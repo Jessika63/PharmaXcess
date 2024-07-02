@@ -48,7 +48,7 @@
     <div id="about" class="content">
         <h1>Informations légales</h1>
         <p>Voici les informations légales de notre site...</p>
-        <!-- Ajoutez ici toutes les informations légales nécessaires -->
+
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -74,10 +74,24 @@
         ];
 
         points.forEach(function(point) {
-            var popupContent = '<b>' + point.name + '</b><br><img src="' + point.photo + '" alt="' + point.name + '" width="200">';
+            var popupContent = '<b>' + point.name + '</b><br><img src="' + point.photo + '" alt="' + point.name + '" width="200"><br><button onclick="getDirections(' + point.lat + ', ' + point.lon + ')">Itinéraire</button>';
             L.marker([point.lat, point.lon]).addTo(map)
                 .bindPopup(popupContent);
         });
+
+        function getDirections(lat, lon) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var startLat = position.coords.latitude;
+                    var startLon = position.coords.longitude;
+                    var destination = lat + ',' + lon;
+                    var url = 'https://www.google.com/maps/dir/?api=1&origin=' + startLat + ',' + startLon + '&destination=' + destination + '&travelmode=driving';
+                    window.open(url, '_blank');
+                });
+            } else {
+                alert("La géolocalisation n'est pas supportée par votre navigateur.");
+            }
+        }
 
         function showMap() {
             document.getElementById('map').style.display = 'block';
