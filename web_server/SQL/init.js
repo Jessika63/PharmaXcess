@@ -2,11 +2,13 @@ const mysql = require('mysql2')
 const fs = require('fs')
 const path = require('path')
 
-const connection = mysql.createConnection({ // TODO : replace by .env file
-    host: 'localhost',
-    user: 'myuser',
-    password: 'mypassword',
-    database: 'mydatabase'
+require('dotenv').config();
+
+const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
 })
 
 const initSQL = () => {
