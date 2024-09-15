@@ -22,4 +22,27 @@ function getMachinesByName(name, callback) {
     });
 }
 
-module.exports = { getMachines, getMachinesByName }
+function getNearestMachines(longitude, latitude, limit = 10, callback) {
+    if (!longitude || !latitude) {
+        return callback(new Error('Longitude and Latitude are required.'));
+    }
+
+    const sql = `
+        SELECT id, name, address, latitude, longitude, 
+        (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) 
+        + sin(radians(?)) * sin(radians(latitude)))) AS distance
+        FROM vending_machines
+        ORDER BY distance
+        LIMIT ?;
+    `;
+    const params = [latitude, longitude, latitude, limit];
+
+    connection.query(sql, params, (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+}
+
+module.exports = { getMachines, getMachinesByName, getNearestMachines }
