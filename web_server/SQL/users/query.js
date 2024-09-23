@@ -22,3 +22,27 @@ function createUser(data, callback) {
         callback(null, result);
     });
 };
+
+function getUserByID(id, callback) {
+    const sql = 'SELECT id, name, email, birthdate FROM users WHERE id = ?';
+
+    connection.query(sql, [id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+};
+
+function getUsersByName(name, callback) {
+    const sql = 'SELECT id, email, birthdate FROM users WHERE name = ?';
+
+    connection.query(sql, [id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+}
+
+module.exports = { getUsers, createUser, getUserByID, getUsersByName }
