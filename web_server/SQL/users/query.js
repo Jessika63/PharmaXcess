@@ -15,11 +15,17 @@ function createUser(data, callback) {
     const { name, birthdate, email, password } = data;
     const sql = 'INSERT INTO users (name, birthdate, email, password) VALUES (?, ?, ?, ?)';
 
-    connection.query(sql, [name, birthdate, email, password], (err, result) => {
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) {
             return callback(err);
         }
-        callback(null, result);
+
+        connection.query(sql, [name, birthdate, email, hashedPassword], (err, result) => {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, result);
+        });
     });
 };
 
