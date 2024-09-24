@@ -5,6 +5,23 @@ remove_doctor_bp = Blueprint('remove_doctor', __name__)
 
 @remove_doctor_bp.route('/remove_doctor', methods=['DELETE'])
 def remove_doctor():
+    """
+    Removes a doctor from the database.
+
+    Query parameters:
+        - first_name: the first name of the doctor to remove.
+        - last_name: the last name of the doctor to remove.
+        - frpp: the French Regulation on Pharmaceutical Products code.
+        - sector: the sector of activity.
+        - region: the region.
+
+    Return Value:
+        - 200 OK with a success message.
+        - 400 Bad Request if required fields are missing.
+        - 404 Not Found if the doctor does not exist.
+        - 500 Internal Server Error if database or other error.
+    """
+
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
     frpp = request.args.get('frpp')

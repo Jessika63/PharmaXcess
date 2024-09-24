@@ -5,6 +5,22 @@ add_doctor_bp = Blueprint('add_doctor', __name__)
 
 @add_doctor_bp.route('/add_doctor', methods=['POST'])
 def add_doctor():
+    """
+    Adds a new doctor to the database.
+
+    Request body (JSON):
+        - first_name: the first name of the doctor.
+        - last_name: the last name of the doctor.
+        - frpp: the French Regulation on Pharmaceutical Products code.
+        - sector: the sector of activity.
+        - region: the region.
+
+    Return Value:
+        - 201 Created with a success message.
+        - 400 Bad Request if required fields are missing.
+        - 500 Internal Server Error if database or other error.
+    """
+
     data = request.get_json()
     first_name = data.get('first_name')
     last_name = data.get('last_name')
