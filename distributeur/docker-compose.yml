@@ -1,0 +1,10 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"  # Modifier si l'app écoute sur un autre port
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development  # Par exemple, pour un environnement de développement Flask
