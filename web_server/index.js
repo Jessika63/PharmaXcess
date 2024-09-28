@@ -1,7 +1,10 @@
 const express = require('express')
+const bodyParser = require('body-parser')
 const app = express()
 
 const { initSQL, endSQL } = require('./SQL/init');
+
+app.use(bodyParser.json())
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
