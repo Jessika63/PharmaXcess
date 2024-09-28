@@ -31,6 +31,8 @@ def add_doctor():
     if not first_name or not last_name or not frpp or not sector or not region:
         return jsonify({"error": "All fields are required"}), 400
 
+    connection = None  # Initialiser ici
+
     try:
         connection = get_connection()  # Établir la connexion ici
         with connection.cursor() as cursor:
@@ -45,4 +47,5 @@ def add_doctor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()  # Fermer la connexion
+        if connection:
+            connection.close()  # Vérifier avant de fermer
