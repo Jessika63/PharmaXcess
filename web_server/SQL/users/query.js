@@ -43,7 +43,7 @@ function getUserByID(id, callback) {
 function getUsersByName(name, callback) {
     const sql = 'SELECT id, email, birthdate FROM users WHERE name = ?';
 
-    connection.query(sql, [id], (err, results) => {
+    connection.query(sql, [name], (err, results) => {
         if (err) {
             return callback(err);
         }
@@ -51,4 +51,26 @@ function getUsersByName(name, callback) {
     });
 }
 
-module.exports = { getUsers, createUser, getUserByID, getUsersByName }
+function getUserByEmail(email, callback) {
+    const sql = 'SELECT id, name, birthdate FROM users WHERE email = ?';
+
+    connection.query(sql, [email], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+}
+
+function doesUserExits(email, callback) {
+    const sql = 'SELECT 1 FROM users WHERE email = ?';
+
+    connection.query(sql, [email], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+}
+
+module.exports = { getUsers, createUser, getUserByID, getUsersByName, getUserByEmail, doesUserExits }
