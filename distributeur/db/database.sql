@@ -1,6 +1,8 @@
 -- Connectez-vous à la base de données
 \connect db_distributeur
 
+CREATE DATABASE doctors_db;
+
 -- Créez la table "doctosr" avec une séquence (pour l'auto-incrément)
 CREATE TABLE IF NOT EXISTS "doctors" (
     id INT AUTO_INCREMENT PRIMARY KEY,
