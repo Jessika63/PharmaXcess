@@ -1,21 +1,42 @@
 version: '3'
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
     ports:
-      - "5000:5000"  # Modifier si l'app écoute sur un autre port
+      - "5000:5000"
     volumes:
       - .:/app
     environment:
-      - FLASK_ENV=development  # Par exemple, pour un environnement de développement Flask
-      - DB_HOST=db  # Correspond au nom du service MySQL
-      - DB_USER=px_user
-      - DB_PASSWORD=px_pwd
-      - DB_NAME=doctors_db
+      - FLASK_ENV=development
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+
   db:
     image: mysql:5.7
     environment:
-      MYSQL_ROOT_PASSWORD: px_root_pwd
-      MYSQL_DATABASE: doctors_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3307:3306"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+
+  test:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.test
+    command: ["pytest", "-vv"]
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=testing
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    profiles:
+      - test

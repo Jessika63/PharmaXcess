@@ -1,17 +1,14 @@
 # To start the project
 
-
 ## Docker set up
 
-
-# start docker
+### start docker
 
 ```bash
 docker-compose up --build
 ```
 
-
-## put db dump into docker (creds inside docker-compose.yml)
+### put db dump into docker (creds inside docker-compose.yml)
 
 ```bash
 docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd doctors_db < database_dump_px.sql
@@ -25,27 +22,21 @@ exemple:
 user = claude
 password = claude123
 
-
 ```bash
 docker exec -i distributeur-db-1 mysql -uclaude -pclaude123 doctors_db < database_dump_px.sql
 ```
-
 
 ensuite doctors_db c'est le nom de la db
 
 puis database_dumb_px.sql c'est le fichier du dump de db
 
-
-## export db dump if needed
-
+### export db dump if needed
 
 ```bash
 cat database_dump_px.sql | docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd
 ```
 
-
-## finished !!
-
+### finished
 
 dumpconfiguré
 
@@ -64,3 +55,19 @@ Pour démarrer le serveur Flask, exécute la commande suivante :
 ```bash
 python app.py
 ```
+
+## Lancer lest test
+
+Pour lancer les test, lancer en premier l'app puis, exécute la commande suivante :
+
+```bash
+docker-compose run test
+```
+
+## Update des dockerfiles ou du docker-compose
+
+Pour update les containers, faire cette commande:
+
+```bash
+docker-compose --profile test up --build
+```*
