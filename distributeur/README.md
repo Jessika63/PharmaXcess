@@ -70,4 +70,4 @@ Pour update les containers, faire cette commande:
 
 ```bash
 docker-compose --profile test up --build
-```*
+```
