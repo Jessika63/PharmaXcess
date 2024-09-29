@@ -8,14 +8,31 @@ services:
       - .:/app
     environment:
       - FLASK_ENV=development  # Par exemple, pour un environnement de développement Flask
-      - DB_HOST=db  # Correspond au nom du service MySQL
-      - DB_USER=px_user
-      - DB_PASSWORD=px_pwd
-      - DB_NAME=doctors_db
+      - DB_HOST=${DB_HOST}  # Correspond au nom du service MySQL
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+
   db:
     image: mysql:5.7
     environment:
-      MYSQL_ROOT_PASSWORD: px_root_pwd
-      MYSQL_DATABASE: doctors_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3307:3306"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+
+  test:
+    build: .
+    command: ["pytest", "-vv"]
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=testing
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    profiles:
+      - test  # Ajout d'un profil pour séparer les tests

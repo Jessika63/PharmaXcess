@@ -64,3 +64,11 @@ Pour démarrer le serveur Flask, exécute la commande suivante :
 ```bash
 python app.py
 ```
+
+## Lancer lest test
+
+Pour lancer les test, lancer en premier l'app puis, exécute la commande suivante :
+
+```bash
+docker-compose run test
+```
