@@ -3,7 +3,7 @@ import sys
 import os
 import pytest
 
-# Ajoute le répertoire de l'application au chemin Python
+# Add the application directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import app

@@ -1,33 +1,32 @@
 
-# Comment écrire une route
+# How to write a route
 
-Pour ajouter une nouvelle route dans l'application Flask, suis les étapes suivantes :
+To add a new route in the Flask application, follow these steps:
 
-## Étape 1: Créer un fichier de route
+## Step 1: Create a route file
 
-Dans le répertoire `routes/`, crée un fichier Python pour ta nouvelle route. Par convention, nomme le fichier en fonction de ce que fait la route. Par exemple, si tu ajoutes une fonctionnalité de mise à jour d'un docteur, tu peux créer un fichier `update_doctor.py`.
+In the `routes/` directory, create a Python file for your new route. As a convention, name the file according to the function of the route. For example, if you're adding a feature to update a doctor, you can create a file named `update_doctor.py`.
 
-## Étape 2: Importer les modules nécessaires
+## Step 2: Import necessary modules
 
-Chaque route Flask doit avoir au minimum les imports suivants :
+Each Flask route must have at least the following imports:
 
 ```python
 from flask import Blueprint, request, jsonify
-from db import get_db  # Assure-toi d'importer la fonction ou connexion DB
+from db import get_db  # Make sure to import the DB connection or function
 ```
 
-## Étape 3: Déclarer le Blueprint
+## Step 3: Declare the Blueprint
 
-Le `Blueprint` permet de modulariser les routes. Crée un blueprint dans ton fichier de route comme ceci :
+The Blueprint helps to modularize routes. Create a blueprint in your route file like this:
 
 ```python
 update_doctor_bp = Blueprint('update_doctor', __name__)
 ```
 
-## Étape 4: Déclarer le Blueprint
+## Step 4: Define the route
 
-Utilise le décorateur @Blueprint.route() pour définir la route, et implémente la logique de traitement :
-Bien penser à ajouter une description claire à la rout.
+Use the @Blueprint.route() decorator to define the route, and implement the logic: Make sure to add a clear description to the route.
 
 ```python
 @update_doctor_bp.route('/update_doctor', methods=['PUT'])
@@ -40,21 +39,22 @@ def update_doctor():
     [Returns]
     """
     data = request.get_json()
-    # Valider et traiter les données
-    # Mettre à jour la base de données avec get_db()
+    # Validate and process data
+    # Update the database using get_db()
     return jsonify({"message": "Doctor updated successfully"}), 200
 ```
 
-## Étape 5: Enregistrer la route dans app.py
+## Step 5: Register the route in app.py
 
-Pour que Flask reconnaisse ta nouvelle route, enregistre le `Blueprint` dans le fichier `app.py`:
+To make Flask recognize your new route, register the Blueprint in the app.py file:
 
 ```python
+Copier le code
 from routes.update_doctor import update_doctor_bp
 
 app.register_blueprint(update_doctor_bp)
 ```
 
-## Étape 6: Tester la route
+## Step 6: Test the route
 
-Suivre ce [Readme](../test/README.md)
+Follow this [Readme](../test/README.md)

@@ -1,23 +1,23 @@
+
 # To start the project
 
-## Docker set up
+## Docker setup
 
-### start docker
+### Start Docker
 
 ```bash
 docker-compose up --build
 ```
 
-### put db dump into docker (creds inside docker-compose.yml)
+### Put DB dump into Docker (credentials inside docker-compose.yml)
 
 ```bash
 docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd doctors_db < database_dump_px.sql
 ```
 
-u = user ; p = password
-coller le user au prefix pareil pour le pwd
+u = user; p = password. Prefix the user and password accordingly.
 
-exemple:
+Example:
 
 user = claude
 password = claude123
@@ -26,47 +26,47 @@ password = claude123
 docker exec -i distributeur-db-1 mysql -uclaude -pclaude123 doctors_db < database_dump_px.sql
 ```
 
-ensuite doctors_db c'est le nom de la db
+Next, **doctors_db** is the name of the database, and **database_dump_px.sql** is the dump file.
 
-puis database_dumb_px.sql c'est le fichier du dump de db
-
-### export db dump if needed
+### Export DB dump if needed
 
 ```bash
 cat database_dump_px.sql | docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd
 ```
 
-### finished
+### Finished
 
-dumpconfiguré
+Dump configured.
 
-## Installer les dépendances
+## Manual setup
 
-Installe les dépendances nécessaires à partir du fichier requirements.txt :
+### Install dependencies
+
+Install the necessary dependencies from the **requirements.txt** file:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Lancer le projet
+### Run the project
 
-Pour démarrer le serveur Flask, exécute la commande suivante :
+To start the Flask server, execute the following command:
 
 ```bash
 python app.py
 ```
 
-## Lancer lest test
+## Run the tests
 
-Pour lancer les test, lancer en premier l'app puis, exécute la commande suivante :
+To run the tests, first start the app, then execute the following command:
 
 ```bash
 docker-compose run test
 ```
 
-## Update des dockerfiles ou du docker-compose
+## Update Dockerfiles or docker-compose
 
-Pour update les containers, faire cette commande:
+To update the containers, run this command:
 
 ```bash
 docker-compose --profile test up --build

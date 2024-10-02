@@ -1,3 +1,4 @@
+
 from flask import Flask
 from dotenv import load_dotenv
 
@@ -5,12 +6,12 @@ from routes.find_doctor import find_doctor_bp
 from routes.add_doctor import add_doctor_bp
 from routes.remove_doctor import remove_doctor_bp
 
-# Charger les variables d'environnement à partir du fichier .env
+# Load environment variables from the .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-# Enregistrer les blueprints
+# Register the blueprints
 app.register_blueprint(find_doctor_bp)
 app.register_blueprint(add_doctor_bp)
 app.register_blueprint(remove_doctor_bp)

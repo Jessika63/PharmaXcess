@@ -1,24 +1,24 @@
 
-# Comment écrire un test
+# How to write a test
 
-Les tests permettent de valider que chaque route fonctionne comme prévu. Pour ajouter un test à l'application, suis les étapes suivantes :
+Tests help validate that each route works as expected. To add a test to the application, follow these steps:
 
-## Étape 1: Créer un fichier de test
+## Step 1: Create a test file
 
-Dans le répertoire `test/`, crée un fichier de test pour la route correspondante. Si tu testes la route `update_doctor`, nomme le fichier `test_update_doctor.py`.
+In the `test/` directory, create a test file for the corresponding route. If you're testing the `update_doctor` route, name the file `test_update_doctor.py`.
 
-### Étape 2 : Importer les modules nécessaires
+## Step 2: Import necessary modules
 
-Assure-toi d'importer `pytest` et le client de test Flask :
+Make sure to import `pytest` and the Flask test client:
 
 ```python
 import pytest
 from app import app
 ```
 
-### Étape 3: Écrire un test pour la route
+## Step 3: Write a test for the route
 
-Utilise la méthode appropriée (client.get(), client.post(), etc.) pour tester la route. Par exemple, pour tester la mise à jour d'un docteur:
+Use the appropriate method (client.get(), client.post(), etc.) to test the route. For example, to test updating a doctor:
 
 ```python
 def test_update_doctor_success(client):
@@ -33,9 +33,9 @@ def test_update_doctor_success(client):
     assert b'Doctor updated successfully' in response.data
 ```
 
-### Étape 4: Ajouter des tests pour les cas d'erreur
+## Step 4: Add tests for error cases
 
-Teste aussi les scénarios où les données sont incorrectes ou où il manque des champs :
+Also, test scenarios where the data is incorrect or fields are missing:
 
 ```python
 def test_update_doctor_missing_field(client):
@@ -48,9 +48,9 @@ def test_update_doctor_missing_field(client):
     assert b'Missing frpp field' in response.data
 ```
 
-### Étape 5: Exécuter les tests
+## Step 5: Run the tests
 
-Pour exécuter les tests avec Docker, utilise la commande suivante :
+To run the tests with Docker, use the following command:
 
 ```bash
 docker-compose run test

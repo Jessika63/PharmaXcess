@@ -17,5 +17,5 @@ def test_add_doctor_missing_field(client):
         'sector': 'General',
         'region': 'Ile-de-France'
     })
-    assert response.status_code == 400  # Mauvais format
+    assert response.status_code == 400  # Bad request
     assert b'All fields are required' in response.data
