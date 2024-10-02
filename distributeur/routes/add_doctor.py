@@ -1,5 +1,6 @@
+
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Importer la fonction de connexion
+from db import get_connection  # Import the connection function
 
 add_doctor_bp = Blueprint('add_doctor', __name__)
 
@@ -31,10 +32,10 @@ def add_doctor():
     if not first_name or not last_name or not frpp or not sector or not region:
         return jsonify({"error": "All fields are required"}), 400
 
-    connection = None  # Initialiser ici
+    connection = None  # Initialize here
 
     try:
-        connection = get_connection()  # Établir la connexion ici
+        connection = get_connection()  # Establish the connection here
         with connection.cursor() as cursor:
             sql_query = """
             INSERT INTO doctors (first_name, last_name, frpp_code, sector, region)
@@ -48,4 +49,4 @@ def add_doctor():
         return jsonify({"error": str(e)}), 500
     finally:
         if connection:
-            connection.close()  # Vérifier avant de fermer
+            connection.close()  # Check before closing
