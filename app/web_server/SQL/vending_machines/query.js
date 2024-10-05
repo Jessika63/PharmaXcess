@@ -22,17 +22,6 @@ function getMachinesByName(name, callback) {
     });
 }
 
-function getMachinesByID(id, callback) {
-    const sql = 'SELECT * FROM vending_machines WHERE id = ?';
-
-    connection.query(sql, [id], (err, results) => {
-        if (err) {
-            return callback(err);
-        }
-        callback(null, results);
-    });
-}
-
 function getNearestMachines(longitude, latitude, limit = 10, callback) {
     if (!longitude || !latitude) {
         return callback(new Error('Longitude and Latitude are required.'));
@@ -56,4 +45,4 @@ function getNearestMachines(longitude, latitude, limit = 10, callback) {
     });
 }
 
-module.exports = { getMachines, getMachinesByName, getMachinesByID, getNearestMachines }
+module.exports = { getMachines, getMachinesByName, getNearestMachines }
