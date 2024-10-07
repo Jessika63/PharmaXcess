@@ -65,12 +65,23 @@ function getUserByEmail(email, callback) {
 function doesUserExits(email, callback) {
     const sql = 'SELECT 1 FROM users WHERE email = ?';
 
-    connection.query(sql, [email], (err, results) => {
+    connection.query(sql, [email], (err, result) => {
         if (err) {
             return callback(err);
         }
-        callback(null, results);
+        callback(null, result);
     });
 }
 
-module.exports = { getUsers, createUser, getUserByID, getUsersByName, getUserByEmail, doesUserExits }
+function checkPassword(email, password, callback) {
+    const sql = 'SELECT 1 FROM users WHERE email = ? AND password = ?';
+
+    connection.query(sql, [email, password], (err, result) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, result);
+    })
+}
+
+module.exports = { getUsers, createUser, getUserByID, getUsersByName, getUserByEmail, doesUserExits, checkPassword }
