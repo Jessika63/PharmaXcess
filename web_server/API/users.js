@@ -19,4 +19,22 @@ app.post('/register', (req, res) => {
         });
     })  
 });
+// TO DO : list of connected user // token
+app.post('/login', (req, res) => {
+    const { password, email } = req.body;
+
+    doesUserExits(email, (err, user) => {
+        if (err)
+            return res.status(500).json({ error: 'Database query failed' });
+        if (user.length == 0)
+            return res.status(400).json({ error: 'User does not exists' });
+        const hashedPassword = bcrypt.hashSync(password, 10);
+
+        checkPassword({email: email, password: hashedPassword}, (err) => {
+            if (err)
+                return res.status(500).json({ error: 'Failed to create user' });
+            res.status(201).json({ message: 'User connected' });
+        })
+    })  
+});
 
