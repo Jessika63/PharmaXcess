@@ -2,7 +2,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 
-const { initSQL, endSQL } = require('./SQL/init');
+const { initSQL, endSQL } = require('./SQL/init')
 
 app.use(bodyParser.json())
 
@@ -15,4 +15,4 @@ app.listen(3000, () => {
     initSQL()
 })
 
-module.exports = app;
+module.exports = app

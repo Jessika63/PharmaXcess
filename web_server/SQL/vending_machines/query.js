@@ -1,41 +1,41 @@
-const connection = require('../init');
+const connection = require('../init')
 
 function getMachines(callback) {
-    const sql = 'SELECT * FROM vending_machines';
+    const sql = 'SELECT * FROM vending_machines'
 
     connection.query(sql, (err, results) => {
         if (err) {
-            return callback(err);
+            return callback(err)
         }
-        callback(null, results);
-    });
+        callback(null, results)
+    })
 }
 
 function getMachinesByName(name, callback) {
-    const sql = 'SELECT * FROM vending_machines WHERE name = ?';
+    const sql = 'SELECT * FROM vending_machines WHERE name = ?'
 
     connection.query(sql, [name], (err, results) => {
         if (err) {
-            return callback(err);
+            return callback(err)
         }
-        callback(null, results);
-    });
+        callback(null, results)
+    })
 }
 
 function getMachinesByID(id, callback) {
-    const sql = 'SELECT * FROM vending_machines WHERE id = ?';
+    const sql = 'SELECT * FROM vending_machines WHERE id = ?'
 
     connection.query(sql, [id], (err, results) => {
         if (err) {
-            return callback(err);
+            return callback(err)
         }
-        callback(null, results);
-    });
+        callback(null, results)
+    })
 }
 
 function getNearestMachines(longitude, latitude, limit = 10, callback) {
     if (!longitude || !latitude) {
-        return callback(new Error('Longitude and Latitude are required.'));
+        return callback(new Error('Longitude and Latitude are required.'))
     }
 
     const sql = `
@@ -44,16 +44,16 @@ function getNearestMachines(longitude, latitude, limit = 10, callback) {
         + sin(radians(?)) * sin(radians(latitude)))) AS distance
         FROM vending_machines
         ORDER BY distance
-        LIMIT ?;
-    `;
-    const params = [latitude, longitude, latitude, limit];
+        LIMIT ?
+    `
+    const params = [latitude, longitude, latitude, limit]
 
     connection.query(sql, params, (err, results) => {
         if (err) {
-            return callback(err);
+            return callback(err)
         }
-        callback(null, results);
-    });
+        callback(null, results)
+    })
 }
 
 module.exports = { getMachines, getMachinesByName, getMachinesByID, getNearestMachines }
