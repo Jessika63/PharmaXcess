@@ -1,0 +1,21 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"  # Modifier si l'app écoute sur un autre port
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development  # Par exemple, pour un environnement de développement Flask
+      - DB_HOST=db  # Correspond au nom du service MySQL
+      - DB_USER=px_user
+      - DB_PASSWORD=px_pwd
+      - DB_NAME=doctors_db
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: px_root_pwd
+      MYSQL_DATABASE: doctors_db
+    ports:
+      - "3307:3306"
