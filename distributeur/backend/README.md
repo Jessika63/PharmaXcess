@@ -4,7 +4,7 @@
 ## Docker set up
 
 
-# start docker
+# [STEP 1] start docker
 
 ```bash
 docker-compose up --build
@@ -56,7 +56,10 @@ ensuite restart docker après avoir modifié le fichier
 sudo systemctl restart docker
 ```
 
-## put db dump into docker (creds inside docker-compose.yml)
+## [STEP 2] put db dump into docker (creds inside docker-compose.yml)
+
+inside another terminal while docker-compose up is still running:
+
 
 check the name of your db container
 
@@ -90,7 +93,7 @@ ensuite doctors_db c'est le nom de la db
 puis database_dumb_px.sql c'est le fichier du dump de db
 
 
-# problems with container or volume
+# if you encounter any problems with container or volume
 
 remove and restart everything:
 
@@ -112,6 +115,10 @@ cat database_dump_px.sql | docker exec -i distributeur-db-1 mysql -uroot -ppx_ro
 
 
 ## finished !!
+
+backend should work properly
+
+'happy dev !'
 
 
 dumpconfiguré
