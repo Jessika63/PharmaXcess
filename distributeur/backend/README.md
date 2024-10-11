@@ -1,19 +1,17 @@
-# To start the project
 
+# To start the project
 
 ## Docker set up
 
-
-# [STEP 1] start docker
+### [STEP 1] start docker
 
 ```bash
 docker-compose up --build
 ```
 
+### [PATCH] if you encounter this error
 
-# [PATCH] if you encounter this error
-
-```
+```bash
 the requirement Flask==2.3.2 (from versions: none)
 155.4 ERROR: No matching distribution found for Flask==2.3.2
 ------
@@ -31,35 +29,40 @@ ERROR: Service 'app' failed to build : Build failed
 
 here is how to solve it:
 
-d'abord remplace dans requirements
-```
+First, replace in **requirements.txt**
+
+```txt
 Flask>=2.3.3,<3.0
 ```
-par
-```
+
+with
+
+```txt
 Flask>=2.3.0,<3.0
 ```
+
 ensuite
 
-ouvre le fichier situé ici (s'il existe pas, crée le)
+Then, open the file located here (if it doesn’t exist, create it)
 /etc/docker/daemon.json
 
+Then replace/add Google's DNS
 
-puis remplace / rajoute le dns de google
 ```json
 {
   "dns": ["8.8.8.8", "8.8.4.4"]
 }
 ```
-ensuite restart docker après avoir modifié le fichier
-```
+
+After modifying the file, restart Docker
+
+```bash
 sudo systemctl restart docker
 ```
 
-## [STEP 2] put db dump into docker (creds inside docker-compose.yml)
+### [STEP 2] put db dump into docker (creds inside docker-compose.yml)
 
 inside another terminal while docker-compose up is still running:
-
 
 check the name of your db container
 
@@ -82,18 +85,15 @@ exemple:
 user = claude
 password = claude123
 
-
 ```bash
 docker exec -i distributeur-db-1 mysql -uclaude -pclaude123 doctors_db < database_dump_px.sql
 ```
 
+Here, **doctors_db** is the name of the database,
 
-ensuite doctors_db c'est le nom de la db
+and **database_dump_px.sql** is the dump file of the database.
 
-puis database_dumb_px.sql c'est le fichier du dump de db
-
-
-# if you encounter any problems with container or volume
+### if you encounter any problems with container or volume
 
 remove and restart everything:
 
@@ -105,27 +105,23 @@ sudo systemctl restart docker
 sudo docker-compose up --build
 ```
 
-
-## export db dump if needed
-
+### export db dump if needed
 
 ```bash
 cat database_dump_px.sql | docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd
 ```
 
-
-## finished !!
+### finished
 
 backend should work properly
 
 'happy dev !'
 
-
 dumpconfiguré
 
 ## Installer les dépendances
 
-Installe les dépendances nécessaires à partir du fichier requirements.txt :
+Install the necessary dependencies from the **requirements.txt** file:
 
 ```bash
 pip install -r requirements.txt
@@ -133,7 +129,7 @@ pip install -r requirements.txt
 
 ## Lancer le projet
 
-Pour démarrer le serveur Flask, exécute la commande suivante :
+To start the Flask server, run the following command:
 
 ```bash
 python app.py

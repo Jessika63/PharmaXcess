@@ -2,3 +2,4 @@
 Flask==2.3.2
 PyMySQL==1.0.3
 python-dotenv==1.0.0
+pytest
