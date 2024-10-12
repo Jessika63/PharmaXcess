@@ -53,5 +53,5 @@ def test_update_doctor_missing_field(client):
 To run the tests with Docker, use the following command:
 
 ```bash
-docker-compose run test
+docker-compose run --rm test
 ```

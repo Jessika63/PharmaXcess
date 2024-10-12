@@ -1,4 +1,5 @@
 
+
 # How to write a route
 
 To add a new route in the Flask application, follow these steps:

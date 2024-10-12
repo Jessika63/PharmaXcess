@@ -1,6 +1,5 @@
-
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Import the connection function
+from db import get_connection  # Importer la fonction de connexion
 
 find_doctor_bp = Blueprint('find_doctor', __name__)
 
@@ -9,7 +8,7 @@ def find_doctor():
     """
     Searches the database for a doctor by first name, last name, sector, and region.
 
-    Query parameters:
+    Query parameter:
         - first_name: the first name of the doctor to search for (in the column first_name).
         - last_name: the last name of the doctor to search for (in the column last_name).
         - frpp: the French Regulation on Pharmaceutical Products code to be checked (in the column frpp_code).
@@ -32,10 +31,8 @@ def find_doctor():
     if not first_name or not last_name or not frpp or not sector or not region:
         return jsonify({"error": "All parameters 'first_name', 'last_name', 'frpp', 'sector', and 'region' are required"}), 400
 
-    connection = None  # Initialize here
-
     try:
-        connection = get_connection()  # Establish the connection here
+        connection = get_connection()  # Établir la connexion ici
         with connection.cursor() as cursor:
             sql_query = """
             SELECT first_name, last_name
@@ -57,5 +54,4 @@ def find_doctor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if connection:
-            connection.close()  # Check before closing
+        connection.close()  # Fermer la connexion

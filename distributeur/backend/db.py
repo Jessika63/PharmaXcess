@@ -1,17 +1,16 @@
-
 import pymysql
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-# Retrieve database information from the .env file
+# Récupérer les informations de la base de données depuis le fichier .env
 DB_HOST = os.getenv('DB_HOST')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
 
-# Function to establish a connection to the database
+# Fonction pour établir la connexion à la base de données
 def get_connection():
     return pymysql.connect(
         host=DB_HOST,
