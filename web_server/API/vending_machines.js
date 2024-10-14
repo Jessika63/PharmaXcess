@@ -1,8 +1,9 @@
 const app = require('../init')
 const { getMachines } = require("../SQL/vending_machines/query")
 const { generateGoogleMapsLink } = require("../tools/google_map")
+const { authenticateToken } = require("../tools/token")
 
-app.get('/vending_machines', (req, res) => {
+app.get('/vending_machines', authenticateToken, (req, res) => {
     getMachines((err, machines) => {
         if (err)
             return res.status(500).json({ error: 'Database query failed' })
@@ -10,7 +11,7 @@ app.get('/vending_machines', (req, res) => {
     })
 })
 
-app.get('/vending_machines/get_nearest', (req, res) => {
+app.get('/vending_machines/get_nearest', authenticateToken, (req, res) => {
     const { latitude, longitude } = req.query
   
     if (!latitude || !longitude)
@@ -22,7 +23,7 @@ app.get('/vending_machines/get_nearest', (req, res) => {
     })
 })
 
-app.get('/vending_machines/get_itinary', (req, res) => {
+app.get('/vending_machines/get_itinary', authenticateToken, (req, res) => {
     const { latitude, longitude, id } = req.query // latitude & longitude are user's coords
 
     if (!id | id < 0)
