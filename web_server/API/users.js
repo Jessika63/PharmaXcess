@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express
+const { authenticateToken, disableToken } = require("../tools/token")
 const { doesUserExits } = require("../SQL/users/query")
 
 app.post('/register', (req, res) => {
@@ -33,8 +34,15 @@ app.post('/login', (req, res) => {
         checkPassword({email: email, password: hashedPassword}, (err) => {
             if (err)
                 return res.status(500).json({ error: 'Failed to create user' })
-            res.status(201).json({ message: 'User connected' })
+
+            res.status(201).json({ message: 'User connected', token: token })
         })
     })  
 })
 
+app.post('/logout', authenticateToken, (req, res) => {
+    const token = req.headers['authorization']
+
+    disableToken(token)
+    res.status(201).json({ message: 'User disconnected' })
+})
