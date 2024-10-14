@@ -4,3 +4,5 @@ function generateGoogleMapsLink(coordsA, coordsB) {
     
     return `https://www.google.com/maps/dir/${latA},${lngA}/${latB},${lngB}`
 }
+
+module.exports = { generateGoogleMapsLink }
