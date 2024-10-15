@@ -31,6 +31,8 @@ def remove_doctor():
     if not first_name or not last_name or not frpp or not sector or not region:
         return jsonify({"error": "All parameters 'first_name', 'last_name', 'frpp', 'sector', and 'region' are required"}), 400
 
+    connection = None  # Initialiser ici
+
     try:
         connection = get_connection()  # Établir la connexion ici
         with connection.cursor() as cursor:
