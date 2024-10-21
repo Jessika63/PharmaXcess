@@ -85,8 +85,63 @@ router.post('/register', (req, res) => {
     })
 })
 
-// TO DO : list of connected user // token
-router.post('/login', (req, res) => {
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Connexion d'un utilisateur
+ *     description: Permet à un utilisateur de se connecter en fournissant son adresse e-mail et son mot de passe.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: john.doe@example.com
+ *                 description: Adresse e-mail de l'utilisateur.
+ *               password:
+ *                 type: string
+ *                 example: strongpassword123
+ *                 description: Mot de passe de l'utilisateur.
+ *     responses:
+ *       201:
+ *         description: Utilisateur connecté avec succès, un token est renvoyé.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User connected
+ *                 token:
+ *                   type: string
+ *                   example: <token>
+ *       400:
+ *         description: L'utilisateur n'existe pas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User does not exists
+ *       500:
+ *         description: Échec de la requête à la base de données ou de la vérification du mot de passe.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database query failed
+*/
+router.post('/login', (req, res) => { // TO DO : list of connected user // token
     const { password, email } = req.body
 
     doesUserExits(email, (err, user) => {
@@ -105,6 +160,38 @@ router.post('/login', (req, res) => {
     })
 })
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Déconnexion de l'utilisateur
+ *     description: Permet à un utilisateur de se déconnecter en invalidant le token d'authentification.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         description: Token d'authentification Bearer.
+ *         schema:
+ *           type: string
+ *           example: Bearer <token>
+ *     responses:
+ *       201:
+ *         description: Utilisateur déconnecté avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User disconnected
+ *       401:
+ *         description: Token invalide ou manquant.
+ *       500:
+ *         description: Erreur interne lors de la déconnexion.
+*/
 router.post('/logout', authenticateToken, (req, res) => {
     const token = req.headers['authorization']
 
