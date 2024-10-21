@@ -1,4 +1,5 @@
-const connection = require('../init')
+const { connection } = require('../init')
+const bcrypt = require('bcryptjs')
 
 function getUsers(callback) {
     const sql = 'SELECT * FROM users'
@@ -13,7 +14,7 @@ function getUsers(callback) {
 
 function createUser(data, callback) {
     const { name, birthdate, email, password } = data
-    const sql = 'INSERT INTO users (name, birthdate, email, password) VALUES (?, ?, ?, ?)'
+    const sql = 'INSERT INTO users (name, birthdate, email, password) VALUES (?, FROM_UNIXTIME(?), ?, ?)'
 
     bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) {
