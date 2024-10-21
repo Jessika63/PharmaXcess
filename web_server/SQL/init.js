@@ -33,12 +33,12 @@ const initSQL = () => {
 
             directories.forEach(directory => {
                 const sqlFilePath = path.join(parentDir, directory, 'init.sql')
-                
+
                 if (fs.existsSync(sqlFilePath)) {
                     console.log(`Found init.sql in ${directory}`)
 
                     const sql = fs.readFileSync(sqlFilePath, 'utf-8')
-                    const queries = sql.split('').filter(query => query.trim().length > 0)
+                    const queries = sql.split(';').map(query => query.trim()).filter(query => query.length > 0)
 
                     queries.forEach(query => {
                         connection.query(query, (err) => {
