@@ -3,3 +3,4 @@
 __pycache__
 .pytest_cache
 database_dump_px_*.sql
+.vscode
