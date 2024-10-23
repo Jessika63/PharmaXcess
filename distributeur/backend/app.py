@@ -1,7 +1,8 @@
 from flask import Flask
 from dotenv import load_dotenv
 
-from routes.find_doctor import find_doctor_bp
+from routes.find_doctor_by_name import find_doctor_by_name_bp
+from routes.find_doctor_by_frpp import find_doctor_by_frpp_bp
 from routes.add_doctor import add_doctor_bp
 from routes.remove_doctor import remove_doctor_bp
 from routes.testing_connection_front import testFrontPost_bp, testFrontGet_bp, testFrontDelete_bp, testFrontPut_bp
@@ -12,7 +13,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Enregistrer les blueprints
-app.register_blueprint(find_doctor_bp)
+app.register_blueprint(find_doctor_by_name_bp)
+app.register_blueprint(find_doctor_by_frpp_bp)
 app.register_blueprint(add_doctor_bp)
 app.register_blueprint(remove_doctor_bp)
 

@@ -1,4 +1,4 @@
-version: '3'
+
 services:
   app:
     build:
@@ -22,6 +22,7 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3307:3306"
+    container_name: "distributeur-backend-db-1"
 
   test:
     build:

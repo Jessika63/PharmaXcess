@@ -70,11 +70,11 @@ check the name of your db container
 docker ps -a
 ```
 
-you should see a container named like 'distributeur-db-1' or 'distributeur_db_1'
+you should see a container named 'distributeur-backend-db-1'
 once you find it, paste the command below with your container name
 
 ```bash
-docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd doctors_db < database_dump_px.sql
+docker exec -i distributeur-backend-db-1 mysql -uroot -ppx_root_pwd doctors_db < database_dump_px.sql
 ```
 
 u = user ; p = password
@@ -86,7 +86,7 @@ user = claude
 password = claude123
 
 ```bash
-docker exec -i distributeur-db-1 mysql -uclaude -pclaude123 doctors_db < database_dump_px.sql
+docker exec -i distributeur-backend-db-1 mysql -uclaude -pclaude123 doctors_db < database_dump_px.sql
 ```
 
 Here, **doctors_db** is the name of the database,
@@ -108,7 +108,7 @@ sudo docker-compose up --build
 ### export db dump if needed
 
 ```bash
-cat database_dump_px.sql | docker exec -i distributeur-db-1 mysql -uroot -ppx_root_pwd
+cat database_dump_px.sql | docker exec -i distributeur-backend-db-1 mysql -uroot -ppx_root_pwd
 ```
 
 ### finished
