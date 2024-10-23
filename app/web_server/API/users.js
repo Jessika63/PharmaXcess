@@ -7,10 +7,19 @@ const { doesUserExits } = require("../SQL/users/query")
 
 /**
  * @swagger
+ * tags:
+ *   - name: Utilisateurs
+ *     description: Opérations relatives aux utilisateurs.
+*/
+
+/**
+ * @swagger
  * /auth/register:
  *   post:
  *     summary: Inscrit un nouvel utilisateur
  *     description: Crée un utilisateur avec un mot de passe haché si l'adresse e-mail n'existe pas déjà.
+ *     tags:
+ *      - Utilisateurs
  *     requestBody:
  *       required: true
  *       content:
@@ -91,6 +100,8 @@ router.post('/register', (req, res) => {
  *   post:
  *     summary: Connexion d'un utilisateur
  *     description: Permet à un utilisateur de se connecter en fournissant son adresse e-mail et son mot de passe.
+ *     tags:
+ *      - Utilisateurs
  *     requestBody:
  *       required: true
  *       content:
@@ -166,6 +177,8 @@ router.post('/login', (req, res) => { // TO DO : list of connected user // token
  *   post:
  *     summary: Déconnexion de l'utilisateur
  *     description: Permet à un utilisateur de se déconnecter en invalidant le token d'authentification.
+ *     tags:
+ *      - Utilisateurs
  *     security:
  *       - bearerAuth: []
  *     parameters:
