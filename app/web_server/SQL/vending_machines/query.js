@@ -22,14 +22,14 @@ function getMachinesByName(name, callback) {
     })
 }
 
-function getMachinesByID(id, callback) {
-    const sql = 'SELECT * FROM vending_machines WHERE id = ?'
+function getMachineByID(id, callback) {
+    const sql = 'SELECT * FROM vending_machines WHERE id = ? LIMIT 1'
 
     connection.query(sql, [id], (err, results) => {
         if (err) {
             return callback(err)
         }
-        callback(null, results)
+        callback(null, results.length > 0 ? results[0] : null)
     })
 }
 
@@ -39,8 +39,8 @@ function getNearestMachines(longitude, latitude, limit = 10, callback) {
     }
 
     const sql = `
-        SELECT id, name, address, latitude, longitude, 
-        (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) 
+        SELECT id, name, latitude, longitude,
+        (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?))
         + sin(radians(?)) * sin(radians(latitude)))) AS distance
         FROM vending_machines
         ORDER BY distance
@@ -56,4 +56,4 @@ function getNearestMachines(longitude, latitude, limit = 10, callback) {
     })
 }
 
-module.exports = { getMachines, getMachinesByName, getMachinesByID, getNearestMachines }
+module.exports = { getMachines, getMachinesByName, getMachineByID, getNearestMachines }
