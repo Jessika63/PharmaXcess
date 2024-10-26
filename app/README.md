@@ -1,14 +1,61 @@
 # PharmaXcess
 
-To init server you need : 
-- npm
-- docker
+*(description coming soon)*
 
-First, user docker to init MySQL (Docker compose is coming soon) : 
-- docker pull mysql:latest
-- docker run --name mysql-container -e MYSQL_ROOT_PASSWORD=rootpassword -e MYSQL_DATABASE=mydatabase -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypassword -p 3306:3306 -d mysql:latest
+## Table of Contents
 
-You must complete web_server/.env file. Do not push this one !!
+- [Prerequisites](#prerequisites)
+- [Server Setup](#server-setup)
+- [Client Setup](#client-setup) *(coming soon)*
+- [Additional Notes](#additional-notes)
 
-Then go to web_server/ and type `npm install`
-To run the project type `npm run start`
+## Prerequisites
+
+To initialize the server, you need: 
+- **npm**
+- **Docker**
+
+## Server Setup
+
+### Step 1: Set Up MySQL with Docker
+
+To set up MySQL using Docker, you can use the following command:
+
+```sh
+docker-compose up -d
+```
+This command will automatically pull the latest MySQL image if it is not already available on your machine.
+
+>Note: You can manually pull the MySQL image with the command below, but it is not necessary if you use docker-compose:
+
+```sh
+docker pull mysql:latest
+```
+
+### Step 2: Create the `.env` File
+
+You must create a `.env` file in the `web_server/` directory.
+
+>**Important:** Do not push this `.env` file to your version control system!
+
+### Step 3: Install Dependencies
+
+After setting up the MySQL service, navigate to the `web_server/` directory and install the necessary dependencies:
+
+```sh
+cd web_server/
+npm install
+```
+
+### Step 4: Run the Project
+
+```sh
+npm run start
+```
+
+## Client Setup *(coming soon)*
+
+## Additional Notes
+
+- Make sure Docker is running before executing the commands to set up the MySQL container.
+- If you make changes to the `.env` file, ensure that you restart the application to apply the new configuration.
