@@ -16,6 +16,7 @@ services:
   
   server:
     build: .
+    image: pharmaxcess_server:latest
     container_name: pharmaxcess_server_container
     ports:
       - "3000:3000"
