@@ -1,4 +1,4 @@
-const connection = require('../init');
+const {connection} = require('../init');
 
 function getMachines(callback) {
     const sql = 'SELECT * FROM vending_machines';

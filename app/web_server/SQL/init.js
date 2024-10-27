@@ -17,7 +17,7 @@ const initSQL = () => {
             console.error('Connection error: ' + err.stack);
             return;
         }
-        console.log('Connected to DB.');
+        console.log('Connected to MySQL database.');
 
         const parentDir = path.join(__dirname, '.');
 
