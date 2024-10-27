@@ -12,50 +12,40 @@
 ## Prerequisites
 
 To initialize the server, you need: 
-- **npm**
+
 - **Docker**
 
 ## Server Setup
 
-### Step 1: Set Up MySQL with Docker
-
-To set up MySQL using Docker, you can use the following command:
-
-```sh
-docker-compose up -d
-```
-This command will automatically pull the latest MySQL image if it is not already available on your machine.
-
->Note: You can manually pull the MySQL image with the command below, but it is not necessary if you use docker-compose:
-
-```sh
-docker pull mysql:latest
-```
-
-### Step 2: Create the `.env` File
+### Step 1: Create the `.env` File
 
 You must create a `.env` file in the `web_server/` directory.
 
 >**Important:** Do not push this `.env` file to your version control system!
 
-### Step 3: Install Dependencies
+### Step 2: Set up and un the database and the server with Docker
 
-After setting up the MySQL service, navigate to the `web_server/` directory and install the necessary dependencies:
-
-```sh
-cd web_server/
-npm install
-```
-
-### Step 4: Run the Project
+To set up and run the database and server using Docker, you can use the following command:
 
 ```sh
-npm run start
+docker-compose up
 ```
+This command will automatically:
+
+-  Pull the latest MySQL image if it is not already available on your machine.
+-  Build the images for the server and database if they are not already built.
+-  Run the respective containers for both the server and the database.
+
+>Note: If you prefer to run individual containers separately, you can do so by specifying the container name in the command:
+
+```sh
+docker-compose up <container_name>
+```
+Make sure to replace `<container_name>` with the actual name of the container you want to run (db or server).
 
 ## Client Setup *(coming soon)*
 
 ## Additional Notes
 
-- Make sure Docker is running before executing the commands to set up the MySQL container.
+- Ensure that the MySQL database container is running before the server container.
 - If you make changes to the `.env` file, ensure that you restart the application to apply the new configuration.
