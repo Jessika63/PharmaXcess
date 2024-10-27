@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS medications (
     expiration_date DATE,
     price DECIMAL(10, 2),
     categories_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (categories_id) REFERENCES categories(id) ON DELETE SET NULL
 );
