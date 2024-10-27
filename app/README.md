@@ -33,7 +33,7 @@ docker-compose up
 This command will automatically:
 
 -  Pull the latest MySQL image if it is not already available on your machine.
--  Build the images for the server and database if they are not already built.
+-  Build the images for Node.js (version 16), the server, and the database if they are not already built.
 -  Run the respective containers for both the server and the database.
 
 >Note: If you prefer to run individual containers separately, you can do so by specifying the container name in the command:
