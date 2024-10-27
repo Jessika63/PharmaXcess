@@ -26,6 +26,8 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE: ${DB_DATABASE}
+    volumes:
+    - .:/usr/src/app
 
 volumes:
   db-data:
