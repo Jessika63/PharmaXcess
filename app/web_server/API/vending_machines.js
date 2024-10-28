@@ -1,7 +1,8 @@
-const app = require('../init');
-const { getMachines } = require("../SQL/vending_machines/query")
+const router = require('express').Router();
+const { getMachines } = require('../SQL/vending_machines/query')
 
-app.get('/vending_machines', (req, res) => {
+
+router.get('/vending_machines', (req, res) => {
     getMachines((err, machines) => {
         if (err)
             return res.status(500).json({ error: 'Database query failed' });
@@ -9,7 +10,7 @@ app.get('/vending_machines', (req, res) => {
     })
 });
 
-app.get('/vending_machines/get_nearest', (req, res) => {
+router.get('/vending_machines/get_nearest', (req, res) => {
     const { latitude, longitude } = req.query;
   
     if (!latitude || !longitude)
@@ -20,3 +21,5 @@ app.get('/vending_machines/get_nearest', (req, res) => {
         res.json(machines)
     })
 });
+
+module.exports = router;
