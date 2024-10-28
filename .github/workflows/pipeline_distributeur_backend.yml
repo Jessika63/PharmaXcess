@@ -1,0 +1,25 @@
+
+name: CI/CD
+
+on:
+  push:
+    branches:
+        - dev
+        - master
+
+jobs:
+  vulnerability_check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Change Permission
+      run: chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
+
+    - name: Install safety
+      run: pip install safety==3.2.10
+
+    - name: Run Safety check
+      run: ./distributeur/backend/scripts/safety/run_safety.sh
