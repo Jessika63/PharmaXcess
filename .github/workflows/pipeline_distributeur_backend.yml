@@ -4,7 +4,6 @@ name: CI/CD
 on:
   push:
     branches:
-        - LOG_add_CI/CD_backend
         - dev
         - master
 
