@@ -152,7 +152,7 @@ router.post('/register', (req, res) => {
  *                   type: string
  *                   example: Database query failed
 */
-router.post('/login', (req, res) => { // TO DO : list of connected user // token
+router.post('/login', (req, res) => {
     const { password, email } = req.body
 
     doesUserExits(email, (err, user) => {

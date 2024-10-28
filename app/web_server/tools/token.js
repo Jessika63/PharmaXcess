@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
-
 const blacklist = new Set()
 
 require('dotenv').config()
