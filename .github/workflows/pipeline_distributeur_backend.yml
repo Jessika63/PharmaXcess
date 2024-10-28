@@ -19,5 +19,8 @@ jobs:
     - name: Change Permission
       run: chmod +x ./distributeur/backend/scripts/run_safety.sh
 
+    - name: Install safety
+      run: pip install safety==3.2.10
+
     - name: Run Safety check
       run: ./distributeur/backend/scripts/run_safety.sh
