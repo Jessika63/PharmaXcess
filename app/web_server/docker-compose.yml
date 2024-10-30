@@ -29,6 +29,7 @@ services:
       DB_DATABASE: ${DB_DATABASE}
     volumes:
     - .:/usr/src/app
+    - /usr/src/app/node_modules
 
 volumes:
   db-data:
