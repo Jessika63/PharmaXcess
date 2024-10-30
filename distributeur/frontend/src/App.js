@@ -1,32 +1,18 @@
 import './App.css';
+import StartingPage from './components/pages/starting_page';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-      </header>
-
-      {/* logo PharmaXcess */}
-
-      <img src={require("./assets/logo.png")} alt="Logo PharmaXcess" className="logo"></img>
-
-      {/* page de garde */}
-      <div>
-        {/* rectangle medicaments sous ordonnance */}
-        <div class="rectangle" style={{top: '30%', left: '50%'}}>
-          <p style={{fontSize: '2.5em'}}>
-            Médicaments sous ordonnance
-          </p>
-        </div>
-
-        {/* rectangle medicaments sans ordonnance */}
-        <div class="rectangle" style={{top: '60%', left: '50%'}}>
-          <p style={{fontSize: '2.5em'}}>
-            Médicaments sans ordonnance
-          </p>
-        </div>
-
+      
+      {/* logo container */}
+      <div className="logo_container">
+        {/* logo PharmaXcess */}
+        <img src={require("./assets/logo.png")} alt="Logo PharmaXcess" className="logo" />
       </div>
+
+      {/* starting page */}
+      <StartingPage />
     </div>
   );
 }
