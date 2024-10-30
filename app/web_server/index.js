@@ -1,7 +1,16 @@
 const express = require('express')
+const bodyParser = require('body-parser')
 const app = express()
+const swaggerUi = require('swagger-ui-express')
+const swaggerSpec = require('./docs/swagger')
+const authRoutes = require('./API/users')
+const machineRoutes = require('./API/vending_machines')
+const { initSQL, endSQL } = require('./SQL/init')
 
-const { initSQL, endSQL } = require('./SQL/init');
+app.use(bodyParser.json())
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use('/auth', authRoutes)
+app.use('/machine', machineRoutes)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
@@ -12,4 +21,4 @@ app.listen(3000, () => {
     initSQL()
 })
 
-module.exports = app;
+module.exports = app

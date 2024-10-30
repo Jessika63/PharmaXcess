@@ -1,0 +1,3 @@
+
+security:
+  ignore-vulnerabilities: # Here you can list multiple specific vulnerabilities you want to ignore (optionally for a time period)
