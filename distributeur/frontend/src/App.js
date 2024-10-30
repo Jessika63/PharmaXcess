@@ -1,23 +1,18 @@
-import logo from './logo.svg';
 import './App.css';
+import StartingPage from './components/pages/starting_page';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      
+      {/* logo container */}
+      <div className="logo_container">
+        {/* logo PharmaXcess */}
+        <img src={require("./assets/logo.png")} alt="Logo PharmaXcess" className="logo" />
+      </div>
+
+      {/* starting page */}
+      <StartingPage />
     </div>
   );
 }
