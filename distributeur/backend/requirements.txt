@@ -1,6 +1,6 @@
 
 Flask>=2.3.0,<3.0
-PyMySQL==1.0.3
+PyMySQL==1.1.1
 python-dotenv==1.0.0
 numpy==1.24.3
 opencv-python==4.8.0.76

@@ -1,3 +1,8 @@
+
+### [STEP 0] install packages
+
+npm install
+
 ### [STEP 1] run docker
 
 docker-compose up --build
