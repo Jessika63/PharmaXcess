@@ -3,6 +3,7 @@ from PIL import Image
 import cv2
 import numpy as np
 import os
+import requests
 import sys
 import re
 
@@ -143,6 +144,80 @@ def read_image(image_path):
 
     return text
 
+
+def getInfos(text):
+    # Get Med Name
+    doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
+    doctors = re.findall(doctor_pattern, text)
+    if not doctors:
+        print("ERROR DOCTOR")
+        return
+
+    firstname, lastname = doctors[0]
+    print(f"Doctor's Name: {firstname} {lastname}")
+
+    # Check if the Med exist (name)
+    doctor_url = f"http://localhost:5000/find_doctor_by_name?first_name={firstname}&last_name={lastname}"
+    doctor_response = requests.get(doctor_url)
+    
+    doctor_data = doctor_response.json()
+    print("API Response for doctor by name:", doctor_data)
+    
+    if doctor_response.status_code == 200 and isinstance(doctor_data, list) and len(doctor_data) > 0 and len(doctor_data[0]) > 0:
+        print("Doctor exists by name.")
+    else:
+        print("Doctor not found by name.")
+
+    # Get RPPS
+    frpp_pattern = r"RPPS:\s*(\d+)|(\d{11})"
+    frpp_match = re.search(frpp_pattern, text)
+    
+    if frpp_match:
+        frpp_code = frpp_match.group(0)
+        print(f"FRPP Code: {frpp_code}")
+        
+        # Check if the Med exist
+        frpp_url = f"http://localhost:5000/find_doctor_by_frpp?frpp={frpp_code}"
+        frpp_response = requests.get(frpp_url)
+        
+        if frpp_response.status_code == 200:
+            print("Doctor exists by FRPP code.")
+        else:
+            print("Doctor not found by FRPP code.")
+    else:
+        print("No FRPP code found.")
+
+    # Get Phone Med
+    phone_pattern = r"Tél\. :\s+(\d{2} \d{2} \d{2} \d{2} \d{2})"
+    phone = re.search(phone_pattern, text)
+    if phone:
+        print(f"Phone: {phone.group(1)}")
+
+    # Get Patient Name
+    patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
+    patient = re.search(patient_pattern, text)
+    
+    if patient:
+        last_name, first_name = patient.groups()
+        print(f"Patient's Name: {first_name} {last_name}")
+
+    # Get Date
+    date_pattern = (
+        r"(?:(?:Le|Date:?|date:?)\s*)?"
+        r"(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
+        r"|\d{1,2}\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)"
+        r"\s+\d{2,4})"
+    )
+    dates = re.findall(date_pattern, text, re.IGNORECASE)
+    
+    if dates:
+        print("Dates found:")
+        for date in dates:
+            date_str = ' '.join(date) if isinstance(date, tuple) else date
+            print(f"- {date_str}")
+
+
+
 def main(image_path):
     if not os.path.isfile(image_path):
         print(f"Error: The file '{image_path}' does not exist.")
@@ -154,48 +229,10 @@ def main(image_path):
         print(text)
     else:
         # print(text)
-        
-        # Get Med Name
-        doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
-        doctors = re.findall(doctor_pattern, text)
-        for firstname, lastname in doctors:
-            print(f"Doctor's Name: {firstname} {lastname}")
 
-        # Get RPPS
-        rpps_pattern = r"RPPS:\s*(\d+)|(\d{11})"
-        rpps = re.search(rpps_pattern, text)
-        if rpps:
-            print(f"RPPS Code: {rpps.group(0)}")
+        # Check information of the prescription
+        getInfos(text)
 
-        # Get Phone Med
-        phone_pattern = r"Tél\. :\s+(\d{2} \d{2} \d{2} \d{2} \d{2})"
-        phone = re.search(phone_pattern, text)
-        if phone:
-            print(f"Phone: {phone.group(1)}")
-
-        # Get Patient Name
-        patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
-        patient = re.search(patient_pattern, text)
-        
-        if patient:
-            last_name, first_name = patient.groups()
-            print(f"Patient's Name: {first_name} {last_name}")
-
-        # Get Date
-        date_pattern = (
-            r"(?:(?:Le|Date:?|date:?)\s*)?"
-            r"(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
-            r"|\d{1,2}\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)"
-            r"\s+\d{2,4})"
-        )
-        dates = re.findall(date_pattern, text, re.IGNORECASE)
-        
-        if dates:
-            print("Dates found:")
-            for date in dates:
-                print(f"- {' '.join(date)}" if isinstance(date, tuple) else f"- {date}")
-
-                
         with open('prescription_text.txt', 'w', encoding='utf-8') as file:
             file.write(text)
 
