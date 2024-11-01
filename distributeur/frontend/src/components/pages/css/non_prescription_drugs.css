@@ -1,0 +1,40 @@
+.npd_App {
+    position: absolute;
+    background-color: #e8c3cb;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .npd_header_container {
+    position: relative;
+    display: flex; /* fix elements on the same row */
+    width: 100%;
+    height: 20%;
+  }
+  
+  .npd_back_button {
+    position: relative;
+    width: 250%;
+    height: 60%;
+    top: 50%;
+    left: 245%;
+  }
+    
+  .npd_logo_container {
+    position: relative;
+    width: 30%;
+    height: 10%;
+    top: 30%;
+    left: 44%;
+    transform: translate(-50%);
+  }
+  
+  .npd_body_page {
+    position: relative;
+    width: 80%;
+    height: 75%;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+  }

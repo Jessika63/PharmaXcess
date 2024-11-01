@@ -34,7 +34,7 @@ function DocumentsChecking() {
             <div className="rectangle" style={{top: '20%', left: '50%'}}>
                 <p style={{ fontSize: '3em', textAlign: 'center' }}>
                 Veuillez insérer les documents <br/>
-                suivants: ordonnance, carte vitale <br/>
+                suivants : ordonnance, carte vitale <br/>
                 et carte d’identité
                 </p>
             </div>

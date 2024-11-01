@@ -16,11 +16,15 @@ function StartingPage() {
       </Link>
 
       {/* Rectangle 'médicaments sans ordonnance' */}
+
+      <Link to="/non-prescription-drugs" style={{ textDecoration: 'none' }}>
       <div className="rectangle" style={{top: '35%', left: '50%'}}>
         <p style={{ fontSize: '3em' }}>
           Médicaments sans ordonnance
         </p>
       </div>
+      </Link>
+
     </div>
   );
 }
