@@ -1,4 +1,0 @@
-
-#!/bin/bash
-# Run the pre-commit installation script with the correct path
-bash distributeur/backend/scripts/pre-commit/install_pre_commit.sh
