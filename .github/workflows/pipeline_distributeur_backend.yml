@@ -4,8 +4,9 @@ name: CI/CD
 on:
   push:
     branches:
-        - dev
         - main
+        - dev
+        - LOG_pre-commit-and-safety # Just for testing
 
 jobs:
   vulnerability_check:
