@@ -1,3 +1,4 @@
 
 security:
+  ignore-unpinned-requirements: false
   ignore-vulnerabilities: # Here you can list multiple specific vulnerabilities you want to ignore (optionally for a time period)
