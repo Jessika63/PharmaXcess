@@ -50,6 +50,12 @@ def test_update_doctor_missing_field(client):
 
 ## Step 5: Run the tests
 
+### Step 5.1 : Start the app, start the db and put the dump in the db
+
+Don't forget to start the app; follow [this readme](../README.md)
+
+### Step 5.2 : Start the tests
+
 To run the tests with Docker, use the following command:
 
 ```bash

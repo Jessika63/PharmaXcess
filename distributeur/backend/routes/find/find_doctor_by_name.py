@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify
 from db import get_connection  # Importer la fonction de connexion
 

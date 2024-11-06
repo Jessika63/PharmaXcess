@@ -9,7 +9,7 @@ def test_find_doctor_by_frpp_success(client):
 
 def test_find_doctor_by_frpp_not_found(client):
     response = client.get('/find_doctor_by_frpp', query_string={
-        'frpp': '9876543210'
+        'frpp': '0000000000'
     })
     assert response.status_code == 200
     data = response.get_json()  # Récupérer les données JSON sous forme de dictionnaire
