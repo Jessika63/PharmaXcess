@@ -15,4 +15,4 @@ RUN pip install --upgrade Flask Werkzeug
 
 COPY . /app
 
-CMD ["pytest", "-vv"]
+CMD ["pytest", "--cov=./", "--cov-report=term-missing", "-vv"]
