@@ -1,4 +1,7 @@
 
+import pytest
+
+@pytest.mark.order(2)
 def test_read_text_success(client, mocker):
     # Simuler la sortie de la commande avec une lecture réussie
     mock_result = mocker.Mock()
@@ -18,7 +21,7 @@ def test_read_text_success(client, mocker):
     assert data['message'] == "Text read successfully"
     assert data['output'] == "Read text successfully"
 
-
+@pytest.mark.order(2)
 def test_read_text_script_failure(client, mocker):
     # Simuler une sortie de commande avec une erreur
     mock_result = mocker.Mock()
@@ -37,7 +40,7 @@ def test_read_text_script_failure(client, mocker):
     data = response.get_json()
     assert data['error'] == "Error occurred while reading the image"
 
-
+@pytest.mark.order(2)
 def test_read_text_exception(client, mocker):
     # Simuler une exception lors de l'exécution de la commande
     mocker.patch('subprocess.run', side_effect=Exception("Unexpected error"))

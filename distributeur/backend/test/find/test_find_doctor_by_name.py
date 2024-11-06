@@ -1,4 +1,7 @@
 
+import pytest
+
+@pytest.mark.order(2)
 def test_find_doctor_by_name_success(client):
     response = client.get('/find_doctor_by_name', query_string={
         'first_name': 'John',
@@ -10,6 +13,7 @@ def test_find_doctor_by_name_success(client):
     assert b'John' in response.data
     assert b'Doe' in response.data
 
+@pytest.mark.order(2)
 def test_find_doctor_by_name_not_found(client):
     response = client.get('/find_doctor_by_name', query_string={
         'first_name': 'Jane',
@@ -20,6 +24,7 @@ def test_find_doctor_by_name_not_found(client):
     assert response.status_code == 404
     assert b'No doctors found' in response.data
 
+@pytest.mark.order(2)
 def test_find_doctor_by_name_missing_params(client):
     response = client.get('/find_doctor_by_name', query_string={
         'first_name': 'John'
