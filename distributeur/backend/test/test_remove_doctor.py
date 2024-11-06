@@ -2,7 +2,7 @@
 
 import pytest
 
-@pytest.mark.order(3)
+@pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_success(client):
     response = client.delete('/remove_doctor', query_string={
         'first_name': 'John',
@@ -14,7 +14,7 @@ def test_remove_doctor_success(client):
     assert response.status_code == 200
     assert b'Doctor removed successfully' in response.data
 
-@pytest.mark.order(3)
+@pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_not_found(client):
     response = client.delete('/remove_doctor', query_string={
         'first_name': 'Jane',

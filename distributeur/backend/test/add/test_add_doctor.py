@@ -1,7 +1,7 @@
 
 import pytest
 
-@pytest.mark.order(1)
+@pytest.mark.order(1) # LOX n°1
 def test_add_doctor_success(client):
     response = client.post('/add_doctor', json={
         'first_name': 'John',
@@ -13,7 +13,7 @@ def test_add_doctor_success(client):
     assert response.status_code == 201
     assert b'Doctor added successfully' in response.data
 
-@pytest.mark.order(1)
+@pytest.mark.order(1) # LOX n°1
 def test_add_doctor_missing_field(client):
     response = client.post('/add_doctor', json={
         'first_name': 'John',

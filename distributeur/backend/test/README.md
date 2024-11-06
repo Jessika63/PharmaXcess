@@ -53,8 +53,10 @@ def test_update_doctor_missing_field(client):
 
 Just before the `def` add an order it will be useful for some line of execution.
 
+Please add a comments to say witch LOX (lien of execution) it refers to.
+
 ```python
-@pytest.mark.order(2)
+@pytest.mark.order(2) # LOX n°66
 def test_update_doctor_missing_field(client):
 ```
 
