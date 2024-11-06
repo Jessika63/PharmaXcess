@@ -63,7 +63,7 @@ export default function AppNavigation() {
           },
           tabBarShowLabel: false,
           tabBarActiveTintColor: '#F57196',
-          tabBarInactiveTintColor: '#EE9AD0',
+          tabBarInactiveTintColor: '#F7C5E0',
           headerTitleAlign: 'center',
           headerTitleStyle: {
             fontWeight: 'bold',
