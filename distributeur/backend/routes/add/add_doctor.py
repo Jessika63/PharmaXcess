@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify
 from db import get_connection  # Importer la fonction de connexion
 
@@ -45,6 +46,7 @@ def add_doctor():
             return jsonify({"message": "Doctor added successfully"}), 201
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if connection:
