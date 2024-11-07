@@ -25,7 +25,7 @@ def test_update_doctor_success(client):
     response = client.put('/update_doctor', json={
         'first_name': 'John',
         'last_name': 'Doe',
-        'frpp': '1234567890',
+        'rpps': '1234567890',
         'sector': 'General',
         'region': 'Ile-de-France'
     })
@@ -45,7 +45,7 @@ def test_update_doctor_missing_field(client):
         'sector': 'General'
     })
     assert response.status_code == 400
-    assert b'Missing frpp field' in response.data
+    assert b'Missing rpps field' in response.data
 ```
 
 ## Step 5: Run the tests

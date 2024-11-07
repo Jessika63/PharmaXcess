@@ -3,7 +3,7 @@ def test_add_doctor_success(client):
     response = client.post('/add_doctor', json={
         'first_name': 'John',
         'last_name': 'Doe',
-        'frpp': '1234567890',
+        'rpps': '1234567890',
         'sector': 'General',
         'region': 'Ile-de-France'
     })

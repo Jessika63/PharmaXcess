@@ -13,7 +13,7 @@ def add_list_doctors():
         - doctors: a list of doctor objects, where each object contains:
             - first_name: the first name of the doctor.
             - last_name: the last name of the doctor.
-            - frpp: the French Regulation on Pharmaceutical Products code.
+            - rpps: the French Regulation on Pharmaceutical Products code.
             - sector: the sector of activity.
             - region: the region.
 
@@ -30,7 +30,7 @@ def add_list_doctors():
         return jsonify({"error": "A list of doctors is required"}), 400
 
     for doctor in doctors:
-        if not all(k in doctor for k in ('first_name', 'last_name', 'frpp', 'sector', 'region')):
+        if not all(k in doctor for k in ('first_name', 'last_name', 'rpps', 'sector', 'region')):
             return jsonify({"error": "All fields are required for each doctor"}), 400
 
     connection = None
@@ -39,10 +39,10 @@ def add_list_doctors():
         connection = get_connection()  # Établir la connexion
         with connection.cursor() as cursor:
             sql_query = """
-            INSERT INTO doctors (first_name, last_name, frpp_code, sector, region)
+            INSERT INTO doctors (first_name, last_name, rpps_code, sector, region)
             VALUES (%s, %s, %s, %s, %s)
             """
-            values = [(doc['first_name'], doc['last_name'], doc['frpp'], doc['sector'], doc['region']) for doc in doctors]
+            values = [(doc['first_name'], doc['last_name'], doc['rpps'], doc['sector'], doc['region']) for doc in doctors]
             cursor.executemany(sql_query, values)
             connection.commit()
             return jsonify({"message": "Doctors added successfully"}), 201

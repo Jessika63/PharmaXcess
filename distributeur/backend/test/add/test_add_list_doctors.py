@@ -5,14 +5,14 @@ def test_add_list_doctors_success(client):
             {
                 'first_name': 'Michael',
                 'last_name': 'Jackson',
-                'frpp': '066606660',
+                'rpps': '066606660',
                 'sector': 'General',
                 'region': 'Ile-de-France'
             },
             {
                 'first_name': 'Jane',
                 'last_name': 'Smith',
-                'frpp': '1234567890',
+                'rpps': '1234567890',
                 'sector': 'Pediatrics',
                 'region': 'Auvergne-Rhône-Alpes'
             }
@@ -38,7 +38,7 @@ def test_add_list_doctors_missing_field(client):
             {
                 'first_name': 'Jane',
                 'last_name': 'Smith',
-                'frpp': '9876543210',
+                'rpps': '9876543210',
                 'sector': 'Pediatrics',
             }
         ]
@@ -57,7 +57,7 @@ def test_add_list_doctors_single_doctor(client):
             {
                 'first_name': 'John',
                 'last_name': 'Doe',
-                'frpp': '1234567890',
+                'rpps': '1234567890',
                 'sector': 'General',
                 'region': 'Ile-de-France'
             }
