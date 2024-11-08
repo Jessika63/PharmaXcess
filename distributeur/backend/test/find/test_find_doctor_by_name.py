@@ -1,5 +1,6 @@
 
 import pytest
+from unittest.mock import patch
 
 @pytest.mark.order(2) # LOX n°1
 def test_find_doctor_by_name_success(client):
@@ -32,3 +33,15 @@ def test_find_doctor_by_name_missing_params(client):
     })
     assert response.status_code == 400
     assert b'Both \'first_name\' and \'last_name\' are required' in response.data
+
+@pytest.mark.order(2)  # LOX n°1
+@patch('routes.find.find_doctor_by_name.get_connection', side_effect=Exception("Database connection failed"))
+def test_find_doctor_by_name_db_error(mock_get_connection, client):
+    response = client.get('/find_doctor_by_name', query_string={
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'sector': 'General',  # Optionnel
+        'region': 'Ile-de-France'  # Optionnel
+    })
+    assert response.status_code == 500
+    assert b'Database connection failed' in response.data
