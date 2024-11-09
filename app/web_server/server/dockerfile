@@ -1,6 +1,16 @@
+FROM openjdk:17-jdk-alpine AS build
+
+WORKDIR /app
+
+COPY pharmaxcess_server /app/pharmaxcess_server
+
+RUN apk add --no-cache maven
+
+RUN mvn -f /app/pharmaxcess_server/pom.xml clean install
+
 FROM openjdk:17-jdk-alpine
 
-COPY pharmaxcess_server/target/pharmaxcess_server-0.0.1-SNAPSHOT.jar /app/pharmaxcess-server.jar
+COPY --from=build /app/pharmaxcess_server/target/pharmaxcess_server-0.0.1-SNAPSHOT.jar /app/pharmaxcess-server.jar
 
 EXPOSE 8080
 
