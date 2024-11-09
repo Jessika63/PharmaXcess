@@ -4,7 +4,7 @@ services:
   db:
     build:
       context: ./database
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: pharmaxcess-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -20,7 +20,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: pharmaxcess-server
     ports:
       - "8080:8080"
@@ -32,6 +32,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/pharmaxcess_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_JPA_SHOW-SQL: true
 
 networks:
   pharmaxcess-network:
