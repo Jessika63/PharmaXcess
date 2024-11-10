@@ -4,7 +4,7 @@ services:
   db:
     build:
       context: ./database
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: pharmaxcess-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -14,13 +14,14 @@ services:
       - "5432:5432"
     volumes:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/postgresql/data
     networks:
       - pharmaxcess-network
 
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: pharmaxcess-server
     ports:
       - "8080:8080"
@@ -34,8 +35,15 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATASOURCE_DRIVER-CLASS-NAME: org.postgresql.Driver
       SPRING_JPA_HIBERNATE_DDL-AUTO: update
-      SPRING_JPA_SHOW-SQL: true
+      SPRING_JPA_SHOW-SQL: "true"
+    volumes:
+      - ./server/pharmaxcess_server:/app/pharmaxcess_server
+      - maven-cache:/root/.m2
 
 networks:
   pharmaxcess-network:
     driver: bridge
+
+volumes:
+  db_data:
+  maven-cache:
