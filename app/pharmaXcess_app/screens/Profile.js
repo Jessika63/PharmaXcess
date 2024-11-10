@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Profile() {
@@ -14,6 +14,10 @@ export default function Profile() {
     ];
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.profileContainer}>
+                <Image source={{ uri: 'https://www.w3schools.com/w3images/avatar2.png' }} style={styles.profileImage} />
+                <Text style={styles.profileName}>John Doe</Text>
+            </View>
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
@@ -34,6 +38,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 20,
         backgroundColor: 'white',
+    },
+    profileContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    profileImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        borderWidth: 2,
+        borderColor: '#F57196',
+        marginBottom: 10,
+    },
+    profileName: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginTop: 10,
+        marginBottom: -25,
     },
     card: {
         width: '110%',
