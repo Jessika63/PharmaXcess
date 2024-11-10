@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native'; // Import du hook useNavigation
 
-export default function Profile() {
+export default function Profile({ navigation }) {
+    
     const items = [
         { title: 'Mes informations', route: 'PersonalInfo' },
         { title: 'Mes maladies', route: 'Diseases' },
@@ -12,6 +14,7 @@ export default function Profile() {
         { title: 'Mes antécédents familiaux', route: 'FamilyHistory' },
         { title: 'Mes médecins', route: 'Doctors' },
     ];
+    
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.profileContainer}>
