@@ -12,7 +12,7 @@ import ClickAndCollect from './screens/ClickAndCollect';
 import Chat from './screens/Chat';
 import Profile from './screens/Profile';
 import PersonalInfo from './screens/PersonalInfo';
-// import Diseases from './screens/Diseases';
+import Diseases from './screens/Diseases';
 // import Treatments from './screens/Treatments';
 // import Hospitalizations from './screens/Hospitalizations';
 // import Allergies from './screens/Allergies';
@@ -37,7 +37,7 @@ function ProfileStackScreen() {
     <ProfileStack.Navigator>
       <ProfileStack.Screen name="Profile" component={Profile} options={{ headerTitleAlign: 'center' }} />
       <ProfileStack.Screen name="PersonalInfo" component={PersonalInfo} options={{ title: 'Mes informations' }} />
-      {/* <ProfileStack.Screen name="Diseases" component={Diseases} options={{ title: 'Maladies' }} /> */}
+      {<ProfileStack.Screen name="Diseases" component={Diseases} options={{ title: 'Maladies' }} />}
       {/* <ProfileStack.Screen name="Treatments" component={Treatments} options={{ title: 'Traitements' }} /> */}
       {/* <ProfileStack.Screen name="Hospitalizations" component={Hospitalizations} options={{ title: 'Hospitalisations' }} /> */}
       {/* <ProfileStack.Screen name="Allergies" component={Allergies} options={{ title: 'Allergies' }} /> */}
