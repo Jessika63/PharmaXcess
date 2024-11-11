@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Diseases({ navigation }) {
-    const [expanded, setExpanded] = useState(null); // Etat pour suivre quelle carte est développée
+    const [expanded, setExpanded] = useState(null);
 
     const diseases = [
         { 
@@ -41,7 +41,7 @@ export default function Diseases({ navigation }) {
     ];
 
     const toggleCard = (index) => {
-        setExpanded(expanded === index ? null : index); // Ouvre/ferme la carte
+        setExpanded(expanded === index ? null : index);
     };
 
     const handleAddPress = () => {
@@ -49,8 +49,7 @@ export default function Diseases({ navigation }) {
     };
 
     const handleEditPress = (diseaseName) => {
-        Alert.alert('Modifier la maladie', `Vous avez sélectionné ${diseaseName} pour la modification.`);
-        // Vous pouvez ici ouvrir un formulaire de modification pour chaque maladie
+        Alert.alert('Modifier la maladie', `Cette fonctionnalité n\'est pas encore implémentée pour la maladie "${diseaseName}".`);
     };
 
     return (
@@ -60,11 +59,9 @@ export default function Diseases({ navigation }) {
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View key={index} style={styles.diseaseCard}>
                             <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                                <View>
-                                    <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
-                                        <Text style={styles.editIcon}>✏️</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
+                                    <Text style={styles.editIcon}>✏️</Text>
+                                </TouchableOpacity>
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.diseaseTitle}>{disease.name}</Text>
                                 </View>
@@ -155,11 +152,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     editButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
         backgroundColor: '#F57196',
         padding: 8,
         borderRadius: 50,
-        marginRight: 275,
     },
+
     editIcon: {
         fontSize: 20,
         color: '#ffffff',
