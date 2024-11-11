@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Diseases({ navigation }) {
-    const [expanded, setExpanded] = useState(null);
+    const [expanded, setExpanded] = useState(null); // Etat pour suivre quelle carte est développée
 
     const diseases = [
         { 
@@ -41,42 +41,55 @@ export default function Diseases({ navigation }) {
     ];
 
     const toggleCard = (index) => {
-        setExpanded(expanded === index ? null : index);
+        setExpanded(expanded === index ? null : index); // Ouvre/ferme la carte
     };
 
     const handleAddPress = () => {
         Alert.alert('Ajouter une maladie', 'Cette fonctionnalité n\'est pas encore implémentée.');
     };
 
+    const handleEditPress = (diseaseName) => {
+        Alert.alert('Modifier la maladie', `Vous avez sélectionné ${diseaseName} pour la modification.`);
+        // Vous pouvez ici ouvrir un formulaire de modification pour chaque maladie
+    };
+
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.diseaseList}>
                 {diseases.map((disease, index) => (
-                    <TouchableOpacity key={index} onPress={() => toggleCard(index)} style={styles.diseaseCard}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                            <Text style={styles.diseaseTitle}>{disease.name}</Text>
-
-                            <Text style={styles.diseaseText}>
-                                <Text style={styles.bold}>Description: </Text>
-                                {expanded === index ? disease.description : `${disease.description.slice(0, 100)}...`}
-                            </Text>
-                            <Text style={styles.diseaseText}>
-                                <Text style={styles.bold}>Symptômes: </Text>
-                                {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 100)}...`}
-                            </Text>
-                            <Text style={styles.diseaseText}>
-                                <Text style={styles.bold}>Date de début: </Text>
-                                {expanded === index ? disease.beginDate : `${disease.beginDate.slice(0, 10)}...`}
-                            </Text>
-                            <Text style={styles.diseaseText}>
-                                <Text style={styles.bold}>Traitements: </Text>
-                                {expanded === index ? disease.medications : `${disease.medications.slice(0, 100)}...`}
-                            </Text>
-                            <Text style={styles.diseaseText}>
-                                <Text style={styles.bold}>Examens: </Text>
-                                {expanded === index ? disease.examens : `${disease.examens.slice(0, 100)}...`}
-                            </Text>
-                        </LinearGradient>
+                    <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
+                        <View key={index} style={styles.diseaseCard}>
+                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                                <View>
+                                    <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
+                                        <Text style={styles.editIcon}>✏️</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.diseaseTitle}>{disease.name}</Text>
+                                </View>
+                                <Text style={styles.diseaseText}>
+                                    <Text style={styles.bold}>Description: </Text>
+                                    {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
+                                </Text>
+                                <Text style={styles.diseaseText}>
+                                    <Text style={styles.bold}>Symptômes: </Text>
+                                    {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
+                                </Text>
+                                <Text style={styles.diseaseText}>
+                                    <Text style={styles.bold}>Date de début: </Text>
+                                    {expanded === index ? disease.beginDate : `${disease.beginDate.slice(0, 25)}`}
+                                </Text>
+                                <Text style={styles.diseaseText}>
+                                    <Text style={styles.bold}>Traitements: </Text>
+                                    {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                                </Text>
+                                <Text style={styles.diseaseText}>
+                                    <Text style={styles.bold}>Examens: </Text>
+                                    {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
+                                </Text>
+                            </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -116,10 +129,16 @@ const styles = StyleSheet.create({
         borderColor: '#f0f0f0',
         backgroundColor: '#f9f9f9',
     },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     diseaseText: {
         fontSize: 16,
         color: '#ffffff',
         marginVertical: 5,
+        padding: 5,
     },
     diseaseTitle: {
         fontSize: 18,
@@ -135,6 +154,16 @@ const styles = StyleSheet.create({
     bold: {
         fontWeight: 'bold',
     },
+    editButton: {
+        backgroundColor: '#F57196',
+        padding: 8,
+        borderRadius: 50,
+        marginRight: 275,
+    },
+    editIcon: {
+        fontSize: 20,
+        color: '#ffffff',
+    },
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -146,7 +175,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
     },
     buttonText: {
-        color: '#ffffff',
+        color: 'white',
+        fontWeight: 'bold',
         fontSize: 16,
     },
     buttonContainer: {
@@ -155,6 +185,5 @@ const styles = StyleSheet.create({
         width: '100%',
         marginTop: 30,
     },
-
 });
 
