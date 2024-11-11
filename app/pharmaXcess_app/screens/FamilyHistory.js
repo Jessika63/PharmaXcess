@@ -11,28 +11,28 @@ export default function FamilyHistory({ navigation }) {
             familyMember: 'Père',
             age: 60,
             severity: 'Modéré',
-            comments: 'Traitement par Metformine'
+            treatments: 'Traitement par Metformine'
         },
         {
             name: 'Cancer du sein',
             familyMember: 'Mère',
             age: 55,
             severity: 'Sévère',
-            comments: 'Chimiothérapie'
+            treatments: 'Chimiothérapie'
         },
         {
             name: 'Hypertension artérielle',
             familyMember: 'Grand-père',
             age: 70,
             severity: 'Modérée',
-            comments: 'Traitement par bêtabloquants'
+            treatments: 'Traitement par bêtabloquants'
         },
         {
             name: 'Alzheimer',
             familyMember: 'Grand-mère',
             age: 80,
             severity: 'Sévère',
-            comments: 'Traitement par Aricept'
+            treatments: 'Traitement par Aricept'
         },
     ];
 
@@ -60,7 +60,7 @@ export default function FamilyHistory({ navigation }) {
                             {disease.familyMember}
                         </Text>
                         <Text style={styles.familyHistoryText}>
-                            <Text style={styles.bold}>Âge au diagnostic: </Text>
+                            <Text style={styles.bold}>Âge: </Text>
                             {disease.age} ans
                         </Text>
                         <Text style={styles.familyHistoryText}>
@@ -68,8 +68,8 @@ export default function FamilyHistory({ navigation }) {
                             {disease.severity}
                         </Text>
                         <Text style={styles.familyHistoryText}>
-                            <Text style={styles.bold}>Commentaires: </Text>
-                            {disease.comments}
+                            <Text style={styles.bold}>Traitements: </Text>
+                            {disease.treatments}
                         </Text>
                     </View>
                 ))}
