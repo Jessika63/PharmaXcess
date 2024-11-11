@@ -59,32 +59,39 @@ export default function Diseases({ navigation }) {
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View key={index} style={styles.diseaseCard}>
-                                <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
-                                    <Ionicons name="pencil" size={25} color="#ffffff" />                                
-                                </TouchableOpacity>
-                                <View style={styles.cardHeader}>
-                                    <Text style={styles.diseaseTitle}>{disease.name}</Text>
-                                </View>
-                                <Text style={styles.diseaseText}>
-                                    <Text style={styles.bold}>Description: </Text>
-                                    {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
-                                </Text>
-                                <Text style={styles.diseaseText}>
-                                    <Text style={styles.bold}>Symptômes: </Text>
-                                    {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
-                                </Text>
-                                <Text style={styles.diseaseText}>
-                                    <Text style={styles.bold}>Date de début: </Text>
-                                    {expanded === index ? disease.beginDate : `${disease.beginDate.slice(0, 25)}`}
-                                </Text>
-                                <Text style={styles.diseaseText}>
-                                    <Text style={styles.bold}>Traitements: </Text>
-                                    {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
-                                </Text>
-                                <Text style={styles.diseaseText}>
-                                    <Text style={styles.bold}>Examens: </Text>
-                                    {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
-                                </Text>
+                            <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
+                                <Ionicons name="pencil" size={25} color="#ffffff" />                                
+                            </TouchableOpacity>
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.diseaseTitle}>{disease.name}</Text>
+                            </View>
+                            <Text style={styles.diseaseText}>
+                                <Text style={styles.bold}>Description: </Text>
+                                {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
+                            </Text>
+                            <Text style={styles.diseaseText}>
+                                <Text style={styles.bold}>Symptômes: </Text>
+                                {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
+                            </Text>
+                            <Text style={styles.diseaseText}>
+                                <Text style={styles.bold}>Date de début: </Text>
+                                {expanded === index ? disease.beginDate : `${disease.beginDate.slice(0, 25)}`}
+                            </Text>
+                            <Text style={styles.diseaseText}>
+                                <Text style={styles.bold}>Traitements: </Text>
+                                {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                            </Text>
+                            <Text style={styles.diseaseText}>
+                                <Text style={styles.bold}>Examens: </Text>
+                                {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
+                            </Text>
+                            <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
+                            <Ionicons 
+                                name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'} 
+                                size={24} 
+                                color="black" 
+                            />
+                            </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -183,6 +190,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         marginTop: 30,
+    },
+    arrowContainer: {
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    arrow: {
+        fontSize: 20,
+        color: '#ffffff',
     },
 });
 

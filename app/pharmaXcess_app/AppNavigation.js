@@ -60,7 +60,7 @@ export default function AppNavigation() {
             } else if (route.name === 'Localisation') {
               iconName = 'location-outline';
             } else if (route.name === 'Click & Collect') {
-              iconName = 'camera-outline';
+              iconName = 'cart-outline';
             } else if (route.name === 'Chat') {
               iconName = 'chatbubble-outline';
             } else if (route.name === 'ProfileStack') {
