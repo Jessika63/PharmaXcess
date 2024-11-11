@@ -15,7 +15,7 @@ import PersonalInfo from './screens/PersonalInfo';
 import Diseases from './screens/Diseases';
 import Treatments from './screens/Treatments';
 import Hospitalizations from './screens/Hospitalizations';
-// import Allergies from './screens/Allergies';
+import Allergies from './screens/Allergies';
 // import FamilyHistory from './screens/FamilyHistory';
 // import Doctors from './screens/Doctors';
 
@@ -40,7 +40,7 @@ function ProfileStackScreen() {
       {<ProfileStack.Screen name="Diseases" component={Diseases} options={{ title: 'Maladies' }} />}
       {<ProfileStack.Screen name="Treatments" component={Treatments} options={{ title: 'Traitements' }} />}
       {<ProfileStack.Screen name="Hospitalizations" component={Hospitalizations} options={{ title: 'Hospitalisations' }} />}
-      {/* <ProfileStack.Screen name="Allergies" component={Allergies} options={{ title: 'Allergies' }} /> */}
+      {<ProfileStack.Screen name="Allergies" component={Allergies} options={{ title: 'Allergies' }} />}
       {/* <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ title: 'Antécédents familiaux' }} /> */}
       {/* <ProfileStack.Screen name="Doctors" component={Doctors} options={{ title: 'Médecins' }} /> */}
     </ProfileStack.Navigator>

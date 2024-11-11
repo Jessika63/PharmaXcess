@@ -70,11 +70,11 @@ export default function PersonalInfo({ navigation}) {
             <ScrollView contentContainerStyle={styles.hospitalizationList}>
                 {hospitalizations.map((hospitalization, index) => (
                     <View key={index} style={styles.hospitalizationCard}>
+                        <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
+                            <Ionicons name="pencil" size={25} color="#ffffff" />                                
+                        </TouchableOpacity>
                         <View style={styles.cardHeader}>
                             <Text style={styles.hospitalizationTitle}>{hospitalization.name}</Text>
-                            <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color="#ffffff" />                                
-                            </TouchableOpacity>
                         </View>
                         <Text style={styles.hospitalizationText}>
                             <Text style={styles.bold}>Date de début: </Text>
