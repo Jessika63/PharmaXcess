@@ -83,11 +83,11 @@ export default function Allergies({ navigation }) {
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                        <Text style={styles.buttonText}>Ajouter</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <Text style={styles.buttonText}>Ajouter</Text>
+                </LinearGradient>
+            </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>

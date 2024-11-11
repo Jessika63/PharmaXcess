@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function PersonalInfo({ navigation}) {
@@ -15,6 +15,10 @@ export default function PersonalInfo({ navigation}) {
         socialSecurityNumber: '123-45-6789',
         address: '1 rue de la paix, 75000 Paris',
         emergencyContact: 'Jane Doe, 06 12 34 56 79',
+    };
+
+    const handleModifyPress = () => {
+        Alert.alert('Modifier mes informations', 'Cette fonctionnalité n\'est pas encore implémentée.');
     };
 
     return (
@@ -60,11 +64,11 @@ export default function PersonalInfo({ navigation}) {
             </View>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                        <Text style={styles.buttonText}>Modifier</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleModifyPress}>
+                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <Text style={styles.buttonText}>Ajouter</Text>
+                </LinearGradient>
+            </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
