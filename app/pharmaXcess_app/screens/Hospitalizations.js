@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function PersonalInfo({ navigation}) {
     const [expanded, setExpanded] = useState(null);
@@ -69,50 +70,48 @@ export default function PersonalInfo({ navigation}) {
             <ScrollView contentContainerStyle={styles.hospitalizationList}>
                 {hospitalizations.map((hospitalization, index) => (
                     <View key={index} style={styles.hospitalizationCard}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                            <View style={styles.cardHeader}>
-                                <Text style={styles.hospitalizationTitle}>{hospitalization.name}</Text>
-                                <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
-                                    <Text style={styles.editIcon}>✏️</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Date de début: </Text>
-                                {hospitalization.beginDate}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Date de fin: </Text>
-                                {hospitalization.endDate}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Durée: </Text>
-                                {hospitalization.duration}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Service: </Text>
-                                {hospitalization.department}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Médecin: </Text>
-                                {hospitalization.doctor}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Hôpital: </Text>
-                                {hospitalization.hospital}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Médicaments: </Text>
-                                {hospitalization.medications}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Examens: </Text>
-                                {hospitalization.examens}
-                            </Text>
-                            <Text style={styles.hospitalizationText}>
-                                <Text style={styles.bold}>Commentaires: </Text>
-                                {hospitalization.comments}
-                            </Text>
-                        </LinearGradient>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.hospitalizationTitle}>{hospitalization.name}</Text>
+                            <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
+                                <Ionicons name="pencil" size={25} color="#ffffff" />                                
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Date de début: </Text>
+                            {hospitalization.beginDate}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Date de fin: </Text>
+                            {hospitalization.endDate}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Durée: </Text>
+                            {hospitalization.duration}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Service: </Text>
+                            {hospitalization.department}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Médecin: </Text>
+                            {hospitalization.doctor}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Hôpital: </Text>
+                            {hospitalization.hospital}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Médicaments: </Text>
+                            {hospitalization.medications}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Examens: </Text>
+                            {hospitalization.examens}
+                        </Text>
+                        <Text style={styles.hospitalizationText}>
+                            <Text style={styles.bold}>Commentaires: </Text>
+                            {hospitalization.comments}
+                        </Text>
                     </View>
                 ))}
             </ScrollView>
@@ -156,13 +155,12 @@ const styles = StyleSheet.create({
     },
     hospitalizationTitle: {
         fontSize: 20,
-        color: 'white',
+        color: '#333',
         fontWeight: 'bold',
     },
     hospitalizationText: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: 'white',
+        color: '#666',
         marginBottom: 5,
     },
     cardHeader: {

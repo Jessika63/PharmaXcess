@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Treatments({ navigation }) {
     const [expanded, setExpanded] = useState(null);
@@ -57,38 +58,36 @@ export default function Treatments({ navigation }) {
             <ScrollView contentContainerStyle={styles.treatmentList}>
                 {treatments.map((treatment, index) => (
                     <View key={index} style={styles.treatmentCard}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                            <View style={styles.cardHeader}>
-                                <Text style={styles.treatmentTitle}>{treatment.name}</Text>
-                                <TouchableOpacity onPress={() => handleEditPress(treatment.name)} style={styles.editButton}>
-                                    <Text style={styles.editIcon}>✏️</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Date de début: </Text>
-                                {treatment.beginDate}
-                            </Text>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Date de fin: </Text>
-                                {treatment.endDate}
-                            </Text>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Dosage: </Text>
-                                {treatment.dosage}
-                            </Text>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Durée: </Text>
-                                {treatment.duration}
-                            </Text>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Effets secondaires: </Text>
-                                {treatment.sideEffects}
-                            </Text>
-                            <Text style={styles.treatmentText}>
-                                <Text style={styles.bold}>Maladie: </Text>
-                                {treatment.disease}
-                            </Text>
-                        </LinearGradient>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.treatmentTitle}>{treatment.name}</Text>
+                            <TouchableOpacity onPress={() => handleEditPress(treatment.name)} style={styles.editButton}>
+                                <Ionicons name="pencil" size={25} color="#ffffff" />                                
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Date de début: </Text>
+                            {treatment.beginDate}
+                        </Text>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Date de fin: </Text>
+                            {treatment.endDate}
+                        </Text>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Dosage: </Text>
+                            {treatment.dosage}
+                        </Text>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Durée: </Text>
+                            {treatment.duration}
+                        </Text>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Effets secondaires: </Text>
+                            {treatment.sideEffects}
+                        </Text>
+                        <Text style={styles.treatmentText}>
+                            <Text style={styles.bold}>Maladie: </Text>
+                            {treatment.disease}
+                        </Text>
                     </View>
                 ))}
             </ScrollView>
@@ -142,7 +141,7 @@ const styles = StyleSheet.create({
     treatmentTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: 'white',
+        color: '#333',
         marginBottom: 10,
     },
     editButton: {
@@ -156,7 +155,7 @@ const styles = StyleSheet.create({
     },
     treatmentText: {
         fontSize: 16,
-        color: 'white',
+        color: '#666',
         marginVertical: 5,
         marginTop: 5,
     },

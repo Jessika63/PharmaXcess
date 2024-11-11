@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Diseases({ navigation }) {
     const [expanded, setExpanded] = useState(null);
@@ -58,9 +59,8 @@ export default function Diseases({ navigation }) {
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View key={index} style={styles.diseaseCard}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                                 <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
-                                    <Text style={styles.editIcon}>✏️</Text>
+                                    <Ionicons name="pencil" size={25} color="#ffffff" />                                
                                 </TouchableOpacity>
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.diseaseTitle}>{disease.name}</Text>
@@ -85,7 +85,6 @@ export default function Diseases({ navigation }) {
                                     <Text style={styles.bold}>Examens: </Text>
                                     {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
                                 </Text>
-                            </LinearGradient>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -133,14 +132,14 @@ const styles = StyleSheet.create({
     },
     diseaseText: {
         fontSize: 16,
-        color: '#ffffff',
+        color: '#666',
         marginVertical: 5,
         padding: 5,
     },
     diseaseTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#ffffff',
+        color: '#333',
         marginBottom: 10,
     },
     gradient: {
