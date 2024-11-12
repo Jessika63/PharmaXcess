@@ -1,5 +1,6 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
+import com.pharmaxcess_server.pharmaxcess_server.dto.MachineDTO;
 import com.pharmaxcess_server.pharmaxcess_server.model.Machine;
 import com.pharmaxcess_server.pharmaxcess_server.service.MachineService;
 import org.locationtech.jts.geom.Coordinate;
@@ -26,17 +27,25 @@ public class MachineController {
     }
 
     @GetMapping
-    public List<Machine> getAllMachines() {
+    public List<MachineDTO> getAllMachines() {
         return machineService.getAllMachines();
     }
 
     @GetMapping("/nearest")
-    public List<Machine> getNearestMachines(
-            @RequestParam double latitude,
-            @RequestParam double longitude) {
-
-        Point userLocation = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+    public List<Machine> getNearestMachines(@RequestParam double latitude, @RequestParam double longitude) {
+        Point userLocation = geometryFactory.createPoint(new Coordinate(latitude, longitude));
 
         return machineService.getNearestMachines(userLocation);
+    }
+
+    @GetMapping("/itinary")
+    public String getMachineIntinary(@RequestParam double latitude, @RequestParam double longitude, @RequestParam Integer id) {
+        Point machineLocation = machineService.getMachineLocationById(id);
+
+        return String.format(
+            "https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=driving",
+            latitude, longitude,
+            machineLocation.getX(), machineLocation.getY()
+        );
     }
 }
