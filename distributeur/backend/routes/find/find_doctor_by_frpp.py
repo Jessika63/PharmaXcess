@@ -42,6 +42,8 @@ def find_doctor_by_frpp():
                 return jsonify({"exists": False}), 200
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()

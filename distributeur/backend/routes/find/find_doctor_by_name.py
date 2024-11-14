@@ -62,4 +62,5 @@ def find_doctor_by_name():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()

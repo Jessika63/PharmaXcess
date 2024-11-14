@@ -15,4 +15,6 @@ RUN pip install --upgrade Flask Werkzeug
 
 COPY . /app
 
-CMD ["pytest", "-vv"]
+COPY pytest.ini /app/
+
+CMD ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]

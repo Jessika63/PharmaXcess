@@ -55,4 +55,5 @@ def remove_doctor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()  # Fermer la connexion
+        if connection:
+            connection.close()

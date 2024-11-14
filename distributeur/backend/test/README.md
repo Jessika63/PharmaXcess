@@ -9,11 +9,10 @@ In the `test/` directory, create a test file for the corresponding route. If you
 
 ## Step 2: Import necessary modules
 
-Make sure to import `pytest` and the Flask test client:
+Make sure to import `pytest`:
 
 ```python
 import pytest
-from app import app
 ```
 
 ## Step 3: Write a test for the route
@@ -48,13 +47,30 @@ def test_update_doctor_missing_field(client):
     assert b'Missing frpp field' in response.data
 ```
 
-## Step 5: Run the tests
+## Step 5: Order of execution
 
-### Step 5.1 : Start the app, start the db and put the dump in the db
+## Step 5.1: Add the order of execution
+
+Just before the `def` add an order it will be useful for some line of execution.
+
+Please add a comments to say witch LOX (lien of execution) it refers to.
+
+```python
+@pytest.mark.order(2) # LOX n°66
+def test_update_doctor_missing_field(client):
+```
+
+## Step 5.2: Update execution line files and directory
+
+In the `LineOfExecution`folder, update the .txt files or add a new one.
+
+## Step 6: Run the tests
+
+### Step 6.1 : Start the app, start the db and put the dump in the db
 
 Don't forget to start the app; follow [this readme](../README.md)
 
-### Step 5.2 : Start the tests
+### Step 6.2 : Start the tests
 
 To run the tests with Docker, use the following command:
 
