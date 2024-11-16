@@ -5,9 +5,13 @@ from unittest.mock import patch
 
 @pytest.mark.order(1) # LOX n°1
 def test_add_doctor_success(client):
-    response = client.post('/add_doctor',
-        json=config.dict_doctor_to_add["add_success_1"]
-    )
+    response = client.post('/add_doctor', json={
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'frpp': '1234567890',
+        'sector': 'General',
+        'region': 'Ile-de-France'
+    })
     assert response.status_code == 201
     assert b'Doctor added successfully' in response.data
 

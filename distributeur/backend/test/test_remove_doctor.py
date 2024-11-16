@@ -14,9 +14,13 @@ def test_remove_doctor_success(client):
 
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_not_found(client):
-    response = client.delete('/remove_doctor',
-        query_string=config.dict_doctor_not_to_add["not_added_with_first_name"]
-    )
+    response = client.delete('/remove_doctor', query_string={
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'frpp': '9876543210',
+        'sector': 'Cardiology',
+        'region': 'Provence-Alpes-Cote d\'Azur'
+    })
     assert response.status_code == 404
     assert b'Doctor not found' in response.data
 

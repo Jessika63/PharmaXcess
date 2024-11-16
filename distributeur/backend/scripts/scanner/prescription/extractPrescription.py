@@ -169,23 +169,23 @@ def getInfos(text):
         print("Doctor not found by name.")
 
     # Get RPPS
-    frpp_pattern = r"RPPS:\s*(\d+)|(\d{11})"
-    frpp_match = re.search(frpp_pattern, text)
+    rpps_pattern = r"RPPS:\s*(\d+)|(\d{11})"
+    rpps_match = re.search(rpps_pattern, text)
     
-    if frpp_match:
-        frpp_code = frpp_match.group(0)
-        print(f"FRPP Code: {frpp_code}")
+    if rpps_match:
+        rpps_code = rpps_match.group(0)
+        print(f"RPPS Code: {rpps_code}")
         
         # Check if the Med exist
-        frpp_url = f"http://localhost:5000/find_doctor_by_frpp?frpp={frpp_code}"
-        frpp_response = requests.get(frpp_url)
+        rpps_url = f"http://localhost:5000/find_doctor_by_rpps?rpps={rpps_code}"
+        rpps_response = requests.get(rpps_url)
         
-        if frpp_response.status_code == 200:
-            print("Doctor exists by FRPP code.")
+        if rpps_response.status_code == 200:
+            print("Doctor exists by RPPS code.")
         else:
-            print("Doctor not found by FRPP code.")
+            print("Doctor not found by RPPS code.")
     else:
-        print("No FRPP code found.")
+        print("No RPPS code found.")
 
     # Get Phone Med
     phone_pattern = r"Tél\. :\s+(\d{2} \d{2} \d{2} \d{2} \d{2})"

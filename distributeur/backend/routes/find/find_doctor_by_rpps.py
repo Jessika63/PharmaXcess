@@ -2,26 +2,26 @@
 from flask import Blueprint, request, jsonify
 from db import get_connection  # Importer la fonction de connexion
 
-find_doctor_by_frpp_bp = Blueprint('find_doctor_by_frpp', __name__)
+find_doctor_by_rpps_bp = Blueprint('find_doctor_by_rpps', __name__)
 
-@find_doctor_by_frpp_bp.route('/find_doctor_by_frpp', methods=['GET'])
-def find_doctor_by_frpp():
+@find_doctor_by_rpps_bp.route('/find_doctor_by_rpps', methods=['GET'])
+def find_doctor_by_rpps():
     """
-    Checks if a doctor with the given FRPP code exists in the database.
+    Checks if a doctor with the given RPPS code exists in the database.
 
     Query parameters:
-        - frpp: the French Regulation on Pharmaceutical Products code (required).
+        - rpps: the French Regulation on Pharmaceutical Products code (required).
 
     Return Value:
         - 200 OK with a boolean indicating if the doctor exists.
-        - 400 Bad Request, if the 'frpp' parameter is missing.
+        - 400 Bad Request, if the 'rpps' parameter is missing.
         - 500 Internal Server Error, if database or other error.
     """
 
-    frpp = request.args.get('frpp')
+    rpps = request.args.get('rpps')
 
-    if not frpp:
-        return jsonify({"error": "'frpp' parameter is required"}), 400
+    if not rpps:
+        return jsonify({"error": "'rpps' parameter is required"}), 400
 
     connection = None  # Initialiser ici
 
@@ -31,9 +31,9 @@ def find_doctor_by_frpp():
             sql_query = """
             SELECT 1
             FROM doctors
-            WHERE frpp_code = %s
+            WHERE rpps_code = %s
             """
-            cursor.execute(sql_query, (frpp,))
+            cursor.execute(sql_query, (rpps,))
             result = cursor.fetchone()
 
             if result:

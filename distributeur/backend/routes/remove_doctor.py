@@ -11,7 +11,7 @@ def remove_doctor():
     Query parameters:
         - first_name: the first name of the doctor to remove.
         - last_name: the last name of the doctor to remove.
-        - frpp: the French Regulation on Pharmaceutical Products code.
+        - rpps: the French Regulation on Pharmaceutical Products code.
         - sector: the sector of activity.
         - region: the region.
 
@@ -24,12 +24,12 @@ def remove_doctor():
 
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
-    frpp = request.args.get('frpp')
+    rpps = request.args.get('rpps')
     sector = request.args.get('sector')
     region = request.args.get('region')
 
-    if not first_name or not last_name or not frpp or not sector or not region:
-        return jsonify({"error": "All parameters 'first_name', 'last_name', 'frpp', 'sector', and 'region' are required"}), 400
+    if not first_name or not last_name or not rpps or not sector or not region:
+        return jsonify({"error": "All parameters 'first_name', 'last_name', 'rpps', 'sector', and 'region' are required"}), 400
 
     connection = None  # Initialiser ici
 
@@ -40,11 +40,11 @@ def remove_doctor():
             DELETE FROM doctors
             WHERE first_name = %s
             AND last_name = %s
-            AND frpp_code = %s
+            AND rpps_code = %s
             AND sector = %s
             AND region = %s
             """
-            cursor.execute(sql_query, (first_name, last_name, frpp, sector, region))
+            cursor.execute(sql_query, (first_name, last_name, rpps, sector, region))
             connection.commit()
 
             if cursor.rowcount > 0:
