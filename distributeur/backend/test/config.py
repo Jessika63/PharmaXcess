@@ -3,18 +3,18 @@ dict_doctor_to_add = {
     "add_success_1" : {
         'first_name': 'John',
         'last_name': 'Doe',
-        'frpp': '1234567890',
+        'rpps': '1234567890',
         'sector': 'General',
         'region': 'Ile-de-France'
     },
     "add_success_2" : {
         'first_name': 'Jane',
         'last_name': 'Smith',
-        'frpp': '1234567890',
+        'rpps': '1234567890',
         'sector': 'Pediatrics',
         'region': 'Auvergne-Rhône-Alpes'
     },
-    "missing_field_frpp" : {
+    "missing_field_rpps" : {
         'first_name': 'John',
         'last_name': 'Doe',
         'sector': 'General',
@@ -23,19 +23,19 @@ dict_doctor_to_add = {
     "missing_field_region" : {
         'first_name': 'Jane',
         'last_name': 'Smith',
-        'frpp': '9876543210',
+        'rpps': '9876543210',
         'sector': 'Pediatrics',
     },
     "missing_field_first_name" : {
         'last_name': 'Doe',
-        'frpp': '1234567890',
+        'rpps': '1234567890',
         'sector': 'General',
         'region': 'Ile-de-France'
     },
 }
 
 dict_doctor_not_to_add = {
-    "not_added_without_frpp" : {
+    "not_added_without_rpps" : {
         'first_name': 'Jane',
         'last_name': 'Smith',
         'sector': 'Cardiology',
@@ -44,13 +44,13 @@ dict_doctor_not_to_add = {
     "not_added_with_first_name" : {
         'first_name': 'Jane',
         'last_name': 'Smith',
-        'frpp': '9876543210',
+        'rpps': '9876543210',
         'sector': 'Cardiology',
         'region': 'Provence-Alpes-Cote d\'Azur'
     }
 }
 
-frpp_not_added = "0000000000"
+rpps_not_added = "0000000000"
 
 
 def global_verifictaion():
@@ -58,7 +58,7 @@ def global_verifictaion():
         verifictaion_not_add_in_add(),
         verifictaion_if_all_unique(),
         verification_all_fields_not_in_doctors(),
-        verification_that_a_specific_frpp_not_in_doctors(),
+        verification_that_a_specific_rpps_not_in_doctors(),
     ]
 
     # Filtrer uniquement les erreurs et les ajouter à une liste plate
@@ -109,9 +109,9 @@ def verification_one_unique(doctor_dict, doctor_dict_name):
 
 def verification_all_fields_not_in_doctors():
     results = [
-        verification_one_field_not_in_doctor("frpp", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_frpp"),
+        verification_one_field_not_in_doctor("rpps", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_rpps"),
         verification_one_field_not_in_doctor("region", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_region"),
-        verification_one_field_not_in_doctor("frpp", dict_doctor_not_to_add, "dict_doctor_not_to_add", "not_added_without_frpp"),
+        verification_one_field_not_in_doctor("rpps", dict_doctor_not_to_add, "dict_doctor_not_to_add", "not_added_without_rpps"),
         verification_one_field_not_in_doctor("first_name", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_first_name"),
     ]
 
@@ -129,8 +129,8 @@ def verification_one_field_not_in_doctor(field, doctor_dict, doctor_dict_name, d
     return True
 
 
-def verification_that_a_specific_frpp_not_in_doctors():
+def verification_that_a_specific_rpps_not_in_doctors():
     for doctor_key, doctor in dict_doctor_to_add.items():
-        if doctor.get('frpp') == frpp_not_added:
-            return [f"The value 'frpp_not_added': ({frpp_not_added}) is found in the doctor: {doctor_key} in dict_doctor_to_add"]
+        if doctor.get('rpps') == rpps_not_added:
+            return [f"The value 'rpps_not_added': ({rpps_not_added}) is found in the doctor: {doctor_key} in dict_doctor_to_add"]
     return True

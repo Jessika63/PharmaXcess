@@ -24,7 +24,7 @@ def test_add_list_doctors_empty_list(client):
 def test_add_list_doctors_missing_field(client):
     response = client.post('/add_list_doctors', json={
         'doctors': [
-            config.dict_doctor_to_add["missing_field_frpp"],
+            config.dict_doctor_to_add["missing_field_rpps"],
             config.dict_doctor_to_add["missing_field_region"]
         ]
     })

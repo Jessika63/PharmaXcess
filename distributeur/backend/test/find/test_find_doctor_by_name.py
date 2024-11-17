@@ -6,7 +6,7 @@ from unittest.mock import patch
 @pytest.mark.order(2) # LOX n°1
 def test_find_doctor_by_name_success(client):
     response = client.get('/find_doctor_by_name',
-        query_string=config.dict_doctor_to_add["missing_field_frpp"]
+        query_string=config.dict_doctor_to_add["missing_field_rpps"]
     )
     assert response.status_code == 200
     assert b'John' in response.data
@@ -15,7 +15,7 @@ def test_find_doctor_by_name_success(client):
 @pytest.mark.order(2) # LOX n°1
 def test_find_doctor_by_name_not_found(client):
     response = client.get('/find_doctor_by_name',
-        query_string=config.dict_doctor_not_to_add["not_added_without_frpp"]
+        query_string=config.dict_doctor_not_to_add["not_added_without_rpps"]
     )
     assert response.status_code == 404
     assert b'No doctors found' in response.data
@@ -33,7 +33,7 @@ def test_find_doctor_by_name_missing_params(client):
 @patch('routes.find.find_doctor_by_name.get_connection', side_effect=Exception("Database connection failed"))
 def test_find_doctor_by_name_db_error(mock_get_connection, client):
     response = client.get('/find_doctor_by_name',
-        query_string=config.dict_doctor_to_add["missing_field_frpp"]
+        query_string=config.dict_doctor_to_add["missing_field_rpps"]
     )
     assert response.status_code == 500
     assert b'Database connection failed' in response.data
