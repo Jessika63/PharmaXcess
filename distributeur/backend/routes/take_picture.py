@@ -23,4 +23,5 @@ def take_picture():
             return jsonify({"error": result.stderr.strip()}), 500
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500

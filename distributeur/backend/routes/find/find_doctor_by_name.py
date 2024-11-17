@@ -60,6 +60,7 @@ def find_doctor_by_name():
                 return jsonify({"error": "No doctors found matching the criteria"}), 404
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if connection:

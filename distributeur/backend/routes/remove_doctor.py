@@ -53,6 +53,7 @@ def remove_doctor():
                 return jsonify({"error": "Doctor not found"}), 404
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if connection:
