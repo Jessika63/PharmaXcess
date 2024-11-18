@@ -1,4 +1,4 @@
-package com.pharmaxcess_server.pharmaxcess_server;
+package com.pharmaxcess_server.pharmaxcess_server.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
