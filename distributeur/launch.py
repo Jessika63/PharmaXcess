@@ -1,7 +1,7 @@
 
 import os
+import json
 import re
-from datetime import datetime
 
 # Function to print with colors
 def colored_print(message, color):
@@ -13,6 +13,21 @@ def colored_print(message, color):
         "reset": "\033[0m",
     }
     print(f"{colors.get(color, colors['reset'])}{message}{colors['reset']}")
+
+# Function to load configuration
+def load_config(config_path):
+    if not os.path.exists(config_path):
+        colored_print(f"ERROR: Configuration file '{config_path}' is missing!", "red")
+        exit(1)
+
+    with open(config_path, "r") as file:
+        try:
+            config = json.load(file)
+        except json.JSONDecodeError as e:
+            colored_print(f"ERROR: Failed to parse configuration file: {e}", "red")
+            exit(1)
+
+    return config
 
 # Function to verify the .env file
 def verify_env_file(env_path, required_keys):
@@ -66,11 +81,26 @@ def verify_db_dump(dump_folder, expected_date):
 
 # Main script
 if __name__ == "__main__":
-    # Variables
+    # Paths
+    config_file_path = "launch_config.json"
     backend_folder = "backend"
     env_file_path = os.path.join(backend_folder, ".env")
-    required_env_keys = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "MYSQL_ROOT_PASSWORD"]
-    db_dump_date = "17_11_2024"
+
+    # Load configuration
+    config = load_config(config_file_path)
+    required_env_keys = config.get("required_env_keys", [])
+    db_dump_date = config.get("db_dump_date", "")
+
+    # Validate configuration
+    missing_config_keys = []
+    if "required_env_keys" not in config:
+        missing_config_keys.append("required_env_keys")
+    if "db_dump_date" not in config:
+        missing_config_keys.append("db_dump_date")
+
+    if missing_config_keys:
+        colored_print(f"ERROR: Configuration file is missing required keys: {', '.join(missing_config_keys)}", "red")
+        exit(1)
 
     # Run checks
     verify_env_file(env_file_path, required_env_keys)

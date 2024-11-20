@@ -1,0 +1,9 @@
+
+{
+    "required_env_keys": [
+        "DB_HOST",
+        "DB_USER",
+        "DB_PASSWORD"
+    ],
+    "db_dump_date": "17_11_2024"
+}
