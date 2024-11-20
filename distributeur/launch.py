@@ -14,6 +14,7 @@ def colored_print(message, color):
     }
     print(f"{colors.get(color, colors['reset'])}{message}{colors['reset']}")
 
+
 # Function to load configuration
 def load_config(config_path):
     if not os.path.exists(config_path):
@@ -28,6 +29,7 @@ def load_config(config_path):
             exit(1)
 
     return config
+
 
 # Function to verify the .env file
 def verify_env_file(env_path, required_keys):
@@ -58,6 +60,7 @@ def verify_env_file(env_path, required_keys):
 
     colored_print("SUCCESS: .env file verification passed!", "green")
 
+
 # Function to verify the database dump file
 def verify_db_dump(dump_folder, expected_date):
     colored_print("STEP 2: Verifying database dump file", "blue")
@@ -79,18 +82,9 @@ def verify_db_dump(dump_folder, expected_date):
     if other_dumps:
         colored_print(f"WARNING: Other dump files found: {', '.join(other_dumps)}", "yellow")
 
-# Main script
-if __name__ == "__main__":
-    # Paths
-    config_file_path = "launch_config.json"
-    backend_folder = "backend"
-    env_file_path = os.path.join(backend_folder, ".env")
 
-    # Load configuration
+def load_config_file(config_file_path):
     config = load_config(config_file_path)
-    required_env_keys = config.get("required_env_keys", [])
-    db_dump_date = config.get("db_dump_date", "")
-
     # Validate configuration
     missing_config_keys = []
     if "required_env_keys" not in config:
@@ -101,6 +95,19 @@ if __name__ == "__main__":
     if missing_config_keys:
         colored_print(f"ERROR: Configuration file is missing required keys: {', '.join(missing_config_keys)}", "red")
         exit(1)
+
+
+# Main script
+if __name__ == "__main__":
+    # Paths
+    config_file_path = "launch_config.json"
+    backend_folder = "backend"
+    env_file_path = os.path.join(backend_folder, ".env")
+
+    # Load configuration
+    config = load_config_file(config_file_path)
+    required_env_keys = config.get("required_env_keys", [])
+    db_dump_date = config.get("db_dump_date", "")
 
     # Run checks
     verify_env_file(env_file_path, required_env_keys)
