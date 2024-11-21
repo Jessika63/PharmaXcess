@@ -30,7 +30,7 @@ def load_config(config_path):
     :return: Parsed configuration as a dictionary
     """
     if not os.path.exists(config_path):
-        colored_print(f"ERROR: Configuration file '{config_path}' is missing!", "red")
+        colored_print(f"ERROR: Configuration file '{config_path}' is missing !", "red")
         exit(1)
 
     with open(config_path, "r") as file:
@@ -54,7 +54,7 @@ def verify_env_file(env_path, required_keys):
     colored_print("STEP 1: Verifying .env file", "blue")
 
     if not os.path.exists(env_path):
-        colored_print("ERROR: .env file is missing!", "red")
+        colored_print("ERROR: .env file is missing !", "red")
         exit(1)
 
     # Read .env file content and parse keys and values
@@ -79,7 +79,7 @@ def verify_env_file(env_path, required_keys):
     if extra_keys:
         colored_print(f"WARNING: Extra keys found in .env file: {', '.join(extra_keys)}", "yellow")
 
-    colored_print("SUCCESS: .env file verification passed!", "green")
+    colored_print("SUCCESS: .env file verification passed !", "green")
 
 
 # Function to verify the database dump file
@@ -98,9 +98,9 @@ def verify_db_dump(dump_folder, expected_date):
 
     # Check for the expected dump file
     if not os.path.exists(dump_file_path):
-        colored_print(f"WARNING: The expected dump file '{expected_file_pattern}' is missing!", "yellow")
+        colored_print(f"WARNING: The expected dump file '{expected_file_pattern}' is missing !", "yellow")
     else:
-        colored_print("SUCCESS: Correct database dump file is present!", "green")
+        colored_print("SUCCESS: Correct database dump file is present !", "green")
 
     # Check if there are other dump files in the folder
     other_dumps = [
@@ -136,13 +136,38 @@ def load_config_file(config_file_path):
     return config
 
 
-def handle_back(backend_folder, db_dump_date):
+def handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date):
     """
-    Handles backend-related operations by:
-    1. Building and starting the containers.
-    2. Waiting for the database container to be up and ready.
-    3. Importing the database dump file into the database container.
+    Handles verification steps before starting backend operations:
+    1. Ensures the environment file exists and contains the required keys.
+    2. Verifies the presence of the database dump file in the specified backend folder.
+
+    Parameters:
+    - env_file_path (str): Path to the environment file (.env).
+    - required_env_keys (list): List of required keys that should be present in the environment file.
+    - backend_folder (str): Path to the backend folder where the database dump file is located.
+    - db_dump_date (str): Date string used to construct the database dump file name.
     """
+    verify_env_file(env_file_path, required_env_keys)
+    verify_db_dump(backend_folder, db_dump_date)
+
+
+def handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date):
+    """
+    Handles the backend operations, including verification and container management:
+    1. Verifies the environment file and database dump file.
+    2. Builds and starts the Docker containers for the backend.
+    3. Waits for the database container to be up and ready.
+    4. Imports the database dump file into the database container.
+
+    Parameters:
+    - env_file_path (str): Path to the environment file (.env).
+    - required_env_keys (list): List of required keys that should be present in the environment file.
+    - backend_folder (str): Path to the backend folder where the database dump file is located.
+    - db_dump_date (str): Date string used to construct the database dump file name.
+    """
+    handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
+
     colored_print("Starting backend operations...", "green")
 
     # Step 0: Change working directory to backend/
@@ -150,7 +175,7 @@ def handle_back(backend_folder, db_dump_date):
         colored_print(f"Changing directory to '{backend_folder}'...", "blue")
         os.chdir(backend_folder)
     except FileNotFoundError:
-        colored_print(f"ERROR: Directory '{backend_folder}' not found!", "red")
+        colored_print(f"ERROR: Directory '{backend_folder}' not found !", "red")
         exit(1)
     except Exception as e:
         colored_print(f"ERROR: Failed to change directory to '{backend_folder}': {e}", "red")
@@ -162,7 +187,7 @@ def handle_back(backend_folder, db_dump_date):
         subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
     except subprocess.CalledProcessError:
         troubleshooting_message = (
-            "ERROR: Failed to start Docker containers with docker-compose!\n\n"
+            "ERROR: Failed to start Docker containers with docker-compose !\n\n"
             "Troubleshooting steps:\n"
             "1. Ensure Docker Desktop (or the Docker daemon) is running.\n"
             "   - Windows/macOS: Check if Docker Desktop is active in your system tray.\n"
@@ -197,7 +222,7 @@ def handle_back(backend_folder, db_dump_date):
                 text=True,
             )
             if "mysqld is alive" in result.stdout:
-                colored_print("Database container is ready!", "green")
+                colored_print("Database container is ready !", "green")
                 break
         except subprocess.CalledProcessError:
             pass  # Ignore errors and retry
@@ -205,15 +230,14 @@ def handle_back(backend_folder, db_dump_date):
         colored_print(f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...", "yellow")
         time.sleep(waiting_time)
     else:
-        colored_print(f"ERROR: Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
+        colored_print(f"ERROR: Database container '{db_container_name}' is not ready after {nb_of_retry} attempts !", "red")
         exit(1)
-
 
     # Step 3: Execute the database dump
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
-        colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder!", "red")
+        colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder !", "red")
         exit(1)
 
     try:
@@ -226,9 +250,9 @@ def handle_back(backend_folder, db_dump_date):
             input=open(dump_file_name, "rb").read(),
             check=True
         )
-        colored_print("Database dump imported successfully!", "green")
+        colored_print("Database dump imported successfully !", "green")
     except subprocess.CalledProcessError:
-        colored_print("ERROR: Failed to import the database dump!", "red")
+        colored_print("ERROR: Failed to import the database dump !", "red")
         exit(1)
 
 
@@ -246,6 +270,7 @@ def handle_front():
 if __name__ == "__main__":
     # Argument parser setup
     parser = argparse.ArgumentParser(description="Utility script with multiple operations.")
+    parser.add_argument("--verif", action="store_true", help="Run verification steps")
     parser.add_argument("--back", action="store_true", help="Run backend-related operations")
     parser.add_argument("--test", action="store_true", help="Run tests")
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
@@ -265,11 +290,10 @@ if __name__ == "__main__":
 
     # Execute operations based on flags
     if any(vars(args).values()):
-        # Perform default verification steps
-        verify_env_file(env_file_path, required_env_keys)
-        verify_db_dump(backend_folder, db_dump_date)
+        if args.verif:
+            handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
         if args.back:
-            handle_back(backend_folder, db_dump_date)
+            handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date)
         if args.test:
             handle_test()
         if args.front:
