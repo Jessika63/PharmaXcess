@@ -156,10 +156,10 @@ def handle_back(backend_folder, db_dump_date):
         colored_print(f"ERROR: Failed to change directory to '{backend_folder}': {e}", "red")
         exit(1)
 
-    # Step 1: Start containers with docker-compose
+    # Step 1: Start containers with docker-compose in detached mode
     try:
-        colored_print("Building and starting Docker containers...", "blue")
-        subprocess.run(["docker-compose", "up", "--build"], check=True)
+        colored_print("Building and starting Docker containers in detached mode...", "blue")
+        subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
     except subprocess.CalledProcessError:
         troubleshooting_message = (
             "ERROR: Failed to start Docker containers with docker-compose!\n\n"
@@ -184,8 +184,12 @@ def handle_back(backend_folder, db_dump_date):
 
     # Step 2: Wait for the database container to be ready
     db_container_name = "distributeur-backend-db-1"
+    nb_of_retry = 10  # Number of retries
+    waiting_time = 10  # Waiting time in seconds between retries
+
     colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
-    for _ in range(20):  # Retry for up to 20 seconds
+
+    for attempt in range(1, nb_of_retry + 1):
         try:
             result = subprocess.run(
                 ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
@@ -196,16 +200,19 @@ def handle_back(backend_folder, db_dump_date):
                 colored_print("Database container is ready!", "green")
                 break
         except subprocess.CalledProcessError:
-            time.sleep(1)
+            pass  # Ignore errors and retry
+
+        colored_print(f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...", "yellow")
+        time.sleep(waiting_time)
     else:
-        colored_print(f"ERROR: Database container '{db_container_name}' is not ready after waiting!", "red")
+        colored_print(f"ERROR: Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
         exit(1)
+
 
     # Step 3: Execute the database dump
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
-    dump_file_path = os.path.join("backend", dump_file_name)
 
-    if not os.path.exists(dump_file_path):
+    if not os.path.exists(dump_file_name):
         colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder!", "red")
         exit(1)
 
@@ -216,7 +223,7 @@ def handle_back(backend_folder, db_dump_date):
                 "docker", "exec", "-i", db_container_name,
                 "mysql", "-uroot", "-ppx_root_pwd", "doctors_db"
             ],
-            input=open(dump_file_path, "rb").read(),
+            input=open(dump_file_name, "rb").read(),
             check=True
         )
         colored_print("Database dump imported successfully!", "green")
