@@ -21,6 +21,51 @@ def colored_print(message, color):
     print(f"{colors.get(color, colors['reset'])}{message}{colors['reset']}")
 
 
+def change_directory(target_folder):
+    """
+    Changes the current working directory to the specified folder or its parent folder if it exists.
+
+    Args:
+        target_folder (str): Path to the directory to change to.
+
+    Raises:
+        SystemExit: Exits the program with an appropriate error message if the operation fails.
+    """
+    def try_change(dir_path):
+        """Helper function to attempt directory change."""
+        try:
+            if os.path.abspath(os.getcwd()) == os.path.abspath(dir_path):
+                colored_print(f"Already in the directory '{dir_path}'.", "yellow")
+                return True
+            colored_print(f"Trying to change directory to '{dir_path}'...", "blue")
+            os.chdir(dir_path)
+            return True
+        except FileNotFoundError:
+            colored_print(f"Directory '{dir_path}' not found.", "yellow")
+        except PermissionError:
+            colored_print(f"ERROR: Insufficient permissions to access '{dir_path}'!", "red")
+        except NotADirectoryError:
+            colored_print(f"ERROR: '{dir_path}' is not a directory!", "red")
+        except OSError as e:
+            colored_print(f"ERROR: OS error when accessing '{dir_path}': {e.strerror} (errno: {e.errno})", "red")
+        except Exception as e:
+            colored_print(f"ERROR: Unexpected error when changing directory to '{dir_path}': {e}", "red")
+        return False
+
+    # Attempt to change to the target directory
+    if try_change(target_folder):
+        return
+
+    # If not successful, attempt to change to the parent directory if it exists
+    parent_dir = os.path.abspath(os.path.join("..", target_folder))
+    if os.path.exists("..") and try_change(parent_dir):
+        return
+
+    # If both attempts fail, exit with an error
+    colored_print(f"ERROR: Unable to change to '{target_folder}' or '{parent_dir}'!", "red")
+    exit(1)
+
+
 # Function to load configuration
 def load_config(config_path):
     """
@@ -152,7 +197,7 @@ def handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
     verify_db_dump(backend_folder, db_dump_date)
 
 
-def handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date):
+def handle_back(backend_folder, db_dump_date, db_container_name):
     """
     Handles the backend operations, including verification and container management:
     1. Verifies the environment file and database dump file.
@@ -166,20 +211,10 @@ def handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date):
     - backend_folder (str): Path to the backend folder where the database dump file is located.
     - db_dump_date (str): Date string used to construct the database dump file name.
     """
-    handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
-
     colored_print("Starting backend operations...", "green")
 
     # Step 0: Change working directory to backend/
-    try:
-        colored_print(f"Changing directory to '{backend_folder}'...", "blue")
-        os.chdir(backend_folder)
-    except FileNotFoundError:
-        colored_print(f"ERROR: Directory '{backend_folder}' not found !", "red")
-        exit(1)
-    except Exception as e:
-        colored_print(f"ERROR: Failed to change directory to '{backend_folder}': {e}", "red")
-        exit(1)
+    change_directory(backend_folder)
 
     # Step 1: Start containers with docker-compose in detached mode
     try:
@@ -208,7 +243,6 @@ def handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date):
         exit(1)
 
     # Step 2: Wait for the database container to be ready
-    db_container_name = "distributeur-backend-db-1"
     nb_of_retry = 10  # Number of retries
     waiting_time = 10  # Waiting time in seconds between retries
 
@@ -237,33 +271,124 @@ def handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date):
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
-        colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder !", "red")
+        colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder!", "red")
         exit(1)
 
     try:
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
-        subprocess.run(
+        with open(dump_file_name, "r", encoding="utf-8") as dump_file:
+            dump_content = dump_file.read()  # Read the SQL dump as a string
+        result = subprocess.run(
             [
                 "docker", "exec", "-i", db_container_name,
                 "mysql", "-uroot", "-ppx_root_pwd", "doctors_db"
             ],
-            input=open(dump_file_name, "rb").read(),
+            input=dump_content,  # Pass the string content
+            text=True,           # Ensure subprocess expects a string
+            capture_output=True, # Capture stdout and stderr
             check=True
         )
-        colored_print("Database dump imported successfully !", "green")
+        colored_print("Database dump imported successfully!", "green")
+    except subprocess.CalledProcessError as e:
+        error_message = e.stderr
+        if "Operation CREATE USER failed" in error_message:
+            colored_print("WARNING: User already exists. Skipping user creation.", "yellow")
+        else:
+            colored_print("ERROR: Failed to import the database dump!", "red")
+            colored_print(f"Details: {error_message}", "red")
+            exit(1)
+
+
+def handle_test(backend_folder, db_container_name):
+    """
+    Handles testing operations by:
+    1. Ensuring the database container is up and ready.
+    2. Running the test suite using docker-compose.
+    """
+    colored_print("Preparing to run tests...", "green")
+
+    # Step 0: Change working directory to backend/
+    change_directory(backend_folder)
+
+    # Step 1: Check if the database container is ready
+    try:
+        colored_print(f"Checking if database container '{db_container_name}' is ready...", "blue")
+        result = subprocess.run(
+            ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
+            capture_output=True,
+            text=True,
+        )
+        if "mysqld is alive" not in result.stdout:
+            raise subprocess.CalledProcessError(1, "Database not ready")
+        colored_print("Database container is ready!", "green")
+    except FileNotFoundError:
+        colored_print("ERROR: Docker command not found! Ensure Docker is installed and in your PATH.", "red")
+        exit(1)
     except subprocess.CalledProcessError:
-        colored_print("ERROR: Failed to import the database dump !", "red")
+        colored_print(f"ERROR: Database container '{db_container_name}' is not ready!", "red")
+        exit(1)
+    except Exception as e:
+        colored_print(f"ERROR: Unexpected error while checking database container: {e}", "red")
+        exit(1)
+
+    # Step 2: Run tests using docker-compose
+    try:
+        colored_print("Running tests using docker-compose...", "blue")
+        subprocess.run(["docker-compose", "run", "--rm", "test"], check=True)
+        colored_print("Tests completed successfully!", "green")
+    except FileNotFoundError:
+        colored_print("ERROR: docker-compose command not found! Ensure Docker Compose is installed and in your PATH.", "red")
+        exit(1)
+    except subprocess.CalledProcessError:
+        colored_print("ERROR: Tests failed during execution!", "red")
+        exit(1)
+    except Exception as e:
+        colored_print(f"ERROR: Unexpected error while running tests: {e}", "red")
         exit(1)
 
 
-# Placeholder function for "test" flag
-def handle_test():
-    colored_print("Running tests...", "green")
+def handle_front(frontend_folder):
+    """
+    Handles frontend-related operations by:
+    1. Installing dependencies using npm.
+    2. Building and starting the containers using docker-compose.
+    """
+    colored_print("Starting frontend operations...", "green")
 
+    # Step 0: Change working directory to frontend/
+    change_directory(frontend_folder)
 
-# Placeholder function for "front" flag
-def handle_front():
-    colored_print("Executing frontend-related operations...", "green")
+    # Step 1: Install dependencies with npm
+    try:
+        colored_print("Installing dependencies using npm...", "blue")
+        subprocess.run(["npm", "install"], check=True)
+        colored_print("Dependencies installed successfully!", "green")
+    except FileNotFoundError:
+        colored_print("ERROR: npm is not installed or not found in PATH!", "red")
+        exit(1)
+    except subprocess.CalledProcessError:
+        colored_print("ERROR: Failed to install dependencies with npm!", "red")
+        exit(1)
+
+    # Step 2: Build and start containers with docker-compose
+    try:
+        colored_print("Building and starting Docker containers in detached mode...", "blue")
+        subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
+        colored_print("Frontend containers started successfully!", "green")
+    except subprocess.CalledProcessError:
+        troubleshooting_message = (
+            "ERROR: Failed to start Docker containers with docker-compose!\n\n"
+            "Troubleshooting steps:\n"
+            "1. Ensure Docker Desktop (or the Docker daemon) is running.\n"
+            "2. Verify Docker Engine context:\n"
+            "   - Run 'docker context ls' and ensure the correct context is active.\n"
+            "3. Test manually with 'docker-compose up --build' for detailed errors.\n"
+            "4. Restart Docker if necessary:\n"
+            "   - Windows/macOS: Open Docker Desktop and restart.\n"
+            "   - Linux: Use 'sudo systemctl restart docker'."
+        )
+        colored_print(troubleshooting_message, "yellow")
+        exit(1)
 
 
 # Main script
@@ -274,6 +399,7 @@ if __name__ == "__main__":
     parser.add_argument("--back", action="store_true", help="Run backend-related operations")
     parser.add_argument("--test", action="store_true", help="Run tests")
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
+    parser.add_argument("--all", action="store_true", help="Run the whole application except for tests")
 
     # Parse arguments
     args = parser.parse_args()
@@ -281,7 +407,9 @@ if __name__ == "__main__":
     # Paths
     config_file_path = "launch_config.json"
     backend_folder = "backend"
+    frontend_folder = "frontend"
     env_file_path = os.path.join(backend_folder, ".env")
+    db_container_name = "distributeur-backend-db-1"
 
     # Load configuration
     config = load_config_file(config_file_path)
@@ -290,14 +418,18 @@ if __name__ == "__main__":
 
     # Execute operations based on flags
     if any(vars(args).values()):
+        if args.all:
+            handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
+            handle_back(backend_folder, db_dump_date, db_container_name)
+            handle_front(frontend_folder)
         if args.verif:
             handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
         if args.back:
-            handle_back(env_file_path, required_env_keys, backend_folder, db_dump_date)
+            handle_back(backend_folder, db_dump_date, db_container_name)
         if args.test:
-            handle_test()
+            handle_test(backend_folder, db_container_name)
         if args.front:
-            handle_front()
+            handle_front(frontend_folder)
     else:
         parser.print_help()
         exit(1)

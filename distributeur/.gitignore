@@ -6,3 +6,4 @@ database_dump_px_*.sql
 .vscode
 .coverage
 **/.coverage
+node_modules
