@@ -1,5 +1,5 @@
 
-# To start the project
+# To start the backend
 
 ## Docker set up
 

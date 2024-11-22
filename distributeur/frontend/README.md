@@ -1,14 +1,15 @@
 
-### [STEP 0] install packages
+# To start the frontend
+
+## [STEP 0] install packages
 
 npm install
 
-### [STEP 1] run docker
+## [STEP 1] run docker
 
 docker-compose up --build
 
-
-# if you encounter that kind of error:
+### if you encounter that kind of error
 
 react-app-distributeur@0.1.0 start /app
 > react-scripts start
@@ -23,6 +24,6 @@ docker-compose down
 docker-compose up --build
 ```
 
-# finished !
+## finished
 
 your app should be running, 'happy dev!'
