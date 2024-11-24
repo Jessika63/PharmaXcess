@@ -29,7 +29,10 @@ troubleshooting_message = (
 # Function to print with colors
 def colored_print(message, color):
     """
-    Print a message in the terminal with the specified color.
+    Print a message in the terminal with the specified color and prefix based on the type.
+
+    :param message: The message to display.
+    :param color: The color/type of the message ('red', 'yellow', 'green', 'blue').
     """
     colors = {
         "red": "\033[91m",
@@ -38,7 +41,22 @@ def colored_print(message, color):
         "blue": "\033[94m",
         "reset": "\033[0m",
     }
-    print(f"{colors.get(color, colors['reset'])}{message}{colors['reset']}")
+
+    prefixes = {
+        "red": "[ERROR]: ",
+        "yellow": "[WARNING]: ",
+        "green": "[SUCCESS]: ",
+        "blue": "[INFO]: ",
+    }
+
+    prefix = prefixes.get(color, "")
+    color_code = colors.get(color, colors["reset"])
+    reset_code = colors["reset"]
+
+    print(f"{color_code}{prefix}{message}{reset_code}")
+
+    if color == "red":
+        exit(1)
 
 
 def change_directory(target_folder):
@@ -61,15 +79,15 @@ def change_directory(target_folder):
             os.chdir(dir_path)
             return True
         except FileNotFoundError:
-            colored_print(f"Directory '{dir_path}' not found.", "yellow")
+            colored_print(f"Directory '{dir_path}' not found in the current working directory '{os.getcwd()}'.", "yellow")
         except PermissionError:
-            colored_print(f"ERROR: Insufficient permissions to access '{dir_path}'!", "red")
+            colored_print(f"Insufficient permissions to access '{dir_path}'!", "red")
         except NotADirectoryError:
-            colored_print(f"ERROR: '{dir_path}' is not a directory!", "red")
+            colored_print(f"'{dir_path}' is not a directory!", "red")
         except OSError as e:
-            colored_print(f"ERROR: OS error when accessing '{dir_path}': {e.strerror} (errno: {e.errno})", "red")
+            colored_print(f"OS error when accessing '{dir_path}': {e.strerror} (errno: {e.errno})", "red")
         except Exception as e:
-            colored_print(f"ERROR: Unexpected error when changing directory to '{dir_path}': {e}", "red")
+            colored_print(f"Unexpected error when changing directory to '{dir_path}': {e}", "red")
         return False
 
     # Attempt to change to the target directory
@@ -82,8 +100,7 @@ def change_directory(target_folder):
         return
 
     # If both attempts fail, exit with an error
-    colored_print(f"ERROR: Unable to change to '{target_folder}' or '{parent_dir}'!", "red")
-    exit(1)
+    colored_print(f"Unable to change to '{target_folder}' or '{parent_dir}'!", "red")
 
 
 # Function to load configuration
@@ -95,15 +112,13 @@ def load_config(config_path):
     :return: Parsed configuration as a dictionary
     """
     if not os.path.exists(config_path):
-        colored_print(f"ERROR: Configuration file '{config_path}' is missing !", "red")
-        exit(1)
+        colored_print(f"Configuration file '{config_path}' is missing !", "red")
 
     with open(config_path, "r") as file:
         try:
             config = json.load(file)
         except json.JSONDecodeError as e:
-            colored_print(f"ERROR: Failed to parse configuration file: {e}", "red")
-            exit(1)
+            colored_print(f"Failed to parse configuration file: {e}", "red")
 
     return config
 
@@ -119,8 +134,7 @@ def verify_env_file(env_path, required_keys):
     colored_print("STEP 1: Verifying .env file", "blue")
 
     if not os.path.exists(env_path):
-        colored_print("ERROR: .env file is missing !", "red")
-        exit(1)
+        colored_print(".env file is missing !", "red")
 
     # Read .env file content and parse keys and values
     with open(env_path, "r") as file:
@@ -136,15 +150,14 @@ def verify_env_file(env_path, required_keys):
     # Check for missing keys
     missing_keys = [key for key in required_keys if key not in env_data]
     if missing_keys:
-        colored_print(f"ERROR: Missing keys in .env file: {', '.join(missing_keys)}", "red")
-        exit(1)
+        colored_print(f"Missing keys in .env file: {', '.join(missing_keys)}", "red")
 
     # Warn about extra keys
     extra_keys = [key for key in env_data if key not in required_keys]
     if extra_keys:
-        colored_print(f"WARNING: Extra keys found in .env file: {', '.join(extra_keys)}", "yellow")
+        colored_print(f"Extra keys found in .env file: {', '.join(extra_keys)}", "yellow")
 
-    colored_print("SUCCESS: .env file verification passed !", "green")
+    colored_print(".env file verification passed !", "green")
 
 
 # Function to verify the database dump file
@@ -163,9 +176,9 @@ def verify_db_dump(dump_folder, expected_date):
 
     # Check for the expected dump file
     if not os.path.exists(dump_file_path):
-        colored_print(f"WARNING: The expected dump file '{expected_file_pattern}' is missing !", "yellow")
+        colored_print(f"The expected dump file '{expected_file_pattern}' is missing !", "yellow")
     else:
-        colored_print("SUCCESS: Correct database dump file is present !", "green")
+        colored_print("Correct database dump file is present !", "green")
 
     # Check if there are other dump files in the folder
     other_dumps = [
@@ -174,7 +187,7 @@ def verify_db_dump(dump_folder, expected_date):
     ]
 
     if other_dumps:
-        colored_print(f"WARNING: Other dump files found: {', '.join(other_dumps)}", "yellow")
+        colored_print(f"Other dump files found: {', '.join(other_dumps)}", "yellow")
 
 
 # Function to load and validate the configuration file
@@ -195,8 +208,7 @@ def load_config_file(config_file_path):
         missing_config_keys.append("db_dump_date")
 
     if missing_config_keys:
-        colored_print(f"ERROR: Configuration file is missing required keys: {', '.join(missing_config_keys)}", "red")
-        exit(1)
+        colored_print(f"Configuration file is missing required keys: {', '.join(missing_config_keys)}", "red")
 
     return config
 
@@ -217,6 +229,53 @@ def handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
     verify_db_dump(backend_folder, db_dump_date)
 
 
+def verify_database_is_up(db_container_name, nb_of_retry=1):
+    """
+    Verifies that the database container is up and ready.
+
+    :param db_container_name: The name of the database container to check.
+    :param nb_of_retry: The number of retries before failing (default is 1).
+    """
+    waiting_time = 10  # Time in seconds between retries
+
+    colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
+
+    for attempt in range(1, nb_of_retry + 1):
+        try:
+            result = subprocess.run(
+                ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
+                capture_output=True,
+                text=True,
+            )
+            if "mysqld is alive" in result.stdout:
+                colored_print("Database container is ready!", "green")
+                return  # Exit function successfully
+        except FileNotFoundError:
+            colored_print("Docker command not found! Ensure Docker is installed and in your PATH.", "red")
+        except subprocess.CalledProcessError:
+            pass
+        except Exception as e:
+            colored_print(f"Unexpected error while checking database container: {e}", "red")
+
+        colored_print(f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...", "yellow")
+        time.sleep(waiting_time)
+
+    colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
+
+
+def start_containers():
+    """
+    Starts Docker containers using docker-compose with the build option and error handling.
+
+    :param troubleshooting_message: The message to display if an error occurs.
+    """
+    try:
+        subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
+        colored_print("Containers started successfully!", "green")
+    except subprocess.CalledProcessError:
+        colored_print(troubleshooting_message, "red")
+
+
 def handle_back(backend_folder, db_dump_date, db_container_name):
     """
     Handles the backend operations, including verification and container management:
@@ -231,50 +290,22 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
     - backend_folder (str): Path to the backend folder where the database dump file is located.
     - db_dump_date (str): Date string used to construct the database dump file name.
     """
-    colored_print("Starting backend operations...", "green")
+    colored_print("Starting backend operations...", "blue")
 
     # Step 0: Change working directory to backend/
     change_directory(backend_folder)
 
     # Step 1: Start containers with docker-compose in detached mode
-    try:
-        colored_print("Building and starting Docker containers in detached mode...", "blue")
-        subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
-    except subprocess.CalledProcessError:
-        colored_print(troubleshooting_message, "yellow")
-        exit(1)
+    start_containers()
 
     # Step 2: Wait for the database container to be ready
-    nb_of_retry = 10  # Number of retries
-    waiting_time = 10  # Waiting time in seconds between retries
-
-    colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
-
-    for attempt in range(1, nb_of_retry + 1):
-        try:
-            result = subprocess.run(
-                ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
-                capture_output=True,
-                text=True,
-            )
-            if "mysqld is alive" in result.stdout:
-                colored_print("Database container is ready !", "green")
-                break
-        except subprocess.CalledProcessError:
-            pass  # Ignore errors and retry
-
-        colored_print(f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...", "yellow")
-        time.sleep(waiting_time)
-    else:
-        colored_print(f"ERROR: Database container '{db_container_name}' is not ready after {nb_of_retry} attempts !", "red")
-        exit(1)
+    verify_database_is_up(db_container_name, nb_of_retry=10)
 
     # Step 3: Execute the database dump
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
-        colored_print(f"ERROR: Dump file '{dump_file_name}' not found in the backend folder!", "red")
-        exit(1)
+        colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
 
     try:
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
@@ -296,9 +327,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
         if "Operation CREATE USER failed" in error_message:
             colored_print("WARNING: User already exists. Skipping user creation.", "yellow")
         else:
-            colored_print("ERROR: Failed to import the database dump!", "red")
-            colored_print(f"Details: {error_message}", "red")
-            exit(1)
+            colored_print(f"Failed to import the database dump!\nDetails: {error_message}", "red")
 
 
 def handle_test(backend_folder, db_container_name):
@@ -313,25 +342,7 @@ def handle_test(backend_folder, db_container_name):
     change_directory(backend_folder)
 
     # Step 1: Check if the database container is ready
-    try:
-        colored_print(f"Checking if database container '{db_container_name}' is ready...", "blue")
-        result = subprocess.run(
-            ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
-            capture_output=True,
-            text=True,
-        )
-        if "mysqld is alive" not in result.stdout:
-            raise subprocess.CalledProcessError(1, "Database not ready")
-        colored_print("Database container is ready!", "green")
-    except FileNotFoundError:
-        colored_print("ERROR: Docker command not found! Ensure Docker is installed and in your PATH.", "red")
-        exit(1)
-    except subprocess.CalledProcessError:
-        colored_print(f"ERROR: Database container '{db_container_name}' is not ready!", "red")
-        exit(1)
-    except Exception as e:
-        colored_print(f"ERROR: Unexpected error while checking database container: {e}", "red")
-        exit(1)
+    verify_database_is_up(db_container_name)
 
     # Step 2: Run tests using docker-compose
     try:
@@ -339,14 +350,11 @@ def handle_test(backend_folder, db_container_name):
         subprocess.run(["docker-compose", "run", "--rm", "test"], check=True)
         colored_print("Tests completed successfully!", "green")
     except FileNotFoundError:
-        colored_print("ERROR: docker-compose command not found! Ensure Docker Compose is installed and in your PATH.", "red")
-        exit(1)
+        colored_print("docker-compose command not found! Ensure Docker Compose is installed and in your PATH.", "red")
     except subprocess.CalledProcessError:
-        colored_print("ERROR: Tests failed during execution!", "red")
-        exit(1)
+        colored_print("Tests failed during execution!", "red")
     except Exception as e:
-        colored_print(f"ERROR: Unexpected error while running tests: {e}", "red")
-        exit(1)
+        colored_print(f"Unexpected error while running tests: {e}", "red")
 
 
 def handle_front(frontend_folder):
@@ -355,7 +363,7 @@ def handle_front(frontend_folder):
     1. Installing dependencies using npm.
     2. Building and starting the containers using docker-compose.
     """
-    colored_print("Starting frontend operations...", "green")
+    colored_print("Starting frontend operations...", "blue")
 
     # Step 0: Change working directory to frontend/
     change_directory(frontend_folder)
@@ -366,20 +374,12 @@ def handle_front(frontend_folder):
         subprocess.run(["npm", "install"], check=True)
         colored_print("Dependencies installed successfully!", "green")
     except FileNotFoundError:
-        colored_print("ERROR: npm is not installed or not found in PATH!", "red")
-        exit(1)
+        colored_print("npm is not installed or not found in PATH!", "red")
     except subprocess.CalledProcessError:
-        colored_print("ERROR: Failed to install dependencies with npm!", "red")
-        exit(1)
+        colored_print("Failed to install dependencies with npm!", "red")
 
     # Step 2: Build and start containers with docker-compose
-    try:
-        colored_print("Building and starting Docker containers in detached mode...", "blue")
-        subprocess.run(["docker-compose", "up", "--build", "-d"], check=True)
-        colored_print("Frontend containers started successfully!", "green")
-    except subprocess.CalledProcessError:
-        colored_print(troubleshooting_message, "yellow")
-        exit(1)
+    start_containers()
 
 
 def temp_change_frpp_by_rpps():
@@ -410,28 +410,13 @@ def handle_update(update_function):
     colored_print("Starting database update...", "green")
 
     # Step 0: Check if the database container is ready
-    colored_print("Checking if the database container is ready...", "blue")
-
-    try:
-        result = subprocess.run(
-            ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
-            capture_output=True,
-            text=True,
-        )
-        if "mysqld is alive" not in result.stdout:
-            colored_print(f"ERROR: Database container '{db_container_name}' is not ready!", "red")
-            exit(1)
-        colored_print("Database container is ready!", "green")
-    except Exception as e:
-        colored_print(f"ERROR: Unexpected error while checking database container: {e}", "red")
-        exit(1)
+    verify_database_is_up(db_container_name)
 
     # Step 1: Check if the update function exists in the dictionary and execute it
     if update_function in UPDATE_FUNCTIONS:
         sql_command = UPDATE_FUNCTIONS[update_function]()
     else:
-        colored_print(f"ERROR: Unknown update function '{update_function}'!", "red")
-        exit(1)
+        colored_print(f"Unknown update function '{update_function}'!", "red")
 
     # Step 2: Execute the update function in the database
     try:
@@ -453,10 +438,9 @@ def handle_update(update_function):
         )
         # Display the error message if it exists
         if error_message.strip():  # Check if the error message is not empty
-            colored_print(f"ERROR: Failed to execute update function. Details: {error_message}", "red")
+            colored_print(f"Failed to execute update function. Details: {error_message}", "red")
         else:
-            colored_print("ERROR: Failed to execute update function. No additional error details provided.", "red")
-        exit(1)
+            colored_print("Failed to execute update function. No additional error details provided.", "red")
 
 
 def handle_down():
@@ -469,20 +453,20 @@ def handle_down():
     # Stop all running containers
     try:
         containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
-        if containers:
+        if len(containers) > 1:
             subprocess.run(["docker", "stop"] + containers, check=True)
             colored_print("All running containers stopped.", "green")
         else:
             colored_print("No running containers to stop.", "yellow")
     except subprocess.CalledProcessError as e:
-        colored_print(f"ERROR: Failed to stop containers. Details: {e.stderr}", "red")
+        colored_print(f"Failed to stop containers. Details: {e.stderr}", "red")
 
     colored_print("Removing all Docker containers...", "blue")
 
     # Remove all containers
     try:
         containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
-        if containers:
+        if len(containers) > 1:
             subprocess.run(["docker", "rm"] + containers, check=True)
             colored_print("All Docker containers removed.", "green")
         else:
@@ -495,20 +479,20 @@ def handle_down():
     # Remove all images
     try:
         images = subprocess.check_output(["docker", "images", "-q"], text=True).strip().split("\n")
-        if images:
+        if len(images) > 1:
             subprocess.run(["docker", "rmi"] + images, check=True)
             colored_print("All Docker images removed.", "green")
         else:
             colored_print("No images to remove.", "yellow")
     except subprocess.CalledProcessError as e:
-        colored_print(f"ERROR: Failed to remove images. Details: {e.stderr}", "red")
+        colored_print(f"Failed to remove images. Details: {e.stderr}", "red")
 
     colored_print("Removing all Docker volumes...", "blue")
 
     # Remove all volumes
     try:
         volumes = subprocess.check_output(["docker", "volume", "ls", "-q"], text=True).strip().split("\n")
-        if volumes:
+        if len(volumes) > 1:
             subprocess.run(["docker", "volume", "rm"] + volumes, check=True)
             colored_print("All Docker volumes removed.", "green")
         else:
