@@ -382,6 +382,141 @@ def handle_front(frontend_folder):
         exit(1)
 
 
+def temp_change_frpp_by_rpps():
+    """
+    Function to rename the column 'frpp' to 'rpps' in the specified table.
+    """
+    update_sql = """
+    ALTER TABLE doctors
+    CHANGE frpp_code rpps_code VARCHAR(255) NOT NULL;
+    """
+
+    return update_sql
+
+
+# Global dictionnary for updates
+UPDATE_FUNCTIONS = {
+    "temp_change_frpp_by_rpps": temp_change_frpp_by_rpps,
+}
+
+
+def handle_update(update_function):
+    """
+    Handles database update operations by executing the specified update function.
+
+    Parameters:
+    - update_function (str): The name of the update function to execute.
+    """
+    colored_print("Starting database update...", "green")
+
+    # Step 0: Check if the database container is ready
+    colored_print("Checking if the database container is ready...", "blue")
+
+    try:
+        result = subprocess.run(
+            ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
+            capture_output=True,
+            text=True,
+        )
+        if "mysqld is alive" not in result.stdout:
+            colored_print(f"ERROR: Database container '{db_container_name}' is not ready!", "red")
+            exit(1)
+        colored_print("Database container is ready!", "green")
+    except Exception as e:
+        colored_print(f"ERROR: Unexpected error while checking database container: {e}", "red")
+        exit(1)
+
+    # Step 1: Check if the update function exists in the dictionary and execute it
+    if update_function in UPDATE_FUNCTIONS:
+        sql_command = UPDATE_FUNCTIONS[update_function]()
+    else:
+        colored_print(f"ERROR: Unknown update function '{update_function}'!", "red")
+        exit(1)
+
+    # Step 2: Execute the update function in the database
+    try:
+        colored_print(f"Executing update function '{update_function}' on database doctors_db...", "blue")
+        result = subprocess.run(
+            [
+                "docker", "exec", db_container_name,
+                "mysql", "-uroot", "-ppx_root_pwd", "-D", "doctors_db", "-e", sql_command
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        colored_print("Database update executed successfully!", "green")
+    except subprocess.CalledProcessError as e:
+        # Filter the specific warning
+        error_message = e.stderr.replace(
+            "mysql: [Warning] Using a password on the command line interface can be insecure.\n", ""
+        )
+        # Display the error message if it exists
+        if error_message.strip():  # Check if the error message is not empty
+            colored_print(f"ERROR: Failed to execute update function. Details: {error_message}", "red")
+        else:
+            colored_print("ERROR: Failed to execute update function. No additional error details provided.", "red")
+        exit(1)
+
+
+def handle_down():
+    """
+    Stops and removes all Docker containers, images, and volumes.
+    """
+
+    colored_print("Stopping all running Docker containers...", "blue")
+
+    # Stop all running containers
+    try:
+        containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
+        if containers:
+            subprocess.run(["docker", "stop"] + containers, check=True)
+            colored_print("All running containers stopped.", "green")
+        else:
+            colored_print("No running containers to stop.", "yellow")
+    except subprocess.CalledProcessError as e:
+        colored_print(f"ERROR: Failed to stop containers. Details: {e.stderr}", "red")
+
+    colored_print("Removing all Docker containers...", "blue")
+
+    # Remove all containers
+    try:
+        containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
+        if containers:
+            subprocess.run(["docker", "rm"] + containers, check=True)
+            colored_print("All Docker containers removed.", "green")
+        else:
+            colored_print("No containers to remove.", "yellow")
+    except subprocess.CalledProcessError as e:
+        colored_print(f"ERROR: Failed to remove containers. Details: {e.stderr}", "red")
+
+    colored_print("Removing all Docker images...", "blue")
+
+    # Remove all images
+    try:
+        images = subprocess.check_output(["docker", "images", "-q"], text=True).strip().split("\n")
+        if images:
+            subprocess.run(["docker", "rmi"] + images, check=True)
+            colored_print("All Docker images removed.", "green")
+        else:
+            colored_print("No images to remove.", "yellow")
+    except subprocess.CalledProcessError as e:
+        colored_print(f"ERROR: Failed to remove images. Details: {e.stderr}", "red")
+
+    colored_print("Removing all Docker volumes...", "blue")
+
+    # Remove all volumes
+    try:
+        volumes = subprocess.check_output(["docker", "volume", "ls", "-q"], text=True).strip().split("\n")
+        if volumes:
+            subprocess.run(["docker", "volume", "rm"] + volumes, check=True)
+            colored_print("All Docker volumes removed.", "green")
+        else:
+            colored_print("No volumes to remove.", "yellow")
+    except subprocess.CalledProcessError as e:
+        colored_print(f"ERROR: Failed to remove volumes. Details: {e.stderr}", "red")
+
+
 # Main script
 if __name__ == "__main__":
     # Argument parser setup
@@ -391,6 +526,8 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true", help="Run tests")
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
     parser.add_argument("--all", action="store_true", help="Run the whole application except for tests")
+    parser.add_argument("--update", type=str, help="Function to update the database")
+    parser.add_argument("--down", action="store_true", help="Function to update the database")
 
     # Parse arguments
     args = parser.parse_args()
@@ -421,6 +558,11 @@ if __name__ == "__main__":
             handle_test(backend_folder, db_container_name)
         if args.front:
             handle_front(frontend_folder)
+        if args.update:
+            update_function = args.update
+            handle_update(update_function)
+        if args.down:
+            handle_down()
     else:
         parser.print_help()
         exit(1)
