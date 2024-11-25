@@ -5,8 +5,16 @@
 
 ### [STEP 1] start docker
 
+# if it's the first time:
+
 ```bash
 docker-compose up --build
+```
+
+# otherwise:
+
+```bash
+docker-compose up
 ```
 
 ### [PATCH] if you encounter this error
@@ -108,7 +116,30 @@ sudo docker-compose up --build
 ### export db dump if needed
 
 ```bash
-cat database_dump_px.sql | docker exec -i distributeur-backend-db-1 mysql -uroot -ppx_root_pwd
+docker exec -i distributeur-backend-db-1 mysqldump -uroot -ppx_root_pwd doctors_db > backup.sql
+```
+
+then after
+
+```sql
+--
+-- Current Database: `doctors_db`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `doctors_db` /*!40100 DEFAULT CHARACTER SET latin1 */;
+
+USE `doctors_db`;
+```
+
+please add:
+
+```sql
+-- CREATE USER 'px_user'
+
+
+CREATE USER 'px_user'@'%' IDENTIFIED BY 'px_pwd';
+GRANT ALL PRIVILEGES ON doctors_db.* TO 'px_user'@'%';
+FLUSH PRIVILEGES;
 ```
 
 ### finished

@@ -5,7 +5,17 @@ npm install
 
 ### [STEP 1] run docker
 
+# if it's the first time:
+
+```bash
 docker-compose up --build
+```
+
+# otherwise:
+
+```bash
+docker-compose up
+```
 
 
 # if you encounter that kind of error:
