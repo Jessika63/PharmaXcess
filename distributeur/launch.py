@@ -14,7 +14,8 @@ troubleshooting_message = (
     "   - Windows/macOS: Check if Docker Desktop is active in your system tray.\n"
     "   - Linux: Run 'sudo systemctl start docker' to start the Docker service.\n"
     "2. Verify Docker Engine context:\n"
-    "   - Run 'docker context ls' and ensure the correct context (e.g., 'default' or 'desktop-linux') is active.\n"
+    "   - Run 'docker context ls' and ensure the correct context"
+    "(e.g., 'default' or 'desktop-linux') is active.\n"
     "   - Switch context if necessary using 'docker context use [context-name]'.\n"
     "3. Check if Docker commands work manually:\n"
     "   - Test with 'docker ps' to verify Docker is accessible.\n"
@@ -34,6 +35,8 @@ def colored_print(message, color):
     :param message: The message to display.
     :param color: The color/type of the message ('red', 'yellow', 'green', 'blue').
     """
+    if color == 'blue' and config["debug_logs"] == "no":
+        return
     colors = {
         "red": "\033[91m",
         "yellow": "\033[93m",
@@ -79,7 +82,10 @@ def change_directory(target_folder):
             os.chdir(dir_path)
             return True
         except FileNotFoundError:
-            colored_print(f"Directory '{dir_path}' not found in the current working directory '{os.getcwd()}'.", "yellow")
+            colored_print(
+                f"Directory '{dir_path}' not found in the current working directory '{os.getcwd()}'.",
+                "yellow"
+            )
         except PermissionError:
             colored_print(f"Insufficient permissions to access '{dir_path}'!", "red")
         except NotADirectoryError:
@@ -193,24 +199,53 @@ def verify_db_dump(dump_folder, expected_date):
 # Function to load and validate the configuration file
 def load_config_file(config_file_path):
     """
-    Load and validate the configuration file.
+    Loads and validates a configuration file, ensuring the presence of required keys.
 
-    :param config_file_path: Path to the configuration file
-    :return: Parsed configuration as a dictionary
+    Args:
+        config_file_path (str): The path to the configuration file.
+
+    Returns:
+        dict: A dictionary containing the parsed configuration data, including:
+              - "required_env_keys" (list): A list of environment keys required for the application.
+              - "db_dump_date" (str): The date of the database dump.
+              - "debug_logs" (str): A flag indicating whether debug logs are enabled ("Yes" or "No").
+
+    Raises:
+        SystemExit:
+            Exits the program with an error message if the configuration file is missing required keys.
     """
     config = load_config(config_file_path)
 
-    # Validate that required keys are present in the configuration
+    # Validate that main sections are present in the configuration
+    if "application_settings" not in config:
+        colored_print("Configuration file is missing 'application_settings' section.", "red")
+    if "verification_settings" not in config:
+        colored_print("Configuration file is missing 'verification_settings' section.", "red")
+
+    # Validate required keys in 'verification_settings'
     missing_config_keys = []
-    if "required_env_keys" not in config:
+    verification_settings = config.get("verification_settings", {})
+    if "required_env_keys" not in verification_settings:
         missing_config_keys.append("required_env_keys")
-    if "db_dump_date" not in config:
+    if "db_dump_date" not in verification_settings:
         missing_config_keys.append("db_dump_date")
 
     if missing_config_keys:
-        colored_print(f"Configuration file is missing required keys: {', '.join(missing_config_keys)}", "red")
+        colored_print(
+            f"'verification_settings' section is missing required keys: {', '.join(missing_config_keys)}",
+            "red",
+        )
 
-    return config
+    # Extract configuration data
+    config_data = {}
+    config_data["required_env_keys"] = verification_settings.get("required_env_keys", [])
+    config_data["db_dump_date"] = verification_settings.get("db_dump_date", "")
+
+    # Extract application settings
+    application_settings = config.get("application_settings", {})
+    config_data["debug_logs"] = application_settings.get("debug_logs", "No").lower()
+
+    return config_data
 
 
 def handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date):
@@ -238,12 +273,17 @@ def verify_database_is_up(db_container_name, nb_of_retry=1):
     """
     waiting_time = 10  # Time in seconds between retries
 
+    env_data = load_env_file(".env")
+
     colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
 
     for attempt in range(1, nb_of_retry + 1):
         try:
             result = subprocess.run(
-                ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppx_root_pwd"],
+                [
+                    "docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot",
+                    "-p" + env_data["MYSQL_ROOT_PASSWORD"]
+                ],
                 capture_output=True,
                 text=True,
             )
@@ -257,10 +297,54 @@ def verify_database_is_up(db_container_name, nb_of_retry=1):
         except Exception as e:
             colored_print(f"Unexpected error while checking database container: {e}", "red")
 
-        colored_print(f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...", "yellow")
+        colored_print(
+            f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
+            "yellow"
+        )
         time.sleep(waiting_time)
 
-    colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
+    colored_print(
+        f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!",
+        "red"
+    )
+
+
+def load_env_file(env_file_path):
+    """
+    Loads environment variables from a .env file and returns them as a dictionary.
+
+    Args:
+        env_file_path (str): Path to the .env file.
+
+    Returns:
+        dict: Dictionary containing key-value pairs from the .env file.
+
+    Raises:
+        FileNotFoundError: If the .env file does not exist.
+        ValueError: If the .env file contains invalid lines.
+    """
+    env_data = {}
+
+    # Check if the file exists
+    if not os.path.exists(env_file_path):
+        raise FileNotFoundError(f"The file '{env_file_path}' does not exist.")
+
+    # Read the file and parse its content
+    with open(env_file_path, "r") as file:
+        for line in file:
+            # Ignore comments and empty lines
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            # Parse key-value pairs
+            if "=" in line:
+                key, value = line.split("=", 1)
+                env_data[key.strip()] = value.strip()
+            else:
+                raise ValueError(f"Invalid line in .env file: {line}")
+
+    return env_data
 
 
 def start_containers():
@@ -301,7 +385,10 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
     # Step 2: Wait for the database container to be ready
     verify_database_is_up(db_container_name, nb_of_retry=10)
 
-    # Step 3: Execute the database dump
+    # Step 3: Get .env variables
+    env_data = load_env_file(".env")
+
+    # Step 4: Execute the database dump
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
@@ -313,8 +400,8 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
             dump_content = dump_file.read()  # Read the SQL dump as a string
         result = subprocess.run(
             [
-                "docker", "exec", "-i", db_container_name,
-                "mysql", "-uroot", "-ppx_root_pwd", "doctors_db"
+                "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
+                "-p" + env_data["MYSQL_ROOT_PASSWORD"], env_data["DB_NAME"]
             ],
             input=dump_content,  # Pass the string content
             text=True,           # Ensure subprocess expects a string
@@ -350,7 +437,10 @@ def handle_test(backend_folder, db_container_name):
         subprocess.run(["docker-compose", "run", "--rm", "test"], check=True)
         colored_print("Tests completed successfully!", "green")
     except FileNotFoundError:
-        colored_print("docker-compose command not found! Ensure Docker Compose is installed and in your PATH.", "red")
+        colored_print(
+            "docker-compose command not found! Ensure Docker Compose is installed and in your PATH.",
+            "red"
+        )
     except subprocess.CalledProcessError:
         colored_print("Tests failed during execution!", "red")
     except Exception as e:
@@ -418,13 +508,19 @@ def handle_update(update_function):
     else:
         colored_print(f"Unknown update function '{update_function}'!", "red")
 
-    # Step 2: Execute the update function in the database
+    # Step 2: Get .env variables
+    env_data = load_env_file(".env")
+
+    # Step 3: Execute the update function in the database
     try:
-        colored_print(f"Executing update function '{update_function}' on database doctors_db...", "blue")
+        colored_print(
+            f"Executing update function '{update_function}' on database '{env_data["DB_NAME"]}'...",
+            "blue"
+        )
         result = subprocess.run(
             [
-                "docker", "exec", db_container_name,
-                "mysql", "-uroot", "-ppx_root_pwd", "-D", "doctors_db", "-e", sql_command
+                "docker", "exec", db_container_name, "mysql", "-uroot",
+                "-p" + env_data["MYSQL_ROOT_PASSWORD"], "-D", env_data["DB_NAME"], "-e", sql_command
             ],
             check=True,
             capture_output=True,
@@ -440,7 +536,10 @@ def handle_update(update_function):
         if error_message.strip():  # Check if the error message is not empty
             colored_print(f"Failed to execute update function. Details: {error_message}", "red")
         else:
-            colored_print("Failed to execute update function. No additional error details provided.", "red")
+            colored_print(
+                "Failed to execute update function. No additional error details provided.",
+                "red"
+            )
 
 
 def handle_down():
@@ -525,19 +624,21 @@ if __name__ == "__main__":
 
     # Load configuration
     config = load_config_file(config_file_path)
-    required_env_keys = config.get("required_env_keys", [])
-    db_dump_date = config.get("db_dump_date", "")
 
     # Execute operations based on flags
     if any(vars(args).values()):
         if args.all:
-            handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
-            handle_back(backend_folder, db_dump_date, db_container_name)
+            handle_verif(
+                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+            )
+            handle_back(backend_folder, config["db_dump_date"], db_container_name)
             handle_front(frontend_folder)
         if args.verif:
-            handle_verif(env_file_path, required_env_keys, backend_folder, db_dump_date)
+            handle_verif(
+                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+            )
         if args.back:
-            handle_back(backend_folder, db_dump_date, db_container_name)
+            handle_back(backend_folder, config["db_dump_date"], db_container_name)
         if args.test:
             handle_test(backend_folder, db_container_name)
         if args.front:
