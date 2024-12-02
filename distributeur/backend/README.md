@@ -40,7 +40,7 @@ here is how to solve it:
 First, replace in **requirements.txt**
 
 ```txt
-Flask>=2.3.3,<3.0
+Flask>=2.3.2,<3.0
 ```
 
 with
