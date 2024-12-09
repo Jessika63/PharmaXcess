@@ -6,11 +6,11 @@
     "ignore_files": [
       "distributeur/backend/database_dump_px_17_11_2024.sql",
       "distributeur/backend/db/database.sql",
+      "distributeur/frontend/package-lock.json",
+      "distributeur/backend/.coverage",
       "app/pharmaXcess_app/package-lock.json",
       "app/pharmaXcess_app/yarn.lock",
-      "app/web_server/package-lock.json",
-      "distributeur/frontend/package-lock.json",
-      "distributeur/backend/.coverage"
+      "app/web_server/package-lock.json"
     ],
     "ignore_dirs": [
         ".git",
