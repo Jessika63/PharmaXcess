@@ -46,50 +46,50 @@ def scan_for_leaks(env_dict, ignored_files, ignored_dirs):
     leaks = {}
     all_files = []
 
-    # Liste des faux positifs globaux
+    # List of global false positives
     false_positive_patterns_global = [
         r'container_name',
         r'#.*DB_HOST',
         r'docker exec.*',
         r'from db import',
-        r'^\s*db:$',  # Nom de service dans docker-compose.yml
+        r'^\s*db:$',
     ]
 
-    # Faux positifs spécifiques à des fichiers
+    # File-specific false positives
     false_positive_patterns_by_file = {
         'README.md': [
-            r'creds inside docker-compose\.yml',  # Instructions génériques
-            r'container named',                   # Mentions génériques de conteneurs
-            r'put db dump into docker',           # Étapes d'utilisation des dumps
-            r'check the name of your db container',  # Instructions génériques
-            r'export db dump if needed',            # Étape de sauvegarde générique
-            r'^### Step 6\.1 : Start the app, start the db and put the dump in the db$',  # Match exact
+            r'creds inside docker-compose\.yml',
+            r'container named',
+            r'put db dump into docker',
+            r'check the name of your db container',
+            r'export db dump if needed',
+            r'^### Step 6\.1 : Start the app, start the db and put the dump in the db$',
         ],
         'check_leak.py': [
-            r'^\s*r\'.*\'',                       # Exemples dans le script actuel
-            r'#.*',                               # Lignes de commentaires
+            r'^\s*r\'.*\'',
+            r'#.*',
         ],
         'config.json': [
-            r'database.sql',                      # Références de fichiers connus
+            r'database.sql',
         ],
     }
 
     def is_false_positive(line, file_path):
         """Check if a line matches global or file-specific false positive patterns."""
-        # Vérifie les faux positifs globaux
+        # Check global false positives
         for pattern in false_positive_patterns_global:
             if re.search(pattern, line):
                 return True
-        # Vérifie les faux positifs spécifiques au fichier
+        # Check file-specific false positives
         file_name = os.path.basename(file_path)
         if file_name in false_positive_patterns_by_file:
             for pattern in false_positive_patterns_by_file[file_name]:
                 if re.search(pattern, line):
                     return True
-        # Ignorer les mentions "DB_HOST" dans des contextes génériques
+        # Ignore generic "DB_HOST" mentions in examples
         if re.search(r'\bDB_HOST\b', line):
             if "example" in file_path.lower() or "README" in file_path.lower():
-                return True  # Suppression des exemples
+                return True
         return False
 
     # Collect all files to scan
@@ -107,7 +107,7 @@ def scan_for_leaks(env_dict, ignored_files, ignored_dirs):
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line_number, line in enumerate(f, start=1):
-                    # Determine which env variables apply to the current file
+                    # Determine applicable environment variables for the current file
                     applicable_envs = {
                         base_dir: vars_dict
                         for base_dir, vars_dict in env_dict.items()
@@ -119,7 +119,7 @@ def scan_for_leaks(env_dict, ignored_files, ignored_dirs):
                             if re.search(rf'\b{re.escape(value)}\b', line):
                                 if is_false_positive(line.strip(), file_path):  # Ignore false positives
                                     continue
-                                relative_file_path = os.path.relpath(file_path)  # Use relative paths
+                                relative_file_path = os.path.relpath(file_path)
                                 if relative_file_path not in leaks:
                                     leaks[relative_file_path] = []
                                 leaks[relative_file_path].append((line_number, key, line.strip()))
@@ -129,10 +129,10 @@ def scan_for_leaks(env_dict, ignored_files, ignored_dirs):
 
 
 def main():
-    # Obtenir le chemin du dossier où se trouve ce script
+    # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Construire un chemin relatif au script
+    # Build a relative path to the script
     config_path = os.path.join(script_dir, 'config.json')
 
     try:
@@ -149,7 +149,7 @@ def main():
     ignored_files = config.get("ignore_files", [])
     ignored_dirs = config.get("ignore_dirs", [])
 
-    # Add env_paths to ignore_files
+    # Add env_paths to ignored_files
     ignored_files.extend(env_paths)
 
     # Load environment variable values
@@ -166,7 +166,7 @@ def main():
     if leaks:
         print("\nPotential leaks detected:")
         for file_path, occurrences in leaks.items():
-            print(f"\nFile: {file_path}")  # Relative paths are displayed here
+            print(f"\nFile: {file_path}")
             for line_number, key, line in occurrences:
                 print(f"  Line {line_number}: {line}")
                 print(f"    -> Leaked variable: {key}")
