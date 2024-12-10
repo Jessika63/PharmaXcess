@@ -10,7 +10,10 @@ public class UserMapper {
         User user = new User();
 
         user.setEmail(userRegister.getEmail());
+        user.setName(userRegister.getName());
+        user.setSurname(userRegister.getSurname());
         user.setUsername(userRegister.getUsername());
+        user.setPassword(userRegister.getPassword());
         return user;
     }
 }
