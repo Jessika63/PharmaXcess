@@ -40,7 +40,7 @@ def handle_update(update_function, db_container_name, backend_folder):
     # Step 3: Execute the update function in the database
     try:
         colored_print(
-            f"Executing update function '{update_function}' on database '{env_data["DB_NAME"]}'...",
+            f"Executing update function '{update_function}' on database '{env_data['DB_NAME']}'...",
             "blue"
         )
         result = subprocess.run(
