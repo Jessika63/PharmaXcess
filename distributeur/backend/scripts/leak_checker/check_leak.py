@@ -129,8 +129,12 @@ def scan_for_leaks(env_dict, ignored_files, ignored_dirs):
 
 
 def main():
-    # Define paths to .env files and ignored elements from config
-    config_path = 'distributeur/backend/scripts/leak_checker/config.json'
+    # Obtenir le chemin du dossier où se trouve ce script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Construire un chemin relatif au script
+    config_path = os.path.join(script_dir, 'config.json')
+
     try:
         with open(config_path, 'r', encoding='utf-8') as config_file:
             config = json.load(config_file)
