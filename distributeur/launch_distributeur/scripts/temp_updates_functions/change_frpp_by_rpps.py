@@ -1,0 +1,11 @@
+
+def change_frpp_by_rpps():
+    """
+    Function to rename the column 'frpp' to 'rpps' in the specified table.
+    """
+    update_sql = """
+    ALTER TABLE doctors
+    CHANGE frpp_code rpps_code VARCHAR(255) NOT NULL;
+    """
+
+    return update_sql
