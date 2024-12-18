@@ -4,6 +4,7 @@ import re
 import json
 import sys
 from tqdm import tqdm
+from pathlib import Path
 
 
 # Constants for False Positives
@@ -52,34 +53,39 @@ def load_config(script_dir):
 def initialize_environment(config):
     """Prepare environment variables and paths."""
     env_paths = config.get("env_paths", [])
+    env_dirs = [os.path.dirname(os.path.dirname(os.path.abspath(path))) for path in env_paths]
     ignored_files = config.get("ignore_files", []) + env_paths
     ignored_dirs = config.get("ignore_dirs", [])
     env_dict = load_env_variables(env_paths)
     if not env_dict:
         print("No environment variables found. Exiting.")
         sys.exit(0)
-    return env_dict, ignored_files, ignored_dirs
+    return env_dict, ignored_files, ignored_dirs, env_dirs
 
 
-def load_env_variables(env_paths):
-    """Load environment variables from .env files."""
-    env_dict = {}
-    for env_path in env_paths:
-        base_dir = os.path.dirname(os.path.abspath(env_path))
+def load_env_variables(env_files):
+    result = {}
+    for env_file in env_files:
+        # Obtenir le chemin absolu et le premier répertoire dans le chemin
+        absolute_path = Path(env_file).resolve()
+        base_dir = str(absolute_path.parents[1])  # Prendre le dossier parent du dossier contenant le .env
+        # Lire les données du fichier .env
+        env_data = {}
         try:
-            with open(env_path, 'r', encoding='utf-8') as f:
-                for line in f:
+            with open(absolute_path, 'r') as file:
+                for line in file:
                     line = line.strip()
-                    if line and not line.startswith("#"):
-                        try:
-                            key, value = line.split('=', 1)
-                            env_dict.setdefault(base_dir, {})[key.strip()] = value.strip()
-                        except ValueError:
-                            print(f"Invalid line in {env_path}: {line}")
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = map(str.strip, line.split('=', 1))
+                        env_data[key] = value
         except FileNotFoundError:
-            print(f"Error: .env file {env_path} not found.")
-    return env_dict
-
+            print(f"Warning: {env_file} not found.")
+        except Exception as e:
+            print(f"Error reading {env_file}: {e}")
+        # Ajouter les données au résultat
+        if env_data:
+            result[base_dir + os.sep] = env_data
+    return result
 
 # File Scanning
 def collect_files(base_dirs, ignored_files, ignored_dirs):
@@ -173,11 +179,9 @@ def main_workflow():
     """Execute the main workflow."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(script_dir)
-    env_dict, ignored_files, ignored_dirs = initialize_environment(config)
-
+    env_dict, ignored_files, ignored_dirs, env_dirs = initialize_environment(config)
     print("Collecting files...")
-    files = collect_files(list(env_dict.keys()), ignored_files, ignored_dirs)
-
+    files = collect_files(env_dirs, ignored_files, ignored_dirs)
     print("Scanning for leaks...")
     leaks = scan_for_leaks(env_dict, files)
 
