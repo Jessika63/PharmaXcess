@@ -5,10 +5,12 @@ import json
 import sys
 from tqdm import tqdm
 from pathlib import Path
+import argparse
+import logging
 
 # Constants for False Positives
 GLOBAL_FALSE_POSITIVES = [
-    r'container_name',  # Matches configuration references to container names
+    r'container_name',   # Matches configuration references to container names
     r'#.*DB_HOST',       # Comments mentioning DB_HOST are considered non-sensitive
     r'docker exec.*',    # Commands to execute in Docker containers
     r'from db import',   # Standard imports from a database module
@@ -36,6 +38,25 @@ FILE_SPECIFIC_FALSE_POSITIVES = {
     ],
 }
 
+def setup_logging(log_file):
+    """
+    Set up logging configuration.
+
+    Args:
+        log_file (str): Path to the log file or None.
+    """
+    handlers = []
+    if log_file:
+        handlers.append(logging.FileHandler(log_file, mode='w'))  # Log to file
+    else:
+        handlers.append(logging.StreamHandler(sys.stdout))  # Log to terminal by default
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=handlers
+    )
+
 # Loaders and Configurations
 def load_config(script_dir):
     """
@@ -57,10 +78,10 @@ def load_config(script_dir):
         with open(config_path, 'r', encoding='utf-8') as config_file:
             return json.load(config_file)
     except FileNotFoundError:
-        print(f"[ERROR] Configuration file {config_path} not found.")
+        logging.error(f"Configuration file {config_path} not found.")
         sys.exit(1)
     except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to parse JSON in {config_path}: {e}")
+        logging.error(f"Failed to parse JSON in {config_path}: {e}")
         sys.exit(1)
 
 def initialize_environment(config):
@@ -84,7 +105,7 @@ def initialize_environment(config):
     env_dict = load_env_variables(env_paths)
 
     if not env_dict:
-        print("[WARNING] No environment variables found. Exiting.")
+        logging.warning("No environment variables found. Exiting.")
         sys.exit(0)
 
     return env_dict, ignored_files, ignored_dirs, env_dirs
@@ -114,9 +135,9 @@ def load_env_variables(env_files):
                         key, value = map(str.strip, line.split('=', 1))
                         env_data[key] = value
         except FileNotFoundError:
-            print(f"[WARNING] {env_file} not found.")
+            logging.warning(f"{env_file} not found.")
         except Exception as e:
-            print(f"[ERROR] Error reading {env_file}: {e}")
+            logging.error(f"Error reading {env_file}: {e}")
 
         if env_data:
             result[base_dir + os.sep] = env_data
@@ -169,7 +190,7 @@ def scan_for_leaks(env_dict, files):
             if file_leaks:
                 leaks[file_path] = file_leaks
         except Exception as e:
-            print(f"[ERROR] Error reading file {file_path}: {e}")
+            logging.error(f"Error reading file {file_path}: {e}")
 
     return leaks
 
@@ -201,7 +222,7 @@ def scan_file(file_path, env_dict):
                             if not is_false_positive(line.strip(), file_path):
                                 leaks.append((line_number, key, line.strip()))
     except Exception as e:
-        print(f"[ERROR] Error processing {file_path}: {e}")
+        logging.error(f"Error processing {file_path}: {e}")
 
     return leaks
 
@@ -253,7 +274,7 @@ def is_false_positive(line, file_path):
     return False
 
 # Report Generation
-def report_results(leaks):
+def report_results(leaks, output_file):
     """
     Report detected leaks to the user.
 
@@ -265,17 +286,32 @@ def report_results(leaks):
         0: If no leaks are detected.
     """
     if leaks:
-        print("\n[WARNING] Potential leaks detected:")
-
-        for file_path, occurrences in leaks.items():
-            print(f"\n[FILE] {file_path}")
-            for line_number, key, line in occurrences:
-                print(f"  [LINE {line_number}] {line}")
-                print(f"    -> Leaked variable: {key}")
+        logging.warning("\nPotential leaks detected:")
+        if output_file:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                for file_path, occurrences in leaks.items():
+                    f.write(f"\n[FILE] {file_path}\n")
+                    for line_number, key, line in occurrences:
+                        f.write(f"  [LINE {line_number}] {line}\n")
+                        f.write(f"    -> Leaked variable: {key}\n")
+        else:
+            # If no output file, print to stdout
+            print("\nPotential leaks detected:")
+            for file_path, occurrences in leaks.items():
+                print(f"\n[FILE] {file_path}")
+                for line_number, key, line in occurrences:
+                    print(f"  [LINE {line_number}] {line}")
+                    print(f"    -> Leaked variable: {key}")
 
         sys.exit(1)
     else:
-        print("[INFO] No leaks detected.")
+        logging.info("No leaks detected.")
+        if output_file:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write("No leaks detected.\n")
+        else:
+            # If no output file, print to stdout
+            print("No leaks detected.")
         sys.exit(0)
 
 # Main Workflow
@@ -294,18 +330,29 @@ def main_workflow():
         0: If no leaks are detected.
         1: If leaks are detected.
     """
+    parser = argparse.ArgumentParser(description="Scan for leaked secrets in files.")
+    parser.add_argument("--output_file", type=str, default=None, help="Path to the output file. Defaults to stdout.")
+    parser.add_argument("--log_file", type=str, default=None, help="Path to the log file. Defaults to stdout.")
+
+    args = parser.parse_args()
+
+    args.output_file = None if args.output_file is sys.stdout else args.output_file
+    args.log_file = None if args.log_file is None else args.log_file
+
+    setup_logging(args.log_file)
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(script_dir)
 
     env_dict, ignored_files, ignored_dirs, env_dirs = initialize_environment(config)
 
-    print("[INFO] Collecting files...")
+    logging.info("Collecting files...")
     files = collect_files(env_dirs, ignored_files, ignored_dirs)
 
-    print("[INFO] Scanning for leaks...")
+    logging.info("Scanning for leaks...")
     leaks = scan_for_leaks(env_dict, files)
 
-    report_results(leaks)
+    report_results(leaks, args.output_file)
 
 if __name__ == "__main__":
     main_workflow()
