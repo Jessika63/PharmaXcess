@@ -17,7 +17,7 @@ public class Ticket {
     private Integer userId;
 
     @Column(name = "assigned_to", nullable = true)
-    private Integer assignedTo;
+    private Long assignedTo;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -52,11 +52,11 @@ public class Ticket {
         this.userId = userId;
     }
 
-    public Integer getAssignedTo() {
+    public Long getAssignedTo() {
         return assignedTo;
     }
 
-    public void setAssignedTo(Integer assignedTo) {
+    public void setAssignedTo(Long assignedTo) {
         this.assignedTo = assignedTo;
     }
 

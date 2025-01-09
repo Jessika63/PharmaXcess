@@ -20,6 +20,18 @@ public class TicketRepository {
         return ticket;
     }
 
+    public Optional<Ticket> updateTicketAssignedTo(Long id, Long assignedTo) {
+        Optional<Ticket> ticketOptional = getTicketById(id);
+
+        if (ticketOptional.isPresent()) {
+            Ticket ticket = ticketOptional.get();
+
+            ticket.setAssignedTo(assignedTo);
+            return Optional.of(ticket);
+        }
+        return Optional.empty();
+    }
+
     public Optional<Ticket> updateTicketStatus(Long id, String status) {
         Optional<Ticket> ticketOptional = getTicketById(id);
         if (ticketOptional.isPresent()) {
@@ -28,9 +40,9 @@ public class TicketRepository {
             return Optional.of(ticket);
         }
         return Optional.empty();
-        }
+    }
 
-        public List<Ticket> findTicketsByUserIdBetween(Long userId, int x, int y) {
+    public List<Ticket> findTicketsByUserIdBetween(Long userId, int x, int y) {
         List<Ticket> tickets = getAllTicketsByUserId(userId);
 
         return tickets.stream()

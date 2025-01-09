@@ -1,10 +1,13 @@
 package com.pharmaxcess_server.pharmaxcess_server.service;
 
+import com.pharmaxcess_server.pharmaxcess_server.dto.TicketCreationRequest;
 import com.pharmaxcess_server.pharmaxcess_server.model.Ticket;
 import com.pharmaxcess_server.pharmaxcess_server.repository.TicketRepository;
+import com.pharmaxcess_server.pharmaxcess_server.dto.TicketAcceptRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TicketService {
@@ -13,5 +16,16 @@ public class TicketService {
 
     public List<Ticket> getUserIdTicketPage(Long userId, int x, int y) {
         return ticketRepository.findTicketsByUserIdBetween(userId, x, y);
+    }
+
+    public Ticket createTicket(TicketCreationRequest ticketCreationRequest) {
+        Ticket ticket = new Ticket();
+
+        ticket.setTitle(ticketCreationRequest.getTitle());
+        return ticketRepository.createTicket(ticket);
+    }
+
+    public Optional<Ticket> acceptTicket(TicketAcceptRequest ticketCreationRequest) {
+        return ticketRepository.updateTicketAssignedTo(ticketCreationRequest.getUserID(), ticketCreationRequest.getTicketID());
     }
 }
