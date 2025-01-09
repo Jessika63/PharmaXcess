@@ -50,9 +50,9 @@ public class TicketRepository {
                   .skip(x - 1)
                   .limit(y - x + 1)
                   .collect(Collectors.toList());
-        }
+    }
 
-        private List<Ticket> getAllTicketsByUserId(Long userId) {
+    private List<Ticket> getAllTicketsByUserId(Long userId) {
         return new ArrayList<>();
     }
 }

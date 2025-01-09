@@ -1,15 +1,32 @@
 package com.pharmaxcess_server.pharmaxcess_server.repository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import java.util.Comparator;
 
+import com.pharmaxcess_server.pharmaxcess_server.model.Ticket;
 import com.pharmaxcess_server.pharmaxcess_server.model.TicketMessage;
 
 @Repository
-public interface TicketMessageRepository extends JpaRepository<TicketMessage, Integer> {
-    @Query(value = "SELECT * FROM ticket_message m WHERE m.ticket_id = :ticketId", nativeQuery = true)
-    List<TicketMessage> findByTicketId(Integer ticketId);
+public class TicketMessageRepository {
+    public List<TicketMessage> findMessageByTicketIdBetween(Long ticketId, int x, int y) {
+        List<TicketMessage> messages = getAllMessageByTicketId(ticketId);
+
+        return messages.stream()
+                  .sorted(Comparator.comparing(TicketMessage::getCreatedAt).reversed())
+                  .skip(x - 1)
+                  .limit(y - x + 1)
+                  .collect(Collectors.toList());
+    }
+
+    private List<TicketMessage> getAllMessageByTicketId(Long ticketId) {
+        return new ArrayList<>();
+    }
+
+    public TicketMessage createMessage(TicketMessage message) {
+        return message;
+    }
 }

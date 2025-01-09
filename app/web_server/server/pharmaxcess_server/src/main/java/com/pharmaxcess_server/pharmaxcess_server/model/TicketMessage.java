@@ -11,7 +11,7 @@ public class TicketMessage {
     private Integer id;
 
     @Column(name = "ticket_id", nullable = false)
-    private Integer ticketId;
+    private Long ticketId;
 
     @Column(name = "user_id", nullable = false)
     private Integer userId;
@@ -30,11 +30,11 @@ public class TicketMessage {
         this.id = id;
     }
 
-    public Integer getTicketId() {
+    public Long getTicketId() {
         return ticketId;
     }
 
-    public void setTicketId(Integer ticketId) {
+    public void setTicketId(Long ticketId) {
         this.ticketId = ticketId;
     }
 
