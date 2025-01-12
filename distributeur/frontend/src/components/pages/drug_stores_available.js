@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
 
 const drug_shops = [
@@ -15,6 +15,10 @@ const drug_shops = [
 ];
 
 function DrugStoresAvailable() {
+
+    const navigate = useNavigate()
+    const location = useLocation()
+
   return (
     <div className="npd_App">
 
@@ -22,7 +26,7 @@ function DrugStoresAvailable() {
         <div className="npd_header_container">
 
             {/* Rectangle 'go back rectangle' */}
-            <Link to="/" style={{ textDecoration: 'none' }}>
+            <Link to={'/' + location.state.from} style={{ textDecoration: 'none' }}>
                 <div className="rectangle npd_back_button" style={{cursor: 'pointer'}}>
                     <p style={{ fontSize: '2.5em' }}>Retour</p>
                 </div>

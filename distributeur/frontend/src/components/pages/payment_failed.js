@@ -1,8 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
 
 function PaymentFailed() {
+
+  const navigate = useNavigate()
+  const location = useLocation()
+
   return (
       <div className="App">
 
@@ -23,13 +27,14 @@ function PaymentFailed() {
 
           {/* Rectangle 'médicaments sous ordonnance' */}
 
-          <Link to="/payment-failed/#" style={{ textDecoration: 'none' }}>
-            <div className="rectangle" style={{top: '20%', left: '50%', cursor: 'pointer'}}>
+          {/* <Link to="/payment-failed/#" style={{ textDecoration: 'none' }}> */}
+            <div className="rectangle" style={{top: '20%', left: '50%', cursor: 'pointer'}}
+            onClick={() => navigate('/' + (location.state.from || '/#'))}>
               <p style={{ fontSize: '3em', textAlign: 'center' }}>
                 Réessayer le paiement
               </p>
             </div>
-          </Link>
+          {/* </Link> */}
 
           {/* Rectangle 'médicaments sans ordonnance' */}
 
