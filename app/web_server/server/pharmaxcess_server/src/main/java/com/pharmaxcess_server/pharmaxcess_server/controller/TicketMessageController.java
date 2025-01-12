@@ -14,8 +14,15 @@ import com.pharmaxcess_server.pharmaxcess_server.dto.MessageCreationRequest;
 import com.pharmaxcess_server.pharmaxcess_server.model.TicketMessage;
 import com.pharmaxcess_server.pharmaxcess_server.service.TicketMessageService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/ticket/message")
+@Tag(name = "Ticket messages", description = "Operations related to messages in ticket")
 public class TicketMessageController {
     private final TicketMessageService ticketMessageService;
 
@@ -25,12 +32,34 @@ public class TicketMessageController {
     }
 
     @GetMapping("/message_page")
+    @Operation(
+        summary = "Get Messages by Page",
+        description = "Retrieves a paginated list of messages related to a specific ticket based on the ticket ID and pagination coordinates.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Messages retrieved successfully."),
+        @ApiResponse(responseCode = "400", description = "Invalid request body."),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
+        @ApiResponse(responseCode = "500", description = "Internal server error.")
+    })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     public List<TicketMessage> getMessageByPage(@RequestBody TicketMessageRequest body) {
         return ticketMessageService.getMessageTicketPage(body.getTicketID(), body.getX(), body.getY());
     }
 
     @GetMapping("/create")
+    @Operation(
+        summary = "Create a Message",
+        description = "Creates a new message for a specified ticket.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Message created successfully."),
+        @ApiResponse(responseCode = "400", description = "Invalid request body."),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
+        @ApiResponse(responseCode = "500", description = "Internal server error.")
+    })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     public TicketMessage createMessage(@RequestBody MessageCreationRequest body) {
         return ticketMessageService.createMessage(body.getTicketID(), body.getMessage());

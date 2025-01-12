@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import java.util.Comparator;
 
-import com.pharmaxcess_server.pharmaxcess_server.model.Ticket;
 import com.pharmaxcess_server.pharmaxcess_server.model.TicketMessage;
 
 @Repository
