@@ -3,11 +3,12 @@ package com.pharmaxcess_server.pharmaxcess_server.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import com.pharmaxcess_server.pharmaxcess_server.dto.TicketCreationRequest;
 import com.pharmaxcess_server.pharmaxcess_server.model.TicketMessage;
 import com.pharmaxcess_server.pharmaxcess_server.repository.TicketMessageRepository;
 
+@Service
 public class TicketMessageService {
     @Autowired
     private TicketMessageRepository ticketMessageRepository;
