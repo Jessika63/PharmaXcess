@@ -1,5 +1,6 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
+import com.pharmaxcess_server.pharmaxcess_server.dto.UserLoginRequest;
 import com.pharmaxcess_server.pharmaxcess_server.dto.UserRegisterRequest;
 import com.pharmaxcess_server.pharmaxcess_server.mapper.UserMapper;
 import com.pharmaxcess_server.pharmaxcess_server.model.User;
@@ -46,10 +47,10 @@ public class AuthController {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Successful login, JWT token returned."),
-        @ApiResponse(responseCode = "401", description = "Invalid username or password."),
+        @ApiResponse(responseCode = "401", description = "Invalid email or password."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public Map<String, String> login(@RequestBody User loginRequest) {
+    public Map<String, String> login(@RequestBody UserLoginRequest loginRequest) {
         try {
             Optional<User> user = userService.findByEmail(loginRequest.getEmail());
 

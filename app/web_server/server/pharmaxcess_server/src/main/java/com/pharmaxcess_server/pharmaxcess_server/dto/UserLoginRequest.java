@@ -4,7 +4,7 @@ public class UserLoginRequest {
     private String Email;
     private String Password;
 
-    public String getUsername() {
+    public String getEmail() {
         return this.Email;
     }
 

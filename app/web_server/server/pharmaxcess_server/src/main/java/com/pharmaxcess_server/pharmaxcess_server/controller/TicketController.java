@@ -1,8 +1,10 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,10 @@ import com.pharmaxcess_server.pharmaxcess_server.dto.TicketAcceptRequest;
 import com.pharmaxcess_server.pharmaxcess_server.model.Ticket;
 import com.pharmaxcess_server.pharmaxcess_server.service.TicketService;
 
+import com.pharmaxcess_server.pharmaxcess_server.service.UserService;
+import com.pharmaxcess_server.pharmaxcess_server.model.User;
+
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,10 +34,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 @Tag(name = "Ticket routes", description = "Operations related to tickets")
 public class TicketController {
     private final TicketService ticketService;
+    private final UserService userService;
 
     @Autowired
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, UserService userService) {
         this.ticketService = ticketService;
+        this.userService = userService;
     }
 
     @GetMapping("/ticket_page")
@@ -47,8 +55,15 @@ public class TicketController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public List<Ticket> getTicketByPage(@RequestBody TicketRequest body) {
-        return ticketService.getUserIdTicketPage(body.getUserID(), body.getX(), body.getY());
+    public List<Ticket> getTicketByPage(@RequestBody TicketRequest body, @AuthenticationPrincipal Principal principal) {
+        String userEmail = principal.getName();
+
+        Optional<User> user = userService.findByEmail(userEmail);
+
+        if (user.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        return ticketService.getUserIdTicketPage(user.get().getId(), body.getX(), body.getY());
     }
 
     @PostMapping("/create")
