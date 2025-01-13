@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify
 from db import get_connection  # Importer la fonction de connexion
 
@@ -36,7 +37,7 @@ def find_doctor_by_name():
         with connection.cursor() as cursor:
             # Construire la requête SQL avec des filtres optionnels
             sql_query = """
-            SELECT first_name, last_name, frpp_code, sector, region
+            SELECT first_name, last_name, rpps_code, sector, region
             FROM doctors
             WHERE first_name = %s
             AND last_name = %s
@@ -59,6 +60,8 @@ def find_doctor_by_name():
                 return jsonify({"error": "No doctors found matching the criteria"}), 404
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()

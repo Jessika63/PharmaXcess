@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: safety
+        name: safety
+        entry: safety check -r ./distributeur/backend/requirements.txt --policy-file ./distributeur/backend/scripts/safety/safety-policy.yaml
+        language: python
+        types: [python]
+        additional_dependencies: [safety]
+        pass_filenames: false
+
+      - id: check-leak
+        name: Check for Leaks
+        entry: python distributeur/backend/scripts/leak_checker/check_leak.py
+        language: python
+        types: [python]
+        pass_filenames: false
+        additional_dependencies:
+          - tqdm

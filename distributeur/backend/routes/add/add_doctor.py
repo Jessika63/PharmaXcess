@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify
 from db import get_connection  # Importer la fonction de connexion
 
@@ -11,7 +12,7 @@ def add_doctor():
     Request body (JSON):
         - first_name: the first name of the doctor.
         - last_name: the last name of the doctor.
-        - frpp: the French Regulation on Pharmaceutical Products code.
+        - rpps: the French Regulation on Pharmaceutical Products code.
         - sector: the sector of activity.
         - region: the region.
 
@@ -24,11 +25,11 @@ def add_doctor():
     data = request.get_json()
     first_name = data.get('first_name')
     last_name = data.get('last_name')
-    frpp = data.get('frpp')
+    rpps = data.get('rpps')
     sector = data.get('sector')
     region = data.get('region')
 
-    if not first_name or not last_name or not frpp or not sector or not region:
+    if not first_name or not last_name or not rpps or not sector or not region:
         return jsonify({"error": "All fields are required"}), 400
 
     connection = None  # Initialiser ici
@@ -37,14 +38,15 @@ def add_doctor():
         connection = get_connection()  # Établir la connexion ici
         with connection.cursor() as cursor:
             sql_query = """
-            INSERT INTO doctors (first_name, last_name, frpp_code, sector, region)
+            INSERT INTO doctors (first_name, last_name, rpps_code, sector, region)
             VALUES (%s, %s, %s, %s, %s)
             """
-            cursor.execute(sql_query, (first_name, last_name, frpp, sector, region))
+            cursor.execute(sql_query, (first_name, last_name, rpps, sector, region))
             connection.commit()
             return jsonify({"message": "Doctor added successfully"}), 201
 
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if connection:

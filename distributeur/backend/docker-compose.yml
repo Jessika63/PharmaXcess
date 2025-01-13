@@ -27,8 +27,8 @@ services:
   test:
     build:
       context: .
-      dockerfile: Docker/Dockerfile.test
-    command: ["pytest", "-vv"]
+      dockerfile: docker/Dockerfile.test
+    command: ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]
     volumes:
       - .:/app
     environment:

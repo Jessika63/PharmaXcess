@@ -4,7 +4,7 @@ import StartingPage from './components/pages/starting_page';
 function App() {
   return (
     <div className="App">
-      
+
       {/* logo container */}
       <div className="logo_container">
         {/* logo PharmaXcess */}

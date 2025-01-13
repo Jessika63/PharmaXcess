@@ -1,11 +1,10 @@
-
 name: CI/CD
 
 on:
   push:
     branches:
-        - dev
-        - main
+      - main
+      - dev
 
 jobs:
   vulnerability_check:
@@ -23,3 +22,21 @@ jobs:
 
     - name: Run Safety check
       run: ./distributeur/backend/scripts/safety/run_safety.sh
+
+  check_leaks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install tqdm
+
+    - name: Run Leak Checker
+      run: python distributeur/backend/scripts/leak_checker/check_leak.py
