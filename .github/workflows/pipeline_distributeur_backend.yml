@@ -17,6 +17,11 @@ jobs:
     - name: Change Permission
       run: chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
     - name: Install safety
       run: pip install safety==3.2.10
 
