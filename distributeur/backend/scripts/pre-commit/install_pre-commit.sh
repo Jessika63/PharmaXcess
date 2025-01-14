@@ -9,4 +9,4 @@ then
 fi
 
 # Install pre-commit hooks
-pre-commit install
+pre-commit install  
