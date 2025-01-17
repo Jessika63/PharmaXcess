@@ -5,7 +5,7 @@ from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 from helpers.verify.verify_database_is_up import verify_database_is_up
 
-def handle_test(backend_folder, db_container_name):
+def handle_test(backend_folder, db_container_name, test_container_name, back_container_name):
     """
     Handles testing operations by:
     1. Ensuring the database container is up and ready.

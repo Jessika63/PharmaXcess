@@ -5,7 +5,7 @@ from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 from helpers.start_containers import start_containers
 
-def handle_front(frontend_folder):
+def handle_front(frontend_folder, front_app_container_name):
     """
     Handles frontend-related operations by:
     1. Installing dependencies using npm.
