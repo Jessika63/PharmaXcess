@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
     parser.add_argument("--all", action="store_true", help="Run the whole application except for tests")
     parser.add_argument("--update", type=str, help="Function to update the database")
-    parser.add_argument("--down", action="store_true", help="Function to update the database")
+    parser.add_argument("--down", action="store_true", help="Function to stop the containers, remove the images, and remove the volumes")
 
     # Parse arguments
     args = parser.parse_args()
