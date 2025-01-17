@@ -41,8 +41,6 @@ with
 Flask>=2.3.0,<3.0
 ```
 
-ensuite
-
 Then, open the file located here (if it doesn’t exist, create it)
 /etc/docker/daemon.json
 
