@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { Link } from 'react-router-dom';
 import './css/non_prescription_drugs.css'
+import ModalStandard from '../modal_standard';
 
 const drugs_items = [
     { id: 1, label: 'Dafalgan' },
@@ -38,6 +39,20 @@ const drugs_items = [
 ];
 
 function NonPrescriptionDrugs() {
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedDrug, setSelectedDrug] = useState(null);
+  
+    const openModal = (drug) => {
+      setSelectedDrug(drug);
+      setIsModalOpen(true);
+    };
+  
+    const closeModal = () => {
+      setIsModalOpen(false);
+      setSelectedDrug(null);
+    };
+
   return (
     <div className="npd_App">
 
@@ -102,8 +117,10 @@ function NonPrescriptionDrugs() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            cursor: 'pointer'
                         }}
+                        onClick={() => openModal(item)}
                     >
                         <p style={{ fontSize: '2.5em', textAlign: 'center' }}>
                             {item.label}
@@ -111,6 +128,20 @@ function NonPrescriptionDrugs() {
                     </div>
                 ))}
             </div>
+
+            {/* Modal */}
+            {isModalOpen && selectedDrug && (
+            <ModalStandard onClose={closeModal}>
+                <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                fontSize: '2em',
+                color: '#333'
+                }}>
+                <h2>{selectedDrug.label}</h2>
+                </div>
+            </ModalStandard>
+            )}
 
         </div>
 
