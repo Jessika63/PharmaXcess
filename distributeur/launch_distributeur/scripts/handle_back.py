@@ -30,7 +30,6 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
 
     # Step 1: Start containers with docker-compose in detached mode
     start_containers()
-
     verify_backend_is_up(back_app_container_name, nb_of_retry=2)
 
     # Step 2: Wait for the database container to be ready
@@ -63,6 +62,6 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     except subprocess.CalledProcessError as e:
         error_message = e.stderr
         if "Operation CREATE USER failed" in error_message:
-            colored_print("WARNING: User already exists. Skipping user creation.", "yellow")
+            colored_print("User already exists. Skipping user creation.", "yellow")
         else:
             colored_print(f"Failed to import the database dump!\nDetails: {error_message}", "red")

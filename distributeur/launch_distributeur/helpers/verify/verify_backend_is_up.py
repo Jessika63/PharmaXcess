@@ -14,7 +14,7 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=1):
     """
     waiting_time = 10  # Time in seconds between retries
 
-    time.sleep(waiting_time / 2)  # Wait for a short time before starting the checks
+    time.sleep(waiting_time)  # Wait starting the checks
 
     colored_print(f"Waiting for backend container '{backend_container_name}' to be ready...", "blue")
 

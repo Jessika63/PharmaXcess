@@ -18,9 +18,13 @@ if __name__ == "__main__":
     parser.add_argument("--back", action="store_true", help="Run backend-related operations")
     parser.add_argument("--test", action="store_true", help="Run tests")
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
-    parser.add_argument("--all", action="store_true", help="Run the whole application except for tests")
+    parser.add_argument(
+        "--all", action="store_true", help="Run the whole application except for tests"
+    )
     parser.add_argument("--update", type=str, help="Function to update the database")
-    parser.add_argument("--down", action="store_true", help="Function to stop the containers, remove the images, and remove the volumes")
+    parser.add_argument("--down", action="store_true",
+        help="Function to stop the containers, remove the images, and remove the volumes"
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -40,17 +44,23 @@ if __name__ == "__main__":
     # Execute operations based on flags
     if any(vars(args).values()):
         if args.all:
-            handle_verif( env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"])
-            handle_back(backend_folder, config["db_dump_date"], db_container_name, back_app_container_name)
-            handle_front(frontend_folder)
+            handle_verif(
+                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+            )
+            handle_back(
+                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+            )
+            handle_front(frontend_folder, front_app_container_name)
         if args.verif:
             handle_verif(
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
         if args.back:
-            handle_back(backend_folder, config["db_dump_date"], db_container_name, back_app_container_name)
+            handle_back(
+                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+            )
         if args.test:
-            handle_test(backend_folder, db_container_name, back_test_container_name, back_app_container_name)
+            handle_test(backend_folder, db_container_name, back_app_container_name)
         if args.front:
             handle_front(frontend_folder, front_app_container_name)
         if args.update:
