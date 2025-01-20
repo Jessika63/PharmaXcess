@@ -1,8 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
 
 function DrugUnavailable() {
+
+  const navigate = useNavigate()
+  const location = useLocation()
+
   return (
     <div className="App">
 
@@ -35,13 +39,14 @@ function DrugUnavailable() {
 
         {/* Rectangle 'médicaments sans ordonnance' */}
 
-        <Link to="/drug-stores-available" style={{ textDecoration: 'none' }}>
-        <div className="rectangle" style={{top: '30%', left: '50%'}}>
+        {/* <Link to="/drug-stores-available" style={{ textDecoration: 'none' }}> */}
+        <div className="rectangle" style={{top: '30%', left: '50%'}}
+        onClick={() => navigate('/drug-stores-available', {state: {from: 'drug-unavailable'}})}>
           <p style={{ fontSize: '3em', textAlign: 'center' }}>
             Liste des pharmacies possédant le médicament
           </p>
         </div>
-        </Link>
+        {/* </Link> */}
 
       </div>
     </div>

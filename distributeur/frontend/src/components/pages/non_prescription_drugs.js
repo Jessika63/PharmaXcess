@@ -1,47 +1,49 @@
 import React, {useState} from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './css/non_prescription_drugs.css'
 import ModalStandard from '../modal_standard';
 
 const drugs_items = [
-    { id: 1, label: 'Dafalgan' },
-    { id: 2, label: 'Gaviscon' },
-    { id: 3, label: 'Nurofen' },
-    { id: 4, label: 'Physiomer' },
-    { id: 5, label: 'Zyrtec' },
-    { id: 6, label: 'Coryzalia' },
-    { id: 7, label: 'Ibuprofen' },
-    { id: 8, label: 'Doliprane' },
-    { id: 9, label: 'L52' },
-    { id: 10, label: 'Toplexil' },
-    { id: 11, label: 'Vitascorbol' },
-    { id: 12, label: 'Hexaspray' },
-    { id: 13, label: 'Voltaren' },
-    { id: 14, label: 'Smecta' },
-    { id: 15, label: 'Synthol' },
-    { id: 16, label: 'Strepsil' },
-    { id: 17, label: 'Dafalgan 2' },
-    { id: 18, label: 'Gaviscon 2' },
-    { id: 19, label: 'Nurofen 2' },
-    { id: 20, label: 'Physiomer 2' },
-    { id: 21, label: 'Zyrtec 2' },
-    { id: 22, label: 'Coryzalia 2' },
-    { id: 23, label: 'Ibuprofen 2' },
-    { id: 24, label: 'Doliprane 2' },
-    { id: 25, label: 'L52 2' },
-    { id: 26, label: 'Toplexil 2' },
-    { id: 27, label: 'Vitascorbol 2' },
-    { id: 28, label: 'Hexaspray 2' },
-    { id: 29, label: 'Voltaren 2' },
-    { id: 30, label: 'Smecta 2' },
-    { id: 31, label: 'Synthol 2' },
-    { id: 32, label: 'Strepsil 2' }
+    { id: 1, label: 'Dafalgan', size: 2, state: 0 },
+    { id: 2, label: 'Gaviscon', size: 0, state: 0 },
+    { id: 3, label: 'Nurofen', size: 1, state: 1 },
+    { id: 4, label: 'Physiomer', size: 2, state: 1 },
+    { id: 5, label: 'Zyrtec', size: 0, state: 0 },
+    { id: 6, label: 'Coryzalia', size: 0, state: 1 },
+    { id: 7, label: 'Ibuprofen', size: 1, state: 0 },
+    { id: 8, label: 'Doliprane', size: 0, state: 0 },
+    { id: 9, label: 'L52', size: 3, state: 1 },
+    { id: 10, label: 'Toplexil', size: 1, state: 1 },
+    { id: 11, label: 'Vitascorbol', size: 1, state: 1 },
+    { id: 12, label: 'Hexaspray', size: 1, state: 1 },
+    { id: 13, label: 'Voltaren', size: 1, state: 1 },
+    { id: 14, label: 'Smecta', size: 1, state: 1 },
+    { id: 15, label: 'Synthol', size: 1, state: 1 },
+    { id: 16, label: 'Strepsil', size: 1, state: 1 },
+    { id: 17, label: 'Dafalgan 2', size: 1, state: 1 },
+    { id: 18, label: 'Gaviscon 2', size: 1, state: 1 },
+    { id: 19, label: 'Nurofen 2', size: 1, state: 1 },
+    { id: 20, label: 'Physiomer 2', size: 1, state: 1 },
+    { id: 21, label: 'Zyrtec 2', size: 1, state: 1 },
+    { id: 22, label: 'Coryzalia 2', size: 1, state: 1 },
+    { id: 23, label: 'Ibuprofen 2', size: 1, state: 1 },
+    { id: 24, label: 'Doliprane 2', size: 1, state: 1 },
+    { id: 25, label: 'L52 2', size: 1, state: 1 },
+    { id: 26, label: 'Toplexil 2', size: 1, state: 1 },
+    { id: 27, label: 'Vitascorbol 2', size: 1, state: 1 },
+    { id: 28, label: 'Hexaspray 2', size: 1, state: 1 },
+    { id: 29, label: 'Voltaren 2', size: 1, state: 1 },
+    { id: 30, label: 'Smecta 2', size: 1, state: 1 },
+    { id: 31, label: 'Synthol 2', size: 1, state: 1 },
+    { id: 32, label: 'Strepsil 2', size: 1, state: 1 }
 ];
 
 function NonPrescriptionDrugs() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDrug, setSelectedDrug] = useState(null);
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const navigate = useNavigate();
   
     const openModal = (drug) => {
       setSelectedDrug(drug);
@@ -51,6 +53,22 @@ function NonPrescriptionDrugs() {
     const closeModal = () => {
       setIsModalOpen(false);
       setSelectedDrug(null);
+    };
+
+    const handlePayment = () => {
+        if (selectedDrug.state > 0) {
+            if (selectedDrug.size > 0) {
+                setIsModalOpen(false);
+                setPaymentModalOpen(true);
+                setTimeout(() => {
+                    setPaymentModalOpen(false);
+                }, 2000);
+            } else {
+                navigate('/drug-unavailable', {state: {from: 'non-prescription-drugs'}});
+            }
+        } else {
+            navigate('/payment-failed', {state: {from: 'non-prescription-drugs'}});
+        }
     };
 
   return (
@@ -138,9 +156,29 @@ function NonPrescriptionDrugs() {
                 fontSize: '2em',
                 color: '#333'
                 }}>
-                <h2>{selectedDrug.label}</h2>
+                <h2>{selectedDrug.label} (Reste: {selectedDrug.size})</h2>
+                </div>
+                <div
+                className='rectangle'
+                style={{ cursor: 'pointer', width: '20%', height: '10%', left: '10.5%', top: '30%' }}
+                onClick={handlePayment}>
+                    Payer
                 </div>
             </ModalStandard>
+            )}
+
+            {/* Modal de paiement réussi */}
+            {paymentModalOpen && (
+                <ModalStandard onClose={() => setPaymentModalOpen(false)}>
+                    <div style={{
+                        padding: '20px',
+                        textAlign: 'center',
+                        fontSize: '2em',
+                        color: '#333'
+                    }}>
+                        <h2>Paiement réussi !</h2>
+                    </div>
+                </ModalStandard>
             )}
 
         </div>
