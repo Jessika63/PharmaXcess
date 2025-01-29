@@ -21,7 +21,7 @@ The application will provide several features, including:
 
 ## Distributeur
 
-You can find all **Distributeur** information [here](distributeur/README.md)
+You can find all **Distributeur** information [here](distributeur/Readme.md)
 
 ## App
 
