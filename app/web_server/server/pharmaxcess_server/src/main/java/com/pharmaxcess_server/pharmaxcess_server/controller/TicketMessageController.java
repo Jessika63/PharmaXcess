@@ -20,17 +20,33 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+/**
+ * REST controller for handling operations related to ticket messages.
+ * Provides endpoints for retrieving and creating messages associated with tickets.
+ */
 @RestController
 @RequestMapping("/api/ticket/message")
 @Tag(name = "Ticket messages", description = "Operations related to messages in ticket")
 public class TicketMessageController {
+
     private final TicketMessageService ticketMessageService;
 
+    /**
+     * Constructs a TicketMessageController.
+     *
+     * @param ticketMessageService the service for handling ticket message operations
+     */
     @Autowired
     public TicketMessageController(TicketMessageService ticketMessageService) {
         this.ticketMessageService = ticketMessageService;
     }
 
+    /**
+     * Retrieves a paginated list of messages associated with a specific ticket.
+     *
+     * @param body the request body containing ticket ID and pagination coordinates
+     * @return a list of paginated messages for the specified ticket
+     */
     @GetMapping("/message_page")
     @Operation(
         summary = "Get Messages by Page",
@@ -48,6 +64,12 @@ public class TicketMessageController {
         return ticketMessageService.getMessageTicketPage(body.getTicketID(), body.getX(), body.getY());
     }
 
+    /**
+     * Creates a new message for a specified ticket.
+     *
+     * @param body the request body containing the ticket ID and message content
+     * @return the created ticket message
+     */
     @GetMapping("/create")
     @Operation(
         summary = "Create a Message",

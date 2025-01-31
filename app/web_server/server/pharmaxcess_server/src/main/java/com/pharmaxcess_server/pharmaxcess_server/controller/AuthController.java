@@ -21,25 +21,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * REST controller for handling user authentication operations.
+ * Provides endpoints for login, registration, and logout.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "User Authentication", description = "Operations related to user authentication")
 public class AuthController {
 
     private final JwtService jwtService;
-
-    @Autowired
     private final UserService userService;
-
-    @Autowired
     private final UserMapper userMapper;
 
+    /**
+     * Constructs an AuthController.
+     *
+     * @param jwtService the service for handling JWT token generation and invalidation
+     * @param userService the service for handling user operations
+     * @param userMapper the mapper for converting user-related DTOs
+     */
+    @Autowired
     public AuthController(JwtService jwtService, UserService userService, UserMapper userMapper) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.userMapper = userMapper;
     }
 
+    /**
+     * Authenticates a user with email and password, and returns a JWT token if credentials are valid.
+     *
+     * @param loginRequest the request body containing the user's email and password
+     * @return a map containing the JWT token if authentication is successful
+     */
     @PostMapping("/login")
     @Operation(
         summary = "User Login",
@@ -55,7 +69,7 @@ public class AuthController {
             Optional<User> user = userService.findByEmail(loginRequest.getEmail());
 
             if (!user.isPresent())
-            return null;
+                return null;
 
             String token = jwtService.generateToken(loginRequest.getEmail(), user.get().getRole());
 
@@ -68,6 +82,12 @@ public class AuthController {
         }
     }
 
+    /**
+     * Registers a new user. If the email or username already exists, an error is returned.
+     *
+     * @param user the request body containing user registration data
+     * @return a response indicating whether registration was successful or not
+     */
     @PostMapping("/register")
     @Operation(
         summary = "User Registration",
@@ -88,6 +108,12 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully!");
     }
 
+    /**
+     * Logs out the user by invalidating the provided JWT token.
+     *
+     * @param token the JWT token to invalidate
+     * @return a message indicating successful logout
+     */
     @PostMapping("/logout")
     @Operation(
         summary = "User Logout",

@@ -24,6 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST controller for handling operations related to vending machines.
+ * Provides endpoints for retrieving all machines, the nearest machines, and generating a machine itinerary.
+ */
 @RestController
 @RequestMapping("/api/machines")
 @Tag(name = "Machines routes", description = "Operations related to machines")
@@ -32,11 +36,21 @@ public class MachineController {
     private final MachineService machineService;
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
+    /**
+     * Constructs a MachineController.
+     *
+     * @param machineService the service for handling machine operations
+     */
     @Autowired
     public MachineController(MachineService machineService) {
         this.machineService = machineService;
     }
 
+    /**
+     * Retrieves a list of all vending machines.
+     *
+     * @return a list of all vending machines
+     */
     @GetMapping
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
@@ -53,6 +67,12 @@ public class MachineController {
         return machineService.getAllMachines();
     }
 
+    /**
+     * Retrieves the nearest vending machines based on the user's location.
+     *
+     * @param body the request body containing the user's latitude and longitude
+     * @return a list of the nearest vending machines
+     */
     @GetMapping("/nearest")
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
@@ -68,10 +88,15 @@ public class MachineController {
     })
     public List<Machine> getNearestMachines(@RequestBody LocationRequest body) {
         Point userLocation = geometryFactory.createPoint(new Coordinate(body.getLatitude(), body.getLongitude()));
-
         return machineService.getNearestMachines(userLocation);
     }
 
+    /**
+     * Generates a Google Maps link for driving directions from the user's location to a specified vending machine.
+     *
+     * @param body the request body containing the user's location and the vending machine's ID
+     * @return a URL for the driving directions to the specified vending machine
+     */
     @GetMapping("/itinary")
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(

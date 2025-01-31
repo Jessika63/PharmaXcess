@@ -29,19 +29,37 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 
+/**
+ * REST controller for handling operations related to tickets.
+ * Provides endpoints for retrieving, creating, and accepting tickets.
+ */
 @RestController
 @RequestMapping("/api/ticket")
 @Tag(name = "Ticket routes", description = "Operations related to tickets")
 public class TicketController {
+
     private final TicketService ticketService;
     private final UserService userService;
 
+    /**
+     * Constructs a TicketController.
+     *
+     * @param ticketService the service for handling ticket operations
+     * @param userService   the service for handling user operations
+     */
     @Autowired
     public TicketController(TicketService ticketService, UserService userService) {
         this.ticketService = ticketService;
         this.userService = userService;
     }
 
+    /**
+     * Retrieves a paginated list of tickets for a specific user.
+     *
+     * @param body       the request body containing pagination coordinates
+     * @param principal  the currently authenticated user
+     * @return a paginated list of tickets for the user
+     */
     @GetMapping("/ticket_page")
     @Operation(
         summary = "Get Tickets by Page",
@@ -66,6 +84,12 @@ public class TicketController {
         return ticketService.getUserIdTicketPage(user.get().getId(), body.getX(), body.getY());
     }
 
+    /**
+     * Creates a new ticket with the specified details.
+     *
+     * @param body the request body containing the ticket details
+     * @return the created ticket
+     */
     @PostMapping("/create")
     @Operation(
         summary = "Create a Ticket",
@@ -83,6 +107,12 @@ public class TicketController {
         return ticketService.createTicket(body);
     }
 
+    /**
+     * Allows a medic to accept a ticket based on the provided request data.
+     *
+     * @param body the request body containing the ticket and user ID
+     * @return the accepted ticket, if successful
+     */
     @PostMapping("/accept")
     @Operation(
         summary = "Accept a Ticket",
