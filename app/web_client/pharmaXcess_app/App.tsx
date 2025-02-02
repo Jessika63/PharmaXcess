@@ -1,7 +1,15 @@
-import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { registerRootComponent } from 'expo';
+import SplashScreenComponent from './src/components/SplashScreen';
 
-const App = () => {
+export default function App () {
+    const [appReady, setAppReady] = useState(false);
+
+    if (!appReady) {
+        return <SplashScreenComponent onReady={() => setAppReady(true)} />;
+    }
+
     return (
     <View style={styles.container}>
         <Text style={styles.text}>Bienvenue dans pharmaXcess_app !</Text>
@@ -23,4 +31,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default App;
+registerRootComponent(App);
