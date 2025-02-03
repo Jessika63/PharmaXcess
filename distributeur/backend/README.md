@@ -106,7 +106,7 @@ sudo docker-compose up --build
 ### export db dump if needed
 
 ```bash
-cat database_dump_px.sql | docker exec -i distributeur-backend-db-1 mysql -uroot -p[sql_password]
+docker exec -i distributeur-backend-db mysqldumpexemple -upx_user -ppx_pwd doctors_db > backupexemple.sql
 ```
 
 ### finished
