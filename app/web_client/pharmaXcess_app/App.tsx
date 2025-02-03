@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useState } from 'react';
 import { registerRootComponent } from 'expo';
-import SplashScreenComponent from './src/components/SplashScreen';
+import SplashScreenComponent from './src/screens/SplashScreen';
 import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App () {
