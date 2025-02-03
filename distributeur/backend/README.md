@@ -106,7 +106,7 @@ sudo docker-compose up --build
 Use this commands to create a dump (a save) of the database:
 
 ```bash
-docker exec -i distributeur-backend-db mysqldumpexemple -upx_user -ppx_pwd doctors_db > backupexemple.sql
+docker exec -i distributeur-backend-db mysqldump -upx_user -ppx_pwd doctors_db > backupexemple.sql
 ```
 
 Then the dump is configured
