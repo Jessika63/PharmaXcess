@@ -38,6 +38,8 @@ To ensure compatibility please install Docker 27.2.0. There is the download link
 
 ### Install Docker Compose
 
+To ensure compatibility please install Docker v2.29.2 There is the download link:
+
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 ## Verify the Installation
