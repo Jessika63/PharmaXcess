@@ -106,8 +106,15 @@ sudo docker-compose up --build
 Use this commands to create a dump (a save) of the database:
 
 ```bash
-(echo "CREATE DATABASE IF NOT EXISTS doctors_db; USE doctors_db;" && docker exec -i distributeur-backend-db mysqldump -uroot -ppx_root_pwd --databases doctors_db --add-drop-database && echo "CREATE USER 'px_user'@'%' IDENTIFIED BY 'px_pwd'; GRANT ALL PRIVILEGES ON doctors_db.* TO 'px_user'@'%'; FLUSH PRIVILEGES;") > backup.sql
+(echo "CREATE DATABASE IF NOT EXISTS [database_name]; USE [database_name];" && docker exec -i distributeur-backend-db mysqldump -uroot -p[sql_root_password] --databases [database_name] --add-drop-database && echo "CREATE USER [database_user]@'%' IDENTIFIED BY [database_password]; GRANT ALL PRIVILEGES ON [database_name].* TO [database_user]@'%'; FLUSH PRIVILEGES;") > backup.sql
 ```
+
+You need to replace:
+
+- `database_user` with your database user name
+- `database_password` with your database password
+- `database_name` with your database name
+- `sql_root_password` with your sql root password
 
 Then the dump is configured
 
