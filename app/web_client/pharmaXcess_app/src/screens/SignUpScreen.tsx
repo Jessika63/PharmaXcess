@@ -6,11 +6,13 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import AuthTextInput from '../components/AuthTextInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { AuthStackParamList } from '../navigation/AuthNavigator'
+import { useTheme } from '../styles/Theme';
 
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'SignUp'>;
 
 export default function SignUpScreen () {
     const navigation = useNavigation<NavigationProps>();
+    const { colors } = useTheme();
 
     const [email, setEmail] = useState('');
     const [emailError, setEmailError] = useState(false);
@@ -47,7 +49,7 @@ export default function SignUpScreen () {
     };
     return (
         <View style={style.container}>
-            <Text style={style.title}>Create an{'\n'}account</Text>
+            <Text style={[style.title, {color: colors.text}]}>Create an{'\n'}account</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -84,13 +86,13 @@ export default function SignUpScreen () {
                 />
             </View>
             <View style={style.logInButtonContainer}>
-                <Text style={style.logInButtonText}>
+                <Text style={[style.logInButtonText, { color: colors.text }]}>
                     I already have an account.
                 </Text>
                 <Button
                     mode="text"
                     onPress={() => navigation.navigate('Login')}
-                    labelStyle={{ fontSize: 16, color: '#6200EE' }}
+                    labelStyle={{ fontSize: 16, color: colors.primary }}
                 >
                     Login
                 </Button>

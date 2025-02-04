@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from 'react-native-paper';
 import { View, StyleSheet } from 'react-native';
+import { useTheme } from '../styles/Theme';
 
 interface CustomButtonProps {
     onPress: () => void;
@@ -15,12 +16,14 @@ interface CustomButtonProps {
 const PrimaryButton: React.FC<CustomButtonProps> = ({
     onPress,
     label,
-    color = '#6200EE',
+    color,
     icon,
     loading = false,
     disabled = false,
 }: CustomButtonProps) => {
     const [isPressed, setIsPressed] = useState(false);
+    const { colors } = useTheme();
+    const buttonColor = color || colors.primary;
     return (
         <View style={[{ opacity: isPressed ? 0.6 : 1 }]}>
             <Button
@@ -35,7 +38,7 @@ const PrimaryButton: React.FC<CustomButtonProps> = ({
                 theme={{
                     roundness: 1,
                     colors: { 
-                        primary: color,
+                        primary: buttonColor,
                     }
                 }}
                 contentStyle={styles.content}

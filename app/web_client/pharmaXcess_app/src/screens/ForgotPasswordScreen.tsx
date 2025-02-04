@@ -2,8 +2,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import AuthTextInput from '../components/AuthTextInput';
 import PrimaryButton from '../components/PrimaryButton';
+import { useTheme } from '../styles/Theme';
 
 export default function ForgotPasswordScreen () {
+    const { colors } = useTheme();
+
     const [email, setEmail] = useState('');
     const [emailError, setEmailError] = useState(false);
     const [emailErrorMessage, setEmailErrorMessage] = useState('' );
@@ -20,7 +23,7 @@ export default function ForgotPasswordScreen () {
 
     return (
         <View style={style.container}>
-            <Text style={style.title}>Forgot{'\n'}password?</Text>
+            <Text style={[style.title, {color: colors.text}]}>Forgot{'\n'}password?</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -30,7 +33,9 @@ export default function ForgotPasswordScreen () {
                 secureTextEntry={false}
                 icon='email'
             />
-            <Text>* Un email vous sera envoyé pour réinitialiser votre mot de passe.</Text>
+            <Text style={{ color: colors.text }}>
+                <Text style={{ color: colors.warning }}>*</Text> Un email vous sera envoyé pour réinitialiser votre mot de passe.
+            </Text>
             <View style={style.submitButtonContainer}>
                 <PrimaryButton
                     onPress={handleForgotPassword}

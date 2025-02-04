@@ -1,6 +1,7 @@
-import { TextInput, StyleSheet, View, TextInputProps, Text } from 'react-native';
+import { StyleSheet, View, TextInputProps, Text } from 'react-native';
 import { useState } from 'react';
 import { TextInput as PaperTextInput } from 'react-native-paper';
+import { useTheme } from '../styles/Theme';
 
 interface AuthTextInputProps extends TextInputProps {
     value: string;
@@ -22,6 +23,7 @@ const AuthTextInput = ({
     icon,
 }: AuthTextInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
+    const { colors } = useTheme();
     return (
         <View>
             <PaperTextInput
@@ -42,15 +44,15 @@ const AuthTextInput = ({
                 theme={{
                     roundness: 12,
                     colors: { 
-                        primary: 'blue',
-                        onSurfaceVariant: '#ccc',
-                        background: 'white',
-                    }
+                        primary: colors.primary,
+                        onSurfaceVariant: '#6d6f78',
+                        background: colors.inputBackground,
+                    },
                 }}
                 mode='outlined'
             />
             <View style={styles.errorTextContainer}>
-                {error && <Text style={styles.errorText}>{errorMessage}</Text>}
+                {error && <Text style={[styles.errorText, { color: colors.warning }]}>{errorMessage}</Text>}
             </View>
         </View>
     )
@@ -64,7 +66,6 @@ const styles = StyleSheet.create({
         marginRight: 10 ,
     },
     errorText: {
-        color: 'red',
         fontSize: 13,
     },
 });

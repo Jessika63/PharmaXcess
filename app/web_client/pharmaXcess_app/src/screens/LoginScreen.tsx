@@ -6,11 +6,13 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import AuthTextInput from '../components/AuthTextInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { AuthStackParamList } from '../navigation/AuthNavigator'
+import { useTheme } from '../styles/Theme';
 
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen () {
     const navigation = useNavigation<NavigationProps>();
+    const { colors } = useTheme();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -38,7 +40,7 @@ export default function LoginScreen () {
 
     return (
         <View style={style.container}>
-            <Text style={style.title}>Welcome{'\n'}Back!</Text>
+            <Text style={[style.title, {color: colors.text}]}>Welcome{'\n'}Back!</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -61,7 +63,7 @@ export default function LoginScreen () {
                 <Button
                     mode="text"
                     onPress={() => navigation.navigate('ForgotPassword')}
-                    labelStyle={{ fontSize: 14, color: '#6200EE' }}
+                    labelStyle={{ fontSize: 14, color: colors.primary }}
                     contentStyle={{ alignSelf: 'flex-end' }}
                 >
                     Forget password?
@@ -76,13 +78,13 @@ export default function LoginScreen () {
                 />
             </View>
             <View style={style.signUpButtonContainer}>
-                <Text style={style.signUpButtonText}>
+                <Text style={[style.signUpButtonText, { color: colors.text }]}>
                     Create an account
                 </Text>
                 <Button
                     mode="text"
                     onPress={() => navigation.navigate('SignUp')}
-                    labelStyle={{ fontSize: 16, color: '#6200EE' }}
+                    labelStyle={{ fontSize: 16, color: colors.primary }}
                 >
                     Sign up
                 </Button>
