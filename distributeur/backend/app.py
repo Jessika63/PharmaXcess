@@ -8,13 +8,14 @@ from routes.add.add_list_doctors import add_list_doctors_bp
 from routes.remove_doctor import remove_doctor_bp
 from routes.take_picture import take_picture_bp
 from routes.read_text import read_text_bp
+from routes.get_pharmacies import get_pharmacies_bp
 
-# Charger les variables d'environnement à partir du fichier .env
+# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-# Enregistrer les blueprints
+# Save blueprints
 app.register_blueprint(find_doctor_by_name_bp)
 app.register_blueprint(find_doctor_by_rpps_bp)
 app.register_blueprint(add_doctor_bp)
@@ -22,6 +23,7 @@ app.register_blueprint(add_list_doctors_bp)
 app.register_blueprint(remove_doctor_bp)
 app.register_blueprint(take_picture_bp)
 app.register_blueprint(read_text_bp)
+app.register_blueprint(get_pharmacies_bp)
 
 @app.route('/')
 def home():

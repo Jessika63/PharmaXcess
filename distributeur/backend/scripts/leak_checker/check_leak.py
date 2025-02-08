@@ -186,8 +186,7 @@ def scan_for_leaks(env_dict, files):
 
     for file_path in tqdm(files, desc="Scanning for leaks", unit="file"):
         try:
-            file_leaks = scan_file(file_path, env_dict)
-            if file_leaks:
+            if file_leaks := scan_file(file_path, env_dict):
                 leaks[file_path] = file_leaks
         except Exception as e:
             logging.error(f"Error reading file {file_path}: {e}")
@@ -216,11 +215,13 @@ def scan_file(file_path, env_dict):
                     if file_path.startswith(base_dir)
                 }
 
-                for base_dir, env_vars in applicable_envs.items():
-                    for key, value in env_vars.items():
-                        if re.search(rf'\b{re.escape(value)}\b', line):
-                            if not is_false_positive(line.strip(), file_path):
-                                leaks.append((line_number, key, line.strip()))
+                for env_vars in applicable_envs.values():
+                    leaks.extend(
+                        (line_number, key, line.strip())
+                        for key, value in env_vars.items()
+                        if re.search(rf'\b{re.escape(value)}\b', line)
+                        and not is_false_positive(line.strip(), file_path)
+                    )
     except Exception as e:
         logging.error(f"Error processing {file_path}: {e}")
 
@@ -263,13 +264,11 @@ def is_false_positive(line, file_path):
     if any(re.search(pattern, line) for pattern in GLOBAL_FALSE_POSITIVES):
         return True
 
-    if file_name in FILE_SPECIFIC_FALSE_POSITIVES:
-        if any(re.search(pattern, line) for pattern in FILE_SPECIFIC_FALSE_POSITIVES[file_name]):
-            return True
+    if file_name in FILE_SPECIFIC_FALSE_POSITIVES and any(re.search(pattern, line) for pattern in FILE_SPECIFIC_FALSE_POSITIVES[file_name]):
+        return True
 
-    if re.search(r'\bDB_HOST\b', line):
-        if "example" in file_path.lower() or "README" in file_path.lower():
-            return True
+    if re.search(r'\bDB_HOST\b', line) and ("example" in file_path.lower() or "README" in file_path.lower()):
+        return True
 
     return False
 
