@@ -6,6 +6,7 @@ import os
 import requests
 import sys
 import re
+import json
 
 def check_orientation_with_tesseract(image_path):
     """
@@ -325,17 +326,18 @@ def main(image_path):
     if text == "No text detected." or text == "No text could be extracted from the image.":
         print(text)
     else:
-        print(text)
+        # print(text)
 
         # Check information of the prescription
         if sys.argv[2] == 'P':
             # getInfosPrescription(text)
             ordonnance_maquette = {
-                "doctor": { "nom", "prenom", "RPPS", "sector", "domain", "contact" },
-                "patient": { "nom", "prenom", "age", "birth", "meeting" },
-                "content": { "- Paracétamol 500mg\n- Oxycodone à prendre 3 fois par jour, matin/midi/soir" }
+                "doctor": [ "nom", "prenom", "RPPS", "sector", "domain", "contact" ],
+                "patient": [ "nom", "prenom", "age", "birth", "meeting" ],
+                "content": [ "- Paracétamol 500mg\n- Oxycodone à prendre 3 fois par jour, matin/midi/soir" ]
             }
             print(ordonnance_maquette)
+            return json.dumps({"status": "Success", "data": ordonnance_maquette}, indent=4)
         elif sys.argv[2] == 'R':
             
             id_card_R_maquette = {
@@ -349,6 +351,7 @@ def main(image_path):
                 "numero du document": "F2MB9430D4"
             }
             print(id_card_R_maquette)
+            return json.dumps({"status": "Success", "data": id_card_R_maquette}, indent=4)
 
             # getInfosRectoID(text)
         elif sys.argv[2] == 'V':
@@ -360,6 +363,7 @@ def main(image_path):
                 "par": "SOUS PREFECTURE DE LA FONTAINE"
             }
             print(id_card_V_maquette)
+            return json.dumps({"status": "Success", "data": id_card_V_maquette}, indent=4)
 
             # getInfosVersoID(text)
         else:
@@ -375,4 +379,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     image_path = sys.argv[1]
-    main(image_path)
+    result = main(image_path)
+    print(result)
