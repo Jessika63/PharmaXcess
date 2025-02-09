@@ -6,9 +6,10 @@ from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 from helpers.start_containers import start_containers
 from helpers.verify.verify_database_is_up import verify_database_is_up
+from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
-def handle_back(backend_folder, db_dump_date, db_container_name):
+def handle_back(backend_folder, db_dump_date, db_container_name, back_app_container_name):
     """
     Handles the backend operations, including verification and container management:
     1. Verifies the environment file and database dump file.
@@ -29,6 +30,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
 
     # Step 1: Start containers with docker-compose in detached mode
     start_containers()
+    verify_backend_is_up(back_app_container_name, nb_of_retry=2)
 
     # Step 2: Wait for the database container to be ready
     verify_database_is_up(db_container_name, nb_of_retry=10)
@@ -60,6 +62,6 @@ def handle_back(backend_folder, db_dump_date, db_container_name):
     except subprocess.CalledProcessError as e:
         error_message = e.stderr
         if "Operation CREATE USER failed" in error_message:
-            colored_print("WARNING: User already exists. Skipping user creation.", "yellow")
+            colored_print("User already exists. Skipping user creation.", "yellow")
         else:
             colored_print(f"Failed to import the database dump!\nDetails: {error_message}", "red")

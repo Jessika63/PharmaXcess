@@ -14,6 +14,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+    container_name: "distributeur-backend-app"
 
   db:
     image: mysql:5.7
@@ -22,7 +23,7 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3307:3306"
-    container_name: "distributeur-backend-db-1"
+    container_name: "distributeur-backend-db"
 
   test:
     build:
@@ -39,3 +40,4 @@ services:
       - DB_NAME=${DB_NAME}
     profiles:
       - test
+    container_name: "distributeur-backend-test"

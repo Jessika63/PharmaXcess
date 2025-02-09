@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from dotenv import load_dotenv
 
 from routes.find.find_doctor_by_name import find_doctor_by_name_bp
@@ -22,6 +22,10 @@ app.register_blueprint(add_list_doctors_bp)
 app.register_blueprint(remove_doctor_bp)
 app.register_blueprint(take_picture_bp)
 app.register_blueprint(read_text_bp)
+
+@app.route('/')
+def home():
+    return jsonify({"message": "Backend is up and running!"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
