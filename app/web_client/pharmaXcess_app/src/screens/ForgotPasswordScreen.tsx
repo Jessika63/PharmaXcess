@@ -23,7 +23,7 @@ export default function ForgotPasswordScreen () {
 
     return (
         <View style={style.container}>
-            <Text style={[style.title, {color: colors.text}]}>Forgot{'\n'}password?</Text>
+            <Text style={[style.title, {color: colors.onBackground}]}>Forgot{'\n'}password?</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -33,8 +33,8 @@ export default function ForgotPasswordScreen () {
                 secureTextEntry={false}
                 icon='email'
             />
-            <Text style={{ color: colors.text }}>
-                <Text style={{ color: colors.warning }}>*</Text> Un email vous sera envoyé pour réinitialiser votre mot de passe.
+            <Text style={{ color: colors.onBackground }}>
+                <Text style={{ color: colors.error }}>*</Text> Un email vous sera envoyé pour réinitialiser votre mot de passe.
             </Text>
             <View style={style.submitButtonContainer}>
                 <PrimaryButton

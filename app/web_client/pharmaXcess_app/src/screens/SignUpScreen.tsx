@@ -49,7 +49,7 @@ export default function SignUpScreen () {
     };
     return (
         <View style={style.container}>
-            <Text style={[style.title, {color: colors.text}]}>Create an{'\n'}account</Text>
+            <Text style={[style.title, {color: colors.onBackground}]}>Create an{'\n'}account</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -86,7 +86,7 @@ export default function SignUpScreen () {
                 />
             </View>
             <View style={style.logInButtonContainer}>
-                <Text style={[style.logInButtonText, { color: colors.text }]}>
+                <Text style={[style.logInButtonText, { color: colors.onBackground }]}>
                     I already have an account.
                 </Text>
                 <Button

@@ -45,14 +45,14 @@ const AuthTextInput = ({
                     roundness: 12,
                     colors: { 
                         primary: colors.primary,
-                        onSurfaceVariant: '#6d6f78',
-                        background: colors.inputBackground,
+                        onSurfaceVariant: colors.onSurfaceVariant,
+                        background: colors.surfaceVariant,
                     },
                 }}
                 mode='outlined'
             />
             <View style={styles.errorTextContainer}>
-                {error && <Text style={[styles.errorText, { color: colors.warning }]}>{errorMessage}</Text>}
+                {error && <Text style={[styles.errorText, { color: colors.error }]}>{errorMessage}</Text>}
             </View>
         </View>
     )

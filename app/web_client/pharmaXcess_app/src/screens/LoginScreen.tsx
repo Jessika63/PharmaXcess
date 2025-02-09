@@ -40,7 +40,7 @@ export default function LoginScreen () {
 
     return (
         <View style={style.container}>
-            <Text style={[style.title, {color: colors.text}]}>Welcome{'\n'}Back!</Text>
+            <Text style={[style.title, {color: colors.onBackground}]}>Welcome{'\n'}Back!</Text>
             <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
@@ -78,7 +78,7 @@ export default function LoginScreen () {
                 />
             </View>
             <View style={style.signUpButtonContainer}>
-                <Text style={[style.signUpButtonText, { color: colors.text }]}>
+                <Text style={[style.signUpButtonText, { color: colors.onBackground }]}>
                     Create an account
                 </Text>
                 <Button
