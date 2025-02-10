@@ -1,7 +1,7 @@
 
 name: Automatic Mirror Sync
 
-on: 
+on:
   [push, delete]
 
 jobs:
