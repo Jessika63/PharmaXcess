@@ -1,0 +1,7 @@
+FROM postgis/postgis:13-3.1-alpine
+
+ENV POSTGRES_USER=admin
+ENV POSTGRES_PASSWORD=password
+ENV POSTGRES_DB=pharmaxcess_db
+
+COPY ./init.sql /docker-entrypoint-initdb.d/
