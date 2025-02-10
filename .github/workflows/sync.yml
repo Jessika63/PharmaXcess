@@ -21,6 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get current branch
+        id: branch
+        run: echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -33,15 +42,16 @@ jobs:
           git remote add mirror git@github.com:EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely.git
           git fetch mirror
 
-          # Créer une branche temporaire
+          # Créer une branche temporaire basée sur la branche actuelle
           git checkout -b temp-mirror
 
           # Supprimer sync.yml du commit (sans le supprimer du repo)
           git rm --cached .github/workflows/sync.yml || true
           git commit -m "Mirror update (excluding sync.yml)" || true
 
-          # Pousser les changements vers le dépôt miroir
-          git push --force mirror temp-mirror:main
+          # Pousser les changements vers la branche actuelle du miroir
+          git push --force mirror temp-mirror:${{ env.branch }}
 
-          # Nettoyage de la branche temporaire
+          # Nettoyage
+          git checkout ${{ env.branch }}
           git branch -D temp-mirror
