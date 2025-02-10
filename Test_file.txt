@@ -1,2 +1,0 @@
-
-The purpose of this file is only for testing the mirror repos
