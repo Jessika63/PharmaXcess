@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) NOT NULL UNIQUE,
     username VARCHAR(100) NOT NULL UNIQUE,
     role VARCHAR(50) DEFAULT 'ROLE_USER',
+    reset_token TEXT,
+    reset_token_expiracy TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

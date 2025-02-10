@@ -36,4 +36,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return an {@link Optional} containing the user if found, otherwise empty
      */
     Optional<User> findByUsername(String username);
+
+    /**
+     * Finds a user by their password reset token.
+     *
+     * @param resetToken the reset token of the user to search for
+     * @return an {@link Optional} containing the user if found, otherwise empty
+     */
+    Optional<User> findByResetToken(String resetToken);
 }

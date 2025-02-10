@@ -2,6 +2,7 @@ package com.pharmaxcess_server.pharmaxcess_server.controller;
 
 import com.pharmaxcess_server.pharmaxcess_server.dto.UserLoginRequest;
 import com.pharmaxcess_server.pharmaxcess_server.dto.UserRegisterRequest;
+import com.pharmaxcess_server.pharmaxcess_server.dto.PasswordResetRequest;
 import com.pharmaxcess_server.pharmaxcess_server.mapper.UserMapper;
 import com.pharmaxcess_server.pharmaxcess_server.model.User;
 
@@ -131,5 +132,38 @@ public class AuthController {
             return "Successfully logged out";
         }
         throw new RuntimeException("Invalid or missing token");
+    }
+
+    /**
+     * Handles the request for password reset by generating a reset token
+     * and sending an email to the user.
+     *
+     * @param request The {@link PasswordResetRequest} containing the user's email.
+     * @return A {@link ResponseEntity} with a success message indicating that an email has been sent.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody PasswordResetRequest request) {
+        userService.generatePasswordResetToken(request.getEmail());
+        return ResponseEntity.ok("An email as been sent.");
+    }
+
+    /**
+     * Handles the password reset request by validating the reset token
+     * and updating the user's password.
+     *
+     * @param token   The password reset token provided in the request.
+     * @param request A {@link Map} containing the new password with the key "newPassword".
+     * @return A {@link ResponseEntity} with a success message if the password was updated,
+     *         or a bad request response if the reset link is invalid.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestBody Map<String, String> request) {
+        String newPassword = request.get("newPassword");
+
+        if (userService.resetPassword(token, newPassword)) {
+            return ResponseEntity.ok("Password updated");
+        } else {
+            return ResponseEntity.badRequest().body("Invalid reset link");
+        }
     }
 }

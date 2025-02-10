@@ -43,6 +43,18 @@ public class User implements UserDetails {
     private Long id;
 
     /**
+     * The password reset token.
+     */
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    /**
+     * The password reset token expiracy date.
+     */
+    @Column(name = "reset_token_expiracy")
+    private LocalDateTime resetTokenExpiry;
+
+    /**
      * The surname of the user.
      */
     @Column(nullable = false)
@@ -278,5 +290,41 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    /**
+     * Sets the password reset token for the user.
+     *
+     * @param token The reset token to be assigned.
+     */
+    public void setResetToken(String token) {
+        this.resetToken = token;
+    }
+
+    /**
+     * Retrieves the password reset token of the user.
+     *
+     * @return The reset token.
+     */
+    public String getResetToken() {
+        return this.resetToken;
+    }
+
+    /**
+     * Retrieves the expiration time of the password reset token.
+     *
+     * @return The expiration timestamp of the reset token.
+     */
+    public LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
+    /**
+     * Sets the expiration time for the password reset token.
+     *
+     * @param resetTokenExpiry The expiration timestamp to be assigned.
+     */
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 }
