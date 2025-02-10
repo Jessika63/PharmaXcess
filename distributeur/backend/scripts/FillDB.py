@@ -5,24 +5,24 @@ import requests
 import unicodedata
 
 API_URL = "http://localhost:5000/add_list_doctors"
-BATCH_SIZE = 180  # Taille du lot
+BATCH_SIZE = 180  # Batch size
 
 def validate_row(row):
     """
-    Vérifie si une ligne du CSV contient toutes les informations requises.
+    Checks if a CSV row contains all required information.
     """
     required_fields = [
-        "Prénom d'exercice",
-        "Nom d'exercice",
-        "Identifiant PP",
-        "Libellé profession",
-        "Bureau cedex (coord. structure)"
+        "Practice First Name",
+        "Practice Last Name",
+        "PP Identifier",
+        "Profession Label",
+        "Cedex Office (structure coordinates)"
     ]
     return all(row.get(field, "").strip() for field in required_fields)
 
 def clean_text(value):
     """
-    Nettoie un texte en supprimant les caractères non valides ou spéciaux.
+    Cleans text by removing invalid or special characters.
     """
     if not value:
         return ""
@@ -32,7 +32,7 @@ def clean_text(value):
 
 def process_csv(csv_path):
     """
-    Lit un fichier CSV et prépare les données sous forme de lots.
+    Reads a CSV file and prepares data in batches.
     """
     doctors = []
     try:
@@ -41,11 +41,11 @@ def process_csv(csv_path):
             for row in csv_reader:
                 if validate_row(row):
                     doctors.append({
-                        "first_name": clean_text(row["Prénom d'exercice"]),
-                        "last_name": clean_text(row["Nom d'exercice"]),
-                        "rpps": clean_text(row["Identifiant PP"]),
-                        "sector": clean_text(row["Libellé profession"]),
-                        "region": clean_text(row["Bureau cedex (coord. structure)"]),
+                        "first_name": clean_text(row["Practice First Name"]),
+                        "last_name": clean_text(row["Practice Last Name"]),
+                        "rpps": clean_text(row["PP Identifier"]),
+                        "sector": clean_text(row["Profession Label"]),
+                        "region": clean_text(row["Cedex Office (structure coordinates)"]),
                     })
                     if len(doctors) == BATCH_SIZE:
                         yield doctors
@@ -53,45 +53,45 @@ def process_csv(csv_path):
         if doctors:
             yield doctors
     except FileNotFoundError:
-        print(f"Erreur : Fichier {csv_path} introuvable.")
+        print(f"Error: File {csv_path} not found.")
     except Exception as e:
-        print(f"Erreur inattendue lors du traitement du CSV : {e}")
+        print(f"Unexpected error while processing CSV: {e}")
 
 def process_json(json_path):
     """
-    Lit un fichier JSON et prépare les données sous forme de liste.
+    Reads a JSON file and prepares data as a list.
     """
     try:
         with open(json_path, mode='r', encoding='utf-8') as file:
             data = json.load(file)
         if not isinstance(data, dict) or "doctors" not in data:
-            print("Le fichier JSON doit contenir une clé 'doctors'.")
+            print("The JSON file must contain a 'doctors' key.")
             return []
         return data["doctors"]
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Erreur avec le fichier JSON : {e}")
+        print(f"Error with JSON file: {e}")
         return []
 
 def send_data_to_api(doctors):
     """
-    Envoie un lot de médecins à l'API.
+    Sends a batch of doctors to the API.
     """
     if not doctors:
-        print("Erreur : Aucun médecin à envoyer.")
+        print("Error: No doctors to send.")
         return
     payload = {"doctors": doctors}
     try:
         response = requests.post(API_URL, json=payload)
         if response.status_code == 201:
-            print("Succès : Les données ont été envoyées à l'API.")
+            print("Success: Data has been sent to the API.")
         else:
-            print(f"Erreur API : {response.status_code} - {response.text}")
+            print(f"API Error: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
-        print(f"Erreur de connexion à l'API : {e}")
+        print(f"Connection error to API: {e}")
 
 def main(file_path):
     """
-    Détecte le type de fichier et envoie les données correspondantes à l'API.
+    Detects the file type and sends the corresponding data to the API.
     """
     if file_path.endswith(".json"):
         doctors = process_json(file_path)
@@ -100,10 +100,10 @@ def main(file_path):
         for batch in process_csv(file_path):
             send_data_to_api(batch)
     else:
-        print("Format non supporté. Utilisez un fichier JSON ou CSV.")
+        print("Unsupported format. Use a JSON or CSV file.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage : python3 fillDBWithFile.py <file_path>")
+        print("Usage: python3 fillDBWithFile.py <file_path>")
     else:
         main(sys.argv[1])

@@ -219,54 +219,54 @@ def getInfosPrescription(text):
             date_str = ' '.join(date) if isinstance(date, tuple) else date
             print(f"- {date_str}")
 
+
 def getInfosVersoID(text):
+    # Address, valid card, issued on, by, authority signature
     
-    #adresse  carte valable  délivrée le  par  Signature de l'autorité
-    
-    # Get adresse
-    adress_pattern = r"Nom:\s*([A-Z]+)\s*\nPrénom\(s\):\s*([A-Z]+)" # Faut changer le regex pour prendre les adresses
-    adress_match = re.search(adress_pattern, text)
-    if adress_match:
-        adress = adress_match.groups()
-        print(f"Adresse: {adress}")
+    # Get address
+    address_pattern = r"Nom:\s*([A-Z]+)\s*\nPrénom\(s\):\s*([A-Z]+)"  # Need to change regex to capture addresses
+    address_match = re.search(address_pattern, text)
+    if address_match:
+        address = address_match.groups()
+        print(f"Address: {address}")
     else:
-        print("ERROR: Adresse.")
+        print("ERROR: Address.")
 
-    # Get Availability
-    card_availability_pattern = r"le:\s*(\d{2}\.\d{2}\.\d{4})"
-    card_availability_match = re.search(card_availability_pattern, text)
-    if card_availability_match:
-        card_availability = card_availability_match.group(1)
-        print(f"Date d'expiration: {card_availability}")
+    # Get Validity
+    card_validity_pattern = r"le:\s*(\d{2}\.\d{2}\.\d{4})"
+    card_validity_match = re.search(card_validity_pattern, text)
+    if card_validity_match:
+        card_validity = card_validity_match.group(1)
+        print(f"Expiration Date: {card_validity}")
     else:
-        print("ERROR: Date d'expiration incorrect.")
+        print("ERROR: Incorrect expiration date.")
 
-    # Get Délivré
-    card_delivery_pattern = r"délivrée le:\s*(\d{2}\.\d{2}\.\d{4})"
-    card_delivery_match = re.search(card_delivery_pattern, text)
-    if card_delivery_match:
-        card_delivery = card_delivery_match.group(1)
-        print(f"Date de livraison: {card_delivery}")
+    # Get Issued Date
+    card_issued_pattern = r"délivrée le:\s*(\d{2}\.\d{2}\.\d{4})"
+    card_issued_match = re.search(card_issued_pattern, text)
+    if card_issued_match:
+        card_issued = card_issued_match.group(1)
+        print(f"Issue Date: {card_issued}")
     else:
-        print("ERROR: Date de livraison incorrect.")
+        print("ERROR: Incorrect issue date.")
 
-    # Get prefecture
-    prefecture_pattern = r"Par etc etc" # Faut changer le regex pour prendre les prefectures
+    # Get Prefecture
+    prefecture_pattern = r"XXXXXXXXXXXXXXXXX"  # Need to change regex to capture prefectures
     prefecture_match = re.search(prefecture_pattern, text)
     if prefecture_match:
         prefecture = prefecture_match.groups()
-        print(f"prefecturee: {prefecture}")
+        print(f"Prefecture: {prefecture}")
     else:
-        print("ERROR: Préfecture incorrect.")
+        print("ERROR: Incorrect prefecture.")
         
-    # Get signature "pas fiable"
-    signature_pattern = r"Par etc etc" # Faut changer le regex pour prendre les signatures
+    # Get Signature (not reliable)
+    signature_pattern = r"XXXXXXXXXXXXXXXXX"  # Need to change regex to capture signatures
     signature_match = re.search(signature_pattern, text)
     if signature_match:
         signature = signature_match.groups()
-        print(f"signaturee: {signature}")
+        print(f"Signature: {signature}")
     else:
-        print("ERROR: signature incorrect.")
+        print("ERROR: Incorrect signature.")
 
 def getInfosRectoID(text):
     # Get Last and First Name
@@ -274,47 +274,46 @@ def getInfosRectoID(text):
     name_match = re.search(name_pattern, text)
     if name_match:
         last_name, first_name = name_match.groups()
-        print(f"Nom: {last_name}")
-        print(f"Prénom: {first_name}")
+        print(f"Last Name: {last_name}")
+        print(f"First Name: {first_name}")
     else:
-        print("ERROR: Nom ou prénom incorrect.")
+        print("ERROR: Incorrect name or first name.")
 
     # Get Date of Birth
     birth_date_pattern = r"le:\s*(\d{2}\.\d{2}\.\d{4})"
     birth_date_match = re.search(birth_date_pattern, text)
     if birth_date_match:
         birth_date = birth_date_match.group(1)
-        print(f"Date de naissance: {birth_date}")
+        print(f"Date of Birth: {birth_date}")
     else:
-        print("ERROR: Date de naissance incorrect.")
+        print("ERROR: Incorrect date of birth.")
 
     # Get Place of Birth
     birth_place_pattern = r"à:\s*([A-Z\s0-9]+)"
     birth_place_match = re.search(birth_place_pattern, text)
     if birth_place_match:
         birth_place = birth_place_match.group(1)
-        print(f"Lieu de naissance: {birth_place}")
+        print(f"Place of Birth: {birth_place}")
     else:
-        print("ERROR: Lieu de naissance incorrect.")
+        print("ERROR: Incorrect place of birth.")
 
     # Get Sex
     sex_pattern = r"Sexe:\s*([MF])"
     sex_match = re.search(sex_pattern, text)
     if sex_match:
-        sex = "Femme" if sex_match.group(1) == "F" else "Homme"
-        print(f"Sexe: {sex}")
+        sex = "Female" if sex_match.group(1) == "F" else "Male"
+        print(f"Sex: {sex}")
     else:
-        print("ERROR: Sexe incorrect.")
+        print("ERROR: Incorrect sex.")
 
     # Get Height (if available)
     height_pattern = r"Taille;\s*([0-9]+(?:\.[0-9]+)?)"
     height_match = re.search(height_pattern, text)
     if height_match:
         height = height_match.group(1)
-        print(f"Taille: {height} cm")
+        print(f"Height: {height} cm")
     else:
-        print("ERROR: Taille incorrect.")
-
+        print("ERROR: Incorrect height.")
 
 def main(image_path):
     if not os.path.isfile(image_path):
@@ -326,52 +325,41 @@ def main(image_path):
     if text == "No text detected." or text == "No text could be extracted from the image.":
         print(text)
     else:
-        # print(text)
-
-        # Check information of the prescription
         if sys.argv[2] == 'P':
-            # getInfosPrescription(text)
-            ordonnance_maquette = {
-                "doctor": [ "nom", "prenom", "RPPS", "sector", "domain", "contact" ],
-                "patient": [ "nom", "prenom", "age", "birth", "meeting" ],
-                "content": [ "- Paracétamol 500mg\n- Oxycodone à prendre 3 fois par jour, matin/midi/soir" ]
+            prescription_mockup = {
+                "doctor": ["last_name", "first_name", "RPPS", "sector", "domain", "contact"],
+                "patient": ["last_name", "first_name", "age", "birth", "meeting"],
+                "content": ["- Paracetamol 500mg\n- Oxycodone to be taken 3 times a day, morning/noon/evening"]
             }
-            print(ordonnance_maquette)
-            return json.dumps({"status": "Success", "data": ordonnance_maquette}, indent=4)
+            print(prescription_mockup)
+            return json.dumps({"status": "Success", "data": prescription_mockup}, indent=4)
         elif sys.argv[2] == 'R':
-            
-            id_card_R_maquette = {
-                "nom": "BRARD",
-                "prenom": "Jaouen Elian PAtrick",
-                "sexe": "M",
-                "nationalité": "FRA",
-                "naissance": "20 04 1986",
-                "lieu de naisance": "PARIS",
-                "nom d'usage": "BRARD",
-                "numero du document": "F2MB9430D4"
+            id_card_R_mockup = {
+                "last_name": "BRARD",
+                "first_name": "Jaouen Elian Patrick",
+                "sex": "M",
+                "nationality": "FRA",
+                "birth_date": "20 04 1986",
+                "place_of_birth": "PARIS",
+                "usage_name": "BRARD",
+                "document_number": "F2MB9430D4"
             }
-            print(id_card_R_maquette)
-            return json.dumps({"status": "Success", "data": id_card_R_maquette}, indent=4)
-
-            # getInfosRectoID(text)
+            print(id_card_R_mockup)
+            return json.dumps({"status": "Success", "data": id_card_R_mockup}, indent=4)
         elif sys.argv[2] == 'V':
-            
-            id_card_V_maquette = {
-                "adresse": "43 Rue de la fontaine, 35600 QUELQUE PART",
-                "validité": "19 07 2006",
-                "delivree": "10 04 2021",
-                "par": "SOUS PREFECTURE DE LA FONTAINE"
+            id_card_V_mockup = {
+                "address": "43 Rue de la fontaine, 35600 SOMEWHERE",
+                "validity": "19 07 2006",
+                "issued": "10 04 2021",
+                "by": "SUB-PREFECTURE OF LA FONTAINE"
             }
-            print(id_card_V_maquette)
-            return json.dumps({"status": "Success", "data": id_card_V_maquette}, indent=4)
-
-            # getInfosVersoID(text)
+            print(id_card_V_mockup)
+            return json.dumps({"status": "Success", "data": id_card_V_mockup}, indent=4)
         else:
             print("ERROR: python3 extractAll.py <image_path> <P|R|V>")
 
         with open('prescription_text.txt', 'w', encoding='utf-8') as file:
             file.write(text)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
