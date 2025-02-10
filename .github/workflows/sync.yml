@@ -37,6 +37,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
+      - name: Remove sync.yml from commit (ensure no untracked files)
+        run: |
+          git clean -fd
+          git rm --cached .github/workflows/sync.yml || true
+          git commit -m "Mirror update (excluding sync.yml)" || true
+
       - name: Push changes to mirror repository (excluding sync.yml)
         run: |
           git remote add mirror git@github.com:EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely.git
@@ -44,10 +50,6 @@ jobs:
 
           # Créer une branche temporaire basée sur la branche actuelle
           git checkout -b temp-mirror
-
-          # Supprimer sync.yml du commit (sans le supprimer du repo)
-          git rm --cached .github/workflows/sync.yml || true
-          git commit -m "Mirror update (excluding sync.yml)" || true
 
           # Pousser les changements vers la branche actuelle du miroir
           git push --force mirror temp-mirror:${{ env.branch }}
