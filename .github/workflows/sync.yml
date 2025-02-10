@@ -1,7 +1,7 @@
 
 name: Automatic Mirror Sync
 
-on:
+on: 
   [push, delete]
 
 jobs:
@@ -16,11 +16,32 @@ jobs:
             exit 0
           fi
 
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - uses: pixta-dev/repository-mirroring-action@v1
-        with:
-          target_repo_url: git@github.com:EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely.git
-          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GIT_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Push changes to mirror repository (excluding sync.yml)
+        run: |
+          git remote add mirror git@github.com:EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely.git
+          git fetch mirror
+
+          # Créer une branche temporaire
+          git checkout -b temp-mirror
+
+          # Supprimer sync.yml du commit (sans le supprimer du repo)
+          git rm --cached .github/workflows/sync.yml || true
+          git commit -m "Mirror update (excluding sync.yml)" || true
+
+          # Pousser les changements vers le dépôt miroir
+          git push --force mirror temp-mirror:main
+
+          # Nettoyage de la branche temporaire
+          git branch -D temp-mirror
