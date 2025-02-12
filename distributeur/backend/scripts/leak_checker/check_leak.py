@@ -25,7 +25,8 @@ FILE_SPECIFIC_FALSE_POSITIVES = {
         r'put db dump into docker',
         r'check the name of your db container',
         r'export db dump if needed',
-        r'^### Step 6\.1 : Start the app, start the db and put the dump in the db$',
+        r'#### Step 6.1 : Start the app, start the db and put the dump in the db',
+        r'### Export db dump if needed'
     ],
     'check_leak.py': [
         # Patterns that match code structures or comments in check_leak.py.
