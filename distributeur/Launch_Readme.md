@@ -9,6 +9,7 @@ With this **launching script** you can launch:
 - the **frontend** to access to the website.
 - the **backend test** to see if every backend root is work.
 - an **update** of the database to update the database.
+- export the database **dump**
 
 Or you can also **stop** every containers, remove them, remove all images and volumes.
 
@@ -141,6 +142,16 @@ python launch.py --update UPDATE_FUNCTION
 ```
 
 Replace UPDATE_FUNCTION by the update function you want
+
+### Export dump
+
+To export the database dump you need to use this command:
+
+```bash
+python launch.py --dump
+```
+
+Be sure to combine this flag with the backend flag
 
 ### Stop everything
 

@@ -2,42 +2,42 @@
 services:
   app:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.app
+      context: .  # Use the current directory for building the Docker image
+      dockerfile: docker/Dockerfile.app  # Specify the Dockerfile to use for the app
     ports:
-      - "5000:5000"  # Modifier si l'app écoute sur un autre port
+      - "5000:5000"  # Expose port 5000 from the container to port 5000 on the host (adjust if app listens on a different port)
     volumes:
-      - .:/app
+      - .:/app  # Mount the current directory to /app inside the container (for code updates)
     environment:
-      - FLASK_ENV=development  # Par exemple, pour un environnement de développement Flask
-      - DB_HOST=${DB_HOST}  # Correspond au nom du service MySQL
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    container_name: "distributeur-backend-app"
+      - FLASK_ENV=development  # Set the Flask environment to development (for Flask)
+      - DB_HOST=${DB_HOST}  # Set the database host (use the environment variable from .env)
+      - DB_USER=${DB_USER}  # Set the database user (use the environment variable from .env)
+      - DB_PASSWORD=${DB_PASSWORD}  # Set the database password (use the environment variable from .env)
+      - DB_NAME=${DB_NAME}  # Set the database name (use the environment variable from .env)
+    container_name: "distributeur-backend-app"  # Name of the container
 
   db:
-    image: mysql:5.7
+    image: mysql:5.7  # Use MySQL version 5.7 for the database service
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Set the MySQL root password (use the environment variable from .env)
+      MYSQL_DATABASE: ${DB_NAME}  # Set the MySQL database name (use the environment variable from .env)
     ports:
-      - "3307:3306"
-    container_name: "distributeur-backend-db"
+      - "3307:3306"  # Expose MySQL container port 3306 to host port 3307
+    container_name: "distributeur-backend-db"  # Name of the MySQL container
 
   test:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.test
-    command: ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]
+      context: .  # Use the current directory for building the Docker image
+      dockerfile: docker/Dockerfile.test  # Specify the Dockerfile to use for the test environment
+    command: ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]  # Run the test suite with pytest
     volumes:
-      - .:/app
+      - .:/app  # Mount the current directory to /app inside the container (for test execution)
     environment:
-      - FLASK_ENV=testing
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - FLASK_ENV=testing  # Set the Flask environment to testing
+      - DB_HOST=${DB_HOST}  # Set the database host (use the environment variable from .env)
+      - DB_USER=${DB_USER}  # Set the database user (use the environment variable from .env)
+      - DB_PASSWORD=${DB_PASSWORD}  # Set the database password (use the environment variable from .env)
+      - DB_NAME=${DB_NAME}  # Set the database name (use the environment variable from .env)
     profiles:
-      - test
-    container_name: "distributeur-backend-test"
+      - test  # Enable this service only in the 'test' profile
+    container_name: "distributeur-backend-test"  # Name of the test container
