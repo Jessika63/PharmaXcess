@@ -1,5 +1,6 @@
+
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Importer la fonction de connexion
+from db import get_connection  # Import the connection function
 
 remove_doctor_bp = Blueprint('remove_doctor', __name__)
 
@@ -22,20 +23,24 @@ def remove_doctor():
         - 500 Internal Server Error if database or other error.
     """
 
+    # Get query parameters
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
     rpps = request.args.get('rpps')
     sector = request.args.get('sector')
     region = request.args.get('region')
 
-    if not first_name or not last_name or not rpps or not sector or not region:
+    # Validate required fields
+    if not all([first_name, last_name, rpps, sector, region]):
         return jsonify({"error": "All parameters 'first_name', 'last_name', 'rpps', 'sector', and 'region' are required"}), 400
 
-    connection = None  # Initialiser ici
+    connection = None  # Initialize connection
 
     try:
-        connection = get_connection()  # Établir la connexion ici
+        # Establish database connection
+        connection = get_connection()
         with connection.cursor() as cursor:
+            # SQL query to remove the doctor
             sql_query = """
             DELETE FROM doctors
             WHERE first_name = %s
@@ -54,7 +59,8 @@ def remove_doctor():
 
     except Exception as e:
         print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+
     finally:
         if connection:
-            connection.close()
+            connection.close()  # Ensure connection is closed

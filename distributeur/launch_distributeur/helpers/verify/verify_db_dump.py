@@ -24,11 +24,10 @@ def verify_db_dump(dump_folder, expected_date):
     else:
         colored_print("Correct database dump file is present !", "green")
 
-    # Check if there are other dump files in the folder
-    other_dumps = [
-        f for f in os.listdir(dump_folder)
-        if re.match(r"database_dump_px_\d{2}_\d{2}_\d{4}\.sql", f) and f != expected_file_pattern
-    ]
-
-    if other_dumps:
+    if other_dumps := [
+        f
+        for f in os.listdir(dump_folder)
+        if re.match(r"database_dump_px_\d{2}_\d{2}_\d{4}\.sql", f)
+        and f != expected_file_pattern
+    ]:
         colored_print(f"Other dump files found: {', '.join(other_dumps)}", "yellow")

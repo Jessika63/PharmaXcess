@@ -14,9 +14,9 @@ def load_config_file():
 
     Returns:
         dict: A dictionary containing the parsed configuration data, including:
-              - "required_env_keys" (list): A list of environment keys required for the application.
-              - "db_dump_date" (str): The date of the database dump.
-              - "debug_logs" (str): A flag indicating whether debug logs are enabled ("Yes" or "No").
+            - "required_env_keys" (list): A list of environment keys required for the application.
+            - "db_dump_date" (str): The date of the database dump.
+            - "debug_logs" (str): A flag indicating whether debug logs are enabled ("Yes" or "No").
 
     Raises:
         SystemExit:
@@ -47,8 +47,9 @@ def load_config_file():
         )
 
     # Extract configuration data
-    config_data = {}
-    config_data["required_env_keys"] = verification_settings.get("required_env_keys", [])
+    config_data = {
+        "required_env_keys": verification_settings.get("required_env_keys", [])
+    }
     config_data["db_dump_date"] = verification_settings.get("db_dump_date", "")
 
     # Extract application settings
