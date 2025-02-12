@@ -27,14 +27,10 @@ def verify_env_file(env_path, required_keys):
             key, _, value = line.partition("=")
             env_data[key.strip()] = value.strip()
 
-    # Check for missing keys
-    missing_keys = [key for key in required_keys if key not in env_data]
-    if missing_keys:
+    if missing_keys := [key for key in required_keys if key not in env_data]:
         colored_print(f"Missing keys in .env file: {', '.join(missing_keys)}", "red")
 
-    # Warn about extra keys
-    extra_keys = [key for key in env_data if key not in required_keys]
-    if extra_keys:
+    if extra_keys := [key for key in env_data if key not in required_keys]:
         colored_print(f"Extra keys found in .env file: {', '.join(extra_keys)}", "yellow")
 
     colored_print(".env file verification passed !", "green")
