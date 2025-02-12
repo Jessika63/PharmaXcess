@@ -11,3 +11,6 @@ pytest-mock==3.10.0
 pytest-order==1.0.1
 pytest-cov==6.0.0
 tqdm==4.67.1
+pyzbar==0.1.8
+qrcode==7.4.2
+pillow==10.0.0
