@@ -2,7 +2,10 @@
 name: Automatic Mirror Sync
 
 on:
-  [push, delete]
+  push:
+  pull_request:
+  delete:
+  merge_group:
 
 jobs:
   mirror:
