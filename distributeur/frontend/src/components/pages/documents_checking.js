@@ -78,7 +78,8 @@ function DocumentsChecking() {
 
                     {/* Rectangle 'Carte Vitale' */}
                     <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '25%', top: '50%', left: '28%'}}>
+                        , width: '25%', top: '50%', left: '28%', cursor: 'pointer'}}
+                        onClick={handleOpenCamera}>
                         <p style={{ fontSize: '3em' }}>
                             Carte Vitale
                         </p>
@@ -86,7 +87,8 @@ function DocumentsChecking() {
 
                     {/* Rectangle 'Carte d'Identité' */}
                     <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '20%', top: '50%', left: '35%'}}>
+                        , width: '20%', top: '50%', left: '35%', cursor: 'pointer'}}
+                        onClick={handleOpenCamera}>
                         <p style={{ fontSize: '3em', textAlign: 'center'}}>
                             Carte <br/>
                             d'Identité

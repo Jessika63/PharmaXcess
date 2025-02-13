@@ -1,4 +1,5 @@
-# PharmaXcess
+
+# PharmaXcess App
 
 *(description coming soon)*
 
@@ -11,7 +12,7 @@
 
 ## Prerequisites
 
-To initialize the server, you need: 
+To initialize the server, you need:
 
 - **Docker**
 
@@ -30,17 +31,19 @@ To set up and run the database and server using Docker, you can use the followin
 ```sh
 docker-compose up
 ```
+
 This command will automatically:
 
--  Pull the latest MySQL image if it is not already available on your machine.
--  Build the images for Node.js (version 16), the server, and the database if they are not already built.
--  Run the respective containers for both the server and the database.
+- Pull the latest MySQL image if it is not already available on your machine.
+- Build the images for Node.js (version 16), the server, and the database if they are not already built.
+- Run the respective containers for both the server and the database.
 
 >Note: If you prefer to run individual containers separately, you can do so by specifying the container name in the command:
 
 ```sh
 docker-compose up <container_name>
 ```
+
 Make sure to replace `<container_name>` with the actual name of the container you want to run (db or server).
 
 ## Client Setup *(coming soon)*
