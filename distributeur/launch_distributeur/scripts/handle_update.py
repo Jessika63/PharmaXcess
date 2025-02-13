@@ -8,7 +8,7 @@ from helpers.change_directory import change_directory
 
 from . import temp_updates_functions as temp
 
-# Global dictionnary for updates
+# Global dictionary for updates
 UPDATE_FUNCTIONS = {
     "temp_change_frpp_by_rpps": temp.change_frpp_by_rpps,
 }

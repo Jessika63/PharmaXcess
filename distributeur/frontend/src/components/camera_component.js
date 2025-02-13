@@ -75,10 +75,16 @@ const CameraComponent = ({ onPhotoCapture }) => {
                          }} />
                     </div>
                     <div
-                        className='rectangle'
-                        style={{ cursor: 'pointer', width: '20%', height: '10%', left: '53.5%', top: '13%' }}
-                        onClick={handleRetakePhoto}>
-                            Prendre une autre photo
+                    className='rectangle'
+                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
+                    onClick={handleRetakePhoto}>
+                        Prendre une autre photo
+                    </div>
+                    <div
+                    className='rectangle'
+                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
+                    onClick={handleRetakePhoto}>
+                        Ok
                     </div>
                 </div>
             ) : (
@@ -92,9 +98,15 @@ const CameraComponent = ({ onPhotoCapture }) => {
                     </div>
                     <div
                     className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '53.5%', top: '13%' }}
+                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
                     onClick={capturePhoto}>
                         Prendre une photo
+                    </div>
+                    <div
+                    className='rectangle'
+                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
+                    onClick={capturePhoto}>
+                        Ok
                     </div>
                     <canvas ref={canvasRef} style={{ display: 'none' }} />
                 </div>

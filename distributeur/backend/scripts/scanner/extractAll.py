@@ -6,6 +6,7 @@ import os
 import requests
 import sys
 import re
+import json
 
 def check_orientation_with_tesseract(image_path):
     """
@@ -145,7 +146,9 @@ def read_image(image_path):
     return text
 
 
-def getInfos(text):
+
+
+def getInfosPrescription(text):
     # Get Med Name
     doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
     doctors = re.findall(doctor_pattern, text)
@@ -217,6 +220,100 @@ def getInfos(text):
             print(f"- {date_str}")
 
 
+def getInfosVersoID(text):
+    # Address, valid card, issued on, by, authority signature
+    
+    # Get address
+    address_pattern = r"Nom:\s*([A-Z]+)\s*\nPrénom\(s\):\s*([A-Z]+)"  # Need to change regex to capture addresses
+    address_match = re.search(address_pattern, text)
+    if address_match:
+        address = address_match.groups()
+        print(f"Address: {address}")
+    else:
+        print("ERROR: Address.")
+
+    # Get Validity
+    card_validity_pattern = r"le:\s*(\d{2}\.\d{2}\.\d{4})"
+    card_validity_match = re.search(card_validity_pattern, text)
+    if card_validity_match:
+        card_validity = card_validity_match.group(1)
+        print(f"Expiration Date: {card_validity}")
+    else:
+        print("ERROR: Incorrect expiration date.")
+
+    # Get Issued Date
+    card_issued_pattern = r"délivrée le:\s*(\d{2}\.\d{2}\.\d{4})"
+    card_issued_match = re.search(card_issued_pattern, text)
+    if card_issued_match:
+        card_issued = card_issued_match.group(1)
+        print(f"Issue Date: {card_issued}")
+    else:
+        print("ERROR: Incorrect issue date.")
+
+    # Get Prefecture
+    prefecture_pattern = r"XXXXXXXXXXXXXXXXX"  # Need to change regex to capture prefectures
+    prefecture_match = re.search(prefecture_pattern, text)
+    if prefecture_match:
+        prefecture = prefecture_match.groups()
+        print(f"Prefecture: {prefecture}")
+    else:
+        print("ERROR: Incorrect prefecture.")
+        
+    # Get Signature (not reliable)
+    signature_pattern = r"XXXXXXXXXXXXXXXXX"  # Need to change regex to capture signatures
+    signature_match = re.search(signature_pattern, text)
+    if signature_match:
+        signature = signature_match.groups()
+        print(f"Signature: {signature}")
+    else:
+        print("ERROR: Incorrect signature.")
+
+def getInfosRectoID(text):
+    # Get Last and First Name
+    name_pattern = r"Nom:\s*([A-Z]+)\s*\nPrénom\(s\):\s*([A-Z]+)"
+    name_match = re.search(name_pattern, text)
+    if name_match:
+        last_name, first_name = name_match.groups()
+        print(f"Last Name: {last_name}")
+        print(f"First Name: {first_name}")
+    else:
+        print("ERROR: Incorrect name or first name.")
+
+    # Get Date of Birth
+    birth_date_pattern = r"le:\s*(\d{2}\.\d{2}\.\d{4})"
+    birth_date_match = re.search(birth_date_pattern, text)
+    if birth_date_match:
+        birth_date = birth_date_match.group(1)
+        print(f"Date of Birth: {birth_date}")
+    else:
+        print("ERROR: Incorrect date of birth.")
+
+    # Get Place of Birth
+    birth_place_pattern = r"à:\s*([A-Z\s0-9]+)"
+    birth_place_match = re.search(birth_place_pattern, text)
+    if birth_place_match:
+        birth_place = birth_place_match.group(1)
+        print(f"Place of Birth: {birth_place}")
+    else:
+        print("ERROR: Incorrect place of birth.")
+
+    # Get Sex
+    sex_pattern = r"Sexe:\s*([MF])"
+    sex_match = re.search(sex_pattern, text)
+    if sex_match:
+        sex = "Female" if sex_match.group(1) == "F" else "Male"
+        print(f"Sex: {sex}")
+    else:
+        print("ERROR: Incorrect sex.")
+
+    # Get Height (if available)
+    height_pattern = r"Taille;\s*([0-9]+(?:\.[0-9]+)?)"
+    height_match = re.search(height_pattern, text)
+    if height_match:
+        height = height_match.group(1)
+        print(f"Height: {height} cm")
+    else:
+        print("ERROR: Incorrect height.")
 
 def main(image_path):
     if not os.path.isfile(image_path):
@@ -228,19 +325,47 @@ def main(image_path):
     if text == "No text detected." or text == "No text could be extracted from the image.":
         print(text)
     else:
-        # print(text)
-
-        # Check information of the prescription
-        getInfos(text)
+        if sys.argv[2] == 'P':
+            prescription_mockup = {
+                "doctor": ["last_name", "first_name", "RPPS", "sector", "domain", "contact"],
+                "patient": ["last_name", "first_name", "age", "birth", "meeting"],
+                "content": ["- Paracetamol 500mg\n- Oxycodone to be taken 3 times a day, morning/noon/evening"]
+            }
+            print(prescription_mockup)
+            return json.dumps({"status": "Success", "data": prescription_mockup}, indent=4)
+        elif sys.argv[2] == 'R':
+            id_card_R_mockup = {
+                "last_name": "BRARD",
+                "first_name": "Jaouen Elian Patrick",
+                "sex": "M",
+                "nationality": "FRA",
+                "birth_date": "20 04 1986",
+                "place_of_birth": "PARIS",
+                "usage_name": "BRARD",
+                "document_number": "F2MB9430D4"
+            }
+            print(id_card_R_mockup)
+            return json.dumps({"status": "Success", "data": id_card_R_mockup}, indent=4)
+        elif sys.argv[2] == 'V':
+            id_card_V_mockup = {
+                "address": "43 Rue de la fontaine, 35600 SOMEWHERE",
+                "validity": "19 07 2006",
+                "issued": "10 04 2021",
+                "by": "SUB-PREFECTURE OF LA FONTAINE"
+            }
+            print(id_card_V_mockup)
+            return json.dumps({"status": "Success", "data": id_card_V_mockup}, indent=4)
+        else:
+            print("ERROR: python3 extractAll.py <image_path> <P|R|V>")
 
         with open('prescription_text.txt', 'w', encoding='utf-8') as file:
             file.write(text)
 
-
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python read_image.py <image_path>")
+    if len(sys.argv) != 3:
+        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
         sys.exit(1)
 
     image_path = sys.argv[1]
-    main(image_path)
+    result = main(image_path)
+    print(result)

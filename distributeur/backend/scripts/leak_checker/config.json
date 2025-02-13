@@ -4,10 +4,11 @@
       "distributeur/backend/.env"
     ],
     "ignore_files": [
-      "distributeur/backend/database_dump_px_17_11_2024.sql",
+      "distributeur/backend/database_dump_px_10_02_2025.sql",
       "distributeur/backend/db/database.sql",
       "distributeur/frontend/package-lock.json",
       "distributeur/backend/.coverage",
+      "distributeur/backend/test/results.png",
       "app/pharmaXcess_app/package-lock.json",
       "app/pharmaXcess_app/yarn.lock",
       "app/web_server/package-lock.json"
@@ -15,6 +16,8 @@
     "ignore_dirs": [
         ".git",
         "distributeur/backend/__pycache__/",
-        "distributeur/backend/.pytest_cache/"
+        "distributeur/backend/.pytest_cache/",
+        "distributeur/frontend/node_modules",
+        "distributeur/frontend/src/assets/"
     ]
 }
