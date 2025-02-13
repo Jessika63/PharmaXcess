@@ -1,11 +1,34 @@
 
 #!/bin/bash
 
-# Détecter l'OS
+# Detect the OS
 OS=$(uname -s)
 echo "Detected OS: $OS"
 
-# Vérifier si le flag --accept-all-change est présent
+# Display help information if --help flag is provided
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --help                 Show this help message"
+    echo "  --accept-all-change    Automatically accept all changes without confirmation"
+    echo ""
+    echo "This script detects your operating system and installs or updates the following packages:"
+    echo "  - Python"
+    echo "  - pip"
+    echo "  - Docker"
+    echo "  - Docker Compose"
+    echo ""
+    echo "For each package, the script checks if the required version is installed. If not, it prompts you for confirmation before installation."
+}
+
+# Check for the --help flag
+if [[ "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# Check if the --accept-all-change flag is present
 ACCEPT_ALL=false
 for arg in "$@"; do
     if [ "$arg" == "--accept-all-change" ]; then
@@ -13,7 +36,7 @@ for arg in "$@"; do
     fi
 done
 
-# Fonction pour demander confirmation
+# Function to ask for confirmation
 ask_user() {
     local message="$1"
     if [ "$ACCEPT_ALL" = true ]; then
@@ -26,7 +49,7 @@ ask_user() {
     esac
 }
 
-# Fonction pour installer un paquet selon l'OS
+# Function to install a package based on the OS
 install_package() {
     local package="$1"
     if [[ "$OS" == "Linux" ]]; then
@@ -39,10 +62,13 @@ install_package() {
         brew install "$package"
     elif [[ "$OS" =~ MINGW.* || "$OS" =~ CYGWIN.* ]]; then
         winget install --silent "$package"
+    else
+        echo "Unsupported OS for package installation."
+        exit 1
     fi
 }
 
-# Fonction de vérification et installation
+# Function to check and install a package
 check_and_install() {
     local name="$1"
     local command="$2"
@@ -75,13 +101,13 @@ check_and_install() {
     fi
 }
 
-# Versions cibles
+# Target versions
 PYTHON_VERSION="3.12.9"
 PIP_VERSION="24.3.1"
 DOCKER_VERSION="27.2.0"
 DOCKER_COMPOSE_VERSION="v2.29.2"
 
-# Installation des programmes
+# Install programs
 check_and_install "Python" "python" "install_package python3" "$PYTHON_VERSION" "([0-9]+\.[0-9]+\.[0-9]+)"
 check_and_install "pip" "pip" "python -m ensurepip --default-pip" "$PIP_VERSION" "([0-9]+\.[0-9]+\.[0-9]+)"
 check_and_install "Docker" "docker" "install_package docker" "$DOCKER_VERSION" "([0-9]+\.[0-9]+\.[0-9]+)"
