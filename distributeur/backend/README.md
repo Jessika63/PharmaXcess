@@ -8,49 +8,9 @@ You need to install:
 - Docker: 27.2.0
 - Docker Compose: v2.29.2
 
-## Installation
+### Installation
 
-### Install Docker
-
-To ensure compatibility please install Docker 27.2.0. There is the download link:
-
-- [Docker](https://www.docker.com/products/docker-desktop)
-
-### Install Docker Compose
-
-To ensure compatibility please install Docker v2.29.2 There is the download link:
-
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-## Verify the Installation
-
-### Verify Docker installation
-
-After installing Docker verify the versions using the following commands:
-
-```bash
-docker --version
-```
-
-The output should be:
-
-```bash
-Docker version 27.2.0, build 3ab4256
-```
-
-### Verify Docker Compose installation
-
-After installing Docker Compose, verify the versions using the following commands:
-
-```bash
-docker-compose --version
-```
-
-The output should be:
-
-```bash
-Docker Compose version v2.29.2-desktop.2
-```
+You can install all prerequisites with [this script](./prerequisites/install_prerequisites.sh) or follow [this readme](./prerequisites/Prerequisites.md)
 
 ## Launching
 
