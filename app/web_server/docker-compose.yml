@@ -2,18 +2,17 @@ version: '3.8'
 
 services:
   db:
-    build:
-      context: ./database
-      dockerfile: dockerfile
+    image: postgis/postgis:13-3.1-alpine  # Utilisation de l'image officielle PostGIS
     container_name: pharmaxcess-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "5432:5432"
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql  # Si vous avez un fichier init.sql à exécuter
       - db_data:/var/lib/postgresql/data
     networks:
       - pharmaxcess-network
@@ -21,7 +20,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: dockerfile
+      dockerfile: dockerfile  # Dockerfile pour votre serveur Spring
     container_name: pharmaxcess-server
     ports:
       - "8080:8080"
