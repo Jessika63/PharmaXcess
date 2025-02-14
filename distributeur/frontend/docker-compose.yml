@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   react-app:
@@ -9,3 +8,4 @@ services:
       - .:/app
     environment:
       - CHOKIDAR_USEPOLLING=true
+    container_name: "distributeur-frontend-app"

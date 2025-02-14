@@ -1,0 +1,4 @@
+
+add/add_doctor | add/add_list_doctors
+find/find_doctor_by_name | find/find_doctor_by_rpps
+Remove

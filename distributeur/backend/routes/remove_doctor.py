@@ -1,5 +1,6 @@
+
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Importer la fonction de connexion
+from db import get_connection  # Import the connection function
 
 remove_doctor_bp = Blueprint('remove_doctor', __name__)
 
@@ -11,7 +12,7 @@ def remove_doctor():
     Query parameters:
         - first_name: the first name of the doctor to remove.
         - last_name: the last name of the doctor to remove.
-        - frpp: the French Regulation on Pharmaceutical Products code.
+        - rpps: the French Regulation on Pharmaceutical Products code.
         - sector: the sector of activity.
         - region: the region.
 
@@ -22,29 +23,33 @@ def remove_doctor():
         - 500 Internal Server Error if database or other error.
     """
 
+    # Get query parameters
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
-    frpp = request.args.get('frpp')
+    rpps = request.args.get('rpps')
     sector = request.args.get('sector')
     region = request.args.get('region')
 
-    if not first_name or not last_name or not frpp or not sector or not region:
-        return jsonify({"error": "All parameters 'first_name', 'last_name', 'frpp', 'sector', and 'region' are required"}), 400
+    # Validate required fields
+    if not all([first_name, last_name, rpps, sector, region]):
+        return jsonify({"error": "All parameters 'first_name', 'last_name', 'rpps', 'sector', and 'region' are required"}), 400
 
-    connection = None  # Initialiser ici
+    connection = None  # Initialize connection
 
     try:
-        connection = get_connection()  # Établir la connexion ici
+        # Establish database connection
+        connection = get_connection()
         with connection.cursor() as cursor:
+            # SQL query to remove the doctor
             sql_query = """
             DELETE FROM doctors
             WHERE first_name = %s
             AND last_name = %s
-            AND frpp_code = %s
+            AND rpps_code = %s
             AND sector = %s
             AND region = %s
             """
-            cursor.execute(sql_query, (first_name, last_name, frpp, sector, region))
+            cursor.execute(sql_query, (first_name, last_name, rpps, sector, region))
             connection.commit()
 
             if cursor.rowcount > 0:
@@ -53,6 +58,9 @@ def remove_doctor():
                 return jsonify({"error": "Doctor not found"}), 404
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error: {e}")
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+
     finally:
-        connection.close()  # Fermer la connexion
+        if connection:
+            connection.close()  # Ensure connection is closed

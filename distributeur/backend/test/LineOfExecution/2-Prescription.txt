@@ -1,0 +1,3 @@
+
+take_picture
+read_text
