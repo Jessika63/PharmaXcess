@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../styles/Theme';
 
 interface CustomButtonProps {
@@ -11,6 +11,7 @@ interface CustomButtonProps {
     icon?: string;
     loading?: boolean;
     disabled?: boolean;
+    fontSize?: number;
 }
 
 const PrimaryButton: React.FC<CustomButtonProps> = ({
@@ -20,6 +21,7 @@ const PrimaryButton: React.FC<CustomButtonProps> = ({
     icon,
     loading = false,
     disabled = false,
+    fontSize = 18
 }: CustomButtonProps) => {
     const [isPressed, setIsPressed] = useState(false);
     const { colors } = useTheme();
@@ -28,7 +30,7 @@ const PrimaryButton: React.FC<CustomButtonProps> = ({
         <View style={[{ opacity: isPressed ? 0.6 : 1 }]}>
             <Button
                 mode='contained'
-                labelStyle={styles.label}
+                labelStyle={[styles.label, { color: colors.onPrimary, fontSize: fontSize }]}
                 icon={icon}
                 loading={loading}
                 disabled={disabled}
@@ -41,9 +43,10 @@ const PrimaryButton: React.FC<CustomButtonProps> = ({
                         primary: buttonColor,
                     }
                 }}
-                contentStyle={styles.content}
             >
-                {label}
+                <Text style={{ lineHeight: fontSize * 1.5 }}>
+                    {label}
+                </Text>
             </Button>
         </View>
     );
@@ -51,11 +54,7 @@ const PrimaryButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
     label: {
-        fontSize: 20,
         fontWeight: 'bold',
-    },
-    content: {
-        height: 50,
     },
 });
 

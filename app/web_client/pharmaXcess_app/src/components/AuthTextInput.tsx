@@ -11,6 +11,7 @@ interface AuthTextInputProps extends TextInputProps {
     errorMessage?: string;
     secureTextEntry?: boolean;
     icon?: string;
+    fontSize?: number;
 }
 
 const AuthTextInput = ({
@@ -21,6 +22,7 @@ const AuthTextInput = ({
     errorMessage,
     secureTextEntry,
     icon,
+    fontSize = 14,
 }: AuthTextInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
     const { colors } = useTheme();
@@ -50,9 +52,10 @@ const AuthTextInput = ({
                     },
                 }}
                 mode='outlined'
+                style={{ fontSize: fontSize }}
             />
-            <View style={styles.errorTextContainer}>
-                {error && <Text style={[styles.errorText, { color: colors.error }]}>{errorMessage}</Text>}
+            <View style={[styles.errorTextContainer, {height: fontSize}]}>
+                {error && <Text style={{ fontSize: fontSize * 0.85, marginTop: fontSize * 0.05, color: colors.error, }}>{errorMessage}</Text>}
             </View>
         </View>
     )
@@ -60,13 +63,7 @@ const AuthTextInput = ({
 
 const styles = StyleSheet.create({
     errorTextContainer: {
-        marginTop: 3,
-        height: 20,
-        marginLeft: 10  ,
-        marginRight: 10 ,
-    },
-    errorText: {
-        fontSize: 13,
+        marginHorizontal: 10,
     },
 });
 

@@ -1,7 +1,7 @@
 import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from '../screens/LoginScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import SignUpScreen from '../screens/SignUpScreen';
+import LoginScreen from '../screens/LoginScreen/LoginScreen.native';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen/ForgotPasswordScreen.native';
+import SignUpScreen from '../screens/SignUpScreen/SignUpScreen.native';
 import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import { useTheme } from '../styles/Theme';
 
