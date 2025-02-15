@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors } from './Colors';
+import { Colors } from '@/src/styles/Colors';
 import { PaperProvider, MD3LightTheme, MD3DarkTheme, MD3Theme } from 'react-native-paper';
 
 type ThemeName = 'auto' | 'light' | 'dark' | 'colorBlindLight' | 'colorBlindDark';

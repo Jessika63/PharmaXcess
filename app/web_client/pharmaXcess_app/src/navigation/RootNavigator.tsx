@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import AppNavigator from './AppNavigator';
 import AuthNavigator from './AuthNavigator';
 
-// import { useTheme } from '../styles/Theme';
+// import { useTheme } from '@/src/context/ThemeContext';
 // import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function RootNavigator() {

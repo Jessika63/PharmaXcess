@@ -3,7 +3,7 @@ import LoginScreen from '../screens/LoginScreen/LoginScreen.native';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen/ForgotPasswordScreen.native';
 import SignUpScreen from '../screens/SignUpScreen/SignUpScreen.native';
 import OTPVerificationScreen from '../screens/OTPVerificationScreen';
-import { useTheme } from '../styles/Theme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 export type AuthStackParamList = {
     Login: undefined;

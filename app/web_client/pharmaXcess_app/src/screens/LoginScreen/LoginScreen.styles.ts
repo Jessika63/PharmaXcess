@@ -1,7 +1,7 @@
 import { StyleSheet, TextStyle } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { moderateScale } from 'react-native-size-matters';
-import { useTheme } from '@/src/styles/Theme';
+import { useTheme } from '@/src/context/ThemeContext';
 import useDeviceInfo from '../../hooks/useDeviceInfo';
 
 interface Styles {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { registerRootComponent } from 'expo';
 import SplashScreenComponent from './src/screens/SplashScreen';
 import RootNavigator from './src/navigation/RootNavigator';
-import { ThemeProvider } from './src/styles/Theme';
+import { ThemeProvider } from '@/src/context/ThemeContext';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/src/locales/i18n';
 import { LanguageProvider } from '@/src/context/LanguageContext';

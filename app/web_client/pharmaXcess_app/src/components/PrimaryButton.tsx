@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from 'react-native-paper';
 import { View, StyleSheet, Text } from 'react-native';
-import { useTheme } from '../styles/Theme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 interface CustomButtonProps {
     onPress: () => void;

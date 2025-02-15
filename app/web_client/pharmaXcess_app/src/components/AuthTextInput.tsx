@@ -1,7 +1,7 @@
 import { StyleSheet, View, TextInputProps, Text, PixelRatio } from 'react-native';
 import { useState } from 'react';
 import { TextInput as PaperTextInput } from 'react-native-paper';
-import { useTheme } from '../styles/Theme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 interface AuthTextInputProps extends TextInputProps {
     value: string;

@@ -6,7 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import AuthTextInput from '@/src/components/AuthTextInput';
 import PrimaryButton from '@/src/components/PrimaryButton';
 import { AuthStackParamList } from '@/src/navigation/AuthNavigator'
-import { useTheme } from '@/src/styles/Theme';
+import { useTheme } from '@/src/context/ThemeContext';
 import signUpStyles from './SignUpScreen.styles';
 import { useTranslation } from 'react-i18next';
 
