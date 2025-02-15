@@ -1,16 +1,16 @@
 
 import subprocess
 from datetime import datetime
-import os
-import json
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 from helpers.verify.verify_database_is_up import verify_database_is_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
+from helpers.config.update_json_config import update_json_config
 
 def handle_dump(backend_folder, db_container_name, back_container_name):
+    # sourcery skip: extract-method, use-fstring-for-concatenation
     """
     Handles the process of creating a database dump using Docker and updating
     a JSON configuration file with the dump date.
@@ -50,31 +50,18 @@ def handle_dump(backend_folder, db_container_name, back_container_name):
         subprocess.run(command, shell=True, check=True)
         colored_print("Database dump exported successfully!", "green")
 
-        # Locate the configuration file
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(script_dir, "../../launch_config.json")
+        # Update the launch_config.json file with the dump date
+        key_path = ["verification_settings", "db_dump_date"]
+        value = today  # Use the formatted current date as the value
+        update_json_config("../../../launch_config.json", key_path, value, mode="change")
 
-        # Check if the configuration file exists
-        if not os.path.exists(config_path):
-            file_name = os.path.basename(config_path)
-            colored_print(f"Configuration file '{file_name}' is missing!", "red")
-            return
+        # Update the leak checker config to replace the old dump file with the new one
+        key_path = ["ignore_files"]
+        value = [
+            "distributeur/backend/" + dump_file_name,  # Add the new dump file with the current date
+            # You can retain other existing files here or replace them as needed
+        ]
+        update_json_config("../../../backend/scripts/leak_checker/config.json", key_path, value, mode="update")
 
-        # Load and update the JSON configuration file
-        with open(config_path, "r") as file:
-            try:
-                config = json.load(file)
-                config["verification_settings"]["db_dump_date"] = today
-            except json.JSONDecodeError as e:
-                colored_print(f"Failed to parse configuration file: {e}", "red")
-                return
-
-        # Write the updated JSON configuration file with a blank line before and after
-        with open(config_path, "w") as file:
-            file.write("\n")  # Add a blank line before JSON data
-            json.dump(config, file, indent=4)
-            file.write("\n")  # Add a blank line after JSON data
-
-        colored_print("Config dump date updated successfully!", "green")
     except Exception as e:
         colored_print(f"Unexpected error while exporting dump: {e}", "red")
