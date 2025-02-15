@@ -1,0 +1,11 @@
+{
+    "title": "Bienvenue à nouveau !",
+    "emailInput": "Entrez votre email.",
+    "emailInputError": "Entrez un email valide.",
+    "passwordInput": "Entrez votre mot de passe.",
+    "passwordInputError": "Entrez un mot de passe valide.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loginButton": "Se connecter",
+    "signUpMessage": "Créer un compte",
+    "signUpButton": "S'inscrire"
+}

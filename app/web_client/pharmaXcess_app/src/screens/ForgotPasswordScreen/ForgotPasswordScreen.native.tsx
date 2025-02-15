@@ -3,9 +3,11 @@ import { useState } from 'react';
 import AuthTextInput from '@/src/components/AuthTextInput';
 import PrimaryButton from '@/src/components/PrimaryButton';
 import forgetPasswordStyles from './ForgotPasswordScreen.styles';
+import { useTranslation } from 'react-i18next';
 
 export default function ForgotPasswordScreen () {
     const style = forgetPasswordStyles();
+    const { t } = useTranslation('forgotPasswordScreen');
 
     const [email, setEmail] = useState('');
     const [emailError, setEmailError] = useState(false);
@@ -14,7 +16,7 @@ export default function ForgotPasswordScreen () {
     const handleForgotPassword = () => {
         if (!email.includes('@')) {
             setEmailError(true);
-            setEmailErrorMessage('Veuillez entrer un email valide.');
+            setEmailErrorMessage(t('emailInputError'));
         } else {
             setEmailError(false);
             setEmailErrorMessage('');
@@ -28,14 +30,14 @@ export default function ForgotPasswordScreen () {
             keyboardShouldPersistTaps='handled'
         >
             <View style={style.titleContainer}>
-                <Text style={style.title}>Mot de passe{"\n"}oublié ?</Text>
+                <Text style={style.title}>{t('title')}</Text>
             </View>
             <View style={style.formContainer}>
                 <View style={style.inputContainer}>
                     <AuthTextInput
                         value={email}
                         onChangeText={setEmail}
-                        placeholder='Entrez votre email'
+                        placeholder={t('emailInput')}
                         error={emailError}
                         errorMessage={emailErrorMessage}
                         secureTextEntry={false}
@@ -43,12 +45,12 @@ export default function ForgotPasswordScreen () {
                         />
                 </View>
                 <Text style={style.infoMessage}>
-                    <Text style={style.infoMessageError}>*</Text> Un email vous sera envoyé pour réinitialiser votre mot de passe.
+                    <Text style={style.infoMessageError}>* </Text>{t('infoMessage')}
                 </Text>
                 <View style={style.submitButtonContainer}>
                     <PrimaryButton
                         onPress={handleForgotPassword}
-                        label='Soumettre'
+                        label={t('sendEmailButton')}
                         loading={false}
                         disabled={false}
                         fontSize={style.submitButton.fontSize}

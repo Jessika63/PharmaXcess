@@ -7,12 +7,14 @@ import AuthTextInput from '../../components/AuthTextInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AuthStackParamList } from '../../navigation/AuthNavigator'
 import loginStyles from './LoginScreen.styles';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen () {
     const navigation = useNavigation<NavigationProps>();
     const style = loginStyles();
+    const { t } = useTranslation('loginScreen');
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -24,14 +26,14 @@ export default function LoginScreen () {
     const handleLogin = () => {
         if (!email.includes('@')) {
             setEmailError(true);
-            setEmailErrorMessage('Veuillez entrer un email valide.');
+            setEmailErrorMessage(t('emailInputError'));
         } else {
             setEmailError(false);
             setEmailErrorMessage('');
         }
         if (password.length < 6) {
             setPasswordError(true);
-            setPasswordErrorMessage('Le mot de passe doit contenir au moins 6 caractères.');
+            setPasswordErrorMessage(t('passwordInputError'));
         } else {
             setPasswordError(false);
             setPasswordErrorMessage('');
@@ -46,14 +48,14 @@ export default function LoginScreen () {
             keyboardShouldPersistTaps='handled'
         >
             <View style={style.titleContainer}>
-                <Text style={style.title}>Bienvenue{'\n'}à nouveau !</Text>
+                <Text style={style.title}>{t('title')}</Text>
             </View>
             <View style={style.formContainer}>
                 <View style={style.emailInputContainer}>
                     <AuthTextInput
                         value={email}
                         onChangeText={setEmail}
-                        placeholder='Entrez votre email'
+                        placeholder={t('emailInput')}
                         error={emailError}
                         errorMessage={emailErrorMessage}
                         secureTextEntry={false}
@@ -64,7 +66,7 @@ export default function LoginScreen () {
                 <AuthTextInput
                     value={password}
                     onChangeText={setPassword}
-                    placeholder='Entrez votre mot de passe'
+                    placeholder={t('passwordInput')}
                     error={passwordError}
                     errorMessage={passwordErrorMessage}
                     secureTextEntry={true}
@@ -79,14 +81,14 @@ export default function LoginScreen () {
                         contentStyle={{ alignSelf: 'flex-end' }}
                     >
                         <Text style={style.ButtonTextContainer}>
-                            Mot de passe oublié ?
+                            {t('forgotPassword')}
                         </Text>
                     </Button>
                 </View>
                 <View style={style.logInButtonContainer}>
                     <PrimaryButton
                         onPress={handleLogin}
-                        label='Se connecter'
+                        label={t('loginButton')}
                         loading={false}
                         disabled={false}
                         fontSize={style.logInButton.fontSize}
@@ -94,7 +96,7 @@ export default function LoginScreen () {
                 </View>
                 <View style={style.signUpButtonContainer}>
                     <Text style={style.signUpButtonText}>
-                        Créer un compte
+                        {t('signUpMessage')}
                     </Text>
                     <Button
                         mode="text"
@@ -102,7 +104,7 @@ export default function LoginScreen () {
                         labelStyle={style.signinButton}
                     >
                         <Text style={style.ButtonTextContainer}>
-                            S'inscrire
+                            {t('signUpButton')}
                         </Text>
                     </Button>
                 </View>

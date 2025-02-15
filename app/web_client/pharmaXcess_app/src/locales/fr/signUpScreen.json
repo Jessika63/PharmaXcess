@@ -1,0 +1,12 @@
+{
+    "title": "Créer un compte",
+    "emailInput": "Entrez votre email.",
+    "emailInputError": "Entrez un email valide.",
+    "passwordInput": "Entrez votre mot de passe.",
+    "passwordInputError": "Entrez un mot de passe valide.",
+    "passwordConfirmationInput": "Confirmez votre mot de passe.",
+    "passwordConfirmationInputError": "Les mots de passe ne correspondent pas.",
+    "signUpButton": "S'inscrire",
+    "loginMessage": "J'ai déjà un compte",
+    "loginButton": "Se connecter"
+}

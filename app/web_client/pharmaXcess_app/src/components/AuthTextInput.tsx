@@ -1,4 +1,4 @@
-import { StyleSheet, View, TextInputProps, Text } from 'react-native';
+import { StyleSheet, View, TextInputProps, Text, PixelRatio } from 'react-native';
 import { useState } from 'react';
 import { TextInput as PaperTextInput } from 'react-native-paper';
 import { useTheme } from '../styles/Theme';
@@ -26,6 +26,7 @@ const AuthTextInput = ({
 }: AuthTextInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
     const { colors } = useTheme();
+    const fontScale = PixelRatio.getFontScale();
     return (
         <View>
             <PaperTextInput
@@ -54,8 +55,8 @@ const AuthTextInput = ({
                 mode='outlined'
                 style={{ fontSize: fontSize }}
             />
-            <View style={[styles.errorTextContainer, {height: fontSize}]}>
-                {error && <Text style={{ fontSize: fontSize * 0.85, marginTop: fontSize * 0.05, color: colors.error, }}>{errorMessage}</Text>}
+            <View style={[styles.errorTextContainer, {height: fontSize * 1.1 * fontScale}]}>
+                {error && <Text style={{ fontSize: fontSize * 0.85, marginTop: fontSize * 0.05 * fontScale, color: colors.error, }}>{errorMessage}</Text>}
             </View>
         </View>
     )

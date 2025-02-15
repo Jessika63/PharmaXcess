@@ -1,0 +1,11 @@
+{
+    "title": "Welcome back!",
+    "emailInput": "Enter your email.",
+    "emailInputError": "Enter a valid email.",
+    "passwordInput": "Enter your password.",
+    "passwordInputError": "Enter a valid password.",
+    "forgotPassword": "Forgot your password?",
+    "loginButton": "Log In",
+    "signUpMessage": "Create an account",
+    "signUpButton": "Sign Up"
+}

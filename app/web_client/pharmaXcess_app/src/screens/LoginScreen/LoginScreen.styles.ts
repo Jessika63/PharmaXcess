@@ -44,7 +44,7 @@ const loginStyles = () => {
             alignSelf: 'center',
         },
         emailInputContainer: {
-            marginBottom: hp('2%'),
+            marginBottom: hp('1%'),
         },
         input: {
             fontSize: moderateScale(14),
@@ -68,12 +68,13 @@ const loginStyles = () => {
             alignItems: 'center',
         },
         signUpButtonText: {
-            fontSize: moderateScale(12),
+            fontSize: moderateScale(13),
             color: colors.onBackground,
         },
         signinButton: {
-            fontSize: moderateScale(14),
-            color: colors.primary
+            fontSize: moderateScale(13),
+            color: colors.primary,
+            textDecorationLine: 'underline',
         },
         ButtonTextContainer: {
             lineHeight: moderateScale(22),

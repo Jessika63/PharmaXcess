@@ -26,6 +26,7 @@ const signUpStyles = () => {
 
     const phoneSpecificStyles:Styles = {
         container: {
+            flexGrow: 1,
             marginHorizontal: wp('7%'),
             marginTop: hp('8%'),
         },
@@ -60,12 +61,13 @@ const signUpStyles = () => {
             alignItems: 'center',
         },
         logInText: {
-            fontSize: moderateScale(12),
+            fontSize: moderateScale(13),
             color: colors.onBackground,
         },
         loginButton: {
-            fontSize: moderateScale(14),
-            color: colors.primary
+            fontSize: moderateScale(13),
+            color: colors.primary,
+            textDecorationLine: 'underline'
         },
         logInButtonText: {
             lineHeight: moderateScale(22),
@@ -73,7 +75,7 @@ const signUpStyles = () => {
     }
     const tabletSpecificStyles:Styles = {
         container: {
-            flex: 1,
+            flexGrow: 1,
             marginHorizontal: wp('7%'),
             marginTop: hp('8%'),
         },
