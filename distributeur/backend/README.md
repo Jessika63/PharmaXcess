@@ -1,99 +1,55 @@
 
-# To start the backend
+# Backend
 
-## Docker set up
+## Prerequisites
 
-### [STEP 1] start docker
+You need to install:
+
+- Docker: 27.2.0
+- Docker Compose: v2.29.2
+
+### Installation
+
+You can install all prerequisites with [this script](./prerequisites/install_prerequisites.sh) or follow [this readme](./prerequisites/Prerequisites.md)
+
+## Launching
+
+### Docker set up
+
+#### [STEP 1] start docker
+
+To run the back-end you need to use this command:
 
 ```bash
 docker-compose up --build
 ```
 
-### [PATCH] if you encounter this error
+#### [STEP 2] put db dump into docker (credentials inside docker-compose.yml)
+
+Inside another terminal while `docker-compose up` is still running:
+
+Paste the command below:
 
 ```bash
-the requirement Flask==2.3.2 (from versions: none)
-155.4 ERROR: No matching distribution found for Flask==2.3.2
-------
-Dockerfile.app:10
---------------------
-   8 |     RUN pip install --upgrade pip
-   9 |     
-  10 | >>> RUN pip install --no-cache-dir -r requirements.txt
-  11 |     
-  12 |     RUN apt-get update && apt-get install -y netcat-openbsd
---------------------
-ERROR: failed to solve: process "/bin/sh -c pip install --no-cache-dir -r requirements.txt" did not complete successfully: exit code: 1
-ERROR: Service 'app' failed to build : Build failed
+docker exec -i distributeur-backend-db mysql -uroot -p[sql_password] [database_name] < database_dump_px.sql
 ```
 
-here is how to solve it:
+-p = password
 
-First, replace in **requirements.txt**
+Past the sql_password next the the prefix and change the database name
 
-```txt
-Flask>=2.3.3,<3.0
-```
+example:
 
-with
-
-```txt
-Flask>=2.3.0,<3.0
-```
-
-ensuite
-
-Then, open the file located here (if it doesn’t exist, create it)
-/etc/docker/daemon.json
-
-Then replace/add Google's DNS
-
-```json
-{
-  "dns": ["8.8.8.8", "8.8.4.4"]
-}
-```
-
-After modifying the file, restart Docker
+sql_password = claude123
+database_name = my_database_name
 
 ```bash
-sudo systemctl restart docker
+docker exec -i distributeur-backend-db-1 mysql -uroot -pclaude123 my_database_name < database_dump_px.sql
 ```
 
-### [STEP 2] put db dump into docker (creds inside docker-compose.yml)
+Here **database_dump_px.sql** is the dump file of the database.
 
-inside another terminal while docker-compose up is still running:
-
-check the name of your db container
-
-```bash
-docker ps -a
-```
-
-you should see a container named 'distributeur-backend-db-1'
-once you find it, paste the command below with your container name
-
-```bash
-docker exec -i distributeur-backend-db-1 mysql -uroot -p[sql_password] [database_name] < database_dump_px.sql
-```
-
-u = user ; p = password
-coller le user au prefix pareil pour le pwd
-
-exemple:
-
-user = claude
-password = claude123
-
-```bash
-docker exec -i distributeur-backend-db-1 mysql -uclaude -pclaude123 my_database_name < database_dump_px.sql
-```
-
-Here, **my_db_name** is the name of the database,
-
-and **database_dump_px.sql** is the dump file of the database.
-
-### if you encounter any problems with container or volume
+##### If you encounter any problems with container or volume
 
 remove and restart everything:
 
@@ -105,32 +61,33 @@ sudo systemctl restart docker
 sudo docker-compose up --build
 ```
 
-### export db dump if needed
+### Export db dump if needed
+
+Use this commands to create a dump (a save) of the database:
 
 ```bash
-cat database_dump_px.sql | docker exec -i distributeur-backend-db-1 mysql -uroot -p[sql_password]
+(echo "CREATE DATABASE IF NOT EXISTS [database_name]; USE [database_name];" && docker exec -i distributeur-backend-db mysqldump -uroot -p[sql_root_password] --databases [database_name] --add-drop-database && echo "CREATE USER [database_user]@'%' IDENTIFIED BY [database_password]; GRANT ALL PRIVILEGES ON [database_name].* TO [database_user]@'%'; FLUSH PRIVILEGES;") > backup.sql
 ```
 
-### finished
+You need to replace:
+
+- `database_user` with your database user name
+- `database_password` with your database password
+- `database_name` with your database name
+- `sql_root_password` with your sql root password
+
+Then the dump is configured
+
+### Finished
 
 backend should work properly
 
 'happy dev !'
 
-dump configuré
+## Routes
 
-## Installer les dépendances
+You can find all information about the routes in this [readme file](routes/Readme.md)
 
-Install the necessary dependencies from the **requirements.txt** file:
+## Back to general **distributeur** documentation
 
-```bash
-pip install -r requirements.txt
-```
-
-## Lancer le projet
-
-To start the Flask server, run the following command:
-
-```bash
-python app.py
-```
+The general **distributeur** documentation is available at [here](../Readme.md)

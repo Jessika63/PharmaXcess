@@ -29,11 +29,9 @@ def load_env_file(env_file_path):
             if not line or line.startswith("#"):
                 continue
 
-            # Parse key-value pairs
-            if "=" in line:
-                key, value = line.split("=", 1)
-                env_data[key.strip()] = value.strip()
-            else:
+            if "=" not in line:
                 raise ValueError(f"Invalid line in .env file: {line}")
 
+            key, value = line.split("=", 1)
+            env_data[key.strip()] = value.strip()
     return env_data
