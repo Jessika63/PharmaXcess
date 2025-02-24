@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { Camera } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ClickAndCollect() {
     const [hasPermission, setHasPermission] = useState(null);
@@ -9,7 +10,7 @@ export default function ClickAndCollect() {
     const [photo, setPhoto] = useState(null);
     const [isImageValidated, setIsImageValidated] = useState(false);
     const [isWaiting, setIsWaiting] = useState(false);
-    const [isValidatedByPharmacist, setIsValidatedByPharmacist] = useState(null);
+    const [isValidateByPharmacist, setIsValidatedByPharmacist] = useState(null);
     const cameraRef = useRef(null);
 
     useEffect(() => {
@@ -48,63 +49,71 @@ export default function ClickAndCollect() {
     if (hasPermission === null) {
         return <Text>Demande de permission de la caméra...</Text>;
     }
-
     if (hasPermission === false) {
         return <Text>Accès à la caméra refusé</Text>;
-    }
-    
-    if (cameraVisible && hasPermission) {
-        return (
-            <Camera style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
-                <View style={styles.cameraButtonContainer}>
-                    <Button title="Prendre la photo" onPress={takePicture} />
-                </View>
-            </Camera>
-        );
-    }
-    
-
-    if (isWaiting) {
-        return (
-            <View style={styles.container}>
-                <Text>Votre ordonnance est en cours de validation...</Text>
-                <ActivityIndicator size="large" color="#F57196" />
-            </View>
-        );
-    }
-
-    if (isValidatedByPharmacist !== null) {
-        return (
-            <View style={styles.container}>
-                {isValidatedByPharmacist ? (
-                    <>
-                        <Text>Votre ordonnance a été validée !</Text>
-                        <Text>Voici votre QR code :</Text>
-                        <QRCode value="https://pharmaxcess.fr" size={150} color="#F57196" />
-                    </>
-                ) : (
-                    <>
-                        <Text>Erreur : le format de l'ordonnance n'est pas valide.</Text>
-                        <Button title="Recommencer" onPress={resetProcess} color="#F57196" />
-                    </>
-                )}
-            </View>
-        );
     }
 
     return (
         <View style={styles.container}>
-            {!photo ? (
-                <Button title="Prendre une photo de votre ordonnance" onPress={() => setCameraVisible(true)} color="#F57196" />
+            <Text style={styles.title}>Click & Collect</Text>
+            {cameraVisible ? (
+                <Camera style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
+                    <TouchableOpacity style={styles.button} onPress={takePicture}>
+                        <LinearGradient colors={['#F57196', '#FFC0CB']} style={styles.gradientButton}>
+                            <Text style={styles.buttonText}>Prendre la photo</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </Camera>
+            ) : isWaiting ? (
+                <View style={styles.centeredContent}>
+                    <Text>Votre ordonnance est en cours de validation...</Text>
+                    <ActivityIndicator size="large" color="#F57196" />
+                </View>
+            ) : isValidateByPharmacist !== null ? (
+                <View style={styles.centeredContent}>
+                    {isValidatedByPharmacist ? (
+                        <>
+                            <Text>Votre ordonnance a été validée !</Text>
+                            <QRCode value="https://pharmaxcess.fr" size={150} color="#F57196" />
+                        </>
+                    ) : (
+                        <>
+                            <Text>Erreur : le format de l'ordonnance n'est pas valide.</Text>
+                            <TouchableOpacity style={styles.button} onPress={resetProcess}>
+                                <LinearGradient colors={['#F57196', '#FFC0CB']} style={styles.gradientButton}>
+                                    <Text style={styles.buttonText}>Recommencer</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
             ) : (
-                <>
-                    <Image source={{ uri: photo.uri }} style={styles.image} />
-                    <Text>Voulez-vous Valider cette photo ou recommencer ?</Text>
-                    <View style={styles.buttonsContainer}>
-                        <Button title="Recommencer" onPress={resetProcess} color="gray" />
-                        <Button title="Valider" onPress={handleImageValidation} color="#F57196" />
-                    </View>
-                </>
+                <View style={styles.centeredContent}>
+                    {!photo ? (
+                        <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(true)}>
+                            <LinearGradient colors={['#F57196', '#FFC0CB']} style={styles.gradientButton}>
+                                <Text style={styles.buttonText}>Prendre une photo de votre ordonnance</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    ) : (
+                        <>
+                            <Image source={{ uri: photo.uri }} style={styles.image} />
+                            <Text>Voulez-vous valider cette photo ou recommencer ?</Text>
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.button} onPress={resetProcess}>
+                                    <LinearGradient colors={['#CCCCCC', '#EEEEEE']} style={styles.gradientButton}>
+                                        <Text style={styles.buttonText}>Recommencer</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={handleImageValidation}>
+                                    <LinearGradient colors={['#F57196', '#FFC0CB']} style={styles.gradientButton}>
+                                        <Text style={styles.buttonText}>Valider</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    )}
+                </View>
             )}
         </View>
     );
@@ -116,31 +125,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
+        backgroundColor: '#FFF'
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#F57196',
     },
     camera: {
         flex: 1,
         justifyContent: 'flex-end',
-    },
-    cameraButtonContainer: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        margin: 20,
-        alignSelf: 'center',
-        marginBottom: 20,
+        width: '100%',
     },
     image: {
         width: 300,
         height: 300,
         marginBottom: 20,
-        margin: 20,
     },
-    buttonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
+    centeredContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    button: {
         width: '80%',
-        marginTop: 16,
-        margin: 20,
+        borderRadius: 25,
+        marginVertical: 10,
+        overflow: 'hidden',
+    },
+    gradientButton: {
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderRadius: 25,
+    },
+    buttonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '80%',
     },
 });

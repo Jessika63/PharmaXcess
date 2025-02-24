@@ -1,50 +1,53 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function Home({ navigation}) {
+export default function Home({ navigation }) {
+    const items = [
+        { title: 'Mes ordonnances', route: 'MyPrescriptions' },
+        { title: 'Mes rappels médicaments', route: 'MedicationReminders' },
+        { title: 'Mes rappels ordonnances', route: 'PrescriptionReminders' },
+    ];
+
     return (
-        <View style={styles.container}>
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MyPrescriptions')}>
-                <LinearGradient colors={['#F57196', '#F7C5E0']} style={styles.gradient}>
-                    <Text style={styles.buttonText}>Mes ordonnances</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button}>
-                <LinearGradient colors={['#F57196', '#F7C5E0']} style={styles.gradient}>
-                    <Text style={styles.buttonText}>Mes rappels médicaments</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button}>
-                <LinearGradient colors={['#F57196', '#F7C5E0']} style={styles.gradient}>
-                    <Text style={styles.buttonText}>Mes rappels ordonnances</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-        </View>
+        <ScrollView contentContainerStyle={styles.container}>
+            {items.map((item, index) => (
+                <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
+                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <Text style={styles.cardText}>{item.title}</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            ))}
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        alignItems: 'center',
+        flexGrow: 1,
+        padding: 20,
+        flexDirection: 'column',
         justifyContent: 'center',
-        backgroundColor: '#fff',
-        paddingTop: 40,
+        alignItems: 'center',
+        backgroundColor: 'white',
     },
     title: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
+        color: '#333',
         marginBottom: 20,
     },
-    button: {
-        width: '80%',
-        borderRadius: 25,
-        marginBottom: 20,
-        height: 50,
-        margin: 10,
+    card: {
+        width: '100%',
+        borderRadius: 10,
+        marginVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cardText: {
+        fontSize: 20,
+        color: 'white',
+        textAlign: 'center',
     },
     gradient: {
         paddingVertical: 15,
@@ -52,10 +55,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
 });

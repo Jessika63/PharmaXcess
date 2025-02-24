@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function MyPrescriptions({ navigation }) {
   const prescriptions = [
@@ -10,31 +11,33 @@ export default function MyPrescriptions({ navigation }) {
     { id: '4', name: 'Traitement Allergies' },
   ];
 
-  const renderPrescription = ({ item }) => (
-    <View style={styles.prescriptionItem}>
-      <View style={styles.prescriptionBar} />
-      <Text style={styles.prescriptionText}>{item.name}</Text>
-    </View>
-  );
+  const handleEditPress = (prescriptionsName) => {
+    alert(`Modification de "${prescriptionsName}" non implémentée. `);
+  };
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={prescriptions}
-        renderItem={renderPrescription}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.prescriptionList}
-      />
+      <ScrollView contentContainerStyle={styles.prescriptionList}>
+        {prescriptions.map((prescription, index) => (
+          <View key={index} style={styles.prescriptionCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
+              <TouchableOpacity onPress={() => handleEditPress(prescription.name)} style={styles.editButton}>
+                <Ionicons name="pencil" size={20} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={() => {/* action pour ajouter une ordonnance */}}>
-          <LinearGradient colors={['#F57196', '#F7C5E0']} style={styles.gradient}>
+        <TouchableOpacity style={styles.button} onPress={() => {/*Ajouter une prescription */}}>
+          <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
             <Text style={styles.buttonText}>Ajouter</Text>
           </LinearGradient>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <LinearGradient colors={['#F57196', '#F7C5E0']} style={styles.gradient}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+          <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
             <Text style={styles.buttonText}>Retour</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -48,62 +51,56 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'white',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  prescriptionList: {
+  prescription: {
     alignItems: 'center',
+    padding: 20,
+    paddingBottom: 100,
   },
-  prescriptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F2',
+  prescriptionCard: {
+    width: '100%',
     borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
     marginVertical: 8,
-    width: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  prescriptionBar: {
-    width: 10,
-    height: '100%',
-    backgroundColor: '#F57196',
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    marginRight: 15,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  prescriptionText: {
-    fontSize: 16,
+  prescriptionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#333',
+  },
+  editButton: {
+    backgroundColor: '#F57196',
+    padding: 5,
+    borderRadius: 50,
   },
   buttonContainer: {
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
-    paddingVertical: 20,
+    marginTop: 30,
+  },
+  button: {
+    flex: 1,
+    marginHorizontal: 10,
   },
   gradient: {
+    padding: 15,
     borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    width: '80%', 
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15, 
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
   },
 });
+
