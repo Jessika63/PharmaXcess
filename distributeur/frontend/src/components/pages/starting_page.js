@@ -1,29 +1,32 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../../App.css'
 
 function StartingPage() {
   return (
-    <div className="starting_page">
-      {/* Rectangle 'médicaments sous ordonnance' */}
+    <div className="w-full h-screen flex flex-col justify-center items-center">
+      
+      {/* Container pour center les 2 boutons */}
+      <div className="flex flex-col items-center space-y-28 w-full">
 
-      <Link to="/documents-checking" style={{ textDecoration: 'none' }}>
-        <div className="rectangle" style={{top: '20%', left: '50%', cursor: 'pointer'}}>
-          <p style={{ fontSize: '3em' }}>
+        {/* Bouton 'Médicaments sous ordonnance' */}
+        <Link to="/documents-checking" className="w-full flex justify-center">
+          <div className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
+              transition-transform duration-500 hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105">
             Médicaments sous ordonnance
-          </p>
-        </div>
-      </Link>
+          </div>
+        </Link>
 
-      {/* Rectangle 'médicaments sans ordonnance' */}
+        {/* Bouton 'Médicaments sans ordonnance' */}
+        <Link to="/non-prescription-drugs" className="w-full flex justify-center">
+          <div className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
+              transition-transform duration-500 hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105">
+            Médicaments sans ordonnance
+          </div>
+        </Link>
 
-      <Link to="/non-prescription-drugs" style={{ textDecoration: 'none' }}>
-      <div className="rectangle" style={{top: '35%', left: '50%'}}>
-        <p style={{ fontSize: '3em' }}>
-          Médicaments sans ordonnance
-        </p>
       </div>
-      </Link>
 
     </div>
   );
