@@ -1,29 +1,80 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
-import '../../App.css'
 
 function StartingPage() {
+  const prescriptionButtonRef = useRef(null);
+  const nonPrescriptionButtonRef = useRef(null);
+  
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowRight") {
+      setFocusedIndex((prevIndex) => (prevIndex < 1 ? prevIndex + 1 : prevIndex));
+    } else if (event.key === "ArrowLeft") {
+      setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+    }
+  };
+
+  useEffect(() => {
+    if (focusedIndex === 0 && prescriptionButtonRef.current) {
+      prescriptionButtonRef.current.focus();
+    } else if (focusedIndex === 1 && nonPrescriptionButtonRef.current) {
+      nonPrescriptionButtonRef.current.focus();
+    }
+  }, [focusedIndex]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
-    <div className="starting_page">
-      {/* Rectangle 'médicaments sous ordonnance' */}
-
-      <Link to="/documents-checking" style={{ textDecoration: 'none' }}>
-        <div className="rectangle" style={{top: '20%', left: '50%', cursor: 'pointer'}}>
-          <p style={{ fontSize: '3em' }}>
-            Médicaments sous ordonnance
-          </p>
+    <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
+      {/* Header */}
+      <div className="w-4/5 h-48 flex justify-center items-center mb-20">
+        {/* Logo */}
+        <div className="flex justify-center items-center w-full">
+          <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
         </div>
-      </Link>
-
-      {/* Rectangle 'médicaments sans ordonnance' */}
-
-      <Link to="/non-prescription-drugs" style={{ textDecoration: 'none' }}>
-      <div className="rectangle" style={{top: '35%', left: '50%'}}>
-        <p style={{ fontSize: '3em' }}>
-          Médicaments sans ordonnance
-        </p>
       </div>
-      </Link>
+
+      {/* Container pour center les 2 boutons */}
+      <div className="flex flex-col items-center space-y-28 w-full">
+
+        {/* Bouton 'Médicaments sous ordonnance' */}
+        <Link to="/documents-checking" className="w-full flex justify-center">
+          <div
+            ref={prescriptionButtonRef}
+            tabIndex={0}
+            className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
+              transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
+              hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
+              ${focusedIndex === 0 ? 'scale-105' : ''}`}
+          >
+            Médicaments avec ordonnance
+          </div>
+        </Link>
+
+        {/* Bouton 'Médicaments sans ordonnance' */}
+        <Link to="/non-prescription-drugs" className="w-full flex justify-center">
+          <div
+            ref={nonPrescriptionButtonRef}
+            tabIndex={0}
+            className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
+              transition-transform duration-500 hover:from-[#d45b93]
+              hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
+              ${focusedIndex === 1 ? 'scale-105' : ''}`}
+          >
+            Médicaments sans ordonnance
+          </div>
+        </Link>
+
+      </div>
 
     </div>
   );
