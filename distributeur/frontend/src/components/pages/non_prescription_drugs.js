@@ -70,13 +70,13 @@ function NonPrescriptionDrugs() {
     };
 
     return (
-        <div className="w-full h-screen flex flex-col items-center p-8 bg-pink-200">
+        <div className="w-full h-screen flex flex-col items-center p-8 bg-background_color">
 
             {/* Header */}
             <div className="w-4/5 h-48 flex justify-between items-center mb-24 mt-10">
                 {/* Retour */}
                 <Link to="/" className="text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
-                    px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition">
+                    px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300">
                     Retour
                 </Link>
 

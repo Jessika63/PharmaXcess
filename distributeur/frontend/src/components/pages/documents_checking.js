@@ -7,8 +7,8 @@ import ModalCamera from '../modal_camera';
 function DocumentsChecking() {
 
     const [showCamera, setShowCamera] = useState(false);
-    const [image, setImage] = useState(null);
-    const [isPhotoTaken, setIsPhotoTaken] = useState(false);
+    // const [image, setImage] = useState(null);
+    // const [isPhotoTaken, setIsPhotoTaken] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -17,10 +17,10 @@ function DocumentsChecking() {
         setIsModalOpen(true);
     };
 
-    const handlePhotoCapture = (capturedImage) => {
-        setImage(capturedImage);
-        setIsPhotoTaken(true);
-    };
+    // const handlePhotoCapture = (capturedImage) => {
+    //     setImage(capturedImage);
+    //     setIsPhotoTaken(true);
+    // };
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -28,14 +28,7 @@ function DocumentsChecking() {
     };
 
     return (
-        <div className="bg-pink-200 w-full h-screen flex flex-col items-center">
-
-            {/* Rectangle 'go back rectangle'
-            <Link to="/" style={{ textDecoration: 'none' }}>
-                <div className="rectangle npd_back_button" style={{cursor: 'pointer'}}>
-                    <p style={{ fontSize: '2.5em' }}>Retour</p>
-                </div>
-            </Link> */}
+        <div className="bg-background_color w-full h-screen flex flex-col items-center">
 
             {/* Header */}
             <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-16">
