@@ -38,6 +38,13 @@ dict_doctor_to_add = {
         'sector': 'General',
         'region': 'Ile-de-France'
     },
+    # Doctor missing the last name field
+    "missing_field_last_name" : {
+        'first_name': 'John',
+        'rpps': '1234567890',
+        'sector': 'General',
+        'region': 'Ile-de-France'
+    },
 }
 
 # Dictionary of doctors not to add, with missing fields
