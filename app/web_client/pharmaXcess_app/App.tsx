@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/src/context/ThemeContext';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/src/locales/i18n';
 import { LanguageProvider } from '@/src/context/LanguageContext';
+import { FontScaleProvider } from '@/src/context/FontScaleContext';
 
 
 export default function App () {
@@ -20,7 +21,9 @@ export default function App () {
         <I18nextProvider i18n={i18n}>
             <LanguageProvider>
                 <ThemeProvider>
-                    <RootNavigator />
+                    <FontScaleProvider>
+                        <RootNavigator />
+                    </FontScaleProvider>
                 </ThemeProvider>
             </LanguageProvider>
         </I18nextProvider>

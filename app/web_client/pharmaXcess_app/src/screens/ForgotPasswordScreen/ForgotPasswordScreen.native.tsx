@@ -42,6 +42,7 @@ export default function ForgotPasswordScreen () {
                         errorMessage={emailErrorMessage}
                         secureTextEntry={false}
                         icon='email'
+                        fontSize={style.input.fontSize}
                         />
                 </View>
                 <Text style={style.infoMessage}>

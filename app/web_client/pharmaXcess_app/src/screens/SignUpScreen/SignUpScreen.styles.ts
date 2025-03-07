@@ -2,6 +2,7 @@ import { StyleSheet, TextStyle } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { moderateScale } from 'react-native-size-matters';
 import { useTheme } from '@/src/context/ThemeContext';
+import { useFontScale } from '@/src/context/FontScaleContext';
 import useDeviceInfo from '@/src/hooks/useDeviceInfo';
 
 interface Styles {
@@ -23,6 +24,7 @@ interface Styles {
 const signUpStyles = () => {
     const { colors } = useTheme();
     const { deviceType } = useDeviceInfo();
+    const { fontScale } = useFontScale();
 
     const phoneSpecificStyles:Styles = {
         container: {
@@ -34,7 +36,7 @@ const signUpStyles = () => {
             marginBottom: hp('7%'),
         },
         title: {
-            fontSize: moderateScale(40),
+            fontSize: moderateScale(40) * fontScale,
             fontWeight: 'bold',
             color: colors.onBackground,
         },
@@ -46,14 +48,14 @@ const signUpStyles = () => {
             marginBottom: hp('2%'),
         },
         input: {
-            fontSize: moderateScale(14),
+            fontSize: moderateScale(14) * fontScale,
         },
         signUpButtonContainer: {
             marginBottom: hp('3%'),
             marginTop: hp('6%'),
         },
         signUpButton: {
-            fontSize: moderateScale(16),
+            fontSize: moderateScale(16) * fontScale,
         },
         logInButtonContainer: {
             flexDirection: 'row',
@@ -61,11 +63,11 @@ const signUpStyles = () => {
             alignItems: 'center',
         },
         logInText: {
-            fontSize: moderateScale(13),
+            fontSize: moderateScale(13) * fontScale,
             color: colors.onBackground,
         },
         loginButton: {
-            fontSize: moderateScale(13),
+            fontSize: moderateScale(13) * fontScale,
             color: colors.primary,
             textDecorationLine: 'underline'
         },
@@ -83,7 +85,7 @@ const signUpStyles = () => {
             marginBottom: hp('7%'),
         },
         title: {
-            fontSize: moderateScale(25),
+            fontSize: moderateScale(25) * fontScale,
             fontWeight: 'bold',
             color: colors.onBackground,
             alignSelf: 'center',
@@ -96,14 +98,14 @@ const signUpStyles = () => {
             marginBottom: hp('2%'),
         },
         input: {
-            fontSize: moderateScale(11),
+            fontSize: moderateScale(11) * fontScale,
         },
         signUpButtonContainer: {
             marginBottom: hp('3%'),
             marginTop: hp('8%'),
         },
         signUpButton: {
-            fontSize: moderateScale(12),
+            fontSize: moderateScale(12) * fontScale,
         },
         logInButtonContainer: {
             flexDirection: 'row',
@@ -111,11 +113,11 @@ const signUpStyles = () => {
             alignItems: 'center',
         },
         logInText: {
-            fontSize: moderateScale(10),
+            fontSize: moderateScale(10) * fontScale,
             color: colors.onBackground,
         },
         loginButton: {
-            fontSize: moderateScale(10),
+            fontSize: moderateScale(10) * fontScale,
             color: colors.primary
         },
         logInButtonText: {
