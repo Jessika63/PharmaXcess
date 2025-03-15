@@ -1,12 +1,34 @@
 {
-    "title": "Create an Account",
-    "emailInput": "Enter your email.",
-    "emailInputError": "Enter a valid email.",
-    "passwordInput": "Enter your password.",
-    "passwordInputError": "Enter a valid password.",
-    "passwordConfirmationInput": "Confirm your password.",
-    "passwordConfirmationInputError": "Passwords do not match.",
-    "signUpButton": "Sign Up",
+    "title": "Create an account",
+
+    "emailInput": {
+        "label": "Email address",
+        "hint": "Enter your email address",
+        "error": "Enter a valid email."
+    },
+
+    "passwordInput": {
+        "label": "Password",
+        "hint": "Enter your password",
+        "error": "Enter a valid password."
+    },
+
+    "passwordConfirmationInput": {
+        "label": "Confirm your password",
+        "hint": "Enter your password",
+        "error": "Passwords do not match."
+    },
+
+    "signUpButton": {
+        "label": "Sign up",
+        "success": "Sign up successful",
+        "hint": "Press to sign up"
+    },
+
     "loginMessage": "I already have an account",
-    "loginButton": "Log In"
+    "loginButton": {
+        "label": "Log in",
+        "labelScreenReader": "I already have an account: log in",
+        "hint": "Press to log in"
+    }
 }

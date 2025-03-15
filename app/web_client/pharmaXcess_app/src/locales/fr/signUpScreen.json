@@ -1,12 +1,34 @@
 {
     "title": "Créer un compte",
-    "emailInput": "Entrez votre email.",
-    "emailInputError": "Entrez un email valide.",
-    "passwordInput": "Entrez votre mot de passe.",
-    "passwordInputError": "Entrez un mot de passe valide.",
-    "passwordConfirmationInput": "Confirmez votre mot de passe.",
-    "passwordConfirmationInputError": "Les mots de passe ne correspondent pas.",
-    "signUpButton": "S'inscrire",
+
+    "emailInput": {
+        "label": "Adresse e-mail",
+        "hint": "Entrez votre adresse e-mail",
+        "error": "Entrez un email valide."
+    },
+    
+    "passwordInput": {
+        "label": "Mot de passe",
+        "hint": "Entrez votre mot de passe",
+        "error": "Entrez un mot de passe valide."
+    },
+    
+    "passwordConfirmationInput": {
+        "label": "Confirmez votre mot de passe",
+        "hint": "Entrez votre mot de passe",
+        "error": "Les mots de passe ne correspondent pas."
+    },
+
+    "signUpButton": {
+        "label": "S'inscrire",
+        "success": "Inscription réussie",
+        "hint": "Appuyez pour s'inscrire"
+    },
+
     "loginMessage": "J'ai déjà un compte",
-    "loginButton": "Se connecter"
+    "loginButton": {
+        "label": "Se connecter",
+        "labelScreenReader": "J'ai déjà un compte: se connecter",
+        "hint": "Appuyez pour se connecter"
+    }
 }

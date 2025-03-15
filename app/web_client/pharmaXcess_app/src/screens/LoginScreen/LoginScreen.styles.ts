@@ -53,6 +53,7 @@ const loginStyles = () => {
         },
         forgotPasswordButtonContainer: {
             marginBottom: hp('6%'),
+            alignItems: 'flex-end',
         },
         forgotPasswordButton: {
             fontSize: moderateScale(12) * fontScale,

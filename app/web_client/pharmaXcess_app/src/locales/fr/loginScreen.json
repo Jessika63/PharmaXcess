@@ -1,11 +1,33 @@
 {
     "title": "Bienvenue à nouveau !",
-    "emailInput": "Entrez votre email.",
-    "emailInputError": "Entrez un email valide.",
-    "passwordInput": "Entrez votre mot de passe.",
-    "passwordInputError": "Entrez un mot de passe valide.",
-    "forgotPassword": "Mot de passe oublié ?",
-    "loginButton": "Se connecter",
+
+    "emailInput": {
+        "label": "Adresse e-mail",
+        "hint": "Entrez votre adresse e-mail",
+        "error": "Entrez un email valide."
+    },
+
+    "passwordInput": {
+        "label": "Mot de passe",
+        "hint": "Entrez votre mot de passe",
+        "error": "Entrez un mot de passe valide."
+    },
+
+    "forgotPassword": {
+        "label": "Mot de passe oublié ?",
+        "hint": "Appuyez pour mot de passe oublié"
+    },
+
+    "loginButton": {
+        "label": "Se connecter",
+        "success": "Connexion réussie",
+        "hint": "Appuyez pour se connecter"
+    },
+
     "signUpMessage": "Créer un compte",
-    "signUpButton": "S'inscrire"
+    "signUp": {
+        "label": "S'inscrire",
+        "labelScreenReader": "Créer un compte: s'inscrire",
+        "hint": "Appuyez pour s'inscrire"
+    }
 }

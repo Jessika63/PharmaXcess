@@ -3,11 +3,10 @@ import { useState } from 'react';
 import { registerRootComponent } from 'expo';
 import SplashScreenComponent from './src/screens/SplashScreen';
 import RootNavigator from './src/navigation/RootNavigator';
-import { ThemeProvider } from '@/src/context/ThemeContext';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/src/locales/i18n';
 import { LanguageProvider } from '@/src/context/LanguageContext';
-import { FontScaleProvider } from '@/src/context/FontScaleContext';
+import { AccessibilityProvider } from '@/src/accessibility/accessibilityContext';
 
 
 export default function App () {
@@ -20,11 +19,9 @@ export default function App () {
     return (
         <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-                <ThemeProvider>
-                    <FontScaleProvider>
-                        <RootNavigator />
-                    </FontScaleProvider>
-                </ThemeProvider>
+                <AccessibilityProvider>
+                    <RootNavigator />
+                </AccessibilityProvider>
             </LanguageProvider>
         </I18nextProvider>
     );

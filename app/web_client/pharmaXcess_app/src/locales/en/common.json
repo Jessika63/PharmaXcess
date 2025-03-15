@@ -1,0 +1,12 @@
+{
+    "eyeButton": {
+        "show": {
+            "label": "Show password",
+            "hint": "Tap to show the password"
+        },
+        "hide": {
+            "label": "Hide password",
+            "hint": "Tap to hide the password"
+        }
+    }
+}

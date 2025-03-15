@@ -1,11 +1,33 @@
 {
     "title": "Welcome back!",
-    "emailInput": "Enter your email.",
-    "emailInputError": "Enter a valid email.",
-    "passwordInput": "Enter your password.",
-    "passwordInputError": "Enter a valid password.",
-    "forgotPassword": "Forgot your password?",
-    "loginButton": "Log In",
+
+    "emailInput": {
+        "label": "Email address",
+        "hint": "Enter your email address",
+        "error": "Enter a valid email."
+    },
+
+    "passwordInput": {
+        "label": "Password",
+        "hint": "Enter your password",
+        "error": "Enter a valid password."
+    },
+
+    "forgotPassword": {
+        "label": "Forgot password?",
+        "hint": "Press for forgot password"
+    },
+
+    "loginButton": {
+        "label": "Log in",
+        "success": "Login successful",
+        "hint": "Press to log in"
+    },
+
     "signUpMessage": "Create an account",
-    "signUpButton": "Sign Up"
+    "signUp": {
+        "label": "Sign up",
+        "labelScreenReader": "Create an account: sign up",
+        "hint": "Press to sign up"
+    }
 }

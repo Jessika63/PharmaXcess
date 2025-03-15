@@ -10,6 +10,9 @@ import enSignUpScreen from './en/signUpScreen.json';
 import frForgotPasswordScreen from './fr/forgotPasswordScreen.json';
 import enForgotPasswordScreen from './en/forgotPasswordScreen.json';
 
+import frCommon from "./fr/common.json"
+import enCommon from "./en/common.json"
+
 export const supportedLanguages = ['en', 'fr'] as const;
 export type LanguageType = 'auto' | typeof supportedLanguages[number];
 export const defaultLanguage: LanguageType = 'en' as const;
@@ -19,11 +22,13 @@ const resources = {
         loginScreen: frLoginScreen,
         signUpScreen: frSignUpScreen,
         forgotPasswordScreen: frForgotPasswordScreen,
+        common: frCommon
     },
     en: {
         loginScreen: enLoginScreen,
         signUpScreen: enSignUpScreen,
         forgotPasswordScreen: enForgotPasswordScreen,
+        common: enCommon
     },
 };
 
@@ -32,7 +37,7 @@ i18n
     .init({
         resources,
         fallbackLng: defaultLanguage,
-        ns: ['loginScreen', 'signUpScreen', 'forgotPasswordScreen'],
+        ns: ['loginScreen', 'signUpScreen', 'forgotPasswordScreen', 'common'],
         defaultNS: 'loginScreen',   
         interpolation: {
             escapeValue: false,

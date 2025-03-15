@@ -1,0 +1,12 @@
+{
+    "eyeButton": {
+        "show": {
+            "label": "Afficher le mot de passe",
+            "hint": "Appuyez pour afficher le mot de passe"
+        },
+        "hide": {
+            "label": "Masquer le mot de passe",
+            "hint": "Appuyez pour masquer le mot de passe"
+        }
+    }
+}
