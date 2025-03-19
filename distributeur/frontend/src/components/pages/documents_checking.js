@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './css/documents_checking.css'
 import CameraComponent from '../camera_component';
@@ -7,7 +7,8 @@ import ModalCamera from '../modal_camera';
 function DocumentsChecking() {
     const [showCamera, setShowCamera] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [focusedIndex, setFocusedIndex] = useState(0);  // Suivi de l'index du bouton focusé
+    const [focusedIndex, setFocusedIndex] = useState(1);
+    const focusedIndexRef = useRef(1);
     const buttonsRef = useRef([]);
 
     const navigate = useNavigate();
@@ -22,21 +23,35 @@ function DocumentsChecking() {
         setShowCamera(false);
     };
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = useCallback((event) => {
         if (event.key === "ArrowRight") {
-            setFocusedIndex((prevIndex) => (prevIndex < 3 ? prevIndex + 1 : prevIndex));
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex < 3 ? prevIndex + 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
         } else if (event.key === "ArrowLeft") {
-            setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex > 0 ? prevIndex - 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
         } else if (event.key === "Enter") {
-            if (focusedIndex > 0) {
-                event.preventDefault();
+            event.preventDefault();
+            if (focusedIndexRef.current >= 1) {
                 handleOpenCamera();
             } else {
-                event.preventDefault();
                 navigate('/');
             }
         }
-    };
+    }, [navigate, handleOpenCamera]);
+
+    useEffect(() => {
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [handleKeyDown]);
 
     useEffect(() => {
         if (buttonsRef.current[focusedIndex]) {
@@ -51,12 +66,16 @@ function DocumentsChecking() {
         };
     }, []);
 
+    useEffect(() => {
+    }, [focusedIndex]);
+    
+
     return (
         <div className="bg-background_color w-full h-screen flex flex-col items-center">
 
             {/* Header */}
             <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-16">
-                {/* Retour */}
+                {/* Go Back */}
                 <Link
                     to="/"
                     ref={(el) => (buttonsRef.current[-1] = el)}
@@ -86,7 +105,7 @@ function DocumentsChecking() {
                 </div>
 
                 <div className="w-full flex space-x-12">
-                    {/* Bouton Ordonnance */}
+                    {/* Button 'Ordonnance' */}
                     <div
                         ref={(el) => (buttonsRef.current[0] = el)}
                         tabIndex={0}
@@ -99,7 +118,7 @@ function DocumentsChecking() {
                         <p className="text-5xl text-center">Ordonnance</p>
                     </div>
 
-                    {/* Bouton Carte Vitale */}
+                    {/* Button 'Carte Vitale' */}
                     <div
                         ref={(el) => (buttonsRef.current[1] = el)}
                         tabIndex={0}
@@ -112,7 +131,7 @@ function DocumentsChecking() {
                         <p className="text-5xl text-center">Carte Vitale</p>
                     </div>
 
-                    {/* Bouton Carte d'Identité */}
+                    {/* Button 'Carte d'Identité' */}
                     <div
                         ref={(el) => (buttonsRef.current[2] = el)}
                         tabIndex={0}
