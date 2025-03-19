@@ -19,7 +19,7 @@ function DrugUnavailable() {
             </div>
         </div>
 
-        {/* Rectangle message d'information */}
+        {/* Rectangle Information Message */}
         <div className="w-3/4 bg-background_color p-8 rounded-xl text-center mb-12">
             <p className="text-5xl text-gray-800">
               Le médicament que vous voulez n'est plus disponible.<br />
@@ -27,10 +27,10 @@ function DrugUnavailable() {
             </p>
         </div>
 
-        {/* Container pour center les 2 boutons */}
+        {/* Container to center both buttons */}
           <div className="flex flex-col items-center space-y-16 w-full">
       
-              {/* Bouton 'Commander plus tard' */}
+              {/* Button 'Commander plus tard' */}
               <div 
                 tabIndex={0} 
                 onClick={() => navigate('/' + (location.state?.from ?? '#'))} 
@@ -41,7 +41,7 @@ function DrugUnavailable() {
                 Commander le médicament et le récupérer plus tard
               </div>
       
-              {/* Bouton 'Liste des pharmacies' */}
+              {/* Button 'Liste des pharmacies' */}
               <div onClick={() => navigate('/drug-stores-available', {state: {from: 'drug-unavailable'}})}
                className="w-full flex justify-center">
                 <div tabIndex={0}

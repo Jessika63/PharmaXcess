@@ -18,17 +18,17 @@ function PaymentFailed() {
             </div>
         </div>
 
-        {/* Rectangle message d'information */}
+        {/* Information message rectangle */}
         <div className="w-3/4 bg-gray-100 p-8 rounded-xl shadow-lg text-center mb-20">
             <p className="text-5xl text-gray-800">
                 Le paiement a échoué, voulez-vous réessayer ou annuler la transaction ?
             </p>
         </div>
 
-        {/* Container pour center les 2 boutons */}
+        {/* Centering buttons container */}
           <div className="flex flex-col items-center space-y-20 w-full">
       
-              {/* Bouton 'Réessayer' */}
+              {/* Button 'Réessayer' (retry) */}
               <div tabIndex={0} 
               onClick={() => navigate('/' + (location.state.from || '/#'))}
               className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
@@ -38,7 +38,7 @@ function PaymentFailed() {
                 Réessayer
               </div>
       
-              {/* Bouton 'Annuler la commande' */}
+              {/* Button 'Annuler la commande' (cancel) */}
               <Link to="/#" className="w-full flex justify-center">
                 <div tabIndex={0}
                 className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 

@@ -74,7 +74,7 @@ function NonPrescriptionDrugs() {
 
             {/* Header */}
             <div className="w-4/5 h-48 flex justify-between items-center mb-24 mt-10">
-                {/* Retour */}
+                {/* Go Back */}
                 <Link to="/" className="text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
                     px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300">
                     Retour
@@ -87,13 +87,13 @@ function NonPrescriptionDrugs() {
 
             </div>
 
-            {/* Message Principal */}
+            {/* Main Message */}
             <div className="w-2/3 h-72 flex items-center justify-center text-gray-800 text-5xl 
                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
                 Voici la liste des médicaments disponibles à la vente :
             </div>
 
-            {/* Grille des médicaments */}
+            {/* Drugs Grill */}
             <div className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200">
                 <div className="grid grid-cols-3 gap-6">
                     {drugs_items.map((item) => (
@@ -108,7 +108,7 @@ function NonPrescriptionDrugs() {
                 </div>
             </div>
 
-            {/* Modal de confirmation */}
+            {/* Confirmation Modal */}
             {isModalOpen && selectedDrug && (
                 <ModalStandard onClose={closeModal}>
                     <div className="p-6 text-center text-5xl text-gray-800">
@@ -122,7 +122,7 @@ function NonPrescriptionDrugs() {
                 </ModalStandard>
             )}
 
-            {/* Modal Paiement Réussi */}
+            {/* Payment Confirmation successful Modal */}
             {paymentModalOpen && (
                 <ModalStandard onClose={() => setPaymentModalOpen(false)}>
                     <div className="p-6 text-center text-2xl text-gray-800">

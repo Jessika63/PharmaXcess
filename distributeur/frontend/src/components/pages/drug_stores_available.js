@@ -21,7 +21,7 @@ function DrugStoresAvailable() {
 
       {/* Header */}
       <div className="w-4/5 flex justify-between items-center mb-24 mt-16">
-        {/* Retour */}
+        {/* Go Back */}
         <Link to={'/' + location.state.from} className="text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
             px-24 py-10 rounded-2xl shadow-lg hover:scale-x-105 transition-transform duration-300">
           Retour
@@ -33,13 +33,13 @@ function DrugStoresAvailable() {
         </div>
       </div>
 
-      {/* Message Principal */}
+      {/* Main message */}
       <div className="w-2/3 h-48 flex items-center justify-center text-center text-gray-800 text-5xl 
         bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-300 mb-24">
         Voici la liste des pharmacies disposant du médicament souhaité :
       </div>
 
-      {/* Liste des pharmacies */}
+      {/* List of pharmacies */}
       <div className="w-4/5 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200">
         <div className="grid grid-cols-1 gap-6 place-items-center">
           {drug_shops.map((item) => (

@@ -16,7 +16,7 @@ const ModalStandard = ({ children, onClose }) => {
                 text-gray-800 flex flex-col justify-center items-center 
                 rounded-2xl shadow-lg p-6 z-50"
             >
-                {children} {/* Contenu de la modal */}
+                {children} {/* Modal COntent */}
             </div>
         </div>
     );

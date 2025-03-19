@@ -33,10 +33,10 @@ function StartingPage() {
             </div>
         </div>
 
-      {/* Container pour center les 2 boutons */}
+      {/* Centering buttons container */}
       <div className="flex flex-col items-center space-y-28 w-full">
 
-        {/* Bouton 'Médicaments sous ordonnance' */}
+        {/* Button 'Médicaments sous ordonnance' */}
         <Link to="/documents-checking" className="w-full flex justify-center">
           <div ref={prescriptionButtonRef} tabIndex={0} 
           className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
@@ -47,7 +47,7 @@ function StartingPage() {
           </div>
         </Link>
 
-        {/* Bouton 'Médicaments sans ordonnance' */}
+        {/* Button 'Médicaments sans ordonnance' */}
         <Link to="/non-prescription-drugs" className="w-full flex justify-center">
           <div ref={nonPrescriptionButtonRef} tabIndex={0}
           className="w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
