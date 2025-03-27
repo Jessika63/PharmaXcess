@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const CameraComponent = ({ onPhotoCapture }) => {
+const CameraComponent = ({ onPhotoCapture, onClose }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
     const [isPhotoTaken, setIsPhotoTaken] = useState(false);
+    const [selectedButtonIndex, setSelectedButtonIndex] = useState(0);
 
     const startCamera = async () => {
         try {
@@ -19,7 +20,7 @@ const CameraComponent = ({ onPhotoCapture }) => {
 
     useEffect(() => {
         startCamera();
-        
+
         return () => {
             if (videoRef.current?.srcObject) {
                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
@@ -50,6 +51,7 @@ const CameraComponent = ({ onPhotoCapture }) => {
     const handleRetakePhoto = () => {
         setImage(null);
         setIsPhotoTaken(false);
+        setSelectedButtonIndex(0);
         startCamera();
     };
 
@@ -59,6 +61,37 @@ const CameraComponent = ({ onPhotoCapture }) => {
         }
     };
 
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!isPhotoTaken) {
+                if (event.key === "Enter") {
+                    capturePhoto();
+                }
+            } else {
+                if (event.key === "ArrowLeft") {
+                    setSelectedButtonIndex(0);
+                } else if (event.key === "ArrowRight") {
+                    setSelectedButtonIndex(1);
+                } else if (event.key === "Enter") {
+                    if (selectedButtonIndex === 0) {
+                        handleRetakePhoto();
+                    } else {
+                        handleValidatePhoto();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown, true);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown, true);
+        };
+    }, [isPhotoTaken, selectedButtonIndex]);
+
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-center">
             {isPhotoTaken ? (
@@ -67,18 +100,17 @@ const CameraComponent = ({ onPhotoCapture }) => {
                         <img src={image} alt="Captured" className="w-full h-full object-contain rounded-xl shadow-lg" />
                     </div>
 
-                    {/* Buttons */}
                     <div className="flex justify-center gap-8 mt-6">
                         <button 
-                            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md" 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 0 ? 'scale-110' : ''}`} 
                             onClick={handleRetakePhoto}
                         >
                             Prendre une autre photo
                         </button>
                         <button 
-                            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md" 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 1 ? 'scale-110' : ''}`} 
                             onClick={handleValidatePhoto}
                         >
                             OK
@@ -91,11 +123,10 @@ const CameraComponent = ({ onPhotoCapture }) => {
                         <video ref={videoRef} autoPlay className="w-full h-full transform scale-x-[-1] rounded-xl shadow-lg" />
                     </div>
 
-                    {/* Buttons */}
                     <div className="flex justify-center gap-8 mt-6">
                         <button 
                             className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md" 
+                            shadow-md hover:scale-110 transition-transform duration-300 scale-110"
                             onClick={capturePhoto}
                         >
                             Prendre une photo
