@@ -1,12 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaSearch } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
 
+const categories = {
+    antiInflammatory: 'Désinflammatoire',
+    painRelief: 'Anti-douleur',
+};
+
 const drugs_items = [
-    { id: 1, label: 'Dafalgan', size: 2, state: 0 },
-    { id: 2, label: 'Gaviscon', size: 0, state: 0 },
-    { id: 3, label: 'Nurofen', size: 1, state: 1 },
-    { id: 4, label: 'Physiomer', size: 2, state: 1 },
+    { id: 1, label: 'Dafalgan', category: 'painRelief', size: 2, state: 0 },
+    { id: 2, label: 'Gaviscon', category: 'antiInflammatory', size: 0, state: 0 },
+    { id: 3, label: 'Nurofen', category: 'painRelief', size: 1, state: 1 },
+    { id: 4, label: 'Physiomer', category: 'antiInflammatory', size: 2, state: 1 },
     { id: 5, label: 'Zyrtec', size: 0, state: 0 },
     { id: 6, label: 'Coryzalia', size: 0, state: 1 },
     { id: 7, label: 'Ibuprofen', size: 1, state: 0 },
@@ -45,6 +51,11 @@ function NonPrescriptionDrugs() {
     const navigate = useNavigate();
 
     const goBackMainButtonRef = useRef(null)
+
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedFilter, setSelectedFilter] = useState(null);
+    const [filteredDrugs, setFilteredDrugs] = useState(drugs_items);
+
     const backButtonRef = useRef(null);
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
@@ -138,6 +149,23 @@ function NonPrescriptionDrugs() {
     }, [isModalOpen, focusedIndex, focusedIndexPaymentModal]);           
     
 
+    const toggleFilterMenu = () => setIsFilterOpen(!isFilterOpen);
+    const applyFilter = (filter) => {
+        setSelectedFilter(filter);
+        if (filter === 'A-G') {
+            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G'));
+        } else if (filter === 'G-P') {
+            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] > 'G' && drug.label[0] <= 'P'));
+        } else if (filter === 'P-Z') {
+            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] > 'P'));
+        } else if (categories[filter]) {
+            setFilteredDrugs(drugs_items.filter(drug => drug.category === filter));
+        } else {
+            setFilteredDrugs(drugs_items);
+        }
+        setIsFilterOpen(false);
+    };
+
     const openModal = (drug) => {
         setSelectedDrug(drug);
         setIsModalOpen(true);
@@ -175,10 +203,31 @@ function NonPrescriptionDrugs() {
                     duration-300 ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
+                <button 
+                    onClick={toggleFilterMenu} 
+                    className="flex items-center gap-3 text-2xl bg-blue-500 text-white 
+                            px-6 py-3 rounded-full shadow-lg hover:bg-blue-600 transition"
+                >
+                    <FaSearch className="text-3xl" />
+                    Rechercher
+                </button>
+
                 <div className="flex-grow flex justify-center pr-72">
                     <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
                 </div>
             </div>
+
+            {isFilterOpen && (
+                <div className="absolute top-24 bg-white shadow-md rounded-lg p-4 w-64">
+                    <p className="font-bold">Filtrer par :</p>
+                    <button onClick={() => applyFilter('A-G')} className="block w-full text-left py-2">A - G</button>
+                    <button onClick={() => applyFilter('G-P')} className="block w-full text-left py-2">G - P</button>
+                    <button onClick={() => applyFilter('P-Z')} className="block w-full text-left py-2">P - Z</button>
+                    <button onClick={() => applyFilter('antiInflammatory')} className="block w-full text-left py-2">Désinflammatoire</button>
+                    <button onClick={() => applyFilter('painRelief')} className="block w-full text-left py-2">Anti-douleur</button>
+                    <button onClick={() => applyFilter(null)} className="block w-full text-left py-2">Réinitialiser</button>
+                </div>
+            )}
 
             <div className="w-2/3 h-72 flex items-center justify-center text-gray-800 text-5xl bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
                 Voici la liste des médicaments disponibles à la vente :
@@ -189,12 +238,12 @@ function NonPrescriptionDrugs() {
                 ref={drugsListRef}
             >
                 <div className="grid grid-cols-3 gap-6">
-                    {drugs_items.map((item, index) => (
+                    {filteredDrugs.map((item, index) => (
                         <div
                             key={item.id}
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
-                            tabIndex={0} // Permet au div d'être focusable
+                            tabIndex={0}
                             className={`h-36 flex items-center justify-center text-4xl text-gray-800 
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
@@ -204,6 +253,7 @@ function NonPrescriptionDrugs() {
                         </div>                    
                     ))}
                 </div>
+
             </div>
 
             {isModalOpen && selectedDrug && (
