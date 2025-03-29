@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_URL, API_URL_DEV } from '@env';
 
 const api = axios.create({
-    baseURL: 'https://localhost:3333',
+    baseURL: __DEV__ ? API_URL_DEV : API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
