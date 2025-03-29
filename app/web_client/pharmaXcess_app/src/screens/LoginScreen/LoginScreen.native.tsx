@@ -10,6 +10,7 @@ import loginStyles from './LoginScreen.styles';
 import { useTranslation } from 'react-i18next';
 import { getAccessibilityProps, getHiddenAccessibilityProps } from '@/src/accessibility/screenReader/accessibilityUtils';
 import { announceForAccessibility, setScreenAccessibilityFocus } from '@/src/accessibility/screenReader/accessibilityConfig';
+import { login } from '@/src/services/authService';
 
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -25,6 +26,8 @@ export default function LoginScreen () {
     const [passwordError, setPasswordError] = useState(false);
     const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
 
+    const [error, setError] = useState('');
+
     const emailErrorRef = useRef<Text>(null);
     const passwordErrorRef = useRef<Text>(null);
 
@@ -32,7 +35,7 @@ export default function LoginScreen () {
         announceForAccessibility(t('title'));
     }, []);
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         let hasError = false;
         let timer = 0;
 
@@ -62,7 +65,14 @@ export default function LoginScreen () {
             setPasswordErrorMessage('');
         }
         if (!hasError) {
-            announceForAccessibility(t('loginButton.success'));
+            try {
+                const response = await login(email, password);
+                announceForAccessibility(t('loginButton.success'));
+            }
+            catch (error) {
+                setError((error as Error).message);
+                console.error('Login Error:', error);
+            }
         }
     };
 
