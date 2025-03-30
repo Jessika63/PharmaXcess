@@ -12,8 +12,14 @@ function StartingPage() {
       setFocusedIndex((prevIndex) => (prevIndex < 1 ? prevIndex + 1 : prevIndex));
     } else if (event.key === "ArrowLeft") {
       setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+    } else if (event.key === "Enter") {
+      if (prescriptionButtonRef.current) {
+        prescriptionButtonRef.current.click();
+      } else if (nonPrescriptionButtonRef.current) {
+        nonPrescriptionButtonRef.current.click();
+      }
     }
-  };
+  };  
 
   useEffect(() => {
     if (focusedIndex === 0 && prescriptionButtonRef.current) {
@@ -32,52 +38,50 @@ function StartingPage() {
   }, []);
 
   return (
-    <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
+    <div className="bg-background_color w-full min-h-screen flex flex-col justify-center items-center overflow-hidden">
       {/* Header */}
-      <div className="w-4/5 h-48 flex justify-center items-center mb-20">
+      <div className="w-4/5 h-40 flex justify-center items-center mb-12">
         {/* Logo */}
         <div className="flex justify-center items-center w-full">
-          <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
+          <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-96 h-24" />
         </div>
       </div>
-
-      {/* Container pour center les 2 boutons */}
-      <div className="flex flex-col items-center space-y-28 w-full">
-
-        {/* Bouton 'Médicaments sous ordonnance' */}
+  
+      {/* Container for centering both buttons */}
+      <div className="flex flex-col items-center space-y-10 w-full">
+  
+        {/* Button 'Médicaments sous ordonnance' */}
         <Link to="/documents-checking" className="w-full flex justify-center">
           <div
             ref={prescriptionButtonRef}
             tabIndex={0}
-            className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
-              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
-              transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
-              hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
+            className={`w-2/5 h-40 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-4xl
+              transition-transform duration-500 hover:scale-105 focus:ring-4 focus:ring-pink-500
               ${focusedIndex === 0 ? 'scale-105' : ''}`}
           >
             Médicaments avec ordonnance
           </div>
         </Link>
-
-        {/* Bouton 'Médicaments sans ordonnance' */}
+  
+        {/* Button 'Médicaments sans ordonnance' */}
         <Link to="/non-prescription-drugs" className="w-full flex justify-center">
           <div
             ref={nonPrescriptionButtonRef}
             tabIndex={0}
-            className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
-              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
-              transition-transform duration-500 hover:from-[#d45b93]
-              hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
+            className={`w-2/5 h-40 flex items-center justify-center rounded-3xl shadow-lg 
+              bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-4xl
+              transition-transform duration-500 hover:scale-105 focus:ring-2 focus:ring-pink-500
               ${focusedIndex === 1 ? 'scale-105' : ''}`}
           >
             Médicaments sans ordonnance
           </div>
         </Link>
-
+  
       </div>
-
     </div>
   );
+  
 }
 
 export default StartingPage;
