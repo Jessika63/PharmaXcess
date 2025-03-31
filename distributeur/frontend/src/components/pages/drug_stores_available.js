@@ -93,7 +93,7 @@ function DrugStoresAvailable() {
 
       {/* List of pharmacies */}
       <div
-        className="w-4/5 h-[40vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+        className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
         tabIndex={0}
       >
         <div className="grid grid-cols-1 gap-4 place-items-center">

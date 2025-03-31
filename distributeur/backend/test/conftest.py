@@ -12,7 +12,7 @@ import config
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_doctors_dicts_and_data_for_tests():
-    assert config.global_verifictaion() is True
+    assert config.global_verification() is True
 
 @pytest.fixture
 def client():

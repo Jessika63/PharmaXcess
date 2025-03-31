@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
+import './css/global.css'
 
 const categories = {
     antiInflammatory: 'Désinflammatoire',
@@ -71,7 +72,7 @@ function NonPrescriptionDrugs() {
 
     const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
     const [focusedIndexSearch, setFocusedIndexSearch] = useState(0);
-    const searchMenuOptions = ["A-G", "G-P", "P-Z", "antiInflammatory"
+    const searchMenuOptions = ["A-G", "H-P", "Q-Z", "antiInflammatory"
         , "painRelief", "reset", "close"];
     const searchMenuRefs = useRef([]);
 
@@ -206,10 +207,10 @@ function NonPrescriptionDrugs() {
     
         if (filter === 'A-G') {
             filteredItems = drugs_items.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G');
-        } else if (filter === 'G-P') {
-            filteredItems = drugs_items.filter(drug => drug.label[0] > 'G' && drug.label[0] <= 'P');
-        } else if (filter === 'P-Z') {
-            filteredItems = drugs_items.filter(drug => drug.label[0] > 'P');
+        } else if (filter === 'H-P') {
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'H' && drug.label[0] <= 'P');
+        } else if (filter === 'Q-Z') {
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'Q');
         } else if (categories[filter]) {
             filteredItems = drugs_items.filter(drug => drug.category === filter);
         } else if (filter === "close") {
@@ -254,8 +255,10 @@ function NonPrescriptionDrugs() {
                 <Link
                 to="/" 
                 ref={goBackMainButtonRef}
-                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-10 
-                    py-6 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+
+                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-24 
+                    py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+
                     duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
@@ -266,20 +269,21 @@ function NonPrescriptionDrugs() {
             </div>
 
             {isSearchMenuOpen && (
-                <div className="absolute top-24 bg-gradient-to-r from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
+                <div className="absolute top-24 left-[80%] bg-gradient-to-r 
+                from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
                     <p className="font-bold">Filtrer par :</p>
                     <button onClick={() => applyFilter('A-G')}
                     key={"A-G"}
                     ref={searchMenuRefs.current[0]}
                     tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 0 ? "scale-105" : ""}`}>A - G</button>
-                    <button onClick={() => applyFilter('G-P')}
-                    key={"G-P"}
+                    <button onClick={() => applyFilter('H-P')}
+                    key={"H-P"}
                     ref={searchMenuRefs.current[1]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? "scale-105" : ""}`}>G - P</button>
-                    <button onClick={() => applyFilter('P-Z')}
-                    key={"P-Z"}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? "scale-105" : ""}`}>H - P</button>
+                    <button onClick={() => applyFilter('Q-Z')}
+                    key={"Q-Z"}
                     ref={searchMenuRefs.current[2]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? "scale-105" : ""}`}>P - Z</button>
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? "scale-105" : ""}`}>Q - Z</button>
                     <button onClick={() => applyFilter('antiInflammatory')} 
                     key={"antiInflammatory"}
                     ref={searchMenuRefs.current[3]}
@@ -310,7 +314,7 @@ function NonPrescriptionDrugs() {
             </div>
 
             <div 
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
+                className="w-4/5 mt-16 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
                 ref={drugsListRef}
             >
                 <div className="grid grid-cols-3 gap-6">
@@ -320,7 +324,9 @@ function NonPrescriptionDrugs() {
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
-                            className={`h-20 flex items-center justify-center text-4xl text-gray-800 
+
+                            className={`h-36 flex items-center justify-center text-4xl text-gray-800 
+
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
                             onClick={() => openModal(item)}
