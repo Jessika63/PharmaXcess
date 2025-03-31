@@ -1,25 +1,21 @@
-import React, {useState} from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './css/documents_checking.css'
 import CameraComponent from '../camera_component';
 import ModalCamera from '../modal_camera';
 
 function DocumentsChecking() {
-
     const [showCamera, setShowCamera] = useState(false);
-    const [image, setImage] = useState(null);
-    const [isPhotoTaken, setIsPhotoTaken] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(1);
+    const focusedIndexRef = useRef(1);
+    const buttonsRef = useRef([]);
+
+    const navigate = useNavigate();
 
     const handleOpenCamera = () => {
         setShowCamera(true);
         setIsModalOpen(true);
-    };
-
-    const handlePhotoCapture = (capturedImage) => {
-        setImage(capturedImage);
-        setIsPhotoTaken(true);
     };
 
     const closeModal = () => {
@@ -27,93 +23,134 @@ function DocumentsChecking() {
         setShowCamera(false);
     };
 
+    const handleKeyDown = useCallback((event) => {
+        if (event.key === "ArrowRight") {
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex < 3 ? prevIndex + 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
+        } else if (event.key === "ArrowLeft") {
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex > 0 ? prevIndex - 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            if (focusedIndexRef.current >= 1) {
+                handleOpenCamera();
+            } else {
+                navigate('/');
+            }
+        }
+    }, [navigate, handleOpenCamera]);
+
+    useEffect(() => {
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [handleKeyDown]);
+
+    useEffect(() => {
+        if (buttonsRef.current[focusedIndex]) {
+            buttonsRef.current[focusedIndex].focus();
+        }
+    }, [focusedIndex]);
+
+    useEffect(() => {
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
+    useEffect(() => {
+    }, [focusedIndex]);
+    
+
     return (
-        <div className="dc_App">
+        <div className="bg-background_color w-full h-screen flex flex-col items-center">
 
-            {/* header container */}
-            <div className="dc_header_container">
-
-                {/* Rectangle 'go back rectangle' */}
-                <Link to="/" style={{ textDecoration: 'none' }}>
-                    <div className="rectangle dc_back_button" style={{cursor: 'pointer'}}>
-                        <p style={{ fontSize: '2.5em' }}>Retour</p>
-                    </div>
+            {/* Header */}
+            <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-16">
+                {/* Go Back */}
+                <Link
+                    to="/"
+                    ref={(el) => (buttonsRef.current[-1] = el)}
+                    tabIndex={0}
+                    className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
+                        px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition 
+                        ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+                >
+                    Retour
                 </Link>
 
-                {/* logo container */}
-                <div className="dc_logo_container">
-                    {/* logo PharmaXcess */}
-                    <img
-                        src={require('./../../assets/logo.png')}
-                        alt="Logo PharmaXcess"
-                        className="logo"
-                    />
+                {/* Logo */}
+                <div className="flex-grow flex justify-center pr-72">
+                    <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
                 </div>
-
             </div>
 
-            <div className='dc_body_page'>
-
-                {/* Rectangle 'main rectangle' */}
-                <div className="rectangle" style={{top: '20%', left: '50%'}}>
-                    <p style={{ fontSize: '3em', textAlign: 'center' }}>
-                    Veuillez insérer les documents <br/>
-                    suivants : ordonnance, carte vitale <br/>
-                    et carte d’identité
+            {/* Main Content */}
+            <div className="w-2/3 h-2/3 flex flex-col items-center mt-24 space-y-24">
+                <div className="w-2/3 h-72 flex items-center justify-center rounded-3xl shadow-lg 
+                    bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 transition-transform duration-500
+                    hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105">
+                    <p className="text-5xl text-center">
+                        Veuillez insérer les documents :<br />
+                        Ordonnance, Carte Vitale, Carte d’Identité
                     </p>
                 </div>
 
-                {/* insertion buttons group */}
-                <div style={{position: 'relative', top: '10%'
-                    , width: '100%', height: '45%', display: 'flex'}}>
-
-                    {/* Rectangle 'Ordonnance' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '22%', top: '50%', left: '17%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em' }}>
-                            Ordonnance
-                        </p>
+                <div className="w-full flex space-x-12">
+                    {/* Button 'Ordonnance' */}
+                    <div
+                        ref={(el) => (buttonsRef.current[0] = el)}
+                        tabIndex={0}
+                        className={`w-3/4 h-48 flex items-center justify-center rounded-3xl shadow-lg 
+                            bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 cursor-pointer
+                            transition-transform duration-500 hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105
+                            ${focusedIndex === 1 ? 'scale-105' : ''}`}
+                        onClick={handleOpenCamera}
+                    >
+                        <p className="text-5xl text-center">Ordonnance</p>
                     </div>
 
-                    {/* Rectangle 'Carte Vitale' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '25%', top: '50%', left: '28%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em' }}>
-                            Carte Vitale
-                        </p>
+                    {/* Button 'Carte Vitale' */}
+                    <div
+                        ref={(el) => (buttonsRef.current[1] = el)}
+                        tabIndex={0}
+                        className={`w-3/4 h-48 flex items-center justify-center rounded-3xl shadow-lg 
+                            bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 cursor-pointer
+                            transition-transform duration-500 hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105
+                            ${focusedIndex === 2 ? 'scale-105' : ''}`}
+                        onClick={handleOpenCamera}
+                    >
+                        <p className="text-5xl text-center">Carte Vitale</p>
                     </div>
 
-                    {/* Rectangle 'Carte d'Identité' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '20%', top: '50%', left: '35%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em', textAlign: 'center'}}>
-                            Carte <br/>
-                            d'Identité
-                        </p>
+                    {/* Button 'Carte d'Identité' */}
+                    <div
+                        ref={(el) => (buttonsRef.current[2] = el)}
+                        tabIndex={0}
+                        className={`w-3/4 h-48 flex items-center justify-center rounded-3xl shadow-lg 
+                            bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 cursor-pointer
+                            transition-transform duration-500 hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105
+                            ${focusedIndex === 3 ? 'scale-105' : ''}`}
+                        onClick={handleOpenCamera}
+                    >
+                        <p className="text-5xl text-center">Carte d'Identité</p>
                     </div>
-
                 </div>
-
-                {isModalOpen && showCamera && (
-                    <ModalCamera onClose={closeModal}>
-
-                        <div style={{
-                            
-                            marginTop: '20px'
-                        }}>
-                            <CameraComponent onPhotoCapture={handlePhotoCapture} />
-                            {/* <button onClick={closeModal} style={{ marginTop: '10px' }}>
-                                Close camera
-                            </button> */}
-                        </div>
-                    </ModalCamera>
-                )}
-
             </div>
 
+            {isModalOpen && showCamera && (
+                <ModalCamera onClose={closeModal}>
+                    <CameraComponent onPhotoCapture={closeModal} />
+                </ModalCamera>
+            )}
         </div>
     );
 }
