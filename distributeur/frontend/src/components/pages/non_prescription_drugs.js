@@ -266,7 +266,8 @@ function NonPrescriptionDrugs() {
             </div>
 
             {isSearchMenuOpen && (
-                <div className="absolute top-24 bg-gradient-to-r from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
+                <div className="absolute top-24 left-[80%] bg-gradient-to-r 
+                from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
                     <p className="font-bold">Filtrer par :</p>
                     <button onClick={() => applyFilter('A-G')}
                     key={"A-G"}
@@ -313,7 +314,7 @@ function NonPrescriptionDrugs() {
                 className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
                 ref={drugsListRef}
             >
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 gap-6 overflow-y-hidden">
                     {filteredDrugs.map((item, index) => (
                         <div
                             key={item.id}
