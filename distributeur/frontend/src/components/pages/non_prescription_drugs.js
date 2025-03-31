@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ModalStandard from '../modal_standard';
+import './css/global.css'
 
 const drugs_items = [
     { id: 1, label: 'Dafalgan', size: 2, state: 0 },
@@ -172,7 +173,7 @@ function NonPrescriptionDrugs() {
                 ref={goBackMainButtonRef}
                 className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-24 
                     py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-                    duration-300 ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
+                    duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
                 <div className="flex-grow flex justify-center pr-72">
@@ -194,7 +195,7 @@ function NonPrescriptionDrugs() {
                             key={item.id}
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
-                            tabIndex={0} // Permet au div d'être focusable
+                            tabIndex={0}
                             className={`h-36 flex items-center justify-center text-4xl text-gray-800 
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
@@ -211,7 +212,7 @@ function NonPrescriptionDrugs() {
                     <button
                         ref={backButtonRef}
                         className={`w-40 h-20 absolute top-4 left-4 text-3xl text-white 
-                            bg-red-500 rounded-xl px-3 py-2 border-2 border-red-700 
+                            bg-red-500 rounded-xl px-3 py-2
                             hover:bg-red-600 focus:outline-none transition-transform duration-300
                             ${focusedIndexPaymentModal === 0 ? 'scale-105' : ''}`}
                         onClick={closeModal}
