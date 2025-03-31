@@ -1,16 +1,17 @@
 
 {
     "env_paths": [
-      "distributeur/backend/.env"
+        "distributeur/backend/.env"
     ],
     "ignore_files": [
-      "distributeur/backend/database_dump_px_17_11_2024.sql",
-      "distributeur/backend/db/database.sql",
-      "distributeur/frontend/package-lock.json",
-      "distributeur/backend/.coverage",
-      "app/pharmaXcess_app/package-lock.json",
-      "app/pharmaXcess_app/yarn.lock",
-      "app/web_server/package-lock.json"
+        "distributeur/backend/db/database.sql",
+        "distributeur/frontend/package-lock.json",
+        "distributeur/backend/.coverage",
+        "distributeur/backend/test/results.png",
+        "app/pharmaXcess_app/package-lock.json",
+        "app/pharmaXcess_app/yarn.lock",
+        "app/web_server/package-lock.json",
+        "distributeur/backend/database_dump_px_10_02_2025.sql"
     ],
     "ignore_dirs": [
         ".git",

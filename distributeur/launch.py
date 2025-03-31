@@ -9,21 +9,25 @@ from launch_distributeur.scripts.handle_front import handle_front
 from launch_distributeur.scripts.handle_test import handle_test
 from launch_distributeur.scripts.handle_update import handle_update
 from launch_distributeur.scripts.handle_down import handle_down
+from launch_distributeur.scripts.handle_dump import handle_dump
 
 # Main script
 if __name__ == "__main__":
     # Argument parser setup
     parser = argparse.ArgumentParser(description="Utility script with multiple operations.")
-    parser.add_argument("--verif", action="store_true", help="Run verification steps")
-    parser.add_argument("--back", action="store_true", help="Run backend-related operations")
-    parser.add_argument("--test", action="store_true", help="Run tests")
-    parser.add_argument("--front", action="store_true", help="Run frontend-related operations")
+    parser.add_argument("--verif", action="store_true", help="Run verification steps.")
+    parser.add_argument("--back", action="store_true", help="Run backend-related operations.")
+    parser.add_argument("--test", action="store_true", help="Run tests.")
+    parser.add_argument("--front", action="store_true", help="Run frontend-related operations.")
     parser.add_argument(
-        "--all", action="store_true", help="Run the whole application except for tests"
+        "--all", action="store_true", help="Run the whole application except for tests."
     )
-    parser.add_argument("--update", type=str, help="Function to update the database")
+    parser.add_argument("--update", type=str, help="Function to update the database.")
     parser.add_argument("--down", action="store_true",
-        help="Function to stop the containers, remove the images, and remove the volumes"
+        help="Function to stop the containers, remove the images, and remove the volumes."
+    )
+    parser.add_argument("--dump", action="store_true",
+        help="Function to export the database dump."
     )
 
     # Parse arguments
@@ -68,6 +72,8 @@ if __name__ == "__main__":
             handle_update(update_function, db_container_name, backend_folder)
         if args.down:
             handle_down()
+        if args.dump:
+            handle_dump(backend_folder, db_container_name, back_app_container_name)
     else:
         parser.print_help()
         exit(1)
