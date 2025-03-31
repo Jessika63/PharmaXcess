@@ -42,7 +42,7 @@ function DrugStoresAvailable() {
       } else {
         alert(`Vous avez sélectionné : ${drug_shops[focusedIndex - 1].label}`);
       }
-      setEnterPressed(false); // Réinitialiser l'état de "Enter" pressé
+      setEnterPressed(false);
     }
   }, [enterPressed, focusedIndex, location.state, navigate]);
 
@@ -70,7 +70,7 @@ function DrugStoresAvailable() {
           to={'/' + (location.state?.from || '')}
           ref={(el) => (buttonsRef.current[0] = el)}
           tabIndex={0}
-          className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
+          className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 focus:outline-none
             px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300
             ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
           onClick={(e) => e.preventDefault()}
@@ -83,7 +83,7 @@ function DrugStoresAvailable() {
         </div>
       </div>
 
-      {/* Main message*/}
+      {/* Main Message */}
       <div
         className="w-2/3 h-48 flex items-center justify-center text-center text-gray-800 text-5xl 
         bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-300 mb-24"

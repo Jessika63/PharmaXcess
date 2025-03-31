@@ -50,10 +50,10 @@ function StartingPage() {
           <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-96 h-24" />
         </div>
       </div>
-  
+
       {/* Container for centering both buttons */}
-      <div className="flex flex-col items-center space-y-10 w-full">
-  
+      <div className="flex flex-col items-center space-y-28 w-full">
+
         {/* Button 'Médicaments sous ordonnance' */}
         <Link to="/documents-checking" className="w-full flex justify-center">
           <div
@@ -67,7 +67,7 @@ function StartingPage() {
             Médicaments avec ordonnance
           </div>
         </Link>
-  
+
         {/* Button 'Médicaments sans ordonnance' */}
         <Link to="/non-prescription-drugs" className="w-full flex justify-center">
           <div

@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
+import './css/global.css'
 
 const categories = {
     antiInflammatory: 'Désinflammatoire',
@@ -254,8 +255,10 @@ function NonPrescriptionDrugs() {
                 <Link
                 to="/" 
                 ref={goBackMainButtonRef}
-                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-10 
-                    py-6 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+
+                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-24 
+                    py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+
                     duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
@@ -321,7 +324,9 @@ function NonPrescriptionDrugs() {
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
-                            className={`h-20 flex items-center justify-center text-4xl text-gray-800 
+
+                            className={`h-36 flex items-center justify-center text-4xl text-gray-800 
+
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
                             onClick={() => openModal(item)}
