@@ -37,58 +37,61 @@ function PaymentFailed() {
   }, []);
 
   return (
-    <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
+      <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
 
-        {/* Header */}
-        <div className="w-4/5 h-48 flex justify-center items-center mb-12 mt-10">
-            {/* Logo */}
-            <div className="flex justify-center items-center w-full">
-                <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
-            </div>
-        </div>
+          {/* Header */}
+          <div className="w-4/5 h-32 flex justify-center items-center mb-8 mt-8">
+              {/* Logo */}
+              <div className="flex justify-center items-center w-full">
+                  <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-96 h-24" />
+              </div>
+          </div>
 
-        {/* Information Message Container */}
-        <div className="w-3/4 bg-background_color p-8 rounded-xl text-center mb-20">
-            <p className="text-5xl text-gray-800">
-                Le paiement a échoué, voulez-vous réessayer ou annuler la transaction ?
-            </p>
-        </div>
+          {/* Information Message Container */}
+          <div className="w-3/4 bg-background_color p-6 rounded-xl text-center mb-8">
+              <p className="text-3xl text-gray-800">
+                  Le paiement a échoué, voulez-vous réessayer ou annuler la transaction ?
+              </p>
+          </div>
 
-        {/* Container for centering both buttons */}
-          <div className="flex flex-col items-center space-y-20 w-full">
+          {/* Container for centering both buttons */}
+          <div className="flex flex-col items-center space-y-12 w-full">
       
               {/* Button 'Réessayer' */}
               <div tabIndex={0}
-              ref={retryButtonRef}
-              onClick={() => navigate('/' + (location.state.from || '/#'))}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  navigate('/' + (location.state.from || '/#'))
-                }
-            }}
-              className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
-                  bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl cursor-pointer
-                  transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
-                  hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
-                  ${focusedIndex === 0 ? 'scale-105' : ''}`}>
-                Réessayer
+                  ref={retryButtonRef}
+                  onClick={() => navigate('/' + (location.state?.from || '/#'))}
+                  onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                          navigate('/' + (location.state?.from || '/#'));
+                      }
+                  }}
+                  className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
+                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl cursor-pointer
+                      transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
+                      hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
+                      ${focusedIndex === 0 ? 'scale-105' : ''}`}
+              >
+                  Réessayer
               </div>
-      
+
               {/* Button 'Annuler la commande' */}
-              <Link to="/#" ref={cancelButtonRef} className="w-full flex justify-center">
-                <div tabIndex={0}
-                className={`w-1/2 h-72 flex items-center justify-center rounded-3xl shadow-lg 
-                    bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-5xl
-                    transition-transform duration-500 hover:from-[#d45b93]
-                    hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
-                    ${focusedIndex === 1 ? 'scale-105' : ''}`}>
-                  Annuler la commande
-                </div>
+              <Link to="/#" ref={cancelButtonRef} className="w-full flex justify-center focus:outline-none">
+                  <div tabIndex={0}
+                      className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
+                          bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl
+                          transition-transform duration-500 hover:from-[#d45b93] focus:outline-none
+                          hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
+                          ${focusedIndex === 1 ? 'scale-105' : ''}`}
+                  >
+                      Annuler la commande
+                  </div>
               </Link>
-      
+
           </div>
-    </div>
+      </div>
   );
+
 }
 
 export default PaymentFailed;
