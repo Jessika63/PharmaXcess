@@ -218,7 +218,8 @@ function NonPrescriptionDrugs() {
         } else {
             filteredItems = drugs_items;
         }
-    
+
+        setIsSearchMenuOpen(false);
         setFilteredDrugs(filteredItems);
         setFocusedIndex(0);
     };    
@@ -251,20 +252,20 @@ function NonPrescriptionDrugs() {
 
     return (
         <div className="w-full h-screen flex flex-col items-center p-8 bg-background_color">
-            <div className="w-4/5 h-48 flex justify-between items-center mb-24 mt-10">
+            <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-2">
                 <Link
                 to="/" 
                 ref={goBackMainButtonRef}
 
-                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-24 
-                    py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-12 
+                    py-8 rounded-2xl shadow-lg hover:scale-105 transition-transform 
 
                     duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
 
                 <div className="flex-grow flex justify-center pr-16">
-                    <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
+                    <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-116 h-28" />
                 </div>
             </div>
 
@@ -325,7 +326,7 @@ function NonPrescriptionDrugs() {
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
 
-                            className={`h-36 flex items-center justify-center text-4xl text-gray-800 
+                            className={`h-24 flex items-center justify-center text-4xl text-gray-800 
 
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
