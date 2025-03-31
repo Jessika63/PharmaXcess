@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify
 import requests
 
@@ -42,8 +41,8 @@ def get_pharmacies():
         out body;
         """
 
-        # Send request to Overpass API
-        response = requests.get(OVERPASS_URL, params={"data": query})
+        # Send request to Overpass API with a timeout of 10 seconds
+        response = requests.get(OVERPASS_URL, params={"data": query}, timeout=10)
         response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404, 500)
 
         # Parse the response JSON
@@ -71,8 +70,13 @@ def get_pharmacies():
         # If no pharmacies were found, return a 404 response
         return jsonify({"error": "No pharmacies found in the specified area"}), 404
 
+    except requests.exceptions.Timeout:
+        # Handle request timeout error
+        print("Error: The request to Overpass API timed out.")
+        return jsonify({"error": "Request to Overpass API timed out. Please try again later."}), 500
+
     except requests.exceptions.RequestException as e:
-        # Handle network-related errors (e.g., timeout, connection error)
+        # Handle network-related errors (e.g., server down, connection error)
         print(f"Error: {e}")  # Log the error
         return jsonify({"error": f"Request to Overpass API failed: {str(e)}"}), 500  # Return 500 Internal Server Error
 

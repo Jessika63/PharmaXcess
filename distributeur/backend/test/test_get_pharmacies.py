@@ -121,3 +121,19 @@ def test_get_pharmacies_unexpected_error(mock_get, client):
 
     assert response.status_code == 500  # Expect 500 Internal Server Error
     assert b"Unexpected error" in response.data  # Check error message
+
+@pytest.mark.order(1)  # LOX n°4
+@patch("requests.get", side_effect=requests.exceptions.Timeout)
+def test_get_pharmacies_timeout(mock_get, client):
+    """
+    Test case: Overpass API timeout.
+
+    - Mocks a timeout exception when calling the Overpass API.
+    - Sends a GET request to /get_pharmacies.
+    - Expects a 500 Internal Server Error response with a timeout error message.
+    """
+
+    response = client.get("/get_pharmacies", query_string={"lat": 52.37, "lon": 4.89, "radius": 1000})
+
+    assert response.status_code == 500  # Expect 500 Internal Server Error
+    assert b"Request to Overpass API timed out" in response.data  # Check error message
