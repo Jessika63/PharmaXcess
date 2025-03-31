@@ -8,12 +8,11 @@ from unittest.mock import patch
 def test_find_doctor_by_name_success(client):
     # Sending a GET request with valid query parameters to find a doctor by name
     response = client.get('/find_doctor_by_name',
-        query_string=config.dict_doctor_to_add["missing_field_rpps"]
+        query_string=config.dict_doctor_to_add["missing_field_first_name"]
     )
     # Assert that the response status code is 200 (OK)
     assert response.status_code == 200
     # Assert that the first and last name of the doctor are in the response data
-    assert b'John' in response.data
     assert b'Doe' in response.data
 
 # Test case where the doctor is not found by the given name
@@ -32,14 +31,13 @@ def test_find_doctor_by_name_not_found(client):
 @pytest.mark.order(2)  # LOX n°1
 def test_find_doctor_by_name_missing_params(client):
     # Sending a GET request with only the 'first_name' parameter (missing 'last_name')
-    response = client.get('/find_doctor_by_name', query_string={
-        'first_name': config.dict_doctor_to_add["add_success_1"]["first_name"]
-        # last_name is missing
-    })
+    response = client.get('/find_doctor_by_name',
+        query_string=config.dict_doctor_to_add["missing_field_last_name"]
+    )
     # Assert that the response status code is 400 (Bad Request)
     assert response.status_code == 400
     # Assert that the response contains the error message about missing parameters
-    assert b'Both \'first_name\' and \'last_name\' are required' in response.data
+    assert b'\'last_name\' is required' in response.data
 
 # Test case to simulate a database connection error while finding a doctor by name
 @pytest.mark.order(2)  # LOX n°1

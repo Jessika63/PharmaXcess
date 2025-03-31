@@ -8,30 +8,30 @@ find_doctor_by_name_bp = Blueprint('find_doctor_by_name', __name__)
 @find_doctor_by_name_bp.route('/find_doctor_by_name', methods=['GET'])
 def find_doctor_by_name():
     """
-    Searches the database for doctors by first name and last name. Other parameters are optional.
+    Searches the database for doctors by last name. Other parameters are optional.
 
     Query parameters:
-        - first_name (str): Required. The first name of the doctor.
         - last_name (str): Required. The last name of the doctor.
+        - first_name (str): Optional. Filters by first name.
         - sector (str): Optional. Filters by sector.
         - region (str): Optional. Filters by region.
 
     Returns:
         - 200 OK: A list of matching doctors.
-        - 400 Bad Request: If 'first_name' or 'last_name' is missing.
+        - 400 Bad Request: If 'last_name' is missing.
         - 404 Not Found: If no doctors match the criteria.
         - 500 Internal Server Error: In case of a database error.
     """
 
     # Retrieve query parameters
-    first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
+    first_name = request.args.get('first_name')
     sector = request.args.get('sector')
     region = request.args.get('region')
 
-    # Validate required fields
-    if not first_name or not last_name:
-        return jsonify({"error": "Both 'first_name' and 'last_name' are required"}), 400
+    # Validate required field
+    if not last_name:
+        return jsonify({"error": "'last_name' is required"}), 400
 
     connection = None  # Initialize connection
 
@@ -43,12 +43,14 @@ def find_doctor_by_name():
             sql_query = """
             SELECT first_name, last_name, rpps_code, sector, region
             FROM doctors
-            WHERE first_name = %s
-            AND last_name = %s
+            WHERE last_name = %s
             """
-            params = [first_name, last_name]
+            params = [last_name]
 
             # Add optional filters
+            if first_name:
+                sql_query += " AND first_name = %s"
+                params.append(first_name)
             if sector:
                 sql_query += " AND sector = %s"
                 params.append(sector)
