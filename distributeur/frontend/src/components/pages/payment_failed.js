@@ -47,7 +47,7 @@ function PaymentFailed() {
             </div>
         </div>
 
-        {/* Rectangle information message */}
+        {/* Information Message Container */}
         <div className="w-3/4 bg-background_color p-8 rounded-xl text-center mb-20">
             <p className="text-5xl text-gray-800">
                 Le paiement a échoué, voulez-vous réessayer ou annuler la transaction ?
