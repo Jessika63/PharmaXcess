@@ -311,10 +311,10 @@ function NonPrescriptionDrugs() {
             </div>
 
             <div 
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
+                className="w-4/5 mt-16 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
                 ref={drugsListRef}
             >
-                <div className="grid grid-cols-3 gap-6 overflow-y-hidden">
+                <div className="grid grid-cols-3 gap-6">
                     {filteredDrugs.map((item, index) => (
                         <div
                             key={item.id}

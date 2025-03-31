@@ -18,31 +18,26 @@ function DrugStoresAvailable() {
   ];
 
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [enterPressed, setEnterPressed] = useState(false); // Nouvel état pour "Enter"
+  const [enterPressed, setEnterPressed] = useState(false);
   const buttonsRef = useRef([]);
 
   const handleKeyDown = (event) => {
     console.log('focusedindex = ', focusedIndex);
-    // Empêcher la propagation de l'événement à d'autres éléments
     event.stopPropagation();
 
-    // Vérifier la touche appuyée et ajuster l'index
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       setFocusedIndex((prevIndex) => Math.min(prevIndex + 1, drug_shops.length));
     } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       setFocusedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
     } else if (event.key === "Enter") {
-      event.preventDefault(); // Empêcher l'action par défaut de la touche Enter
-      setEnterPressed(true);  // Marquer que "Enter" a été appuyé
+      event.preventDefault();
+      setEnterPressed(true);
     }
   };
 
-  // Utiliser useEffect pour observer les changements de focusedIndex et enterPressed
   useEffect(() => {
     if (enterPressed) {
-      // Action basée sur l'état "Enter" pressé
       if (focusedIndex === 0) {
-        // Navigate back only when the user presses Enter and focusedIndex is 0
         navigate('/' + (location.state?.from || ''));
       } else {
         alert(`Vous avez sélectionné : ${drug_shops[focusedIndex - 1].label}`);
@@ -78,7 +73,7 @@ function DrugStoresAvailable() {
           className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 
             px-24 py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300
             ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
-          onClick={(e) => e.preventDefault()}  // Empêcher la redirection par défaut du lien "Retour"
+          onClick={(e) => e.preventDefault()}
         >
           Retour
         </Link>
@@ -88,7 +83,7 @@ function DrugStoresAvailable() {
         </div>
       </div>
 
-      {/* Message Principal */}
+      {/* Main message*/}
       <div
         className="w-2/3 h-48 flex items-center justify-center text-center text-gray-800 text-5xl 
         bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-300 mb-24"
@@ -96,9 +91,9 @@ function DrugStoresAvailable() {
         Voici la liste des pharmacies disposant du médicament souhaité :
       </div>
 
-      {/* Liste des pharmacies */}
+      {/* List of pharmacies */}
       <div
-        className="w-4/5 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+        className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
         tabIndex={0}
       >
         <div className="grid grid-cols-1 gap-6 place-items-center">
@@ -112,7 +107,7 @@ function DrugStoresAvailable() {
               hover:scale-105 transition-transform duration-300 cursor-pointer
               ${focusedIndex === index + 1 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
               onClick={(event) => {
-                event.preventDefault();  // Pour éviter toute redirection par défaut
+                event.preventDefault();
                 alert(`Vous avez sélectionné : ${item.label}`);
               }} 
             >
