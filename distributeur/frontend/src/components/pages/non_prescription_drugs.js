@@ -1,3 +1,4 @@
+import './css/global.css'
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
@@ -50,6 +51,8 @@ function NonPrescriptionDrugs() {
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const navigate = useNavigate();
 
+    const searchButtonRef = useRef(null);
+
     const goBackMainButtonRef = useRef(null)
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -66,6 +69,12 @@ function NonPrescriptionDrugs() {
 
     const itemRefs = useRef([]);
 
+    const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
+    const [focusedIndexSearch, setFocusedIndexSearch] = useState(0);
+    const searchMenuOptions = ["A-G", "G-P", "P-Z", "antiInflammatory"
+        , "painRelief", "reset", "close"];
+    const searchMenuRefs = useRef([]);
+
     useEffect(() => {
         itemRefs.current = itemRefs.current.slice(0, drugs_items.length);
     }, [drugs_items]);
@@ -79,7 +88,7 @@ function NonPrescriptionDrugs() {
             setFocusedIndexPaymentModal(prevIndex => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
         }
     };
-    
+
 
     useEffect(() => {
         if (isModalOpen) {
@@ -90,35 +99,52 @@ function NonPrescriptionDrugs() {
             }
         }
     }, [focusedIndexPaymentModal, isModalOpen]);
-    
 
-    const handleKeyDown = (event) => {    
+    const handleKeyDown = (event) => {
+        const currentLength = filteredDrugs.length;
+        const filteredIds = filteredDrugs.map(item => item.id);
+
         if (event.key === "ArrowRight") {
             event.preventDefault();
             setFocusedIndexBackBtn(0);
-            goBackMainButtonRef.current.blur();
-            if (focusedIndex < drugs_items.length - 1) {
+            goBackMainButtonRef.current?.blur();
+            searchButtonRef.current?.blur();
+            
+            if (focusedIndex === -2) {
+                setFocusedIndex(-1);
+                searchButtonRef.current?.focus();
+            } else if (focusedIndex === -1) {
+                setFocusedIndex(0);
+            } else if (focusedIndex < currentLength - 1) {
                 setFocusedIndex((prevIndex) => prevIndex + 1);
-            } else {
-                const nextElement = document.getElementById(`drug-${focusedIndex + 1}`);
-                if (nextElement) nextElement.scrollIntoView({ behavior: "smooth" });
             }
         } else if (event.key === "ArrowLeft") {
             event.preventDefault();
-            if (focusedIndex > 0) {
+            
+            if (focusedIndex >= 0 && focusedIndex < currentLength) {
                 setFocusedIndex((prevIndex) => prevIndex - 1);
-            } else {
-                if (goBackMainButtonRef?.current) {
-                    setFocusedIndexBackBtn(1);
-                    setFocusedIndex(-1);
-                    goBackMainButtonRef?.current.focus();
-                }
+            } else if (focusedIndex === 0) {
+                setFocusedIndex(-1);
+                searchButtonRef.current?.focus();
+            } else if (focusedIndex === -1) {
+                setFocusedIndex(-2);
+                goBackMainButtonRef.current?.focus();
+                setFocusedIndexBackBtn(1);
             }
         } else if (event.key === "Enter") {
             event.preventDefault();
-            openModal(drugs_items[focusedIndex]);
+            if (focusedIndex >= 0 && focusedIndex < currentLength) {
+                const focusedId = filteredIds[focusedIndex];
+                const item = drugs_items.find(drug => drug.id === focusedId);
+                openModal(item);
+            } else if (focusedIndex === -1) {
+                searchButtonRef.current?.click();
+                toggleFilterMenu();
+            } else if (focusedIndex === -2) {
+                goBackMainButtonRef.current?.click();
+            }
         }
-    };
+    };    
 
     useEffect(() => {
         if (itemRefs.current[focusedIndex]) {
@@ -131,40 +157,70 @@ function NonPrescriptionDrugs() {
         }
     }, [focusedIndex]); 
        
+    const handleKeyDownSearchMenu = (event) => {
+        if (event.key === "ArrowRight") {
+            event.preventDefault();
+            setFocusedIndexSearch((prevIndex) =>
+                prevIndex < searchMenuOptions.length - 1 ? prevIndex + 1 : prevIndex
+            );
+        } else if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            setFocusedIndexSearch((prevIndex) =>
+                prevIndex > 0 ? prevIndex - 1 : prevIndex
+            );
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            applyFilter(searchMenuOptions[focusedIndexSearch]);
+            setIsSearchMenuOpen(false);
+        } else if (event.key === "Escape") {
+            setIsSearchMenuOpen(false);
+        }
+
+    };
+    
+    useEffect(() => {
+        if (isSearchMenuOpen) {
+            searchMenuRefs.current[focusedIndexSearch]?.current?.focus();
+        }
+    }, [focusedIndexSearch, isSearchMenuOpen]);
 
     useEffect(() => {
         const handleKeydownEvent = (event) => {
-            if (!isModalOpen) {
-                handleKeyDown(event);
-            } else {
+            if (isSearchMenuOpen) {
+                handleKeyDownSearchMenu(event);
+            } else if (isModalOpen) {
                 handleKeyDownPaymentModal(event);
+            } else {
+                handleKeyDown(event);
             }
         };
     
         document.addEventListener("keydown", handleKeydownEvent);
+        return () => document.removeEventListener("keydown", handleKeydownEvent);
+    }, [isSearchMenuOpen, isModalOpen, focusedIndex, focusedIndexPaymentModal, focusedIndexSearch]);
     
-        return () => {
-            document.removeEventListener("keydown", handleKeydownEvent);
-        };
-    }, [isModalOpen, focusedIndex, focusedIndexPaymentModal]);           
-    
-
-    const toggleFilterMenu = () => setIsFilterOpen(!isFilterOpen);
+    const toggleFilterMenu = () => setIsSearchMenuOpen(!isSearchMenuOpen);
     const applyFilter = (filter) => {
         setSelectedFilter(filter);
+        let filteredItems;
+    
         if (filter === 'A-G') {
-            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G'));
+            filteredItems = drugs_items.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G');
         } else if (filter === 'G-P') {
-            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] > 'G' && drug.label[0] <= 'P'));
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'G' && drug.label[0] <= 'P');
         } else if (filter === 'P-Z') {
-            setFilteredDrugs(drugs_items.filter(drug => drug.label[0] > 'P'));
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'P');
         } else if (categories[filter]) {
-            setFilteredDrugs(drugs_items.filter(drug => drug.category === filter));
+            filteredItems = drugs_items.filter(drug => drug.category === filter);
+        } else if (filter === "close") {
+            filteredItems = filteredDrugs;
         } else {
-            setFilteredDrugs(drugs_items);
+            filteredItems = drugs_items;
         }
-        setIsFilterOpen(false);
-    };
+    
+        setFilteredDrugs(filteredItems);
+        setFocusedIndex(0);
+    };    
 
     const openModal = (drug) => {
         setSelectedDrug(drug);
@@ -198,39 +254,59 @@ function NonPrescriptionDrugs() {
                 <Link
                 to="/" 
                 ref={goBackMainButtonRef}
-                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-24 
-                    py-10 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-                    duration-300 ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
+                className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-10 
+                    py-6 rounded-2xl shadow-lg hover:scale-105 transition-transform 
+                    duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
                         Retour
                 </Link>
-                <button 
-                    onClick={toggleFilterMenu} 
-                    className="flex items-center gap-3 text-2xl bg-blue-500 text-white 
-                            px-6 py-3 rounded-full shadow-lg hover:bg-blue-600 transition"
-                >
-                    <FaSearch className="text-3xl" />
-                    Rechercher
-                </button>
 
-                <div className="flex-grow flex justify-center pr-72">
+                <div className="flex-grow flex justify-center pr-16">
                     <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
                 </div>
             </div>
 
-            {isFilterOpen && (
-                <div className="absolute top-24 bg-white shadow-md rounded-lg p-4 w-64">
+            {isSearchMenuOpen && (
+                <div className="absolute top-24 bg-gradient-to-r from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
                     <p className="font-bold">Filtrer par :</p>
-                    <button onClick={() => applyFilter('A-G')} className="block w-full text-left py-2">A - G</button>
-                    <button onClick={() => applyFilter('G-P')} className="block w-full text-left py-2">G - P</button>
-                    <button onClick={() => applyFilter('P-Z')} className="block w-full text-left py-2">P - Z</button>
-                    <button onClick={() => applyFilter('antiInflammatory')} className="block w-full text-left py-2">Désinflammatoire</button>
-                    <button onClick={() => applyFilter('painRelief')} className="block w-full text-left py-2">Anti-douleur</button>
-                    <button onClick={() => applyFilter(null)} className="block w-full text-left py-2">Réinitialiser</button>
+                    <button onClick={() => applyFilter('A-G')}
+                    key={"A-G"}
+                    ref={searchMenuRefs.current[0]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 0 ? "scale-105" : ""}`}>A - G</button>
+                    <button onClick={() => applyFilter('G-P')}
+                    key={"G-P"}
+                    ref={searchMenuRefs.current[1]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? "scale-105" : ""}`}>G - P</button>
+                    <button onClick={() => applyFilter('P-Z')}
+                    key={"P-Z"}
+                    ref={searchMenuRefs.current[2]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? "scale-105" : ""}`}>P - Z</button>
+                    <button onClick={() => applyFilter('antiInflammatory')} 
+                    key={"antiInflammatory"}
+                    ref={searchMenuRefs.current[3]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 3 ? "scale-105" : ""}`}>Désinflammatoire</button>
+                    <button onClick={() => applyFilter('painRelief')}
+                    key={"painRelief"}
+                    ref={searchMenuRefs.current[4]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 4 ? "scale-105" : ""}`}>Anti-douleur</button>
+                    <button onClick={() => applyFilter(null)} 
+                    key={"reset"}
+                    ref={searchMenuRefs.current[5]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 5 ? "scale-105" : ""}`}>Réinitialiser</button>
+                    <button onClick={() => applyFilter(null)} 
+                    key={"close"}
+                    ref={searchMenuRefs.current[6]}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 6 ? "scale-105" : ""}`}>Fermer</button>
                 </div>
             )}
 
-            <div className="w-2/3 h-72 flex items-center justify-center text-gray-800 text-5xl bg-gradient-to-r from-pink-500 to-rose-400 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
-                Voici la liste des médicaments disponibles à la vente :
+            <div className="flex items-center bg-gradient-to-r from-pink-500 to-rose-400 px-6 py-4 rounded-xl shadow-lg">
+                <span className="text-2xl text-white">Voici la liste des médicaments disponibles à la vente :</span>
+                <button 
+                    ref={searchButtonRef} 
+                    onClick={toggleFilterMenu}
+                    className={`ml-4 flex items-center gap-2 text-white text-xl bg-transparent px-4 py-2 rounded-lg shadow hover:opacity-80 ${focusedIndex == -1 ? "scale-105" : ""}`}>
+                    <FaSearch className="text-2xl" /> Rechercher
+                </button>
             </div>
 
             <div 
@@ -244,7 +320,7 @@ function NonPrescriptionDrugs() {
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
-                            className={`h-36 flex items-center justify-center text-4xl text-gray-800 
+                            className={`h-20 flex items-center justify-center text-4xl text-gray-800 
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
                             onClick={() => openModal(item)}
@@ -261,7 +337,7 @@ function NonPrescriptionDrugs() {
                     <button
                         ref={backButtonRef}
                         className={`w-40 h-20 absolute top-4 left-4 text-3xl text-white 
-                            bg-red-500 rounded-xl px-3 py-2 border-2 border-red-700 
+                            bg-red-500 rounded-xl px-3 py-2
                             hover:bg-red-600 focus:outline-none transition-transform duration-300
                             ${focusedIndexPaymentModal === 0 ? 'scale-105' : ''}`}
                         onClick={closeModal}

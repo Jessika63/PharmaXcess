@@ -13,15 +13,19 @@ function StartingPage() {
     } else if (event.key === "ArrowLeft") {
       setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
     } else if (event.key === "Enter") {
-      if (prescriptionButtonRef.current) {
-        prescriptionButtonRef.current.click();
-      } else if (nonPrescriptionButtonRef.current) {
-        nonPrescriptionButtonRef.current.click();
-      }
+      setFocusedIndex((prevIndex) => {
+        if (prevIndex === 0 && prescriptionButtonRef.current) {
+          prescriptionButtonRef.current.click();
+        } else if (prevIndex === 1 && nonPrescriptionButtonRef.current) {
+          nonPrescriptionButtonRef.current.click();
+        }
+        return prevIndex; // keep unchanged index
+      });
     }
   };  
 
   useEffect(() => {
+    console.log('index effect: ', focusedIndex)
     if (focusedIndex === 0 && prescriptionButtonRef.current) {
       prescriptionButtonRef.current.focus();
     } else if (focusedIndex === 1 && nonPrescriptionButtonRef.current) {
