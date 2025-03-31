@@ -71,7 +71,7 @@ function NonPrescriptionDrugs() {
 
     const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
     const [focusedIndexSearch, setFocusedIndexSearch] = useState(0);
-    const searchMenuOptions = ["A-G", "G-P", "P-Z", "antiInflammatory"
+    const searchMenuOptions = ["A-G", "H-P", "Q-Z", "antiInflammatory"
         , "painRelief", "reset", "close"];
     const searchMenuRefs = useRef([]);
 
@@ -206,10 +206,10 @@ function NonPrescriptionDrugs() {
     
         if (filter === 'A-G') {
             filteredItems = drugs_items.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G');
-        } else if (filter === 'G-P') {
-            filteredItems = drugs_items.filter(drug => drug.label[0] > 'G' && drug.label[0] <= 'P');
-        } else if (filter === 'P-Z') {
-            filteredItems = drugs_items.filter(drug => drug.label[0] > 'P');
+        } else if (filter === 'H-P') {
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'H' && drug.label[0] <= 'P');
+        } else if (filter === 'Q-Z') {
+            filteredItems = drugs_items.filter(drug => drug.label[0] > 'Q');
         } else if (categories[filter]) {
             filteredItems = drugs_items.filter(drug => drug.category === filter);
         } else if (filter === "close") {
@@ -272,14 +272,14 @@ function NonPrescriptionDrugs() {
                     key={"A-G"}
                     ref={searchMenuRefs.current[0]}
                     tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 0 ? "scale-105" : ""}`}>A - G</button>
-                    <button onClick={() => applyFilter('G-P')}
-                    key={"G-P"}
+                    <button onClick={() => applyFilter('H-P')}
+                    key={"H-P"}
                     ref={searchMenuRefs.current[1]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? "scale-105" : ""}`}>G - P</button>
-                    <button onClick={() => applyFilter('P-Z')}
-                    key={"P-Z"}
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? "scale-105" : ""}`}>H - P</button>
+                    <button onClick={() => applyFilter('Q-Z')}
+                    key={"Q-Z"}
                     ref={searchMenuRefs.current[2]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? "scale-105" : ""}`}>P - Z</button>
+                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? "scale-105" : ""}`}>Q - Z</button>
                     <button onClick={() => applyFilter('antiInflammatory')} 
                     key={"antiInflammatory"}
                     ref={searchMenuRefs.current[3]}
