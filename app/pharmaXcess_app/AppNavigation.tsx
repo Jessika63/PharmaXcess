@@ -21,6 +21,7 @@ import Doctors from './screens/Doctors';
 import MedicineReminders from './screens/MedicineReminders';
 import Settings from './screens/Settings';
 import PrescriptionReminders from './screens/PrescriptionReminders';
+import VisualOptions from './screens/VisualOptions';
 
 type TabBarIconProps = {
   color: string;
@@ -31,6 +32,7 @@ type TabBarIconProps = {
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+
 
 function HomeStackScreen(): JSX.Element {
   return (
@@ -55,6 +57,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="Allergies" component={Allergies} options={{ title: 'Allergies' }} />
       <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ title: 'Antécédents familiaux' }} />
       <ProfileStack.Screen name="Doctors" component={Doctors} options={{ title: 'Médecins' }} />
+      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ title: 'Options de visualisation' }} />
     </ProfileStack.Navigator>
   );
 }
