@@ -70,6 +70,10 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         setIsModalVisible(false);
     };
 
+    const handleEditPress = (name: string): void => {
+        Alert.alert('Modifier le rappel', `Cette fonctionnalité n'est pas encore implémentée pour ${name}.`);
+    };
+
     return (
         <View style={styles.container}>
             <FlatList
@@ -78,6 +82,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 renderItem={({ item }) => (
                     <View style={styles.alarmCard}>
                         <Text style={styles.reminderName}>Médicament: {item.medicineName}</Text>
+                        <TouchableOpacity onPress={() => handleEditPress(item.medicineName)} style={styles.editButton}>
+                            <Ionicons name="create-outline" size={20} color="#fff" />
+                        </TouchableOpacity>
                         <Text style={styles.alarmText}>Heure: {item.time}</Text>
                         <Text style={styles.alarmText}>Jours: {item.days.join(', ')}</Text>
                         <Text style={styles.alarmText}>Son: {item.sound}</Text>
@@ -158,20 +165,17 @@ const styles = StyleSheet.create({
         color: '#F57196',
     },
     alarmCard: {
+        padding: 16,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        marginBottom: 16,
         width: '100%',
-        backgroundColor: '#F2F2F2',
-        marginVertical: 8,
-        borderRadius: 10,
-        marginBottom: 20,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: '#f0f0f0',
-        fontSize: 20,
     } as ViewStyle,
     alarmText: {
         fontSize: 16,
         color: '#666',
         marginBottom: 10,
+        paddingRight: 20,
     } as TextStyle,
     bold: {
         fontWeight: 'bold',
@@ -241,4 +245,13 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
+    editButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#F57196',
+        padding: 5,
+        borderRadius: 5,
+        zIndex: 1,
+    } as ViewStyle,
 });

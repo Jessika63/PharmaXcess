@@ -58,9 +58,10 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
         setIsModalVisible(false);
     };
 
-    function handleAddPress(event: GestureResponderEvent): void {
-        throw new Error('Function not implemented.');
-    }
+
+    const handleEditPress = (name: string): void => {
+        Alert.alert('Modifier le rappel', `Cette fonctionnalité n'est pas encore implémentée pour ${name}.`);
+    };
 
     return (
         <View style={styles.container}>
@@ -69,6 +70,9 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.reminderItem}>
+                        <TouchableOpacity onPress={() => handleEditPress(item.name)} style={styles.editButton}>
+                            <Ionicons name="create-outline" size={20} color="#fff" />
+                        </TouchableOpacity>
                         <Text style={styles.reminderName}>Ordonnance: {item.name}</Text>
                         <Text style={styles.reminderDate}>Date: {item.date}</Text>
                         <Text style={styles.reminderSound}>Son: {item.sound}</Text>
@@ -229,5 +233,13 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 16,
+    },
+    editButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#F57196',
+        padding: 8,
+        borderRadius: 5,
     },
 });

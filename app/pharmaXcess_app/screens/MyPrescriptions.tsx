@@ -36,9 +36,6 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): J
     Alert.alert('Ajouter une ordonnance', 'Cette fonctionnalité n\'est pas encore implémentée.');
   }
 
-  const handleEditPress = (prescriptionName: string): void => {
-    Alert.alert('Modifier une ordonnance', `Cette fonctionnalité n\'est pas encore implémentée pour ${prescriptionName}.`);
-  };
 
   return (
     <View style={styles.container}>
@@ -49,9 +46,6 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): J
             <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
             <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
             <Text style={styles.prescriptionMedications}>Médicaments: {prescription.medications}</Text>
-            <TouchableOpacity onPress={() => handleEditPress(prescription.name)} style={styles.editButton}>
-              <Ionicons name="create-outline" size={20} color="#fff" />
-            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
