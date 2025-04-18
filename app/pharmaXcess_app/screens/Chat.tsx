@@ -39,8 +39,8 @@ export default function Chat({ navigation }: ChatProps): JSX.Element {
         Alert.alert('Open Ticket', 'This feature is not implemented yet.');
     };
 
-    const handleOpenChat = (chatId: string): void => {
-        navigation.navigate('ChatDetails', { chatId });
+    const handleOpenChat = (id: string): void => {
+        Alert.alert('Open Chat', 'This feature is not implemented yet.');
     };
 
     return (
