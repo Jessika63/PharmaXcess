@@ -22,34 +22,38 @@ export default function Localisation(): JSX.Element {
 
     useEffect(() => {
         (async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission refusée', 'Accordez la permission d\'accéder à votre position.');
-                return;
+            try {
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Permission refusée', 'Accordez la permission d\'accéder à votre position.');
+                    return;
+                }
+    
+                const currentLocation = await Location.getCurrentPositionAsync({});
+                setLocation(currentLocation);
+    
+                const mockDistributors: Distributor[] = [
+                    { id: 1, name: 'Pharmacie A', latitude: currentLocation.coords.latitude + 0.01, longitude: currentLocation.coords.longitude + 0.01, distance: 1 },
+                    { id: 2, name: 'Pharmacie B', latitude: currentLocation.coords.latitude - 0.01, longitude: currentLocation.coords.longitude - 0.01, distance: 2 },
+                    { id: 3, name: 'Pharmacie C', latitude: currentLocation.coords.latitude + 0.02, longitude: currentLocation.coords.longitude - 0.02, distance: 3 },
+                ];
+    
+                setDistributors(mockDistributors.sort((a, b) => a.distance - b.distance));
+            } catch (error) {
+                console.error('Erreur lors de la récupération de la localisation :', error);
             }
-
-            const currentLocation = await Location.getCurrentPositionAsync({});
-            setLocation(currentLocation);
-
-            const mockDistributors: Distributor[] = [
-                { id: 1, name: 'Pharmacie A', latitude: currentLocation.coords.latitude + 0.01, longitude: currentLocation.coords.longitude + 0.01, distance: 1 },
-                { id: 2, name: 'Pharmacie B', latitude: currentLocation.coords.latitude - 0.01, longitude: currentLocation.coords.longitude - 0.01, distance: 2 },
-                { id: 3, name: 'Pharmacie C', latitude: currentLocation.coords.latitude + 0.02, longitude: currentLocation.coords.longitude - 0.02, distance: 3 },
-            ];
-
-            setDistributors(mockDistributors.sort((a, b) => a.distance - b.distance));
         })();
     }, []);
 
     const handleGoToDistributor = async () => {
-        if (!startLocation || !selectedDistributor) {
-            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+        if (!location || !selectedDistributor) {
+            Alert.alert('Erreur', 'Veuillez sélectionner une pharmacie et vérifier votre position.');
             return;
         }
-
+    
         setRouteCoordinates([
-            { latitude: location!.coords.latitude, longitude: location!.coords.longitude },
-            { latitude: selectedDistributor.latitude, longitude: selectedDistributor.longitude }
+            { latitude: location.coords.latitude, longitude: location.coords.longitude },
+            { latitude: selectedDistributor.latitude, longitude: selectedDistributor.longitude },
         ]);
     };
 
@@ -66,8 +70,8 @@ export default function Localisation(): JSX.Element {
             <MapView
                 style={styles.map}
                 initialRegion={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
+                    latitude: location?.coords.latitude || 0,
+                    longitude: location?.coords.longitude || 0,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
@@ -106,13 +110,13 @@ export default function Localisation(): JSX.Element {
                     data={distributors}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.distributorText}
-                            onPress={() => setSelectedDistributor(item)}
-                        >
-                            <Text style={styles.distributorText}>{item.name}</Text>
-                            <Text style={styles.distanceText}>{item.distance} km</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                    style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: '#F7C5E0' }]}
+                    onPress={() => setSelectedDistributor(item)}
+                    >
+                        <Text style={styles.distributorText}>{item.name}</Text>
+                        <Text style={styles.distanceText}>{item.distance} km</Text>
+                    </TouchableOpacity>
                     )}
                 />
                 {selectedDistributor && (
@@ -122,21 +126,28 @@ export default function Localisation(): JSX.Element {
                             style={styles.input}
                             placeholder="Départ"
                             value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
-                            onChangeText={(text) => setStartLocation({ 
-                                coords: {
-                                    latitude: parseFloat(text.split(',')[0]), 
-                                    longitude: parseFloat(text.split(',')[1]),
-                                    altitude: null,
-                                    accuracy: null,
-                                    altitudeAccuracy: null,
-                                    heading: null,
-                                    speed: null
-                                },
-                                timestamp: Date.now()
-                            })}
+                            onChangeText={(text) => {
+                                const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
+                                if (!isNaN(latitude) && !isNaN(longitude)) {
+                                    setStartLocation({
+                                        coords: {
+                                            latitude,
+                                            longitude,
+                                            altitude: null,
+                                            accuracy: null,
+                                            altitudeAccuracy: null,
+                                            heading: null,
+                                            speed: null,
+                                        },
+                                        timestamp: Date.now(),
+                                    });
+                                } else {
+                                    Alert.alert('Erreur', 'Veuillez entrer des coordonnées valides au format "latitude, longitude".');
+                                }
+                            }}
                         />
                         <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
-                            <LinearGradient colors={['#F57196', '#FFC0CB']} style={styles.gradientButton}>
+                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradientButton}>
                                 <Text style={styles.goButtonText}>Aller à la pharmacie</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -207,7 +218,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
     } as TextStyle,
     goButton: {
-        backgroundColor: '#FF6347',
         padding: 10,
         borderRadius: 5,
         marginTop: 10,
