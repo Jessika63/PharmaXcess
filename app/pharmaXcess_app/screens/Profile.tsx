@@ -15,6 +15,16 @@ type Item = {
 };
 
 export default function Profile({ navigation }: ProfileProps): JSX.Element {
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.headerButton}>
+                    <Ionicons name="settings-outline" size={24} color="black" />
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation]);
+
     const items: Item[] = [
         { title: 'Mes informations', route: 'PersonalInfo', icon: 'person-outline' },
         { title: 'Mes maladies', route: 'Diseases', icon: 'medkit-outline' },
@@ -100,5 +110,8 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         marginLeft: 10,
+    },
+    headerButton: {
+        marginRight: 10,
     },
 });

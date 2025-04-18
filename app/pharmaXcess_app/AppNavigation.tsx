@@ -19,6 +19,7 @@ import Allergies from './screens/Allergies';
 import FamilyHistory from './screens/FamilyHistory';
 import Doctors from './screens/Doctors';
 import MedicineReminders from './screens/MedicineReminders';
+import Settings from './screens/Settings';
 import PrescriptionReminders from './screens/PrescriptionReminders';
 
 type TabBarIconProps = {
@@ -45,7 +46,8 @@ function HomeStackScreen(): JSX.Element {
 function ProfileStackScreen(): JSX.Element {
   return (
     <ProfileStack.Navigator>
-      <ProfileStack.Screen name="Profile" component={Profile} options={{ headerTitleAlign: 'center' }} />
+      <ProfileStack.Screen name="Profile" component={Profile} options={{ headerTitleAlign: 'center', title: 'Profil' }} />
+      <ProfileStack.Screen name="Settings" component={Settings} options={{ title: 'Paramètres' }} />
       <ProfileStack.Screen name="PersonalInfo" component={PersonalInfo} options={{ title: 'Mes informations' }} />
       <ProfileStack.Screen name="Diseases" component={Diseases} options={{ title: 'Maladies' }} />
       <ProfileStack.Screen name="Treatments" component={Treatments} options={{ title: 'Traitements' }} />
@@ -104,9 +106,9 @@ export default function AppNavigation(): JSX.Element {
         })}
       >
         <Tab.Screen name="HomeStack" component={HomeStackScreen} options={{ headerShown: false }} />
-        <Tab.Screen name="Localisation" component={Localisation} />
-        <Tab.Screen name="Click & Collect" component={ClickAndCollect} />
-        <Tab.Screen name="Chat" component={Chat} />
+        <Tab.Screen name="Localisation" component={Localisation} options={{ headerTitleAlign: 'center', title: 'Localisation'}} />
+        <Tab.Screen name="Click & Collect" component={ClickAndCollect} options={{ headerTitleAlign: 'center', title: 'Click & Collect'}}/>
+        <Tab.Screen name="Chat" component={Chat} options={{ headerTitleAlign: 'center', title: 'Mes discussions'}} />
         <Tab.Screen name="ProfileStack" component={ProfileStackScreen} options={{ headerShown: false }} />
       </Tab.Navigator>
     </NavigationContainer>
