@@ -163,6 +163,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     borderRadius: 10,
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   gradient: {
       paddingVertical: 15,
