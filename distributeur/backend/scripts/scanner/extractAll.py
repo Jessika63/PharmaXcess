@@ -3,6 +3,7 @@ import numpy as np
 import os
 import re
 import sys
+import json
 from paddleocr import PaddleOCR
 
 
@@ -61,111 +62,101 @@ def extract_text_paddleocr(image_path):
 
 
 def getInfosPrescription(text):
-    print("\n--- Infos Ordonnance ---\n")
+    infos = {}
+
     doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
     doctors = re.findall(doctor_pattern, text)
     if doctors:
         firstname, lastname = doctors[0]
-        print(f"Médecin : {firstname} {lastname}")
-    else:
-        print("Médecin non détecté")
+        infos["medecin"] = {"prenom": firstname, "nom": lastname}
 
     rpps_pattern = r"RPPS[:\s]*([0-9]{11})"
     rpps_match = re.search(rpps_pattern, text)
     if rpps_match:
-        print(f"RPPS : {rpps_match.group(1)}")
+        infos["rpps"] = rpps_match.group(1)
 
     patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
     patient = re.search(patient_pattern, text)
     if patient:
         last_name, first_name = patient.groups()
-        print(f"Patient : {first_name} {last_name}")
+        infos["patient"] = {"prenom": first_name, "nom": last_name}
 
     date_pattern = r"\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
     dates = re.findall(date_pattern, text)
     if dates:
-        print("Dates trouvées :", ", ".join(dates))
+        infos["dates"] = dates
+
+    return infos
 
 
 def getInfosRectoID(text):
-    print("\n--- Infos Carte d'Identité (Recto) ---\n")
+    infos = {}
+    text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
+               .replace("TM=Nom", "Nom").replace("PrenomS", "Prénoms") \
+               .replace("Nele", "Née le").replace("Taille", "Taille ") \
+               .replace("Sexe:", "Sexe:")
 
-    text = text.replace("Mationalite", "Nationalité")
-    text = text.replace("Francaise", "Française")
-    text = text.replace("TM=Nom", "Nom")
-    text = text.replace("PrenomS", "Prénoms")
-    text = text.replace("Nele", "Née le")
-    text = text.replace("Taille", "Taille ")
-    text = text.replace("Sexe:", "Sexe:")
-
-    # Nationalité
     match = re.search(r"Nationalité[:\s]*([A-Za-zéÉèàêâîç]+)", text)
     if match:
-        print(f"Nationalité : {match.group(1)}")
+        infos["nationalite"] = match.group(1)
 
-    # Nom
     match = re.search(r"Nom[:\s]*([A-Z]+)", text)
     if match:
-        print(f"Nom : {match.group(1).capitalize()}")
+        infos["nom"] = match.group(1).capitalize()
 
-    # Prénoms
     match = re.search(r"Prénoms[:\s]*([A-Z]+)", text)
     if match:
         raw = match.group(1)
         prenoms = re.findall(r'[A-Z][a-z]*', raw.capitalize())
-        print(f"Prénoms : {' '.join(prenoms)}")
+        infos["prenoms"] = prenoms
 
-    # Sexe
     match = re.search(r"Sexe[:\s]*([MF])", text)
     if match:
-        print(f"Sexe : {'Homme' if match.group(1) == 'M' else 'Femme'}")
+        infos["sexe"] = "Homme" if match.group(1) == "M" else "Femme"
 
-    # Date de naissance
     match = re.search(r"Née(?: le)?[:\s]*([0-9]{2}[.\-/][0-9]{2}[.\-/][0-9]{4})", text)
     if match:
-        print(f"Née : {match.group(1).replace('.', '/')}")
+        infos["date_naissance"] = match.group(1).replace('.', '/')
 
-    # Taille
     match = re.search(r"Taille\s*([0-9][.,][0-9]{2})", text)
     if match:
-        print(f"Taille : {match.group(1).replace(',', '.')} m")
+        infos["taille"] = match.group(1).replace(',', '.')
+
+    return infos
 
 
 def getInfosVersoID(text):
-    print("\n--- Infos Carte Identité Verso ---\n")
-
-    text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au")
-    text = text.replace("delivreele", "délivrée le")
-    text = text.replace("Adresse.:", "Adresse:")
-    text = text.replace("Adresse.", "Adresse:")
-    text = text.replace("LaPrefete", "La Préfète")
-    text = text.replace("Par", "par")
-
+    infos = {}
+    text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
+               .replace("delivreele", "délivrée le") \
+               .replace("Adresse.:", "Adresse:") \
+               .replace("Adresse.", "Adresse:") \
+               .replace("LaPrefete", "La Préfète") \
+               .replace("Par", "par")
 
     address_pattern = r"Adresse[:\s]*([0-9A-Z\- ]+)"
     address_match = re.search(address_pattern, text, re.IGNORECASE)
     if address_match:
         adresse = address_match.group(1)
         adresse = re.sub(r"(\d{5})([A-Z])", r"\1 \2", adresse)
-        print(f"Adresse : {adresse.strip().title()}")
+        infos["adresse"] = adresse.strip().title()
 
-    # Date de validité
     validity_pattern = r"valable.*?(\d{2}[./-]\d{2}[./-]\d{4})"
     valid_match = re.search(validity_pattern, text)
     if valid_match:
-        print(f"Date de validité : {valid_match.group(1).replace('.', '/')}")
+        infos["date_validite"] = valid_match.group(1).replace('.', '/')
 
-    # Date de délivrance
     issued_pattern = r"délivrée\s*le\s*(\d{2}[./-]\d{2}[./-]\d{4})"
     issued_match = re.search(issued_pattern, text)
     if issued_match:
-        print(f"Délivrée le : {issued_match.group(1).replace('.', '/')}")
+        infos["date_delivrance"] = issued_match.group(1).replace('.', '/')
 
-    # Autorité
     by_pattern = r"par\s*([A-Z\s\-]+)"
     by_match = re.search(by_pattern, text, re.IGNORECASE)
     if by_match:
-        print(f"Délivrée par : {by_match.group(1).strip().title()}")
+        infos["autorite"] = by_match.group(1).strip().title()
+
+    return infos
 
 
 
@@ -178,14 +169,21 @@ def main(image_path, doc_type):
     print("\n=== TEXTE OCR ===\n")
     print(text)
 
+    data = {}
+
     if doc_type == "P":
-        getInfosPrescription(text)
+        data = getInfosPrescription(text)
     elif doc_type == "R":
-        getInfosRectoID(text)
+        data = getInfosRectoID(text)
     elif doc_type == "V":
-        getInfosVersoID(text)
+        data = getInfosVersoID(text)
     else:
         print("Type inconnu. Utilisez P, R ou V.")
+        return
+
+    print("\n=== INFOS JSON ===\n")
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+    return data
 
 
 if __name__ == "__main__":
