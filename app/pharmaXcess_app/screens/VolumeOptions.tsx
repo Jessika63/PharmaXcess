@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function VolumeOptions({ navigation }): JSX.Element {
-    const [volume, setVolume] = useState('medium');
+    const [volume, setVolume] = useState('medium'); // Options : 'mute', 'low', 'medium', 'high', 'max'
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.card}>
-                {['low', 'medium', 'high'].map((level) => (
+            <Text style={styles.title}>Options de Volume</Text>
+
+            {/* Options de Volume */}
+            <View style={styles.section}>
+                {['mute', 'low', 'medium', 'high', 'max'].map((level) => (
                     <TouchableOpacity
                         key={level}
-                        style={[styles.volumeButton, volume === level && styles.selectedVolume]}
+                        style={[styles.option, volume === level && styles.selectedOption]}
                         onPress={() => setVolume(level)}
                     >
                         <Ionicons
@@ -21,15 +24,24 @@ export default function VolumeOptions({ navigation }): JSX.Element {
                             color="white"
                         />
                         <Text style={styles.optionText}>
-                            {level === 'low' ? 'Bas' : level === 'medium' ? 'Moyen' : 'Haut'}
+                            {level === 'mute'
+                                ? 'Silencieux'
+                                : level === 'low'
+                                ? 'Faible'
+                                : level === 'medium'
+                                ? 'Moyen'
+                                : level === 'high'
+                                ? 'Fort'
+                                : 'Maximum'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-                    
+
+            {/* Bouton Retour */}
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                    <Text style={styles.buttonText}>Retour</Text>
+                    <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </ScrollView>
@@ -41,73 +53,45 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 20,
         backgroundColor: 'white',
-        alignItems: 'center',
     },
-    card: {
-        width: '100%',
-        backgroundColor: '#f8f8f8',
-        borderRadius: 10,
-        padding: 15,
-        marginVertical: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#F57196',
     },
-    volumeButton: {
+    section: {
+        marginBottom: 20,
+    },
+    option: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
         borderRadius: 5,
-        backgroundColor: '#F57196',
-        marginHorizontal: 5,
+        backgroundColor: 'lightgray',
+        marginBottom: 10,
     },
-    selectedVolume: {
-        backgroundColor: '#EE9AD0',
+    selectedOption: {
+        backgroundColor: '#F57196',
     },
     optionText: {
         fontSize: 16,
         color: 'white',
         marginLeft: 10,
-        fontWeight: 'bold',
     },
     returnButton: {
-        width: '100%',
         marginTop: 20,
+        width: '100%',
         borderRadius: 10,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        marginVertical: 8,
-        overflow: 'hidden',
     },
     gradient: {
         paddingVertical: 15,
-        borderRadius: 10,
+        borderRadius: 5,
         alignItems: 'center',
     },
-    buttonText: {
+    returnButtonText: {
+        fontSize: 18,
         color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
-        textAlign: 'center',
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 30,
-    },
-    button: {
-        flex: 1,
-        marginHorizontal: 10,
-    },
-    icon: {
-        width: 24,
-        height: 24,
-        marginLeft: 10,
     },
 });
