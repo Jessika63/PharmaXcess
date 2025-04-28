@@ -10,10 +10,8 @@ export default function ConsentOptions({ navigation }): JSX.Element {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Options de Consentement</Text>
-
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Type de consentement</Text>
+                <Text style={styles.subtitle}>Consentements</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -27,20 +25,20 @@ export default function ConsentOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Aucun (aucun consentement requis)'
+                                ? 'Collecte et stockage de vos informations personnelles'
                                 : type === 'type1'
-                                ? 'Standard (consentement standard)'
+                                ? 'Utilisation pour la gestion de votre compte'
                                 : type === 'type2'
-                                ? 'Opt-in (consentement explicite)'
-                                : 'Opt-out (consentement implicite)'}
+                                ? 'Stockage de votre historique médical'
+                                : 'Gestion de vos prescriptions médicales'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée du consentement</Text>
-                {['default', 'short', 'medium', 'long'].map((duration) => (
+                <Text style={styles.subtitle}>Autorisations</Text>
+                {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
                         style={[styles.option, consentDuration === duration && styles.selectedOption]}
@@ -53,40 +51,15 @@ export default function ConsentOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Court (1 mois)'
+                                ? 'Partage avec les professionnels de santé'
                                 : duration === 'short'
-                                ? 'Moyen (6 mois)'
-                                : duration === 'medium'
-                                ? 'Long (1 an)'
-                                : 'Permanent (sans expiration)'}
+                                ? 'Partage avec les pharmaciens'
+                                : 'Partage avec les proches'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Association de consentement</Text>
-                {['default', 'type1', 'type2'].map((association) => (
-                    <TouchableOpacity
-                        key={association}
-                        style={[styles.option, consentAssociation === association && styles.selectedOption]}
-                        onPress={() => setConsentAssociation(association)}
-                    >
-                        <Ionicons
-                            name={consentAssociation === association ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {association === 'default'
-                                ? 'Aucune (aucune association)'
-                                : association === 'type1'
-                                ? 'Anonyme (association anonyme)'
-                                : 'Identifiable (association identifiable)'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
@@ -127,7 +100,6 @@ const styles = StyleSheet.create({
     },
     returnButton: {
         marginTop: 20,
-        alignItems: 'center',
         borderRadius: 10,
         width: '100%',
         overflow: 'hidden',
