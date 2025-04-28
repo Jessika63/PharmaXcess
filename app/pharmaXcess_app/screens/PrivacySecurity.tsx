@@ -3,75 +3,33 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+interface Item {
+    title: string;
+    route: string;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+}
+
 export default function PrivacySecurity({ navigation }): JSX.Element {
+
+    const items: Item[] = [
+        { title: 'Gestion du consentement et des données', route: 'consentOptions', icon: 'shield-checkmark-outline' },
+        { title: 'Authentification et sécurité', route: 'authenticationOptions', icon: 'lock-closed-outline' },
+        { title: 'Protection des données sensibles', route: 'sensibleDataOptions', icon: 'shield-outline' },
+        { title: 'Gestion des données personnelles', route: 'personalDataOptions', icon: 'person-outline' },
+        { title: 'Conformité réglementaire', route: 'reglementationOptions', icon: 'document-text-outline' },
+        { title: 'Sécurité avancée', route: 'avancedSecurityOptions', icon: 'shield-checkmark-outline' },
+    ];
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('consentOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Gestion du consentement et des données</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('authenticationOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Authentification et sécurité</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('sensibleDataOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Protection des données sensibles</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('personalDataOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Gestion des données personnelles</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('reglementationOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Conformité réglementaire</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('avancedSecurityOptions')}
-            >
-                <LinearGradient
-                    colors={['#EE9AD0', '#F57196']}
-                    style={styles.gradient}
-                >
-                    <Text style={styles.itemText}>Sécurité avancée</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+            {items.map((item, index) => (
+                <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
+                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <Text style={styles.itemText}>{item.title}</Text>
+                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                    </LinearGradient>
+                </TouchableOpacity>
+            ))}
         </ScrollView>
     );
 }
@@ -84,7 +42,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '100%',
-        height: 100,
+        height: 105,
         borderRadius: 10,
         paddingVertical: 15,
         paddingHorizontal: 20,
@@ -113,4 +71,3 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
 });
-//         paddingVertical: 15,
