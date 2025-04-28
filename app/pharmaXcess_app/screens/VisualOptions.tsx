@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { isModuleExportName } from 'typescript';
 
 export default function VisualOptions({ navigation }): JSX.Element {
     const [fontSize, setFontSize] = useState('medium');

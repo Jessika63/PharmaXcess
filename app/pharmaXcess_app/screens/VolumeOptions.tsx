@@ -4,13 +4,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function VolumeOptions({ navigation }): JSX.Element {
-    const [volume, setVolume] = useState('medium'); // Options : 'mute', 'low', 'medium', 'high', 'max'
+    const [volume, setVolume] = useState('medium'); 
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>Options de Volume</Text>
 
-            {/* Options de Volume */}
             <View style={styles.section}>
                 {['mute', 'low', 'medium', 'high', 'max'].map((level) => (
                     <TouchableOpacity
@@ -19,7 +18,7 @@ export default function VolumeOptions({ navigation }): JSX.Element {
                         onPress={() => setVolume(level)}
                     >
                         <Ionicons
-                            name={volume === level ? 'checkbox-outline' : 'square-outline'}
+                            name={volume === level ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
                             color="white"
                         />
@@ -38,7 +37,6 @@ export default function VolumeOptions({ navigation }): JSX.Element {
                 ))}
             </View>
 
-            {/* Bouton Retour */}
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>

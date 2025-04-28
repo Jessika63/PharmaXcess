@@ -4,36 +4,63 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function SoundTypeOptions({ navigation }): JSX.Element {
-    const [soundType, setSoundType] = useState('default'); // Options: 'default', 'type1', 'type2', 'type3'
+    const [soundType, setSoundType] = useState('default');
+    const [soundDuration, setSoundDuration] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Options de Type de Son</Text>
-
-            {/* Options de Type de Son */}
             <View style={styles.section}>
-                {['default', 'type1', 'type2', 'type3'].map((type) => (
-                    <TouchableOpacity
-                        key={type}
-                        style={[styles.option, soundType === type && styles.selectedOption]}
-                        onPress={() => setSoundType(type)}
-                    >
-                        <Ionicons
-                            name={soundType === type ? 'checkbox-outline' : 'square-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {type === 'default'
-                                ? 'Par défaut'
-                                : type === 'type1'
-                                ? 'Type 1'
-                                : type === 'type2'
-                                ? 'Type 2'
-                                : 'Type 3'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                <Text style={styles.title}>Son de notification</Text>
+                    {['default', 'type1', 'type2', 'type3', 'type4'].map((type) => (
+                        <TouchableOpacity
+                            key={type}
+                            style={[styles.option, soundType === type && styles.selectedOption]}
+                            onPress={() => setSoundType(type)}
+                        >
+                            <Ionicons
+                                name={soundType === type ? 'checkmark-circle' : 'ellipse-outline'}
+                                size={24}
+                                color="white"
+                            />
+                            <Text style={styles.optionText}>
+                                {type === 'default'
+                                    ? 'Standard (son par défaut)'
+                                    : type === 'type1'
+                                    ? 'Discret'
+                                    : type === 'type2'
+                                    ? 'Médical (son médical)'
+                                    : type === 'type3'
+                                    ? 'Nature'
+                                    : 'Personnalisé (son personnalisé)'}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.title}>Durée du son</Text>
+                    {['default', 'type1', 'type2', 'type3'].map((type) => (
+                        <TouchableOpacity
+                            key={type}
+                            style={[styles.option, soundDuration === type && styles.selectedOption]}
+                            onPress={() => setSoundDuration(type)}
+                        >
+                            <Ionicons
+                                name={soundDuration === type ? 'checkmark-circle' : 'ellipse-outline'}
+                                size={24}
+                                color="white"
+                            />
+                            <Text style={styles.optionText}>
+                                {type === 'default'
+                                    ? 'Court (2 secondes)'
+                                    : type === 'type1'
+                                    ? 'Moyen (5 secondes)'
+                                    : type === 'type2'
+                                    ? 'Long (10 secondes)'
+                                    : 'Répétitif (15 secondes)'}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
             </View>
 
             {/* Bouton Retour */}
@@ -66,7 +93,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 10,
-        backgroundColor: '#EE9AD0',
+        backgroundColor: 'lightgray',
         marginBottom: 10,
     },
     selectedOption: {
