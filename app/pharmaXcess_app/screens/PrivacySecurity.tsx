@@ -12,12 +12,12 @@ interface Item {
 export default function PrivacySecurity({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Gestion du consentement et des données', route: 'consentOptions', icon: 'shield-checkmark-outline' },
-        { title: 'Authentification et sécurité', route: 'authenticationOptions', icon: 'lock-closed-outline' },
-        { title: 'Protection des données sensibles', route: 'sensibleDataOptions', icon: 'shield-outline' },
-        { title: 'Gestion des données personnelles', route: 'personalDataOptions', icon: 'person-outline' },
-        { title: 'Conformité réglementaire', route: 'reglementationOptions', icon: 'document-text-outline' },
-        { title: 'Sécurité avancée', route: 'avancedSecurityOptions', icon: 'shield-checkmark-outline' },
+        { title: 'Gestion du consentement et des données', route: 'ConsentOptions', icon: 'shield-checkmark-outline' },
+        { title: 'Authentification et sécurité', route: 'AuthenticationOptions', icon: 'lock-closed-outline' },
+        { title: 'Protection des données sensibles', route: 'SensibleDataOptions', icon: 'shield-outline' },
+        { title: 'Gestion des données personnelles', route: 'PersonalDataOptions', icon: 'person-outline' },
+        { title: 'Conformité réglementaire', route: 'ReglementationOptions', icon: 'document-text-outline' },
+        { title: 'Sécurité avancée', route: 'AdvancedSecurityOptions', icon: 'shield-checkmark-outline' },
     ];
 
     return (

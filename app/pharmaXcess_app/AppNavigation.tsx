@@ -27,6 +27,7 @@ import VolumeOptions from './screens/VolumeOptions';
 import SoundTypeOptions from './screens/SoundTypeOptions';
 import VibrationOptions from './screens/VibrationsOptions';
 import PrivacySecurity from './screens/PrivacySecurity';
+import ConsentOptions from './screens/ConsentOptions';
 
 type TabBarIconProps = {
   color: string;
@@ -68,6 +69,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ headerTitleAlign: 'center', title: 'Options de type de son' }} />
       <ProfileStack.Screen name="VibrationOptions" component={VibrationOptions} options={{ headerTitleAlign: 'center', title: 'Options de vibration' }} />
       <ProfileStack.Screen name="PrivacySecurity" component={PrivacySecurity} options={{ headerTitleAlign: 'center', title: 'Confidentialité et sécurité' }} />
+      <ProfileStack.Screen name="ConsentOptions" component={ConsentOptions} options={{ headerTitleAlign: 'center', title: 'Consentement' }} />
     </ProfileStack.Navigator>
   );
 }
