@@ -155,8 +155,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
-//     },
-//     optionText: {
-//         fontSize: 18,
-//         color: 'white',
-//         marginLeft: 10,
