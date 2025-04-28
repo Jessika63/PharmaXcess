@@ -16,7 +16,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
                     {['small', 'medium', 'large'].map((size) => (
                         <TouchableOpacity
                             key={size}
-                            style={[styles.optionButton, fontSize === size && styles.selectedOption]}
+                            style={[styles.option, fontSize === size && styles.selectedOption]}
                             onPress={() => setFontSize(size)}
                         >
                             <Ionicons
@@ -97,21 +97,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    optionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 5,
-        backgroundColor: '#EE9AD0',
-        marginBottom: 10,
-    },
     selectedOption: {
         backgroundColor: '#F57196',
     },
     optionText: {
         fontSize: 18,
-        color: 'white',
         marginLeft: 10,
     },
     returnButton: {
@@ -123,7 +113,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 5,
-        backgroundColor: '#EE9AD0',
+        backgroundColor: 'lightgray',
         marginBottom: 10,
     },
     gradient: {
