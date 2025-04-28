@@ -1,78 +1,41 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function AudioOptions({ navigation }): JSX.Element {
-    const [volume, setVolume] = useState('medium');
-    const [sound, setSound] = useState('default');
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Volume</Text>
-                {['low', 'medium', 'high'].map((level) => (
-                    <TouchableOpacity
-                        key={level}
-                        style={[styles.optionButton, volume === level && styles.selectedOption]}
-                        onPress={() => setVolume(level)}
-                    >
-                        <Ionicons
-                            name={volume === level ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {level === 'low' ? 'Bas' : level === 'medium' ? 'Moyen' : 'Haut'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Son</Text>
-                {['default', 'chime', 'alert'].map((soundOption) => (
-                    <TouchableOpacity
-                        key={soundOption}
-                        style={[styles.optionButton, sound === soundOption && styles.selectedOption]}
-                        onPress={() => setSound(soundOption)}
-                    >
-                        <Ionicons
-                            name={sound === soundOption ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {soundOption === 'default' ? 'Par défaut' : sound === 'chime' ? 'Carillon' : 'Alerte'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Notifications</Text>
-                <TouchableOpacity
-                    style={[styles.optionButton, notificationsEnabled && styles.selectedOption]}
-                    onPress={() => setNotificationsEnabled(!notificationsEnabled)}
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => navigation.navigate('VolumeOptions')}
+            >
+                <LinearGradient
+                    colors={['#EE9AD0', '#F57196']}
+                    style={styles.gradient}
                 >
-                    <Ionicons
-                        name={notificationsEnabled ? 'checkmark-circle' : 'ellipse-outline'}
-                        size={24}
-                        color="white"
-                    />
-                    <Text style={styles.optionText}>
-                        {notificationsEnabled ? 'Activées' : 'Désactivées'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                    <Text style={styles.itemText}>Volume</Text>
+                </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => navigation.navigate('SoundTypeOptions')}
+            >
+                <LinearGradient
+                    colors={['#EE9AD0', '#F57196']}
+                    style={styles.gradient}
+                >
+                    <Text style={styles.itemText}>Type de son</Text>
+                </LinearGradient>
+            </TouchableOpacity>
 
             <TouchableOpacity
-                style={styles.returnButton}
-                onPress={() => navigation.goBack()}
-            >
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                    <Text style={styles.returnButtonText}>Retour</Text>
+                style={styles.card}
+                onPress={() => navigation.navigate('VibrationOptions')}>
+                <LinearGradient
+                    colors={['#EE9AD0', '#F57196']}
+                    style={styles.gradient}
+                >
+                    <Text style={styles.itemText}>Vibrations</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </ScrollView>
@@ -85,42 +48,29 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: 'white',
     },
-    section: {
-        marginBottom: 20,
-    },
-    sectionTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    optionButton: {
+    card: {
+        width: '100%',
+        height: 100,
+        borderRadius: 10,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        marginVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        backgroundColor: 'lightgray',
-        marginBottom: 10,
-    },
-    selectedOption: {
-        backgroundColor: '#F57196',
-    },
-    optionText: {
-        fontSize: 18,
-        marginLeft: 10,
-    },
-    returnButton: {
-        marginTop: 20,
-        borderRadius: 10,
+        marginBottom: 0,
+        overflow: 'hidden',
     },
     gradient: {
+        flex: 1,
         paddingVertical: 15,
         justifyContent: 'center',
-        alignItems: 'center',
         borderRadius: 10,
+        alignItems: 'center',
     },
-    returnButtonText: {
-        fontSize: 18,
+    itemText: {
+        fontSize: 20,
         color: '#ffffff',
+        marginLeft: 10,
+        fontWeight: 'bold',
     },
-});
+}); 
