@@ -25,6 +25,7 @@ import VisualOptions from './screens/VisualOptions';
 import AudioOptions from './screens/AudioOptions';
 import VolumeOptions from './screens/VolumeOptions';
 import SoundTypeOptions from './screens/SoundTypeOptions';
+import VibrationOptions from './screens/VibrationsOptions';
 
 type TabBarIconProps = {
   color: string;
@@ -52,18 +53,19 @@ function ProfileStackScreen(): JSX.Element {
   return (
     <ProfileStack.Navigator>
       <ProfileStack.Screen name="Profile" component={Profile} options={{ headerTitleAlign: 'center', title: 'Profil' }} />
-      <ProfileStack.Screen name="Settings" component={Settings} options={{ title: 'Paramètres' }} />
-      <ProfileStack.Screen name="PersonalInfo" component={PersonalInfo} options={{ title: 'Mes informations' }} />
-      <ProfileStack.Screen name="Diseases" component={Diseases} options={{ title: 'Maladies' }} />
-      <ProfileStack.Screen name="Treatments" component={Treatments} options={{ title: 'Traitements' }} />
-      <ProfileStack.Screen name="Hospitalizations" component={Hospitalizations} options={{ title: 'Hospitalisations' }} />
-      <ProfileStack.Screen name="Allergies" component={Allergies} options={{ title: 'Allergies' }} />
-      <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ title: 'Antécédents familiaux' }} />
-      <ProfileStack.Screen name="Doctors" component={Doctors} options={{ title: 'Médecins' }} />
-      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ title: 'Options de visualisation' }} />
-      <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ title: 'Options audio' }} />
-      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ title: 'Options de volume' }} />
-      <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ title: 'Options de type de son' }} />
+      <ProfileStack.Screen name="Settings" component={Settings} options={{ headerTitleAlign: 'center', title: 'Paramètres' }} />
+      <ProfileStack.Screen name="PersonalInfo" component={PersonalInfo} options={{ headerTitleAlign: 'center', title: 'Mes informations' }} />
+      <ProfileStack.Screen name="Diseases" component={Diseases} options={{ headerTitleAlign: 'center', title: 'Maladies' }} />
+      <ProfileStack.Screen name="Treatments" component={Treatments} options={{ headerTitleAlign: 'center', title: 'Traitements' }} />
+      <ProfileStack.Screen name="Hospitalizations" component={Hospitalizations} options={{ headerTitleAlign: 'center', title: 'Hospitalisations' }} />
+      <ProfileStack.Screen name="Allergies" component={Allergies} options={{ headerTitleAlign: 'center', title: 'Allergies' }} />
+      <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ headerTitleAlign: 'center', title: 'Antécédents familiaux' }} />
+      <ProfileStack.Screen name="Doctors" component={Doctors} options={{ headerTitleAlign: 'center', title: 'Médecins' }} />
+      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ headerTitleAlign: 'center', title: 'Options de visualisation' }} />
+      <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ headerTitleAlign: 'center', title: 'Options audio' }} />
+      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ headerTitleAlign: 'center', title: 'Options de volume' }} />
+      <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ headerTitleAlign: 'center', title: 'Options de type de son' }} />
+      <ProfileStack.Screen name="VibrationOptions" component={VibrationOptions} options={{ headerTitleAlign: 'center', title: 'Options de vibration' }} />
     </ProfileStack.Navigator>
   );
 }
