@@ -23,6 +23,7 @@ import Settings from './screens/Settings';
 import PrescriptionReminders from './screens/PrescriptionReminders';
 import VisualOptions from './screens/VisualOptions';
 import AudioOptions from './screens/AudioOptions';
+import VolumeOptions from './screens/VolumeOptions';
 
 type TabBarIconProps = {
   color: string;
@@ -60,6 +61,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="Doctors" component={Doctors} options={{ title: 'Médecins' }} />
       <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ title: 'Options de visualisation' }} />
       <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ title: 'Options audio' }} />
+      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ title: 'Options de volume' }} />
     </ProfileStack.Navigator>
   );
 }
