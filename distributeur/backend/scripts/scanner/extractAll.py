@@ -17,7 +17,7 @@ def add_background(img, scale_factor=1.5):
     background[start_y:start_y + height, start_x:start_x + width] = img
     return background
 
-
+# fix the orientation of the given image
 def correct_orientation(image_path):
     img = cv2.imread(image_path)
     img = add_background(img)
@@ -48,6 +48,7 @@ def correct_orientation(image_path):
     return corrected_image_path
 
 
+# extract text
 def extract_text_paddleocr(image_path):
     ocr = PaddleOCR(use_angle_cls=True, lang='fr')
     result = ocr.ocr(image_path, cls=True)
@@ -60,7 +61,7 @@ def extract_text_paddleocr(image_path):
 
 
 
-
+# function to get information of prescription
 def getInfosPrescription(text):
     infos = {}
 
@@ -89,6 +90,7 @@ def getInfosPrescription(text):
     return infos
 
 
+# function to get information the front of an ID card 
 def getInfosRectoID(text):
     infos = {}
     text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
@@ -125,6 +127,7 @@ def getInfosRectoID(text):
     return infos
 
 
+# function to get information the back of an ID card 
 def getInfosVersoID(text):
     infos = {}
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
