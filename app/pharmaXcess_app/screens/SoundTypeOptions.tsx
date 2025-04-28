@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+        color: '#F57196',
     },
     section: {
         marginBottom: 20,

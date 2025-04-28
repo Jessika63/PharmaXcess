@@ -6,13 +6,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 export default function VibrationOptions({ navigation }): JSX.Element {
     const [vibrationType, setVibrationType] = useState('default');
     const [vibrationDuration, setVibrationDuration] = useState('default');
+    const [vibrationAssociation, setVibrationAssociation] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Options de Vibration</Text>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Type de vibration</Text>
+                <Text style={styles.subtitle}>Intensité</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -26,20 +26,20 @@ export default function VibrationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Standard (vibration par défaut)'
+                                ? 'Désactivé (aucune vibration)'
                                 : type === 'type1'
-                                ? 'Discret'
+                                ? 'Légère (vibration légère)'
                                 : type === 'type2'
-                                ? 'Médical (vibration médicale)'
-                                : 'Personnalisé (vibration personnalisée)'}
+                                ? 'Moyenne (vibration moyenne)'
+                                : 'Forte (vibration forte)'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de la vibration</Text>
-                {['default', 'short', 'medium', 'long'].map((duration) => (
+                <Text style={styles.subtitle}>Schéma de vibration</Text>
+                {['default', 'short', 'medium', 'long', 'sos'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
                         style={[styles.option, vibrationDuration === duration && styles.selectedOption]}
@@ -52,12 +52,40 @@ export default function VibrationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Court (2 secondes)'
+                                ? 'Simple (1 vibration)'
                                 : duration === 'short'
-                                ? 'Moyen (5 secondes)'
+                                ? 'Double (2 vibrations)'
                                 : duration === 'medium'
-                                ? 'Long (10 secondes)'
-                                : 'Répétitif (15 secondes)'}
+                                ? 'Triple (3 vibrations)'
+                                : duration === 'long'
+                                ? 'Continu (vibration continue)'
+                                : 'SOS (morse)'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.subtitle}>Association vibration/son</Text>
+                {['default', 'short', 'medium', 'long'].map((duration) => (
+                    <TouchableOpacity
+                        key={duration}
+                        style={[styles.option, vibrationAssociation === duration && styles.selectedOption]}
+                        onPress={() => setVibrationAssociation(duration)}
+                    >
+                        <Ionicons
+                            name={vibrationAssociation === duration ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={24}
+                            color="white"
+                        />
+                        <Text style={styles.optionText}>
+                            {duration === 'default'
+                                ? 'Simultané (vibration et son)'
+                                : duration === 'short'
+                                ? 'Alterné (vibration et son alternés)'
+                                : duration === 'medium'
+                                ? 'Vibration unique (vibration unique)'
+                                : 'Son unique (son unique)'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -87,7 +115,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     subtitle: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#F57196',

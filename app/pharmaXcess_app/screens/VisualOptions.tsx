@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
+        color: '#F57196',
     },
     selectedOption: {
         backgroundColor: '#F57196',
