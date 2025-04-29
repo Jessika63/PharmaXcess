@@ -10,7 +10,7 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Types de données sensibles</Text>
+                <Text style={styles.subtitle}>Masque des informations</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => ( 
                     <TouchableOpacity
                         key={type}
@@ -24,19 +24,19 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Données médicales'
+                                ? 'Mode discret '
                                 : type === 'type1'
-                                ? 'Données de localisation'
+                                ? 'Notifications privées'
                                 : type === 'type2'
-                                ? 'Données de santé mentale'
-                                : 'Données génétiques'}
+                                ? 'Masquage automatique après 5 minutes'
+                                : 'Déverouillage des informations masquées'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de conservation</Text>
-                {['default', 'short', 'medium', 'long'].map((duration) => (
+                <Text style={styles.subtitle}>Verrouillage par section</Text>
+                {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
                         style={[styles.option, dataDuration === duration && styles.selectedOption]}
@@ -49,12 +49,10 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? '6 mois'
+                                ? 'Ordonnances'
                                 : duration === 'short'
-                                ? '1 an'
-                                : duration === 'medium'
-                                ? '2 ans'
-                                : '5 ans'}
+                                ? 'Historique médical'
+                                : 'Traitements en cours'}
                         </Text>
                     </TouchableOpacity>
                 ))}
