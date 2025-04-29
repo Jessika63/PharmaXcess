@@ -12,7 +12,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Gestion des données personnelles</Text>
+                <Text style={styles.subtitle}>Téléchargement des données </Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -26,19 +26,19 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Collecte et stockage de vos informations personnelles'
+                                ? 'PDF'
                                 : type === 'type1'
-                                ? 'Utilisation pour la gestion de votre compte'
+                                ? 'CSV'
                                 : type === 'type2'
-                                ? 'Stockage de votre historique médical'
-                                : 'Gestion de vos prescriptions médicales'}
+                                ? 'Inclure l\'historique complet'
+                                : 'Protéger par mot de passe'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Autorisations</Text>
+                <Text style={styles.subtitle}>Suppression des données</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -52,17 +52,17 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Partage avec les professionnels de santé'
+                                ? 'Historique de navigation'
                                 : duration === 'short'
-                                ? 'Partage avec les pharmaciens'
-                                : 'Partage avec les proches'}
+                                ? 'Ordonnances archivées'
+                                : 'Données du compte'},
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de conservation</Text>
+                <Text style={styles.subtitle}>Anonymisation</Text>
                 {['default', 'short', 'medium'].map((regulation) => (
                     <TouchableOpacity
                         key={regulation}
@@ -76,16 +76,16 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {regulation === 'default'
-                                ? 'Conservation de 6 mois'
+                                ? 'Activer mode anonyme'
                                 : regulation === 'short'
-                                ? 'Conservation de 1 an'
-                                : 'Conservation de 2 ans'}
+                                ? 'Masquer noms médicaments'
+                                : 'Masquer les pathologies'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Association des données</Text>
+                <Text style={styles.subtitle}>Période de conservation</Text>
                 {['default', 'short', 'medium'].map((association) => (
                     <TouchableOpacity
                         key={association}
@@ -99,10 +99,10 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {association === 'default'
-                                ? 'Association avec les professionnels de santé'
+                                ? 'Conservation de 6 mois'
                                 : association === 'short'
-                                ? 'Association avec les pharmaciens'
-                                : 'Association avec les proches'}
+                                ? 'Conservation de 1 an'
+                                : 'Conservation de 2 ans'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
         borderRadius: 5,
-        backgroundColor: '#F7C5E0',
+        backgroundColor: 'lightgray',
     },
     optionText: {
         fontSize: 18,
