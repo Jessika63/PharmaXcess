@@ -11,8 +11,8 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Authentification</Text>
-                {['default', 'type1', 'type2', 'type3'].map((type) => (
+                <Text style={styles.subtitle}>Méthodes de connexion</Text>
+                {['default', 'type1', 'type2', 'type3', 'type4'].map((type) => (
                     <TouchableOpacity
                         key={type}
                         style={[styles.option, authType === type && styles.selectedOption]}
@@ -25,19 +25,21 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Authentification par mot de passe'
+                                ? 'Code PIN'
                                 : type === 'type1'
-                                ? 'Authentification par empreinte digitale'
+                                ? 'Mot de passe'
                                 : type === 'type2'
-                                ? 'Authentification par reconnaissance faciale'
-                                : 'Authentification par code PIN'}
+                                ? 'Empreinte digitale'
+                                : type === 'type3'
+                                ? 'Reconnaissance faciale'
+                                : 'Double authentification'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de session</Text>
+                <Text style={styles.subtitle}>Options double authentification</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -51,38 +53,15 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Session de 30 minutes'
+                                ? 'SMS'
                                 : duration === 'short'
-                                ? 'Session de 15 minutes'
-                                : 'Session de 60 minutes'}
+                                ? 'Email'
+                                : 'Application d\'authentification'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Association d'appareils</Text>
-                {['default', 'phone', 'tablet'].map((association) => (
-                    <TouchableOpacity
-                        key={association}
-                        style={[styles.option, authAssociation === association && styles.selectedOption]}
-                        onPress={() => setAuthAssociation(association)}
-                    >
-                        <Ionicons
-                            name={authAssociation === association ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {association === 'default'
-                                ? 'Aucun appareil associé'
-                                : association === 'phone'
-                                ? 'Appareil mobile associé'
-                                : 'Tablette associée'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
@@ -102,10 +81,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
-        color: '#333',
+        color: '#F57196',
     },
     option: {
         flexDirection: 'row',
@@ -113,10 +92,10 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
         borderRadius: 5,
-        backgroundColor: '#6200ee',
+        backgroundColor: 'lightgray',
     },
     selectedOption: {
-        backgroundColor: '#3700b3',
+        backgroundColor: '#F57196',
     },
     optionText: {
         marginLeft: 10,
