@@ -1,66 +1,65 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default function AuthenticationOptions({ navigation }): JSX.Element {
-    const [authType, setAuthType] = useState('default');
-    const [authDuration, setAuthDuration] = useState('default');
+export default function SensibleDataOptions({ navigation }): JSX.Element {
+    const [dataType, setDataType] = useState('default');
+    const [dataDuration, setDataDuration] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Méthodes de connexion</Text>
-                {['default', 'type1', 'type2', 'type3', 'type4'].map((type) => (
+                <Text style={styles.subtitle}>Types de données sensibles</Text>
+                {['default', 'type1', 'type2', 'type3'].map((type) => ( 
                     <TouchableOpacity
                         key={type}
-                        style={[styles.option, authType === type && styles.selectedOption]}
-                        onPress={() => setAuthType(type)}
+                        style={[styles.option, dataType === type && styles.selectedOption]}
+                        onPress={() => setDataType(type)}
                     >
                         <Ionicons
-                            name={authType === type ? 'checkmark-circle' : 'ellipse-outline'}
+                            name={dataType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
                             color="white"
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Code PIN'
+                                ? 'Données médicales'
                                 : type === 'type1'
-                                ? 'Mot de passe'
+                                ? 'Données de localisation'
                                 : type === 'type2'
-                                ? 'Empreinte digitale'
-                                : type === 'type3'
-                                ? 'Reconnaissance faciale'
-                                : 'Double authentification'}
+                                ? 'Données de santé mentale'
+                                : 'Données génétiques'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Options double authentification</Text>
-                {['default', 'short', 'medium'].map((duration) => (
+                <Text style={styles.subtitle}>Durée de conservation</Text>
+                {['default', 'short', 'medium', 'long'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
-                        style={[styles.option, authDuration === duration && styles.selectedOption]}
-                        onPress={() => setAuthDuration(duration)}
+                        style={[styles.option, dataDuration === duration && styles.selectedOption]}
+                        onPress={() => setDataDuration(duration)}
                     >
                         <Ionicons
-                            name={authDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
+                            name={dataDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
                             color="white"
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'SMS'
+                                ? '6 mois'
                                 : duration === 'short'
-                                ? 'Email'
-                                : 'Application d\'authentification'}
+                                ? '1 an'
+                                : duration === 'medium'
+                                ? '2 ans'
+                                : '5 ans'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-
+            
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
@@ -74,7 +73,13 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'white',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#F57196',
     },
     section: {
         marginBottom: 20,
@@ -85,6 +90,9 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         color: '#F57196',
     },
+    selectedOption: {
+        backgroundColor: '#F57196',
+    },
     option: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -93,9 +101,6 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: 'lightgray',
     },
-    selectedOption: {
-        backgroundColor: '#F57196',
-    },
     optionText: {
         marginLeft: 10,
         color: 'white',
@@ -103,17 +108,34 @@ const styles = StyleSheet.create({
     },
     returnButton: {
         marginTop: 20,
-        alignSelf: 'center',
-        width: '80%',
+        borderRadius: 10,
+        width: '100%',
+        overflow: 'hidden',
     },
     gradient: {
-        padding: 15,
+        paddingVertical: 15,
         borderRadius: 5,
         alignItems: 'center',
     },
     returnButtonText: {
+        fontSize: 18,
         color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
+    },
+    icon: {
+        width: 24,
+        height: 24,
+        marginLeft: 10,
+    },
+    card: {
+        width: '100%',
+        height: 105,
+        borderRadius: 10,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        marginVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 0,
+        overflow: 'hidden',
     },
 });
