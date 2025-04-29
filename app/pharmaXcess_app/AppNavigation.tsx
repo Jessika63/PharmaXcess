@@ -31,6 +31,7 @@ import ConsentOptions from './screens/ConsentOptions';
 import AuthenticationOptions from './screens/AuthenticationOptions';
 import SensibleDataOptions from './screens/SensibleDataOptions';
 import PersonalDataOptions from './screens/PersonalDataOptions';
+import ReglementationOptions from './screens/ReglementationOptions';
 
 type TabBarIconProps = {
   color: string;
@@ -76,6 +77,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="AuthenticationOptions" component={AuthenticationOptions} options={{ headerTitleAlign: 'center', title: 'Options d\'authentification' }} />
       <ProfileStack.Screen name="SensibleDataOptions" component={SensibleDataOptions} options={{ headerTitleAlign: 'center', title: 'Options de données sensibles' }} />
       <ProfileStack.Screen name="PersonalDataOptions" component={PersonalDataOptions} options={{ headerTitleAlign: 'center', title: 'Options de données personnelles' }} />
+      <ProfileStack.Screen name="ReglementationOptions" component={ReglementationOptions} options={{ headerTitleAlign: 'center', title: 'Réglementation' }} />
     </ProfileStack.Navigator>
   );
 }
