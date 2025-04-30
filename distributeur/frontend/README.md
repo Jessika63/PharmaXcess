@@ -54,3 +54,21 @@ your app should be running, 'happy dev!'
 ## Back to general **distributeur** documentation
 
 The general **distributeur** documentation is available at [here](../Readme.md)
+
+
+<h1>Code configuration</h1>
+
+<h2>/pages directory</h2>
+
+Every screens from the app is organized inside the 'page'
+
+
+<h2>/components directory</h2>
+
+The 'components' directory is used to store every feature wich will be used inside of a page (for example camera component)
+
+
+<h2>Styles</h2>
+
+There is a css folder for main global styles such as buttons ;
+BUT tailwind is mainly used inside of this project app
