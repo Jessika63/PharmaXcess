@@ -67,17 +67,17 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="Allergies" component={Allergies} options={{ headerTitleAlign: 'center', title: 'Allergies' }} />
       <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ headerTitleAlign: 'center', title: 'Antécédents familiaux' }} />
       <ProfileStack.Screen name="Doctors" component={Doctors} options={{ headerTitleAlign: 'center', title: 'Médecins' }} />
-      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ headerTitleAlign: 'center', title: 'Options de visualisation' }} />
-      <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ headerTitleAlign: 'center', title: 'Options audio' }} />
-      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ headerTitleAlign: 'center', title: 'Options de volume' }} />
-      <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ headerTitleAlign: 'center', title: 'Options de type de son' }} />
-      <ProfileStack.Screen name="VibrationOptions" component={VibrationOptions} options={{ headerTitleAlign: 'center', title: 'Options de vibration' }} />
+      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ headerTitleAlign: 'center', title: 'Options visuelles ' }} />
+      <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ headerTitleAlign: 'center', title: 'Notifications sonores ' }} />
+      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ headerTitleAlign: 'center', title: 'Volume' }} />
+      <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ headerTitleAlign: 'center', title: 'Type de son' }} />
+      <ProfileStack.Screen name="VibrationOptions" component={VibrationOptions} options={{ headerTitleAlign: 'center', title: 'Vibrations' }} />
       <ProfileStack.Screen name="PrivacySecurity" component={PrivacySecurity} options={{ headerTitleAlign: 'center', title: 'Confidentialité et sécurité' }} />
-      <ProfileStack.Screen name="ConsentOptions" component={ConsentOptions} options={{ headerTitleAlign: 'center', title: 'Consentement' }} />
-      <ProfileStack.Screen name="AuthenticationOptions" component={AuthenticationOptions} options={{ headerTitleAlign: 'center', title: 'Options d\'authentification' }} />
-      <ProfileStack.Screen name="SensibleDataOptions" component={SensibleDataOptions} options={{ headerTitleAlign: 'center', title: 'Options de données sensibles' }} />
-      <ProfileStack.Screen name="PersonalDataOptions" component={PersonalDataOptions} options={{ headerTitleAlign: 'center', title: 'Options de données personnelles' }} />
-      <ProfileStack.Screen name="ReglementationOptions" component={ReglementationOptions} options={{ headerTitleAlign: 'center', title: 'Réglementation' }} />
+      <ProfileStack.Screen name="ConsentOptions" component={ConsentOptions} options={{ headerTitleAlign: 'center', title: 'Consentement et données ' }} />
+      <ProfileStack.Screen name="AuthenticationOptions" component={AuthenticationOptions} options={{ headerTitleAlign: 'center', title: 'Authentification et sécurité' }} />
+      <ProfileStack.Screen name="SensibleDataOptions" component={SensibleDataOptions} options={{ headerTitleAlign: 'center', title: 'Protection des informations sensibles' }} />
+      <ProfileStack.Screen name="PersonalDataOptions" component={PersonalDataOptions} options={{ headerTitleAlign: 'center', title: 'Gestion des données personnelles' }} />
+      <ProfileStack.Screen name="ReglementationOptions" component={ReglementationOptions} options={{ headerTitleAlign: 'center', title: 'Conformité réglementaire' }} />
     </ProfileStack.Navigator>
   );
 }

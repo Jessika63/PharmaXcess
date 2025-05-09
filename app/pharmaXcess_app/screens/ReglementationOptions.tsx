@@ -13,8 +13,8 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Type de réglementation</Text>
-                {['default', 'type1', 'type2', 'type3'].map((type) => (
+                <Text style={styles.subtitle}>Statut RGPD</Text>
+                {['default', 'type1', 'type2'].map((type) => (
                     <TouchableOpacity
                         key={type}
                         style={[styles.option, reglementationType === type && styles.selectedOption]}
@@ -27,18 +27,16 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Aucune réglementation'
+                                ? 'Afficer le statut RGPD'
                                 : type === 'type1'
-                                ? 'Réglementation standard'
-                                : type === 'type2'
-                                ? 'Réglementation renforcée'
-                                : 'Réglementation personnalisée'}
+                                ? 'Recevoir notifications des mises à jour de politique RGPD'
+                                : 'Revoir et renouveler mon consentement annuellement'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de la réglementation</Text>
+                <Text style={styles.subtitle}>Droit d'accès</Text>
                 {['default', 'short', 'medium', 'long'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -52,19 +50,19 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Aucune durée'
+                                ? 'Demander l\'accès complet à mes données'
                                 : duration === 'short'
-                                ? 'Durée courte (1 mois)'
+                                ? 'Demander la rectification de mes données'
                                 : duration === 'medium'
-                                ? 'Durée moyenne (6 mois)'
-                                : 'Durée longue (1 an)'}
+                                ? 'Demander l\'effacement de mes données'
+                                : 'Limiter le traitement de mes données'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Accès aux données</Text>
-                {['default', 'public', 'private', 'restricted'].map((access) => (
+                <Text style={styles.subtitle}>Politique de confidentialité</Text>
+                {['default', 'public'].map((access) => (
                     <TouchableOpacity
                         key={access}
                         style={[styles.option, reglementationAccess === access && styles.selectedOption]}
@@ -77,19 +75,15 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {access === 'default'
-                                ? 'Accès public'
-                                : access === 'public'
-                                ? 'Accès privé'
-                                : access === 'private'
-                                ? 'Accès restreint'
-                                : 'Accès personnalisé'}
+                                ? 'Recevoir la politique de confidentialité'
+                                : 'Notifier changement de la politique de confidentialité'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
                 <Text style={styles.subtitle}>Mises à jours des conditions</Text>
-                {['default', 'immediate', 'weekly', 'monthly'].map((confirmation) => (
+                {['default', 'immediate', 'weekly'].map((confirmation) => (
                     <TouchableOpacity
                         key={confirmation}
                         style={[styles.option, reglementationConfirmation === confirmation && styles.selectedOption]}
@@ -102,18 +96,16 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {confirmation === 'default'
-                                ? 'Aucune mise à jour'
+                                ? 'Consentement explicite pour chaque mise à jour'
                                 : confirmation === 'immediate'
-                                ? 'Mise à jour immédiate'
-                                : confirmation === 'weekly'
-                                ? 'Mise à jour hebdomadaire'
-                                : 'Mise à jour mensuelle'}
+                                ? 'Comparaison des mises à jour'
+                                : 'Option refus nouvelles conditions'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Confidentialité des données</Text>
+                <Text style={styles.subtitle}>Certifications et normes</Text>
                 {['default', 'high', 'medium', 'low'].map((confidentiality) => (
                     <TouchableOpacity
                         key={confidentiality}
@@ -127,12 +119,12 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {confidentiality === 'default'
-                                ? 'Confidentialité standard'
+                                ? 'Afficher les certifications'
                                 : confidentiality === 'high'
-                                ? 'Haute confidentialité'
+                                ? 'Vérifier la conformité aux normes'
                                 : confidentiality === 'medium'
-                                ? 'Confidentialité moyenne'
-                                : 'Basse confidentialité'}
+                                ? 'Consulter les audits de sécurité'
+                                : 'Télécharger attestations conformité'}
                         </Text>
                     </TouchableOpacity>
                 ))}
