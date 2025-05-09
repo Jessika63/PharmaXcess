@@ -13,8 +13,8 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Niveau de sécurité</Text>
-                {['default', 'low', 'medium', 'high'].map((level) => (
+                <Text style={styles.subtitle}>Chiffrement des données</Text>
+                {['default', 'low', 'medium'].map((level) => (
                     <TouchableOpacity
                         key={level}
                         style={[styles.option, securityLevel === level && styles.selectedOption]}
@@ -27,19 +27,17 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {level === 'default'
-                                ? 'Sécurité par défaut'
+                                ? 'Activer le chiffrement renforcé de bout en bout'
                                 : level === 'low'
-                                ? 'Sécurité faible'
-                                : level === 'medium'
-                                ? 'Sécurité moyenne'
-                                : 'Sécurité élevée'}
+                                ? 'Chiffrer les données locales stockées sur l\'appareil'
+                                : 'Régénérer automatiquement clés de chiffrement tous les 30 jours '}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Chiffrement des données</Text>
-                {['default', 'enabled', 'disabled'].map((encryption) => (
+                <Text style={styles.subtitle}>Backup et Sauvegarde</Text>
+                {['default', 'enabled'].map((encryption) => (
                     <TouchableOpacity
                         key={encryption}
                         style={[styles.option, dataEncryption === encryption && styles.selectedOption]}
@@ -52,17 +50,14 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {encryption === 'default'
-                                ? 'Chiffrement par défaut'
-                                : encryption === 'enabled'
-                                ? 'Chiffrement activé'
-                                : 'Chiffrement désactivé'}
+                                ? 'Sauvegardes quotidiennes'
+                                : 'Sauvegardes locales de l\'appareil'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Authentification à deux
-                    facteurs</Text>
+                <Text style={styles.subtitle}>Notifications de sécurité </Text>
                 {['default', 'enabled', 'disabled'].map((auth) => (
                     <TouchableOpacity
                         key={auth}
@@ -76,17 +71,17 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {auth === 'default'
-                                ? 'Authentification par défaut'
+                                ? 'Alerte de connexion depuis un nouvel appareil '
                                 : auth === 'enabled'
-                                ? 'Authentification à deux facteurs activée'
-                                : 'Authentification à deux facteurs désactivée'}
+                                ? 'Notification de tentatives d\'accès échouées '
+                                : 'Alerte activité inhabituelle'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Délai d'expiration de la session</Text>
-                {['default', 'short', 'medium', 'long'].map((timeout) => (
+                <Text style={styles.subtitle}>Authentification renforcée</Text>
+                {['default', 'short', 'medium'].map((timeout) => (
                     <TouchableOpacity
                         key={timeout}
                         style={[styles.option, sessionTimeout === timeout && styles.selectedOption]}
@@ -99,19 +94,17 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {timeout === 'default'
-                                ? 'Délai d\'expiration par défaut'
+                                ? 'Validation biométrique pour les informations sensibles'
                                 : timeout === 'short'
-                                ? 'Délai d\'expiration court'
-                                : timeout === 'medium'
-                                ? 'Délai d\'expiration moyen'
-                                : 'Délai d\'expiration long'}
+                                ? 'Validation par SMS pour les modifications importantes'
+                                : 'Authentification à deux facteurs'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Sauvegarde des données</Text>
-                {['default', 'enabled', 'disabled'].map((backup) => (
+                <Text style={styles.subtitle}>Vérification des appareils </Text>
+                {['default', 'enabled', 'disabled', 'approved'].map((backup) => (
                     <TouchableOpacity
                         key={backup}
                         style={[styles.option, dataBackup === backup && styles.selectedOption]}
@@ -124,10 +117,12 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {backup === 'default'
-                                ? 'Sauvegarde par défaut'
+                                ? 'Lister appareils connectés '
                                 : backup === 'enabled'
-                                ? 'Sauvegarde activée'
-                                : 'Sauvegarde désactivée'}
+                                ? 'Déconnecter autres appareils'
+                                : backup === 'disabled'
+                                ? 'Limiter à 3 appareils maximum '
+                                : 'Approuver manuellement chaque appareil'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -160,17 +155,14 @@ const styles = StyleSheet.create({
     option: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F57196',
-        borderRadius: 10,
-        padding: 10,
+        backgroundColor: 'lightgray',
+        borderRadius: 5,
         marginBottom: 10,
-        width: '100%',
-        height: 60,
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
     },
     selectedOption: {
-        backgroundColor: '#EE9AD0',
+        backgroundColor: '#F57196',
         borderRadius: 10,
         padding: 10,
         flexDirection: 'row',
