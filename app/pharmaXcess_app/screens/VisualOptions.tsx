@@ -24,7 +24,11 @@ export default function VisualOptions({ navigation }): JSX.Element {
                                 color="white"
                             />
                             <Text style={styles.optionText}>
-                                {size === 'small' ? 'Petite' : size === 'medium' ? 'Moyenne' : 'Grande'}
+                                {size === 'small' 
+                                ? 'Petite' 
+                                : size === 'medium' 
+                                ? 'Moyenne' 
+                                : 'Grande'}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -44,7 +48,13 @@ export default function VisualOptions({ navigation }): JSX.Element {
                             color="white"
                         />
                         <Text style={styles.optionText}>
-                            {mode === 'standard' ? 'Standard' : mode === 'deuteranopia' ? 'Deutéranopie' : mode === 'protanopia' ? 'Protanopie' : 'Tritanopie'}
+                            {mode === 'standard' 
+                            ? 'Standard' 
+                            : mode === 'deuteranopia' 
+                            ? 'Deutéranopie' 
+                            : mode === 'protanopia' 
+                            ? 'Protanopie' 
+                            : 'Tritanopie'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -64,7 +74,9 @@ export default function VisualOptions({ navigation }): JSX.Element {
                             color="white"
                         />
                         <Text style={styles.optionText}>
-                            {themeOption === 'light' ? 'Clair' : 'Sombre'}
+                            {themeOption === 'light' 
+                            ? 'Clair' 
+                            : 'Sombre'}
                         </Text>
                     </TouchableOpacity>
                 ))}
