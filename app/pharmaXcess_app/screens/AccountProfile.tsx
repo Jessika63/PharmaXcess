@@ -6,13 +6,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 export default function AccountProfile({ navigation }): JSX.Element {
     const [profileType, setProfileType] = useState('default');
     const [profileDuration, setProfileDuration] = useState('default');
+    const [exports, setExports] = useState('default');
+    const [contacts, setContacts] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Options de Profil</Text>
 
             <View style={styles.section}>
-                {['default', 'type1', 'type2', 'type3'].map((type) => (
+                <Text style={styles.title}>Gestion des traitements</Text>
+                {['default', 'type1', 'type2'].map((type) => (
                     <TouchableOpacity
                         key={type}
                         style={[styles.option, profileType === type && styles.selectedOption]}
@@ -25,19 +27,18 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Profil Standard'
+                                ? 'Partager mes traitements avec mes professionnels de santé'
                                 : type === 'type1'
-                                ? 'Profil Avancé'
-                                : type === 'type2'
-                                ? 'Profil Professionnel'
-                                : 'Profil Administrateur'}
+                                ? 'Générer rapport suivi de traitement'
+                                : 'Masquer certains traitements au public '}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                {['default', 'short', 'medium'].map((duration) => (
+                <Text style={styles.title}>Synchronisation des ordonnances</Text>
+                {['default', 'short'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
                         style={[styles.option, profileDuration === duration && styles.selectedOption]}
@@ -50,10 +51,56 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Durée Standard'
-                                : duration === 'short'
-                                ? 'Durée Courte'
-                                : 'Durée Longue'}
+                                ? 'Synchronisation automatique avec ma pharmacie'
+                                : 'Notifications avant expiration de mon ordonnance '}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <View style={styles.section}>
+                <Text style={styles.title}>Exportation/import de données médicales </Text>
+                {['default', 'short', 'medium', 'share'].map((exportType) => (
+                    <TouchableOpacity
+                        key={exportType}
+                        style={[styles.option, exports === exportType && styles.selectedOption]}
+                        onPress={() => setExports(exportType)}
+                    >
+                        <Ionicons
+                            name={exports === exportType ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={24}
+                            color="white"
+                        />
+                        <Text style={styles.optionText}>
+                            {exportType === 'default'
+                                ? 'Format médical standard (HL7, FHIR) '
+                                : exportType === 'short'
+                                ? 'Intégration avec mon dossier médical partagé '
+                                : exportType === 'medium'
+                                ? 'Import depuis d\'autres applications de santé'
+                                : 'Partage sécurisé avec les professionnels autorisés '}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <View style={styles.section}>
+                <Text style={styles.title}>Contacts médicaux </Text>
+                {['default', 'short', 'medium'].map((contactType) => (
+                    <TouchableOpacity
+                        key={contactType}
+                        style={[styles.option, contacts === contactType && styles.selectedOption]}
+                        onPress={() => setContacts(contactType)}
+                    >
+                        <Ionicons
+                            name={contacts === contactType ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={24}
+                            color="white"
+                        />
+                        <Text style={styles.optionText}>
+                            {contactType === 'default'
+                                ? 'Ajouter pharmacie habituelle'
+                                : contactType === 'short'
+                                ? 'Définir des contacts d\'urgence'
+                                : 'Autorisations accès professionnel '}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -77,30 +124,26 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#F57196',
-    },
-    section: {
-        marginBottom: 20,
-    },
-    subtitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
         marginBottom: 10,
         color: '#F57196',
     },
     option: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#F57196',
-        borderRadius: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 10,
+        backgroundColor: '#adadad',
         marginBottom: 10,
     },
     selectedOption: {
         backgroundColor: '#F57196',
-    },
+        borderRadius: 10,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        overflow: 'hidden',    },
     optionText: {
         fontSize: 18,
         color: 'white',
@@ -111,11 +154,15 @@ const styles = StyleSheet.create({
     },
     gradient: {
         paddingVertical: 15,
-        borderRadius: 5,
+        borderRadius: 10,
         alignItems: 'center',
     },
     returnButtonText: {
-        color: 'white',
         fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    section: {
+        marginBottom: 20,
     },
 });
