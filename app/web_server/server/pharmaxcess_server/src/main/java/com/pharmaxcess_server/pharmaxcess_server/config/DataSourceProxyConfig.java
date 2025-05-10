@@ -1,3 +1,4 @@
+package com.pharmaxcess_server.pharmaxcess_server.config;
 import net.ttddyy.dsproxy.listener.QueryExecutionListener;
 import net.ttddyy.dsproxy.ExecutionInfo;
 import net.ttddyy.dsproxy.QueryInfo;
