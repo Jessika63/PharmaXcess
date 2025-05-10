@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 18,
         marginLeft: 10,
+        color: 'white',
     },
     returnButton: {
         marginTop: 20,
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 5,
-        backgroundColor: 'lightgray',
+        backgroundColor: '#adadad',
         marginBottom: 10,
     },
     gradient: {

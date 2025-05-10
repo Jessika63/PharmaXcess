@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 10,
-        backgroundColor: 'lightgray',
+        backgroundColor: '#adadad',
         marginBottom: 10,
     },
     selectedOption: {

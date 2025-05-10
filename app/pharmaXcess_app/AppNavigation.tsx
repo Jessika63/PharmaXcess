@@ -34,6 +34,7 @@ import PersonalDataOptions from './screens/PersonalDataOptions';
 import ReglementationOptions from './screens/ReglementationOptions';
 import AdvancedSecurityOptions from './screens/AdvancedSecurityoptions';
 import Notifications from './screens/Notifications';
+import AccountProfile from './screens/AccountProfile';
 
 type TabBarIconProps = {
   color: string;
@@ -82,6 +83,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="ReglementationOptions" component={ReglementationOptions} options={{ headerTitleAlign: 'center', title: 'Conformité réglementaire' }} />
       <ProfileStack.Screen name="AdvancedSecurityOptions" component={AdvancedSecurityOptions} options={{ headerTitleAlign: 'center', title: 'Sécurité avancée' }} />
       <ProfileStack.Screen name="Notifications" component={Notifications} options={{ headerTitleAlign: 'center', title: 'Notifications' }} />
+      <ProfileStack.Screen name="AccountProfile" component={AccountProfile} options={{ headerTitleAlign: 'center', title: 'Compte et profil' }} />
     </ProfileStack.Navigator>
   );
 }

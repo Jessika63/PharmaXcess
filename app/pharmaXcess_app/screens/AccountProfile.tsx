@@ -1,60 +1,59 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default function ConsentOptions({ navigation }): JSX.Element {
-    const [consentType, setConsentType] = useState('default');
-    const [consentDuration, setConsentDuration] = useState('default');
-    const [consentAssociation, setConsentAssociation] = useState('default');
+export default function AccountProfile({ navigation }): JSX.Element {
+    const [profileType, setProfileType] = useState('default');
+    const [profileDuration, setProfileDuration] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            <Text style={styles.title}>Options de Profil</Text>
+
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Consentements</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
-                        style={[styles.option, consentType === type && styles.selectedOption]}
-                        onPress={() => setConsentType(type)}
+                        style={[styles.option, profileType === type && styles.selectedOption]}
+                        onPress={() => setProfileType(type)}
                     >
                         <Ionicons
-                            name={consentType === type ? 'checkmark-circle' : 'ellipse-outline'}
+                            name={profileType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
                             color="white"
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
-                                ? 'Collecte et stockage de vos informations personnelles'
+                                ? 'Profil Standard'
                                 : type === 'type1'
-                                ? 'Utilisation pour la gestion de votre compte'
+                                ? 'Profil Avancé'
                                 : type === 'type2'
-                                ? 'Stockage de votre historique médical'
-                                : 'Gestion de vos prescriptions médicales'}
+                                ? 'Profil Professionnel'
+                                : 'Profil Administrateur'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Autorisations</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
-                        style={[styles.option, consentDuration === duration && styles.selectedOption]}
-                        onPress={() => setConsentDuration(duration)}
+                        style={[styles.option, profileDuration === duration && styles.selectedOption]}
+                        onPress={() => setProfileDuration(duration)}
                     >
                         <Ionicons
-                            name={consentDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
+                            name={profileDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
                             color="white"
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
-                                ? 'Partage avec les professionnels de santé'
+                                ? 'Durée Standard'
                                 : duration === 'short'
-                                ? 'Partage avec les pharmaciens'
-                                : 'Partage avec les proches'}
+                                ? 'Durée Courte'
+                                : 'Durée Longue'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -90,19 +89,25 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         color: '#F57196',
     },
+    option: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#F57196',
+        borderRadius: 5,
+        marginBottom: 10,
+    },
     selectedOption: {
         backgroundColor: '#F57196',
     },
     optionText: {
         fontSize: 18,
-        marginLeft: 10,
         color: 'white',
+        marginLeft: 10,
     },
     returnButton: {
         marginTop: 20,
-        borderRadius: 10,
-        width: '100%',
-        overflow: 'hidden',
     },
     gradient: {
         paddingVertical: 15,
@@ -110,16 +115,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     returnButtonText: {
-        fontSize: 18,
         color: 'white',
-    },
-    option: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 5,
-        backgroundColor: '#adadad',
-        marginBottom: 10,
+        fontSize: 18,
     },
 });

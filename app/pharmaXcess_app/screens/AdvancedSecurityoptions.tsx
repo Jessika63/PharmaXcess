@@ -127,6 +127,11 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                     </TouchableOpacity>
                 ))}
             </View>
+            <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
+                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <Text style={styles.returnButtonText}>Retour</Text>
+                </LinearGradient>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
@@ -155,7 +160,7 @@ const styles = StyleSheet.create({
     option: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'lightgray',
+        backgroundColor: '#adadad',
         borderRadius: 5,
         marginBottom: 10,
         paddingHorizontal: 15,
