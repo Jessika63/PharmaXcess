@@ -6,8 +6,17 @@ import sys
 import json
 from paddleocr import PaddleOCR
 
-
 def add_background(img, scale_factor=1.5):
+    """
+    Adds a white background around the input image to increase its size.
+
+    Parameters:
+    - img (numpy.ndarray): Original image.
+    - scale_factor (float): Scale factor to increase image dimensions.
+
+    Returns:
+    - numpy.ndarray: New image with a white background.
+    """
     height, width, _ = img.shape
     new_height = int(height * scale_factor)
     new_width = int(width * scale_factor)
@@ -17,8 +26,16 @@ def add_background(img, scale_factor=1.5):
     background[start_y:start_y + height, start_x:start_x + width] = img
     return background
 
-# fix the orientation of the given image
 def correct_orientation(image_path):
+    """
+    Corrects the skew of an image using line detection and rotates it if needed.
+
+    Parameters:
+    - image_path (str): Path to the input image.
+
+    Returns:
+    - str: Path to the saved, corrected image.
+    """
     img = cv2.imread(image_path)
     img = add_background(img)
     img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
@@ -47,9 +64,16 @@ def correct_orientation(image_path):
     cv2.imwrite(corrected_image_path, img)
     return corrected_image_path
 
-
-# extract text
 def extract_text_paddleocr(image_path):
+    """
+    Extracts text from an image using PaddleOCR.
+
+    Parameters:
+    - image_path (str): Path to the input image.
+
+    Returns:
+    - str: Recognized text from the image.
+    """
     ocr = PaddleOCR(use_angle_cls=True, lang='fr')
     result = ocr.ocr(image_path, cls=True)
     output_text = []
@@ -58,11 +82,16 @@ def extract_text_paddleocr(image_path):
             output_text.append(word_info[1][0])
     return "\n".join(output_text)
 
-
-
-
-# function to get information of prescription
 def getInfosPrescription(text):
+    """
+    Extracts structured data from a prescription text.
+
+    Parameters:
+    - text (str): Raw OCR-extracted text.
+
+    Returns:
+    - dict: Extracted information including doctor, RPPS, patient, and dates.
+    """
     infos = {}
 
     doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
@@ -89,9 +118,16 @@ def getInfosPrescription(text):
 
     return infos
 
-
-# function to get information the front of an ID card 
 def getInfosRectoID(text):
+    """
+    Extracts structured data from the front of a French ID card.
+
+    Parameters:
+    - text (str): Raw OCR-extracted text.
+
+    Returns:
+    - dict: Extracted information including name, nationality, sex, etc.
+    """
     infos = {}
     text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
                .replace("TM=Nom", "Nom").replace("PrenomS", "Prénoms") \
@@ -126,9 +162,16 @@ def getInfosRectoID(text):
 
     return infos
 
-
-# function to get information the back of an ID card 
 def getInfosVersoID(text):
+    """
+    Extracts structured data from the back of a French ID card.
+
+    Parameters:
+    - text (str): Raw OCR-extracted text.
+
+    Returns:
+    - dict: Extracted information including address, authority, delivery and validity dates.
+    """
     infos = {}
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
                .replace("delivreele", "délivrée le") \
@@ -161,11 +204,17 @@ def getInfosVersoID(text):
 
     return infos
 
-
-
-
-
 def main(image_path, doc_type):
+    """
+    Main function to process an image: correct orientation, extract text, and parse data.
+
+    Parameters:
+    - image_path (str): Path to the input image.
+    - doc_type (str): Type of document ('P' = prescription, 'R' = recto ID, 'V' = verso ID).
+
+    Returns:
+    - dict: Parsed information extracted from the image.
+    """
     corrected_image = correct_orientation(image_path)
     text = extract_text_paddleocr(corrected_image)
 
@@ -188,8 +237,13 @@ def main(image_path, doc_type):
     print(json.dumps(data, indent=2, ensure_ascii=False))
     return data
 
-
 if __name__ == "__main__":
+    """
+    Entry point for command-line usage.
+
+    Usage:
+        python3 script.py <image_path> <P|R|V>
+    """
     if len(sys.argv) != 3:
         print("Utilisation : python3 script.py <image_path> <P|R|V>")
         sys.exit(1)

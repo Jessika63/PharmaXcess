@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 
@@ -18,10 +17,9 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     4. Imports the database dump file into the database container.
 
     Parameters:
-    - env_file_path (str): Path to the environment file (.env).
-    - required_env_keys (list): List of required keys that should be present in the environment file.
     - backend_folder (str): Path to the backend folder where the database dump file is located.
-    - db_dump_date (str): Date string used to construct the database dump file name.
+    - db_dump_date (str): Date string used to construct the database dump file name,
+                          OR a complete SQL filename (e.g. 'dump.sql').
     """
     colored_print("Starting backend operations...", "blue")
 
@@ -38,27 +36,34 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     # Step 3: Get .env variables
     env_data = load_env_file(".env")
 
-    # Step 4: Execute the database dump
-    dump_file_name = f"database_dump_px_{db_dump_date}.sql"
+    # Step 4: Determine dump filename
+    if db_dump_date.endswith(".sql"):
+        dump_file_name = db_dump_date
+    else:
+        dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
-        colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
+        colored_print(f"[ERROR]: Dump file '{dump_file_name}' not found in the backend folder!", "red")
+        return
 
+    # Step 5: Import dump into MySQL
     try:
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
         with open(dump_file_name, "r", encoding="utf-8") as dump_file:
-            dump_content = dump_file.read()  # Read the SQL dump as a string
+            dump_content = dump_file.read()
+
         result = subprocess.run(
             [
                 "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
                 "-p" + env_data["MYSQL_ROOT_PASSWORD"], env_data["DB_NAME"]
             ],
-            input=dump_content,  # Pass the string content
-            text=True,           # Ensure subprocess expects a string
-            capture_output=True, # Capture stdout and stderr
+            input=dump_content,
+            text=True,
+            capture_output=True,
             check=True
         )
         colored_print("Database dump imported successfully!", "green")
+
     except subprocess.CalledProcessError as e:
         error_message = e.stderr
         if "Operation CREATE USER failed" in error_message:
