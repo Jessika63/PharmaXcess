@@ -12,10 +12,11 @@ interface Item {
 export default function FAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Comment configurer les rappels de médicaments ?', route: 'ReminderSetup', icon: 'alarm-outline' },
-        { title: 'Comment ajouter un nouveau médicament ?', route: 'AddMedication', icon: 'add-circle-outline' },
-        { title: 'Comment consulter l\'historique des prises ?', route: 'HistoryTracking', icon: 'time-outline' },
-        { title: 'Comment personnaliser les paramètres de notification ?', route: 'NotificationSettings', icon: 'settings-outline' },
+        { title: 'Général', route: 'GeneralFAQ', icon: 'help-circle-outline' },
+        { title: 'Compte et confidentialité', route: 'AccountPrivacyFAQ', icon: 'lock-closed-outline' },
+        { title: 'Gestion des médicaments', route: 'MedicationManagementFAQ', icon: 'medkit-outline' },
+        { title: 'Problèmes techniques', route: 'TechnicalIssuesFAQ', icon: 'bug-outline' },
+        { title: 'Pharmacies partenaires', route: 'PartnerPharmaciesFAQ', icon: 'business-outline' },
     ];
 
     return (
@@ -61,12 +62,10 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: 'white',
         marginLeft: 10,
-        flex: 1,
         fontWeight: 'bold',
     },
     icon: {
         marginLeft: 10,
-        color: 'white',
         width: 24,
         height: 24,
     },
