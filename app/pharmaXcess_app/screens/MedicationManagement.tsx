@@ -12,10 +12,10 @@ interface Item {
 export default function MedicationManagement({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Ajouter un médicament', route: 'AddMedication', icon: 'add-circle-outline' },
-        { title: 'Gérer les médicaments', route: 'ManageMedications', icon: 'create-outline' },
-        { title: 'Historique des médicaments', route: 'MedicationHistory', icon: 'time-outline' },
-        { title: 'Rappels de médicaments', route: 'MedicationReminders', icon: 'alarm-outline' },
+        { title: 'Ajouter un nouveau traitement', route: 'AddTreatment', icon: 'add-circle-outline' },
+        { title: 'Configuration des rappels', route: 'ReminderSettings', icon: 'alarm-outline' },
+        { title: 'Suivi de l\'historique des prises', route: 'HistoryTracking', icon: 'time-outline' },
+
     ];
 
     return (
@@ -61,14 +61,11 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: 'white',
         marginLeft: 10,
+        fontWeight: 'bold', 
     },
     icon: {
-        position: 'absolute',
-        right: 20,
-        top: 15,
         width: 24,
         height: 24,
-        color: 'white',
         marginLeft: 10,
     },
 });
