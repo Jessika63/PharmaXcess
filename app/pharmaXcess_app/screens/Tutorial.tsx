@@ -9,20 +9,20 @@ interface Item {
     icon: React.ComponentProps<typeof Ionicons>['name'];
 }
 
-export default function HelpSupport({ navigation }): JSX.Element {
+export default function Tutorial({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Tutoriel', route: 'Tutorial', icon: 'book-outline' },
-        { title: 'FAQ', route: 'FAQ', icon: 'help-circle-outline' },
-        { title: 'Assistance technique', route: 'TechnicalSupport', icon: 'construct-outline' },
-        { title: 'Signaler un problème', route: 'ReportIssue', icon: 'alert-circle-outline' },  
+        { title: 'Premiers pas', route: 'FirstSteps', icon: 'book-outline' },
+        { title: 'Gestion des médicaments', route: 'MedicationManagement', icon: 'medkit-outline' },
+        { title: 'Importation des ordonnances', route: 'PrescriptionImport', icon: 'document-text-outline' },
+        { title: 'Profil médical', route: 'MedicalProfile', icon: 'person-outline' },
     ];
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.cardGradient}>
+                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.itemText}>{item.title}</Text>
                         <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
                     </LinearGradient>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         overflow: 'hidden',
     },
-    cardGradient: {
+    gradient: {
         flex: 1,
         paddingVertical: 15,
         justifyContent: 'center',
@@ -58,8 +58,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     itemText: {
-        fontSize: 20,
-        color: 'white',
+        fontSize: 18,
+        color: '#ffffff',
         marginLeft: 10,
         fontWeight: 'bold',
     },
@@ -68,4 +68,4 @@ const styles = StyleSheet.create({
         height: 24,
         marginLeft: 10,
     },
-}); 
+});
