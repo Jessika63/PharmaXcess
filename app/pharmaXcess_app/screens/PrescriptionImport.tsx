@@ -13,8 +13,8 @@ export default function PrescriptionImport({ navigation }): JSX.Element {
 
     const items: Item[] = [
         { title: 'Scanner une ordonnance', route: 'ScanPrescription', icon: 'camera-outline' },
-        { title: 'Importer une ordonnance', route: 'ImportPrescription', icon: 'document-text-outline' },
-        { title: 'Historique des ordonnances', route: 'PrescriptionHistory', icon: 'time-outline' },
+        { title: 'Validation des informations', route: 'ValidatePrescription', icon: 'checkmark-circle-outline' },
+        { title: 'Synchronisation avec pharmacie', route: 'SyncPharmacy', icon: 'sync-outline' },
     ];
 
     return (
@@ -63,12 +63,8 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     icon: {
-        position: 'absolute',
-        right: 20,
-        top: 15,
         width: 24,
         height: 24,
-        color: 'white',
         marginLeft: 10,
     },
 });
