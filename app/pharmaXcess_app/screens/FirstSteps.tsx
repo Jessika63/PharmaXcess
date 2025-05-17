@@ -12,10 +12,9 @@ interface Item {
 export default function FirstSteps({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Premiers pas', route: 'FirstSteps', icon: 'book-outline' },
-        { title: 'Gestion des médicaments', route: 'MedicationManagement', icon: 'medkit-outline' },
-        { title: 'Importation des ordonnances', route: 'PrescriptionImport', icon: 'document-text-outline' },
-        { title: 'Profil médical', route: 'MedicalProfile', icon: 'person-outline' },
+        { title: 'Configuration initiale du compte', route: 'AccountSetup', icon: 'settings-outline' },
+        { title: 'Navigation dans l\'interface', route: 'InterfaceNavigation', icon: 'apps-outline' },
+        { title: 'Personnalisation des paramètres', route: 'SettingsCustomization', icon: 'options-outline' },
     ];
 
     return (
