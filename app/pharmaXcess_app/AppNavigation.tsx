@@ -37,6 +37,7 @@ import Notifications from './screens/Notifications';
 import AccountProfile from './screens/AccountProfile';
 import HelpSupport from './screens/HelpSupport';
 import Tutorial from './screens/Tutorial';
+import FirstSteps from './screens/FirstSteps';
 
 type TabBarIconProps = {
   color: string;
@@ -88,6 +89,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="AccountProfile" component={AccountProfile} options={{ headerTitleAlign: 'center', title: 'Compte et profil' }} />
       <ProfileStack.Screen name="HelpSupport" component={HelpSupport} options={{ headerTitleAlign: 'center', title: 'Aide et support' }} />
       <ProfileStack.Screen name="Tutorial" component={Tutorial} options={{ headerTitleAlign: 'center', title: 'Tutoriel' }} />
+      <ProfileStack.Screen name="FirstSteps" component={FirstSteps} options={{ headerTitleAlign: 'center', title: 'Premiers pas' }} />
     </ProfileStack.Navigator>
   );
 }
