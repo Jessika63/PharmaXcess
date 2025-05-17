@@ -12,9 +12,9 @@ interface Item {
 export default function MedicationManagementFAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Comment ajouter un médicament ?', route: 'AddMedication', icon: 'add-circle-outline' },
-        { title: 'Comment gérer mes ordonnances ?', route: 'ManagePrescriptions', icon: 'document-text-outline' },
-        { title: 'Comment suivre mes médicaments ?', route: 'TrackMedications', icon: 'pulse-outline' },
+        { title: 'Comment ajouter des médicaments non prescrits ?', route: 'AddOverTheCounter', icon: 'medkit-outline' },
+        { title: 'Que faire si je manque une prise ?', route: 'MissedDose', icon: 'alert-circle-outline' },
+        { title: 'Comment gérer les interactions médicamenteuses ?', route: 'DrugInteractions', icon: 'warning-outline' },
     ];
 
     return (
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     card: {
-        width: '100%',
+        width: '105%',
         height: 105,
         borderRadius: 10,
         paddingHorizontal: 20,
@@ -59,10 +59,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     icon: {
-        position: 'absolute',
-        right: 20,
-        top: 15,
-        fontSize: 24,
-        color: 'white',
+        marginTop: 15,
     }
 });
