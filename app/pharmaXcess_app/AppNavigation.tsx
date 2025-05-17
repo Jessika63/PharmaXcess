@@ -41,6 +41,7 @@ import FirstSteps from './screens/FirstSteps';
 import MedicationManagement from './screens/MedicationManagement';
 import PrescriptionImport from './screens/PrescriptionImport';
 import MedicalProfile from './screens/MedicalProfile';
+import FAQ from './screens/FAQ';
 
 type TabBarIconProps = {
   color: string;
@@ -96,6 +97,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="MedicationManagement" component={MedicationManagement} options={{ headerTitleAlign: 'center', title: 'Gestion des médicaments' }} />
       <ProfileStack.Screen name="PrescriptionImport" component={PrescriptionImport} options={{ headerTitleAlign: 'center', title: 'Importation des ordonnances' }} />
       <ProfileStack.Screen name="MedicalProfile" component={MedicalProfile} options={{ headerTitleAlign: 'center', title: 'Profil médical' }} />
+      <ProfileStack.Screen name="FAQ" component={FAQ} options={{ headerTitleAlign: 'center', title: 'FAQ' }} />
     </ProfileStack.Navigator>
   );
 }
