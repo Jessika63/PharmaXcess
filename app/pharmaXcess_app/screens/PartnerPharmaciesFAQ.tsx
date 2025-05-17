@@ -12,9 +12,8 @@ interface Item {
 export default function PartnerPharmaciesFAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Comment choisir une pharmacie partenaire ?', route: 'ChoosePartnerPharmacy', icon: 'medkit-outline' },
-        { title: 'Comment changer de pharmacie partenaire ?', route: 'ChangePartnerPharmacy', icon: 'swap-horizontal-outline' },
-        { title: 'Que faire si ma pharmacie partenaire ne répond pas ?', route: 'PharmacyNotResponding', icon: 'alert-circle-outline' },
+        { title: 'Comment trouver une pharmacie compatible ?', route: 'FindCompatiblePharmacy', icon: 'search-outline' },
+        { title: 'Comment synchroniser mon ordonnance avec une pharmacie ?', route: 'SyncPrescription', icon: 'sync-outline' },
     ];
 
     return (
