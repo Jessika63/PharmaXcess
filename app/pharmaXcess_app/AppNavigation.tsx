@@ -44,6 +44,7 @@ import MedicalProfile from './screens/MedicalProfile';
 import FAQ from './screens/FAQ';
 import GeneralFAQ from './screens/GeneralFAQ';
 import AccountPrivacyFAQ from './screens/AccountPrivacyFAQ';
+import MedicationManagementFAQ from './screens/MedicationManagementFAQ';
 
 type TabBarIconProps = {
   color: string;
@@ -102,6 +103,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="FAQ" component={FAQ} options={{ headerTitleAlign: 'center', title: 'FAQ' }} />
       <ProfileStack.Screen name="GeneralFAQ" component={GeneralFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Général' }} />
       <ProfileStack.Screen name="AccountPrivacyFAQ" component={AccountPrivacyFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Compte et confidentialité' }} />
+      <ProfileStack.Screen name="MedicationManagementFAQ" component={MedicationManagementFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Gestion des médicaments' }} />
     </ProfileStack.Navigator>
   );
 }
