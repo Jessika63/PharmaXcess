@@ -12,8 +12,8 @@ interface Item {
 export default function TechnicalIssuesFAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
+        { title: 'L\'application ne se synchronise pas', route: 'AppSyncIssues', icon: 'sync-outline' },
         { title: 'Problèmes de connexion', route: 'ConnectionIssues', icon: 'wifi-outline' },
-        { title: 'Erreurs d\'application', route: 'AppErrors', icon: 'bug-outline' },
         { title: 'Problèmes de notifications', route: 'NotificationIssues', icon: 'notifications-off-outline' },
     ];
 
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     card: {
-        width: '100%',
+        width: '105%',
         height: 105,
         borderRadius: 10,
         paddingHorizontal: 20,
@@ -59,10 +59,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     icon: {
-        position: 'absolute',
-        right: 20,
-        top: 15,
-        color: 'white',
-        fontSize: 24,
+        marginTop: 15,
     }
 });
