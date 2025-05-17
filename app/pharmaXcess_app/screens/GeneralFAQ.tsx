@@ -13,10 +13,8 @@ export default function GeneralFAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
         { title: 'Qu\'est-ce que PharmaXcess ?', route: 'PharmaXcessInfo', icon: 'information-circle-outline' },
-        { title: 'Comment fonctionne l\'application ?', route: 'AppFunctionality', icon: 'help-circle-outline' },
-        { title: 'Comment créer un compte ?', route: 'CreateAccount', icon: 'person-add-outline' },
-        { title: 'Comment réinitialiser mon mot de passe ?', route: 'ResetPassword', icon: 'key-outline' },
-        { title: 'Comment contacter le support ?', route: 'ContactSupport', icon: 'chatbubble-ellipses-outline' },
+        { title: 'Comment mes données sont-elles protégées ?', route: 'DataProtection', icon: 'shield-checkmark-outline' },
+        { title: 'L\'appplication fonctionne-t-elle hors ligne ?', route: 'OfflineFunctionality', icon: 'cloud-offline-outline' },
     ];
 
     return (
@@ -40,15 +38,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     card: {
-        width: '100%',
+        width: '105%',
         height: 105,
         borderRadius: 10,
-        paddingVertical: 15,
         paddingHorizontal: 20,
         marginVertical: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 0,
         overflow: 'hidden',
     },
     gradient: {
@@ -57,18 +51,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 10,
         alignItems: 'center',
-        flexDirection: 'row',
-        paddingHorizontal: 20,
     },
     itemText: {
         fontSize: 20,
         color: 'white',
-        marginLeft: 10,
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     icon: {
-        width: 24,
-        height: 24,
-        marginLeft: 10,
-    },
+        marginTop: 15,},
 });
