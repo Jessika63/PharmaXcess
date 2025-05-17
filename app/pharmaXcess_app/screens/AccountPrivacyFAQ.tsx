@@ -12,9 +12,9 @@ interface Item {
 export default function AccountPrivacyFAQ({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Comment gérer mes paramètres de confidentialité ?', route: 'ManagePrivacySettings', icon: 'shield-checkmark-outline' },
         { title: 'Comment supprimer mon compte ?', route: 'DeleteAccount', icon: 'trash-outline' },
-        { title: 'Comment signaler un problème de confidentialité ?', route: 'ReportPrivacyIssue', icon: 'alert-circle-outline' },
+        { title: 'Qui a accès à mes données ?', route: 'DataAccess', icon: 'lock-closed-outline' },
+        { title: 'Comment modifier mes informations personnelles ?', route: 'EditPersonalInfo', icon: 'create-outline' },
     ];
 
     return (
@@ -41,7 +41,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 105,
         borderRadius: 10,
-        paddingVertical: 15,
         paddingHorizontal: 20,
         marginVertical: 8,
         flexDirection: 'row',
