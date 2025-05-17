@@ -12,10 +12,9 @@ interface Item {
 export default function MedicalProfile({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Antécédents médicaux', route: 'MedicalHistory', icon: 'heart-outline' },
-        { title: 'Allergies', route: 'Allergies', icon: 'warning-outline' },
-        { title: 'Médicaments actuels', route: 'CurrentMedications', icon: 'medkit-outline' },
-        { title: 'Vaccins', route: 'Vaccinations', icon: 'shield-checkmark-outline' },
+        { title: 'Configuration du profil médical', route: 'ProfileSetup', icon: 'person-add-outline' },
+        { title: 'Ajout de conditions médicales et allergies', route: 'MedicalConditions', icon: 'medkit-outline' },
+        { title: 'Partage sécurisé avec les professionnels de santé', route: 'SecureSharing', icon: 'shield-checkmark-outline' },
     ];
 
     return (
@@ -42,12 +41,8 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 105,
         borderRadius: 10,
-        paddingVertical: 15,
         paddingHorizontal: 20,
         marginVertical: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 0,
         overflow: 'hidden',
     },
     gradient: {
@@ -61,11 +56,9 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: 'white',
         fontWeight: 'bold',
-        marginLeft: 10,
+        textAlign: 'center',
     },
     icon: {
-        marginLeft: 10,
-        width: 24,
-        height: 24,
+        marginTop: 15, 
     },
 });
