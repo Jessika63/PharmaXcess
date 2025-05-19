@@ -10,15 +10,36 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import javax.sql.DataSource;
 import java.util.List;
 
+/**
+ * Spring configuration class for setting up a proxy DataSource
+ * that logs executed SQL queries for auditing purposes.
+ *
+ * The proxy captures and logs each query along with the currently
+ * authenticated user's name, if available.
+ */
 @Configuration
 public class DataSourceProxyConfig {
 
+    /**
+     * Creates a proxy for the original DataSource that intercepts SQL queries
+     * and logs them with the associated authenticated user.
+     *
+     * @param originalDataSource the original DataSource managed by Spring (e.g., HikariDataSource)
+     * @return a proxied DataSource with query logging enabled
+     */
     @Bean
     public DataSource dataSource(DataSource originalDataSource) {
         return ProxyDataSourceBuilder
                 .create(originalDataSource)
                 .name("Audit-Logger")
                 .listener(new QueryExecutionListener() {
+                    /**
+                     * Logs SQL queries before they are executed,
+                     * including the name of the authenticated user (if any).
+                     *
+                     * @param execInfo      metadata about the execution
+                     * @param queryInfoList list of queries to be executed
+                     */
                     @Override
                     public void beforeQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
                         String username = "ANONYMOUS";
@@ -33,6 +54,13 @@ public class DataSourceProxyConfig {
                         }
                     }
 
+                    /**
+                     * Callback after query execution.
+                     * Currently not implemented.
+                     *
+                     * @param execInfo      metadata about the execution
+                     * @param queryInfoList list of queries that were executed
+                     */
                     @Override
                     public void afterQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
                         // TODO
