@@ -7,7 +7,6 @@ export default function ReportIssue({ navigation }): JSX.Element {
     const [email, setEmail] = useState<string>('');
     const [phone, setPhone] = useState<string>('');
     const [issueType, setIssueType] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
     const [attachment, setAttachment] = useState<string>('');
 
     const handleConfirm = () => {
@@ -16,11 +15,10 @@ export default function ReportIssue({ navigation }): JSX.Element {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <TextInput style={styles.input} placeholder="Nom et prénom" value={name} onChangeText={setName} />
-            <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} />
-            <TextInput style={styles.input} placeholder="Numéro de téléphone" value={phone} onChangeText={setPhone} />
-            <TextInput style={styles.input} placeholder="Type de problème" value={issueType} onChangeText={setIssueType} />
-            <TextInput style={styles.input} placeholder="Description du problème" value={description} onChangeText={setDescription} />
+            <TextInput style={styles.input} placeholder="Type de problème" value={name} onChangeText={setName} />
+            <TextInput style={styles.input} placeholder="Criticité du problème" value={email} onChangeText={setEmail} />
+            <TextInput style={styles.input} placeholder="Description détaillée " value={phone} onChangeText={setPhone} />
+            <TextInput style={styles.input} placeholder="Etapes pour reproduire le problème " value={issueType} onChangeText={setIssueType} />
             <TouchableOpacity style={styles.button} onPress={() => Alert.alert('Déposer un fichier', 'Fonctionnalité à venir')}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                     <Text style={styles.buttonText}>Déposer un fichier</Text>
@@ -47,30 +45,25 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     input: {
-        height: 50,
-        borderColor: '#adadad',
+        height: 40,
+        borderColor: 'gray',
         borderWidth: 1,
-        borderRadius: 10,
+        borderRadius: 5,
         paddingHorizontal: 10,
-        marginBottom: 15,
-        backgroundColor: '#f5f5f5',
-        fontSize: 16,
-        color: '#333',
+        marginVertical: 10,
     },
     button: {
-        height: 50,
         borderRadius: 10,
-        marginBottom: 15,
         overflow: 'hidden',
-        backgroundColor: '#adadad',
-        justifyContent: 'center',
-        alignItems: 'center',
+        marginTop: 20,
+        width: '100%',
     },
     gradient: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10,
+        paddingVertical: 15,
     },
     buttonText: {
         fontSize: 18,
