@@ -12,11 +12,15 @@ interface Item {
 export default function AdvancedPrivacy({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Gestion des données', route: 'DataManagement', icon: 'shield-checkmark-outline' },
-        { title: 'Sécurité des données', route: 'DataSecurity', icon: 'lock-closed-outline' },
-        { title: 'Confidentialité des données', route: 'DataPrivacy', icon: 'eye-off-outline' },
-        { title: 'Paramètres de confidentialité avancés', route: 'AdvancedPrivacySettings', icon: 'settings-outline' },
-    ];
+        { title: 'Consulter nos documents', route: 'ViewDocuments', icon: 'document-text-outline' },
+        { title: 'Préférences de notification', route: 'NotificationPreferences', icon: 'notifications-outline' },
+        { title: 'Historique et transparence', route: 'HistoryTransparency', icon: 'time-outline' },
+        { title: 'Données personnelles et utilisation', route: 'PersonalDataUsage', icon: 'shield-checkmark-outline' },
+        { title: 'Préférences de communication', route: 'CommunicationPreferences', icon: 'chatbubble-ellipses-outline' },
+        { title: 'Gestion des cookies', route: 'CookieManagement', icon: 'cog-outline' },
+        { title: 'Exercice des droits RGPD ', route: 'ExerciseRights', icon: 'shield-outline' },
+        { title: 'Options de gestion du compte', route: 'AccountManagement', icon: 'person-outline' },
+    ]
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
