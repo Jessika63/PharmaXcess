@@ -5,14 +5,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function CookieManagement({ navigation }): JSX.Element {
     const [cookieConsent, setCookieConsent] = useState('default');
-    const [cookieDuration, setCookieDuration] = useState('default');
-    const [cookieUsage, setCookieUsage] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Consentement aux cookies</Text>
-                {['default', 'yes'].map((consent) => (
+                <Text style={styles.subtitle}>Niveau de cookies acceptés </Text>
+                {['default', 'yes', 'nothing'].map((consent) => (
                     <TouchableOpacity
                         key={consent}
                         style={[styles.option, cookieConsent === consent && styles.selectedOption]}
@@ -25,58 +23,15 @@ export default function CookieManagement({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {consent === 'default'
-                                ? 'On'
-                                : 'Off'}
+                                ? 'Tous les cookies'
+                                : consent === 'yes'
+                                ? 'Essentiels uniquement'
+                                : 'Aucun cookie'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Durée de conservation des cookies</Text>
-                {['default', 'short', 'medium'].map((duration) => (
-                    <TouchableOpacity
-                        key={duration}
-                        style={[styles.option, cookieDuration === duration && styles.selectedOption]}
-                        onPress={() => setCookieDuration(duration)}
-                    >
-                        <Ionicons
-                            name={cookieDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {duration === 'default'
-                                ? '30 jours'
-                                : duration === 'short'
-                                ? '7 jours'
-                                : '1 jour'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Utilisation des cookies</Text>
-                {['default', 'analytics', 'advertising'].map((usage) => (
-                    <TouchableOpacity
-                        key={usage}
-                        style={[styles.option, cookieUsage === usage && styles.selectedOption]}
-                        onPress={() => setCookieUsage(usage)}
-                    >
-                        <Ionicons
-                            name={cookieUsage === usage ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {usage === 'default'
-                                ? 'Cookies de session'
-                                : usage === 'analytics'
-                                ? 'Cookies d\'analyse'
-                                : 'Cookies publicitaires'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
+
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
                 <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.returnButtonGradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
@@ -90,7 +45,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5',
     },
     section: {
         marginBottom: 20,
@@ -106,7 +61,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
         marginBottom: 10,
-        borderRadius: 10,
+        borderRadius: 5,
         backgroundColor: '#adadad',
     },
     selectedOption: {
@@ -119,25 +74,17 @@ const styles = StyleSheet.create({
     optionText: {
         marginLeft: 10,
         color: 'white',
+        fontSize: 16,
     },
     returnButtonGradient: {
         padding: 15,
-        borderRadius: 10,
+        borderRadius: 5,
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 20,
-        width: '100%',
-        overflow: 'hidden',
     },
     returnButton: {
         marginTop: 20,
-        borderRadius: 10,
-        width: '100%',
-        overflow: 'hidden',
-        backgroundColor: '#F57196',
-        padding: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: '80%',
+        alignSelf: 'center',
     },
     returnButtonText: {
         fontSize: 18,
