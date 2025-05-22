@@ -12,10 +12,9 @@ interface Item {
 export default function HistoryTransparency({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Historique des transactions', route: 'TransactionHistory', icon: 'time-outline' },
-        { title: 'Transparence des données', route: 'DataTransparency', icon: 'shield-checkmark-outline' },
-        { title: 'Rapports d\'audit', route: 'AuditReports', icon: 'document-text-outline' },
-        { title: 'Consentement et préférences', route: 'ConsentPreferences', icon: 'checkmark-circle-outline' },
+        { title: 'Consulter l\'historique des versions', route: 'VersionHistory', icon: 'document-text-outline' },
+        { title: 'Voir les changements récents', route: 'RecentChanges', icon: 'document-text-outline' },
+        { title: 'Comparer les versions', route: 'CompareVersions', icon: 'document-text-outline' },
     ];
 
     return (
@@ -40,7 +39,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '100%',
-        height: 110,
+        height: 115,
         borderRadius: 10,
         paddingVertical: 15,
         paddingHorizontal: 20,
