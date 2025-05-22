@@ -53,6 +53,7 @@ import AppPreferences from './screens/AppPreferences';
 import AdvancedPrivacy from './screens/AdvancedPrivacy';
 import ViewDocuments from './screens/ViewDocuments';
 import NotificationPreferences from './screens/NotificationPreferences';
+import HistoryTransparency from './screens/HistoryTransparency';
 
 type TabBarIconProps = {
   color: string;
@@ -120,6 +121,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="AdvancedPrivacy" component={AdvancedPrivacy} options={{ headerTitleAlign: 'center', title: 'Confidentialité avancée' }} />
       <ProfileStack.Screen name="ViewDocuments" component={ViewDocuments} options={{ headerTitleAlign: 'center', title: 'Consulter nos documents' }} />
       <ProfileStack.Screen name="NotificationPreferences" component={NotificationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de notification' }} />
+      <ProfileStack.Screen name="HistoryTransparency" component={HistoryTransparency} options={{ headerTitleAlign: 'center', title: 'Historique et transparence' }} />
     </ProfileStack.Navigator>
   );
 }
