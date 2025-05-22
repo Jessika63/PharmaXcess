@@ -49,6 +49,7 @@ import TechnicalIssuesFAQ from './screens/TechnicalIssuesFAQ';
 import PartnerPharmaciesFAQ from './screens/PartnerPharmaciesFAQ';
 import TechnicalSupport from './screens/TechnicalSupport';
 import ReportIssue from './screens/ReportIssue';
+import AppPreferences from './screens/AppPreferences';
 
 type TabBarIconProps = {
   color: string;
@@ -112,6 +113,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="PartnerPharmaciesFAQ" component={PartnerPharmaciesFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Pharmacies partenaires' }} />
       <ProfileStack.Screen name="TechnicalSupport" component={TechnicalSupport} options={{ headerTitleAlign: 'center', title: 'Support technique' }} />
       <ProfileStack.Screen name="ReportIssue" component={ReportIssue} options={{ headerTitleAlign: 'center', title: 'Signaler un problème' }} />
+      <ProfileStack.Screen name="AppPreferences" component={AppPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de l\'application' }} />
     </ProfileStack.Navigator>
   );
 }
