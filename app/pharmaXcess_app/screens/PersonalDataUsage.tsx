@@ -4,88 +4,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function PersonalDataUsage({ navigation }): JSX.Element {
-    const [dataType, setDataType] = useState("default");
-    const [dataDuration, setDataDuration] = useState("default");
-    const [dataAssociation, setDataAssociation] = useState("default");
     const [dataRegulation, setDataRegulation] = useState("default");
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Téléchargement des données </Text>
-                {["default", "type1", "type2", "type3"].map((type) => (
-                    <TouchableOpacity
-                        key={type}
-                        style={[styles.option, dataType === type && styles.selectedOption]}
-                        onPress={() => setDataType(type)}
-                    >
-                        <Ionicons
-                            name={dataType === type ? "checkmark-circle" : "ellipse-outline"}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {type === "default"
-                                ? "PDF"
-                                : type === "type1"
-                                ? "CSV"
-                                : type === "type2"
-                                ? "Inclure l'historique complet"
-                                : "Protéger par mot de passe"}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Suppression des données</Text>
-                {["default", "short", "medium"].map((duration) => (
-                    <TouchableOpacity
-                        key={duration}
-                        style={[styles.option, dataDuration === duration && styles.selectedOption]}
-                        onPress={() => setDataDuration(duration)}
-                    >
-                        <Ionicons
-                            name={dataDuration === duration ? "checkmark-circle" : "ellipse-outline"}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {duration === "default"
-                                ? "Historique de navigation"
-                                : duration === "short"
-                                ? "Ordonnances archivées"
-                                : "Données du compte"},
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Partage des données</Text>
-                {["default", "option1", "option2"].map((association) => (
-                    <TouchableOpacity
-                        key={association}
-                        style={[styles.option, dataAssociation === association && styles.selectedOption]}
-                        onPress={() => setDataAssociation(association)}
-                    >
-                        <Ionicons
-                            name={dataAssociation === association ? "checkmark-circle" : "ellipse-outline"}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {association === "default"
-                                ? "Partage avec des tiers"
-                                : association === "option1"
-                                ? "Partage avec des partenaires"
-                                : "Partage avec des chercheurs"}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Anonymisation</Text>
+                <Text style={styles.subtitle}>Consentements </Text>
                 {["default", "short", "medium"].map((regulation) => (
                     <TouchableOpacity
                         key={regulation}
@@ -99,10 +23,10 @@ export default function PersonalDataUsage({ navigation }): JSX.Element {
                         />
                         <Text style={styles.optionText}>
                             {regulation === "default"
-                                ? "Données anonymisées"
+                                ? "Consentement pour partager toutes les données d\'usage et d\'amélioration"
                                 : regulation === "short"
-                                ? "Données pseudonymisées"
-                                : "Données non anonymisées"}
+                                ? "Consentement pour les données anonymisées à des fins de statistiques"
+                                : "Consentement pour la recherche médicale"}
                         </Text>
                     </TouchableOpacity>
                 ))}
