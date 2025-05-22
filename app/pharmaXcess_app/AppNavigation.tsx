@@ -56,6 +56,7 @@ import NotificationPreferences from './screens/NotificationPreferences';
 import HistoryTransparency from './screens/HistoryTransparency';
 import PersonalDataUsage from './screens/PersonalDataUsage';
 import CommunicationPreferences from './screens/CommunicationPreferences';
+import CookieManagement from './screens/CookieManagement';
 
 type TabBarIconProps = {
   color: string;
@@ -126,6 +127,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="HistoryTransparency" component={HistoryTransparency} options={{ headerTitleAlign: 'center', title: 'Historique et transparence' }} />
       <ProfileStack.Screen name="PersonalDataUsage" component={PersonalDataUsage} options={{ headerTitleAlign: 'center', title: 'Utilisation des données personnelles' }} />
       <ProfileStack.Screen name="CommunicationPreferences" component={CommunicationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de communication' }} />
+      <ProfileStack.Screen name="CookieManagement" component={CookieManagement} options={{ headerTitleAlign: 'center', title: 'Gestion des cookies' }} />
     </ProfileStack.Navigator>
   );
 }
