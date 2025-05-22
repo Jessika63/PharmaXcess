@@ -12,9 +12,9 @@ interface Item {
 export default function ExerciseRights({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Accéder à mes données personnelles', route: 'AccessData', icon: 'document-text-outline' },
-        { title: 'Modifier mes données personnelles', route: 'EditData', icon: 'document-text-outline' },
-        { title: 'Supprimer mes données personnelles', route: 'DeleteData', icon: 'document-text-outline' },
+        { title: 'Demander une copie complète de mes données personnelles', route: 'RequestData', icon: 'document-text-outline' },
+        { title: 'Demander la limitation du traitement de mes données personnelles', route: 'LimitProcessing', icon: 'shield-checkmark-outline' },
+        { title: 'Demander la rectification des données personnelles inexactes', route: 'RequestCorrection', icon: 'checkmark-circle-outline' },
     ];
 
     return (
