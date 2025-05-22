@@ -12,10 +12,9 @@ interface Item {
 export default function AccountManagement({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Gérer mon compte', route: 'ManageAccount', icon: 'person-outline' },
-        { title: 'Préférences de communication', route: 'CommunicationPreferences', icon: 'chatbubbles-outline' },
-        { title: 'Historique de transparence', route: 'HistoryTransparency', icon: 'document-text-outline' },
-        { title: 'Aide et support', route: 'HelpSupport', icon: 'help-circle-outline' },
+        { title: 'Désactivation temporaire', route: 'TemporaryDeactivation', icon: 'pause-circle-outline' },
+        { title: 'Suppression définitive', route: 'PermanentDeletion', icon: 'trash-outline' },
+        { title: 'Conservation sélective des données', route: 'SelectiveDataRetention', icon: 'shield-checkmark-outline' },
     ];
 
     return (
@@ -36,11 +35,11 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
-        backgroundColor: 'white',
+        flexDirection: 'column',
     },
     card: {
         width: '100%',
-        height: 100,
+        height: 105,
         borderRadius: 10,
         paddingVertical: 15,
         paddingHorizontal: 20,
