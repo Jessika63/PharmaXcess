@@ -12,18 +12,16 @@ interface Item {
 export default function ViewDocuments({ navigation }): JSX.Element {
 
     const items: Item[] = [
-        { title: 'Politique de confidentialité', route: 'PrivacyPolicy', icon: 'document-text-outline' },
-        { title: 'Conditions d\'utilisation', route: 'TermsOfUse', icon: 'document-text-outline' },
-        { title: 'Politique de cookies', route: 'CookiePolicy', icon: 'document-text-outline' },
-        { title: 'Politique de sécurité des données', route: 'DataSecurityPolicy', icon: 'document-text-outline' },
-        { title: 'Politique de gestion des incidents', route: 'IncidentManagementPolicy', icon: 'document-text-outline' },
+        { title: 'Politique de confidentialité complète ', route: 'PrivacyPolicy', icon: 'document-text-outline' },
+        { title: 'Version simplifiée et résumé', route: 'SimplifiedVersion', icon: 'document-text-outline' },
+        { title: 'Télécharger au format PDF', route: 'DownloadPDF', icon: 'document-text-outline' },
     ];
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.cardGradient}>
                         <Text style={styles.cardText}>{item.title}</Text>
                         <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
                     </LinearGradient>
@@ -37,11 +35,11 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
-        flexDirection: 'column',
+        backgroundColor: 'white',
     },
     card: {
         width: '100%',
-        height: 100,
+        height: 110,
         borderRadius: 10,
         paddingVertical: 15,
         paddingHorizontal: 20,
@@ -62,38 +60,11 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: 'white',
         fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    gradient: {
-        flex: 1,
-        paddingVertical: 15,
-        justifyContent: 'center',
-        borderRadius: 10,
-        alignItems: 'center',
+        marginLeft: 10,
     },
     icon: {
         width: 24,
         height: 24,
         marginLeft: 10,
-    },
-    buttonText: {
-        fontSize: 18,
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    button: {
-        marginTop: 20,
-        borderRadius: 10,
-        width: '100%',
-        overflow: 'hidden',
-    },
-    input: {
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        marginVertical: 10,
     },
 });
