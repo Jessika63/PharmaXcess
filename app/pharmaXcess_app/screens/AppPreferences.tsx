@@ -18,7 +18,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
                 <Text style={styles.subtitle}>Langue</Text>
-                {['French', 'English', 'Spanish'].map((lang) => (
+                {['French', 'English', 'Spanish', 'German', 'Italian', 'Nederlands', 'Portugues'].map((lang) => (
                     <TouchableOpacity
                         key={lang}
                         style={[styles.option, language === lang && styles.selectedOption]}
@@ -29,7 +29,21 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{lang}</Text>
+                        <Text style={styles.optionText}>
+                            {lang === 'French'
+                                ? 'Français'
+                                : lang === 'English'
+                                ? 'Anglais'
+                                : lang === 'Spanish'
+                                ? 'Espagnol'
+                                : lang === 'German'
+                                ? 'Allemand'
+                                : lang === 'Italian'
+                                ? 'Italien'
+                                : lang === 'Nederlands'
+                                ? 'Néerlandais'
+                                : 'Portugais'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -47,7 +61,13 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{format}</Text>
+                        <Text style={styles.optionText}>
+                            {format === 'DD/MM/YYYY'
+                                ? 'JJ/MM/AAAA'
+                                : format === 'MM/DD/YYYY'
+                                ? 'MM/JJ/AAAA'
+                                : 'AAAA/MM/JJ'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -65,14 +85,16 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{format}</Text>
+                        <Text style={styles.optionText}>
+                            {format === '24h' ? '24 heures' : '12 heures (AM/PM) '}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Fréquence de notification</Text>
-                {['Daily', 'Weekly', 'Monthly'].map((freq) => (
+                <Text style={styles.subtitle}>Fréquence de synchronisation </Text>
+                {['Real time', 'Hour', 'Daily', 'Wi-fi '].map((freq) => (
                     <TouchableOpacity
                         key={freq}
                         style={[styles.option, frequency === freq && styles.selectedOption]}
@@ -83,14 +105,22 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{freq}</Text>
+                        <Text style={styles.optionText}>
+                            {freq === 'Real time'
+                                ? 'Temps réel'
+                                : freq === 'Hour'
+                                ? 'Toute les heures'
+                                : freq === 'Daily'
+                                ? 'Quotidien'
+                                : 'Wi-fi uniquement'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Éléments à afficher</Text>
-                {['All', 'Favorites', 'Recent'].map((elem) => (
+                <Text style={styles.subtitle}>Éléments à synchroniser </Text>
+                {['Treatments', 'Appointment', 'Prescriptions', 'Profile'].map((elem) => (
                     <TouchableOpacity
                         key={elem}
                         style={[styles.option, elements === elem && styles.selectedOption]}
@@ -101,7 +131,15 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{elem}</Text>
+                        <Text style={styles.optionText}>
+                            {elem === 'Treatments'
+                                ? 'Traitements et médicaments'
+                                : elem === 'Appointment'
+                                ? 'Rendez-vous médicaux '
+                                : elem === 'Prescriptions'
+                                ? 'Ordonnances'
+                                : 'Profil'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -119,14 +157,18 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{saveOption}</Text>
+                        <Text style={styles.optionText}>
+                            {saveOption === 'Local'
+                                ? 'Sauvegarde sur l\'appareil uniquement '
+                                : 'Sauvegarde dans le cloud'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Fonctionnalité</Text>
-                {['Default', 'Advanced'].map((func) => (
+                <Text style={styles.subtitle}>Fonctionnalités disponibles hors-lignes </Text>
+                {['Medicine', 'Alarm', 'Profil', 'Check'].map((func) => (
                     <TouchableOpacity
                         key={func}
                         style={[styles.option, fonctionality === func && styles.selectedOption]}
@@ -137,14 +179,22 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{func}</Text>
+                        <Text style={styles.optionText}>
+                            {func === 'Medicine'
+                                ? 'Consultation des médicaments'
+                                : func === 'Alarm'
+                                ? 'Recevoir des rappels de médicaments'
+                                : func === 'Profil'
+                                ? 'Accéder à mon profil'
+                                : 'Marquer les médicaments comme pris'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
                 <Text style={styles.subtitle}>Téléchargement</Text>
-                {['Default', 'High Quality'].map((downloadOption) => (
+                {['Important', 'Wi-fi', 'Ask '].map((downloadOption) => (
                     <TouchableOpacity
                         key={downloadOption}
                         style={[styles.option, download === downloadOption && styles.selectedOption]}
@@ -155,14 +205,20 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{downloadOption}</Text>
+                        <Text style={styles.optionText}>
+                            {downloadOption === 'Important'
+                                ? 'Télécharger les informations essentielles seulement pour utilisation hors-ligne'
+                                : downloadOption === 'Wi-fi'
+                                ? 'Télécharger uniquement sur Wi-fi'
+                                : 'Demander avant de télécharger'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Notifications</Text>
-                {['Default', 'Silent'].map((notify) => (
+                <Text style={styles.subtitle}>Notifications hors-ligne </Text>
+                {['All', 'Alarm', 'Nothing '].map((notify) => (
                     <TouchableOpacity
                         key={notify}
                         style={[styles.option, notifications === notify && styles.selectedOption]}
@@ -173,7 +229,13 @@ export default function AppPreferences({ navigation }): JSX.Element {
                             size={24}
                             color="white"
                         />
-                        <Text style={styles.optionText}>{notify}</Text>
+                        <Text style={styles.optionText}>
+                            {notify === 'All'
+                                ? 'Activer les notifications même hors-ligne'
+                                : notify === 'Alarm'
+                                ? 'Activer uniquement les rappels de médicaments'
+                                : 'Désactiver toutes les notifications'}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -191,7 +253,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5',
     },
     section: {
         marginBottom: 20,
@@ -216,25 +278,21 @@ const styles = StyleSheet.create({
     optionText: {
         marginLeft: 10,
         color: 'white',
-        fontSize: 18,
+        fontSize: 16,
     },
     returnButton: {
         marginTop: 20,
-        borderRadius: 10,
-        width: '100%',
-        overflow: 'hidden',
+        width: '80%',
+        alignSelf: 'center',
     },
     gradient: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 10,
-        paddingVertical: 15,
+        borderRadius: 5,
+        padding: 15,
     },
     returnButtonText: {
-        fontSize: 18,
+        fontSize: 16,
         color: 'white',
         fontWeight: 'bold',
-        textAlign: 'center',
     },
 });
