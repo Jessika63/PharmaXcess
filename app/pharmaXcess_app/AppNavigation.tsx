@@ -58,6 +58,7 @@ import PersonalDataUsage from './screens/PersonalDataUsage';
 import CommunicationPreferences from './screens/CommunicationPreferences';
 import CookieManagement from './screens/CookieManagement';
 import ExerciseRights from './screens/ExerciseRights';
+import AccountManagement from './screens/AccountManagement';
 
 type TabBarIconProps = {
   color: string;
@@ -130,6 +131,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="CommunicationPreferences" component={CommunicationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de communication' }} />
       <ProfileStack.Screen name="CookieManagement" component={CookieManagement} options={{ headerTitleAlign: 'center', title: 'Gestion des cookies' }} />
       <ProfileStack.Screen name='ExerciseRights' component={ExerciseRights} options={{ headerTitleAlign: 'center', title: 'Exercice des droits RGPD' }} />
+      <ProfileStack.Screen name='AccountManagement' component={AccountManagement} options={{ headerTitleAlign: 'center', title: 'Gestion de compte' }} />
     </ProfileStack.Navigator>
   );
 }
