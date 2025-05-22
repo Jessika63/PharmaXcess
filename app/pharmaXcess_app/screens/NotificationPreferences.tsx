@@ -4,35 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function NotificationPreferences({ navigation }): JSX.Element {
-    const [notificationType, setNotificationType] = useState('default');
     const [notificationFrequency, setNotificationFrequency] = useState('default');
-    const [notificationMethod, setNotificationMethod] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Type de notification</Text>
-                {['default', 'type1', 'type2'].map((type) => (
-                    <TouchableOpacity
-                        key={type}
-                        style={[styles.option, notificationType === type && styles.selectedOption]}
-                        onPress={() => setNotificationType(type)}
-                    >
-                        <Ionicons
-                            name={notificationType === type ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {type === 'default'
-                                ? 'Notifications push'
-                                : type === 'type1'
-                                ? 'E-mails'
-                                : 'SMS'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
             <View style={styles.section}>
                 <Text style={styles.subtitle}>Fréquence des notifications</Text>
                 {['default', 'daily', 'weekly'].map((frequency) => (
@@ -50,38 +25,16 @@ export default function NotificationPreferences({ navigation }): JSX.Element {
                             {frequency === 'default'
                                 ? 'Immédiatement'
                                 : frequency === 'daily'
-                                ? 'Quotidiennement'
-                                : 'Hebdomadairement'}
+                                ? 'Mensuel '
+                                : 'Désactivée '}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Méthode de notification</Text>
-                {['default', 'email', 'sms'].map((method) => (
-                    <TouchableOpacity
-                        key={method}
-                        style={[styles.option, notificationMethod === method && styles.selectedOption]}
-                        onPress={() => setNotificationMethod(method)}
-                    >
-                        <Ionicons
-                            name={notificationMethod === method ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text style={styles.optionText}>
-                            {method === 'default'
-                                ? 'Application'
-                                : method === 'email'
-                                ? 'E-mail'
-                                : 'SMS'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-            <TouchableOpacity style={styles.saveButton} onPress={() => navigation.navigate('Settings')}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                    <Text style={styles.saveButtonText}>Enregistrer les préférences</Text>
+            
+            <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
+                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.returnButtonGradient}>
+                    <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </ScrollView>
@@ -98,18 +51,27 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
+        color: '#F57196',
     },
     option: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
+        padding: 10,
+        marginBottom: 10,
+        borderRadius: 10,
+        backgroundColor: '#adadad',
     },
     selectedOption: {
-        backgroundColor: '#EE9AD0',
+        backgroundColor: '#F57196',
         borderRadius: 10,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        overflow: 'hidden',
     },
     optionText: {
         fontSize: 16,
