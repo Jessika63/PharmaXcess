@@ -54,6 +54,7 @@ import AdvancedPrivacy from './screens/AdvancedPrivacy';
 import ViewDocuments from './screens/ViewDocuments';
 import NotificationPreferences from './screens/NotificationPreferences';
 import HistoryTransparency from './screens/HistoryTransparency';
+import PersonalDataUsage from './screens/PersonalDataUsage';
 
 type TabBarIconProps = {
   color: string;
@@ -122,6 +123,7 @@ function ProfileStackScreen(): JSX.Element {
       <ProfileStack.Screen name="ViewDocuments" component={ViewDocuments} options={{ headerTitleAlign: 'center', title: 'Consulter nos documents' }} />
       <ProfileStack.Screen name="NotificationPreferences" component={NotificationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de notification' }} />
       <ProfileStack.Screen name="HistoryTransparency" component={HistoryTransparency} options={{ headerTitleAlign: 'center', title: 'Historique et transparence' }} />
+      <ProfileStack.Screen name="PersonalDataUsage" component={PersonalDataUsage} options={{ headerTitleAlign: 'center', title: 'Utilisation des données personnelles' }} />
     </ProfileStack.Navigator>
   );
 }
