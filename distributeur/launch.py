@@ -1,3 +1,4 @@
+
 import os
 import argparse
 
@@ -26,9 +27,8 @@ if __name__ == "__main__":
         help="Function to stop the containers, remove the images, and remove the volumes."
     )
     parser.add_argument("--dump", action="store_true",
-        help="Function to export the database dump.")
-    parser.add_argument("--dump_file", type=str,
-        help="Specify a custom database dump file to load into the backend.")
+        help="Function to export the database dump."
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -45,26 +45,23 @@ if __name__ == "__main__":
     # Load configuration
     config = load_config_file()
 
-    # Determine which dump file to use
-    selected_dump_file = args.dump_file if args.dump_file else config["db_dump_date"]
-
     # Execute operations based on flags
     if any(vars(args).values()):
         if args.all:
             handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, selected_dump_file
+                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
             handle_back(
-                backend_folder, selected_dump_file, db_container_name, back_app_container_name
+                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
             )
             handle_front(frontend_folder, front_app_container_name)
         if args.verif:
             handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, selected_dump_file
+                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
         if args.back:
             handle_back(
-                backend_folder, selected_dump_file, db_container_name, back_app_container_name
+                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
             )
         if args.test:
             handle_test(backend_folder, db_container_name, back_app_container_name)
