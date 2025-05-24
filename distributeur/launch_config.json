@@ -1,0 +1,16 @@
+
+{
+    "verification_settings": {
+        "required_env_keys": [
+            "DB_HOST",
+            "DB_USER",
+            "DB_PASSWORD",
+            "DB_NAME",
+            "MYSQL_ROOT_PASSWORD"
+        ],
+        "db_dump_date": "21_05_2025"
+    },
+    "application_settings": {
+        "debug_logs": "Yes"
+    }
+}
