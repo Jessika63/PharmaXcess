@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - fix_gha
 
 jobs:
   vulnerability_check:
