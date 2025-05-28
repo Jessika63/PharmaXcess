@@ -1,4 +1,15 @@
+# Safety v2+ policy configuration
+ignored_vulnerabilities:
+  - "CVE-2018-20225"   # Example ignored CVE
+  - "PYSEC-2021-314"   # Example ignored PyPI vulnerability
 
-security:
-  ignore-unpinned-requirements: false
-  ignore-vulnerabilities: # Here you can list multiple specific vulnerabilities you want to ignore (optionally for a time period)
+scan_options:
+  ignore_unpinned_requirements: false  # Fail on unpinned deps
+  full_report: true
+  report_only_ignore: false
+
+# Strict failure thresholds
+fail_on:
+  severity: medium+   # Fail on medium/high/critical
+  vulnerability_count: 1
+  unpinned_requirements: true

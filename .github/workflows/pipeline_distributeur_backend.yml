@@ -10,13 +10,12 @@ on:
 jobs:
   vulnerability_check:
     runs-on: ubuntu-latest
+    env:
+      SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}  # Required auth
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
-    - name: Change Permission
-      run: chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -24,10 +23,12 @@ jobs:
         python-version: '3.x'
 
     - name: Install safety
-      run: pip install safety>=2.0  # Updated version
+      run: pip install safety==2.3.5  # Pinned stable version
 
-    - name: Run Safety check
-      run: ./distributeur/backend/scripts/safety/run_safety.sh
+    - name: Run Security Scan
+      run: |
+        chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
+        ./distributeur/backend/scripts/safety/run_safety.sh
 
   check_leaks:
     runs-on: ubuntu-latest

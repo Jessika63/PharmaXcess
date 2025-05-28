@@ -1,9 +1,14 @@
-
 #!/bin/bash
 
-# Run Safety
-echo "Running safety check..."
-safety scan -r ./distributeur/backend/requirements.txt --policy-file ./distributeur/backend/scripts/safety/safety-policy.yaml
+# Strict error handling
+set -euo pipefail
 
-# Capture the exit code for GitHub Actions (0 if OK, 1 if there are vulnerabilities)
-exit $?
+# Run Safety with explicit failure on vulnerabilities
+safety scan \
+    --file ./distributeur/backend/requirements.txt \
+    --policy-file ./distributeur/backend/scripts/safety/safety-policy.yaml \
+    --output json \
+    --exit-code 1  # Force exit code 1 on vulnerabilities
+
+echo "No critical vulnerabilities detected"
+exit 0

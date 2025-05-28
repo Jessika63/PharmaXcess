@@ -3,11 +3,11 @@ repos:
     hooks:
       - id: safety
         name: safety
-        entry: safety check -r ./distributeur/backend/requirements.txt --policy-file ./distributeur/backend/scripts/safety/safety-policy.yaml
-        language: python
+        entry: ./distributeur/backend/scripts/safety/run_safety.sh
+        language: system
         types: [python]
-        additional_dependencies: [safety]
         pass_filenames: false
+        require_serial: true
 
       - id: check-leak
         name: Check for Leaks
