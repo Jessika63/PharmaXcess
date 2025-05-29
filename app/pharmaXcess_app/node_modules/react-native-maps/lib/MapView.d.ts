@@ -49,6 +49,15 @@ export type MapViewProps = ViewProps & {
      */
     followsUserLocation?: boolean;
     /**
+     * If `false` the map will not capture PoI clicks
+     * This can improve click handling on the map for android
+     *
+     * @default true
+     * @platform iOS: Not supported
+     * @platform Android: supported
+     */
+    poiClickEnabled?: boolean;
+    /**
      * The initial camera view the map should use.  Use this prop instead of `camera`
      * only if you don't want to control the camera of the map besides the initial view.
      *
@@ -113,7 +122,7 @@ export type MapViewProps = ViewProps & {
      * Sets loading background color.
      *
      * @default `#FFFFFF`
-     * @platform iOS: Apple Maps only
+     * @platform iOS: Supported
      * @platform Android: Supported
      */
     loadingBackgroundColor?: string;
@@ -314,6 +323,15 @@ export type MapViewProps = ViewProps & {
      * @platform Android: Supported
      */
     onPress?: (event: MapPressEvent) => void;
+    /**
+     * Callback that is called once before the region changes, such as when the user starts moving the map.
+     * `isGesture` property indicates if the move was from the user (true) or an animation (false).
+     * **Note**: `isGesture` is supported by Google Maps only.
+     *
+     * @platform iOS: Supported
+     * @platform Android: Supported
+     */
+    onRegionChangeStart?: (event: NativeSyntheticEvent<Details>) => void;
     /**
      * Callback that is called continuously when the region changes, such as when a user is dragging the map.
      * `isGesture` property indicates if the move was from the user (true) or an animation (false).

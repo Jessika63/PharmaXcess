@@ -20,6 +20,8 @@
 {
   if (self = [super init]) {
     _polyline = [[AIRGMSPolyline alloc] init];
+    _polyline.spans = @[[GMSStyleSpan spanWithColor:_strokeColor]];
+    _polyline.strokeColor = _strokeColor;
   }
   return self;
 }
@@ -32,20 +34,12 @@
 
   if (!coordinates || coordinates.count == 0) 
   {
-    _polyline.map = nil; // Remove polyline from the map
+    [path removeAllCoordinates];
     return;
   }
 
   for (int i = 0; i < coordinates.count; i++) {
     [path addCoordinate:coordinates[i].coordinate];
-  }
-
-  if (!_originalMap) {
-    _originalMap = _polyline.map; // Store the original map
-  }
-
-  if (!_polyline.map) {
-    _polyline.map = _originalMap;
   }
 
   _polyline.path = path;

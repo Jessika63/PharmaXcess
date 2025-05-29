@@ -96,19 +96,23 @@ public class MapView extends com.google.android.gms.maps.MapView implements Goog
   private Boolean isMapLoaded = false;
   private Integer loadingBackgroundColor = null;
   private Integer loadingIndicatorColor = null;
-  private final int baseMapPadding = 50;
 
   private LatLngBounds boundsToMove;
   private CameraUpdate cameraToSet;
+  private boolean setPaddingDeferred = false;
   private boolean showUserLocation = false;
   private boolean handlePanDrag = false;
   private boolean moveOnMarkerPress = true;
   private boolean cacheEnabled = false;
+  private boolean poiClickEnabled = true;
+
   private ReadableMap initialRegion;
   private ReadableMap region;
+  private ReadableMap initialCamera;
   private ReadableMap camera;
   private String customMapStyleString;
   private boolean initialRegionSet = false;
+  private boolean initialCameraSet = false;
   private LatLngBounds cameraLastIdleBounds;
   private int cameraMoveReason = 0;
   private MapMarker selectedMarker;
@@ -250,7 +254,6 @@ public class MapView extends com.google.android.gms.maps.MapView implements Goog
 
     markerCollection.setInfoWindowAdapter(this);
     markerCollection.setOnMarkerDragListener(this);
-    this.map.setOnPoiClickListener(this);
     this.map.setOnIndoorStateChangeListener(this);
 
     applyBridgedProps();
@@ -379,6 +382,10 @@ public class MapView extends com.google.android.gms.maps.MapView implements Goog
       @Override
       public void onCameraMoveStarted(int reason) {
         cameraMoveReason = reason;
+        boolean isGesture = GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE == reason;
+        WritableMap event = new WritableNativeMap();
+        event.putBoolean("isGesture", isGesture);
+        manager.pushEvent(context, view, "onRegionChangeStart", event);
       }
     });
 
@@ -536,18 +543,30 @@ public class MapView extends com.google.android.gms.maps.MapView implements Goog
     }
   }
 
+  public void setInitialCamera(ReadableMap initialCamera) {
+    this.initialCamera = initialCamera;
+    if (!initialCameraSet && map != null) {
+      moveToCamera(initialCamera);
+      initialCameraSet = true;
+    }
+  }
+
   private void applyBridgedProps() {
     if(initialRegion != null) {
       moveToRegion(initialRegion);
       initialRegionSet = true;
     } else if(region != null) {
       moveToRegion(region);
-    } else {
+    } else if (initialCamera != null) {
+      moveToCamera(initialCamera);
+      initialCameraSet = true;
+    } else if (camera != null) {
       moveToCamera(camera);
     }
     if(customMapStyleString != null) {
       map.setMapStyle(new MapStyleOptions(customMapStyleString));
     }
+    this.setPoiClickEnabled(poiClickEnabled);
   }
 
   private void moveToRegion(ReadableMap region) {
@@ -664,6 +683,11 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
   public void setCacheEnabled(boolean cacheEnabled) {
     this.cacheEnabled = cacheEnabled;
     this.cacheView();
+  }
+
+  public void setPoiClickEnabled(boolean poiClickEnabled) {
+    this.poiClickEnabled = poiClickEnabled;
+    map.setOnPoiClickListener(poiClickEnabled ? this : null);
   }
 
   public void enableMapLoading(boolean loadingEnabled) {
@@ -845,6 +869,21 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
   }
 
   public void updateExtraData(Object extraData) {
+    if (setPaddingDeferred && super.getHeight() > 0 && super.getWidth() > 0) {
+      CameraUpdate cu = CameraUpdateFactory.newCameraPosition(map.getCameraPosition());
+
+      map.setPadding(edgeLeftPadding + baseLeftMapPadding,
+          edgeTopPadding + baseTopMapPadding,
+          edgeRightPadding + baseRightMapPadding,
+          edgeBottomPadding + baseBottomMapPadding);
+      map.moveCamera(cu);
+
+      // Move the google logo to the default base padding value.
+      map.setPadding(baseLeftMapPadding, baseTopMapPadding, baseRightMapPadding, baseBottomMapPadding);
+
+      setPaddingDeferred = false;
+    }
+
     // if boundsToMove is not null, we now have the MapView's width/height, so we can apply
     // a proper camera move
     if (boundsToMove != null) {
@@ -922,10 +961,10 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
     }
     if (addedPosition) {
       LatLngBounds bounds = builder.build();
-      CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, baseMapPadding);
+      CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 0);
 
       if (edgePadding != null) {
-        map.setPadding(edgePadding.getInt("left"), edgePadding.getInt("top"),
+        appendMapPadding(edgePadding.getInt("left"), edgePadding.getInt("top"),
           edgePadding.getInt("right"), edgePadding.getInt("bottom"));
       }
 
@@ -934,6 +973,8 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
       } else {
         map.moveCamera(cu);
       }
+      // Move the google logo to the default base padding value.
+      map.setPadding(baseLeftMapPadding, baseTopMapPadding, baseRightMapPadding, baseBottomMapPadding);
     }
   }
 
@@ -964,10 +1005,10 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
 
     if (addedPosition) {
       LatLngBounds bounds = builder.build();
-      CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, baseMapPadding);
+      CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 0);
 
       if (edgePadding != null) {
-        map.setPadding(edgePadding.getInt("left"), edgePadding.getInt("top"),
+        appendMapPadding(edgePadding.getInt("left"), edgePadding.getInt("top"),
           edgePadding.getInt("right"), edgePadding.getInt("bottom"));
       }
 
@@ -976,20 +1017,54 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
       } else {
         map.moveCamera(cu);
       }
+      // Move the google logo to the default base padding value.
+      map.setPadding(baseLeftMapPadding, baseTopMapPadding, baseRightMapPadding, baseBottomMapPadding);
     }
   }
 
+  // padding configured by 'mapPadding' property
   int baseLeftMapPadding;
   int baseRightMapPadding;
   int baseTopMapPadding;
   int baseBottomMapPadding;
+  // extra padding specified by 'edgePadding' option of fitToElements/fitToSuppliedMarkers/fitToCoordinates
+  int edgeLeftPadding;
+  int edgeRightPadding;
+  int edgeTopPadding;
+  int edgeBottomPadding;
 
   public void applyBaseMapPadding(int left, int top, int right, int bottom){
-    this.map.setPadding(left, top, right, bottom);
+    if (super.getHeight() <= 0 || super.getWidth() <= 0) {
+      // the map is not laid out yet and calling setPadding() now has no effect
+      baseLeftMapPadding = left;
+      baseRightMapPadding = right;
+      baseTopMapPadding = top;
+      baseBottomMapPadding = bottom;
+      setPaddingDeferred = true;
+      return;
+    }
+
+    // retrieve current camera with current edge paddings configured
+    map.setPadding(edgeLeftPadding + baseLeftMapPadding,
+        edgeTopPadding + baseTopMapPadding,
+        edgeRightPadding + baseRightMapPadding,
+        edgeBottomPadding + baseBottomMapPadding);
+    CameraUpdate cu = CameraUpdateFactory.newCameraPosition(map.getCameraPosition());
+
     baseLeftMapPadding = left;
     baseRightMapPadding = right;
     baseTopMapPadding = top;
     baseBottomMapPadding = bottom;
+
+    // apply base paddings and restore center position of the map
+    map.setPadding(edgeLeftPadding + left,
+        edgeTopPadding + top,
+        edgeRightPadding + right,
+        edgeBottomPadding + bottom);
+    map.moveCamera(cu);
+
+    // Move the google logo to the default base padding value.
+    map.setPadding(left, top, right, bottom);
   }
 
   public void fitToCoordinates(ReadableArray coordinatesArray, ReadableMap edgePadding,
@@ -1006,7 +1081,7 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
     }
 
     LatLngBounds bounds = builder.build();
-    CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, baseMapPadding);
+    CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 0);
 
     if (edgePadding != null) {
       appendMapPadding(edgePadding.getInt("left"), edgePadding.getInt("top"), edgePadding.getInt("right"), edgePadding.getInt("bottom"));
@@ -1022,21 +1097,17 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
   }
 
   private void appendMapPadding(int iLeft,int iTop, int iRight, int iBottom) {
-    int left;
-    int top;
-    int right;
-    int bottom;
     double density = getResources().getDisplayMetrics().density;
 
-    left = (int) (iLeft * density);
-    top = (int) (iTop * density);
-    right = (int) (iRight * density);
-    bottom = (int) (iBottom * density);
+    edgeLeftPadding = (int) (iLeft * density);
+    edgeTopPadding = (int) (iTop * density);
+    edgeRightPadding = (int) (iRight * density);
+    edgeBottomPadding = (int) (iBottom * density);
 
-    map.setPadding(left + baseLeftMapPadding,
-            top + baseTopMapPadding,
-            right + baseRightMapPadding,
-            bottom + baseBottomMapPadding);
+    map.setPadding(edgeLeftPadding + baseLeftMapPadding,
+            edgeTopPadding + baseTopMapPadding,
+            edgeRightPadding + baseRightMapPadding,
+            edgeBottomPadding + baseBottomMapPadding);
   }
 
   public double[][] getMapBoundaries() {
@@ -1444,4 +1515,5 @@ public static CameraPosition cameraPositionFromMap(ReadableMap camera){
       layout(getLeft(), getTop(), getRight(), getBottom());
     }
   };
+
 }
