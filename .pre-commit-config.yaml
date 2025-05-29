@@ -1,13 +1,13 @@
+
 repos:
   - repo: local
     hooks:
       - id: safety
         name: safety
-        entry: ./distributeur/backend/scripts/safety/run_safety.sh
+        entry: bash -c "cd ./distributeur/backend/scripts/safety && ./run_safety.sh"
         language: system
         types: [python]
         pass_filenames: false
-        require_serial: true
 
       - id: check-leak
         name: Check for Leaks
@@ -15,5 +15,4 @@ repos:
         language: python
         types: [python]
         pass_filenames: false
-        additional_dependencies:
-          - tqdm
+        additional_dependencies: [tqdm]

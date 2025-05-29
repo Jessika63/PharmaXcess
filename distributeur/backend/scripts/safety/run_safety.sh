@@ -1,14 +1,19 @@
+
 #!/bin/bash
+set -eo pipefail
 
-# Strict error handling
-set -euo pipefail
+echo "Running strict Safety scan (v3.5.1)..."
+echo "Working directory: $(pwd)"
 
-# Run Safety with explicit failure on vulnerabilities
+REQUIREMENTS_FILE="../../requirements.txt"
+
+[ -f "$REQUIREMENTS_FILE" ] || { echo "Error: requirements.txt not found"; exit 1; }
+
+# Exécution du scan sans policy file
 safety scan \
-    --file ./distributeur/backend/requirements.txt \
-    --policy-file ./distributeur/backend/scripts/safety/safety-policy.yaml \
+    --file "$REQUIREMENTS_FILE" \
     --output json \
-    --exit-code 1  # Force exit code 1 on vulnerabilities
+    --exit-code 1
 
-echo "No critical vulnerabilities detected"
+echo "Scan completed - no vulnerabilities found"
 exit 0
