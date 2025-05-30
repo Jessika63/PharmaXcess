@@ -36,26 +36,19 @@ def handle_dump(backend_folder, db_container_name, back_container_name):
         database_user = env_data["DB_USER"]
         dump_file_name = f"database_dump_px_{today}.sql"
 
-        # Construct the command to create a database dump
-        if os.name == "nt":  # Windows
-            command = (
-                f"printf 'CREATE DATABASE IF NOT EXISTS `{database_name}`;\\nUSE `{database_name}`;\\n' > {dump_file_name} && "
-                f"docker exec -i {db_container_name} mysqldump -uroot "
-                f"-p{env_data['MYSQL_ROOT_PASSWORD']} --databases {database_name} --add-drop-database >> {dump_file_name} && "
-                f"printf 'CREATE USER \\'{database_user}\\'@\\'%%\\' IDENTIFIED BY \\'{env_data['DB_PASSWORD']}\\';\\n' >> {dump_file_name} && "
-                f"printf 'GRANT ALL PRIVILEGES ON `{database_name}`.* TO \\'{database_user}\\'@\\'%%\\';\\n' >> {dump_file_name} && "
-                f"printf 'FLUSH PRIVILEGES;\\n' >> {dump_file_name}"
-            )
-        else:  # Unix/Linux/Mac
-            command = (
-                f"printf 'CREATE DATABASE IF NOT EXISTS `{database_name}`;\nUSE `{database_name}`;\n' > {dump_file_name} && "
-                f"docker exec -i {db_container_name} mysqldump -uroot "
-                f"-p{env_data['MYSQL_ROOT_PASSWORD']} --databases {database_name} --add-drop-database >> {dump_file_name} && "
-                f"printf 'CREATE USER \'{database_user}\'@\'%%\' IDENTIFIED BY \'{env_data['DB_PASSWORD']}\';\n' >> {dump_file_name} && "
-                f"printf 'GRANT ALL PRIVILEGES ON `{database_name}`.* TO \'{database_user}\'@\'%%\';\n' >> {dump_file_name} && "
-                f"printf 'FLUSH PRIVILEGES;\n' >> {dump_file_name}"
-            )
+        # Check current OS
+        is_windows = os.name == 'nt'
+        backslash = '\\\\' if is_windows else '\\'
 
+        # Construct the command to create a database dump
+        command = (
+            f"printf 'CREATE DATABASE IF NOT EXISTS `{database_name}`;{backslash}nUSE `{database_name}`;{backslash}n' > {dump_file_name} && "
+            f"docker exec -i {db_container_name} mysqldump -uroot "
+            f"-p{env_data['MYSQL_ROOT_PASSWORD']} --databases {database_name} --add-drop-database >> {dump_file_name} && "
+            f"printf 'CREATE USER {backslash}'{database_user}{backslash}'@{backslash}'%%{backslash}' IDENTIFIED BY {backslash}'{env_data['DB_PASSWORD']}{backslash}';{backslash}n' >> {dump_file_name} && "
+            f"printf 'GRANT ALL PRIVILEGES ON `{database_name}`.* TO {backslash}'{database_user}{backslash}'@{backslash}'%%{backslash}';{backslash}n' >> {dump_file_name} && "
+            f"printf 'FLUSH PRIVILEGES;{backslash}n' >> {dump_file_name}"
+        )
 
         # Execute the command in the shell
         subprocess.run(command, shell=True, check=True)

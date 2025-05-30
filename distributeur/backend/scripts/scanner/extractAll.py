@@ -230,7 +230,7 @@ def main(image_path, doc_type):
     elif doc_type == "V":
         data = getInfosVersoID(text)
     else:
-        print("Type inconnu. Utilisez P, R ou V.")
+        print("Unknown. Use P, R, V.")
         return
 
     print("\n=== INFOS JSON ===\n")
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         python3 script.py <image_path> <P|R|V>
     """
     if len(sys.argv) != 3:
-        print("Utilisation : python3 script.py <image_path> <P|R|V>")
+        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
         sys.exit(1)
 
     img_path = sys.argv[1]
