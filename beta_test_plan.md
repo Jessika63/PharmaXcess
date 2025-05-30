@@ -12,7 +12,7 @@ Ce beta-test plan vise à évaluer la stabilité, l'efficacité et la conviviali
 
 ---
 
-## **2. Contexte et chiffres clés **
+## **2. Contexte et chiffres clés**
 La France continue de faire face à une inégalité d'accès aux médicaments, en particulier en dehors des heures d'ouverture habituelles et dans les zones rurales. Voici quelques données importantes qui illustrent cette observation : 
 
 --- 
@@ -25,7 +25,7 @@ La France continue de faire face à une inégalité d'accès aux médicaments, e
 
 ---
 
-### **2.2 Accessibilité géographique **
+### **2.2 Accessibilité géographique**
 - En zone rurale, il est courant d'avoir une distance moyenne de 15 à 20 km entre deux pharmacies.
 - Sur l'ensemble du territoire, la distance moyenne à parcourir pour se rendre à une pharmacie s'élève à 3,8km. 
 - Il arrive que certains résidents soient contraints de faire des trajets aller-retour de plus de 40km pour se rendre à une pharmacie de garde.
@@ -46,7 +46,7 @@ Ces chiffres renforcent l'intérêt d'une solution comme PharmaXcess, qui propos
 
 ## **3. Sélection des fonctionnalités clés **
 
-### **3.1 Distributeur **
+### **3.1 Distributeur**
 - Extraction des informations nécessaires à partir du scan de l'ordonnance. 
 - Vérification de l'authenticité de l'ordonnance.
 - Validation et autorisation pour la distribution des médicaments.
@@ -54,7 +54,7 @@ Ces chiffres renforcent l'intérêt d'une solution comme PharmaXcess, qui propos
 
 ---
 
-### **3.2 Application **
+### **3.2 Application**
 - Utilisation du système de Click & Collect pour prendre des photos de l'ordonnance, l'envoyer au pharmacien et recevoir un QR code.
 - Localisation des distributeurs et calcul d'itinéraires.
 - Assurer la gestion des médicaments en fournissant des rappels de prise.
@@ -65,7 +65,7 @@ Ces chiffres renforcent l'intérêt d'une solution comme PharmaXcess, qui propos
 
 ## **4. Couverture des parcours utilisateurs clés**
 
-### **4.1 Parcours n°1 : Utilisateur patient **
+### **4.1 Parcours n°1 : Utilisateur patient**
 - Ouvre l'application PharmaXcess. 
 - Prendre une photo de son ordonnance en utilisant l'option Click & Collect. 
 - Transfère l'image au pharmacien.
@@ -83,7 +83,7 @@ Cas particulies couverts :
 
 ---
 
-### **4.2 Parcours n°2 : Pharmacien **
+### **4.2 Parcours n°2 : Pharmacien**
 - Reçoit une ordonnance via l'application. 
 - Vérification de l'authenticité de l'ordonnance.
 - La demande peut être acceptée ou refusée.
@@ -94,7 +94,7 @@ L'objectif est de s'assurer que la validation se déroule rapidement, de manièr
 
 ---
 
-### **4.3 Cas d'erreur (ordonnance illisble) **
+### **4.3 Cas d'erreur (ordonnance illisble)**
 - Une ordonnance floue est utilisée par l'utilisateur. 
 - L'image est refusée par le système qui demande une nouvelle tentative. 
 - En cas de difficulté à lire l'ordonnance après plusieurs essais, une alerte est envoyée au pharmacien.
@@ -113,7 +113,7 @@ L'objectif est de vérifier que le processus d'information, de paiement et de re
 
 --- 
 
-## **5. Définition des scénarios de test **
+## **5. Définition des scénarios de test**
 
 ### **5.1 Scénarios pour le distributeur**
 | **Scénario** | **Etapes** | **Résultat attendu** |
@@ -126,7 +126,7 @@ L'objectif est de vérifier que le processus d'information, de paiement et de re
 
 ---
 
-### **5.2 Scénarios pour l'application **
+### **5.2 Scénarios pour l'application**
 | **Scénario** | **Etapes** | **Résultat attendu** |
 |--------------|---------------|------------------------|
 | Click & Collect  | Prise de photo -> envoi au pharmacien -> QR code | L'ordonnance a été analysée et validée. Un QR code a été généré |
