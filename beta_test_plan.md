@@ -44,7 +44,7 @@ Ces chiffres renforcent l'intérêt d'une solution comme PharmaXcess, qui propos
 
 --- 
 
-## **3. Sélection des fonctionnalités clés **
+## **3. Sélection des fonctionnalités clés**
 
 ### **3.1 Distributeur**
 - Extraction des informations nécessaires à partir du scan de l'ordonnance. 
