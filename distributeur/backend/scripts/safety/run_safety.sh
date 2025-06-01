@@ -9,7 +9,6 @@ REQUIREMENTS_FILE="../../requirements.txt"
 
 [ -f "$REQUIREMENTS_FILE" ] || { echo "Error: requirements.txt not found"; exit 1; }
 
-# Exécution du scan sans policy file
 safety scan \
     --file "$REQUIREMENTS_FILE" \
     --output json \
