@@ -2,3 +2,10 @@
 # Empty policy file - no exclusions
 scan:
   exclude: []
+
+# Bloquer IMMÉDIATEMENT si une vulnérabilité est trouvée
+policy:
+  ignore:
+    vulnerabilities: []  # Ne jamais ignorer de CVE
+  thresholds:
+    vulnerabilities: 0   # Tolérance zéro
