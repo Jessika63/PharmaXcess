@@ -3,44 +3,20 @@ import React from 'react';
 const ModalStandard = ({ children, onClose }) => {
     return (
         <div>
-            {/* Darkening overlay covering the whole page*/}
-            <div
-                style={{
-                    position: 'fixed',
-                    top: '-50%',
-                    left: '-20%',
-                    width: '135%',
-                    height: '145%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                    zIndex: 1000,
-                }}
+            {/* Darkening overlay */}
+            <div 
+                className="fixed inset-0 bg-black bg-opacity-30 z-50"
                 onClick={onClose}
             ></div>
 
             {/* Modal Content */}
-            <div
-                style={{
-                    position: 'fixed',
-                    top: '-30%',
-                    left: '50%',
-                    transform: 'translate(-50%, 0)',
-                    width: '100%',
-                    height: '105%',
-                    // #e06a7d, #f5b1b7
-                    // background: '#e06a7d',
-                    background: 'linear-gradient(to bottom, #d96a7a, #e8a0a8)',
-                    color: '#333333',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '30px',
-                    boxShadow: '0px 0px 60px 60px rgba(0, 0, 0, 0.5)',
-                    zIndex: 1001,
-                    padding: '20px',
-                }}
+            <div 
+                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                w-full max-w-5xl h-1/2 max-h-full bg-gradient-to-b from-pink-500 to-rose-400 
+                text-gray-800 flex flex-col justify-center items-center 
+                rounded-2xl shadow-lg p-6 z-50"
             >
-                {children} {/* div content => camera display etc */}
+                {children} {/* Modal Content */}
             </div>
         </div>
     );

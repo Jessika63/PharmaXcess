@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import '../App.css';
 
-const CameraComponent = ({ onPhotoCapture }) => {
+const CameraComponent = ({ onPhotoCapture, onClose }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
     const [isPhotoTaken, setIsPhotoTaken] = useState(false);
+    const [selectedButtonIndex, setSelectedButtonIndex] = useState(0);
 
     const startCamera = async () => {
         try {
@@ -20,95 +20,120 @@ const CameraComponent = ({ onPhotoCapture }) => {
 
     useEffect(() => {
         startCamera();
-        
-        return () => {
-            const currentVideoRef = videoRef.current;
 
-            if (currentVideoRef && currentVideoRef.srcObject) {
-                const tracks = currentVideoRef.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
+        return () => {
+            if (videoRef.current?.srcObject) {
+                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
         };
     }, []);
 
     const capturePhoto = () => {
-        const canvas = canvasRef.current;
-        const video = videoRef.current;
+        if (canvasRef.current && videoRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
 
-        if (canvas && video) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             const ctx = canvas.getContext('2d');
 
             ctx.save();
-            ctx.scale(-1, 1); // image mirroring
+            ctx.scale(-1, 1);
             ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
             ctx.restore();
 
             const imageSrc = canvas.toDataURL('image/png');
             setImage(imageSrc);
             setIsPhotoTaken(true);
-
-            onPhotoCapture(imageSrc);
         }
     };
 
     const handleRetakePhoto = () => {
         setImage(null);
         setIsPhotoTaken(false);
+        setSelectedButtonIndex(0);
         startCamera();
     };
 
+    const handleValidatePhoto = () => {
+        if (image) {
+            onPhotoCapture(image);
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!isPhotoTaken) {
+                if (event.key === "Enter") {
+                    capturePhoto();
+                }
+            } else {
+                if (event.key === "ArrowLeft") {
+                    setSelectedButtonIndex(0);
+                } else if (event.key === "ArrowRight") {
+                    setSelectedButtonIndex(1);
+                } else if (event.key === "Enter") {
+                    if (selectedButtonIndex === 0) {
+                        handleRetakePhoto();
+                    } else {
+                        handleValidatePhoto();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown, true);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown, true);
+        };
+    }, [isPhotoTaken, selectedButtonIndex]);
+
     return (
-        <div style={{ position: 'relative', width: '265%', height: '78%'
-            , top: '9%', left: '-85%'
-         }}>
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
             {isPhotoTaken ? (
-                <div style={{position: 'relative', top: '1%'
-                    , width: '95%', height: '96%', left: '2%'}}>
-                    <div style={{position: 'relative', width: '87%', height: '87%'
-                        , left: '10%', top: '1%'
-                    }}>
-                        <img src={image} alt="Captured" style={{ width: '100%', height: '100%'
-                            , objectFit: 'contain'
-                         }} />
+                <div className="relative w-[95%] h-[96%] flex flex-col items-center">
+                    <div className="w-[87%] h-[87%] flex justify-center items-center">
+                        <img src={image} alt="Captured" className="w-full h-full object-contain rounded-xl shadow-lg" />
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
-                    onClick={handleRetakePhoto}>
-                        Prendre une autre photo
-                    </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
-                    onClick={handleRetakePhoto}>
-                        Ok
+
+                    <div className="flex justify-center gap-8 mt-6">
+                        <button 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 0 ? 'scale-110' : ''}`} 
+                            onClick={handleRetakePhoto}
+                        >
+                            Prendre une autre photo
+                        </button>
+                        <button 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 1 ? 'scale-110' : ''}`} 
+                            onClick={handleValidatePhoto}
+                        >
+                            OK
+                        </button>
                     </div>
                 </div>
             ) : (
-                <div style={{position: 'relative', top: '1%'
-                    , width: '95%', height: '96%', left: '2%'}}>
-                    <div style={{position: 'relative', width: '87%', height: '87%'
-                        , left: '10%', top: '1%'
-                    }}>
-                        <video ref={videoRef} autoPlay style={
-                            { transform: 'scaleX(-1)', width: '100%', height: '100%' }}/>
+                <div className="relative w-[95%] h-[96%] flex flex-col items-center">
+                    <div className="w-[87%] h-[87%] flex justify-center items-center">
+                        <video ref={videoRef} autoPlay className="w-full h-full transform scale-x-[-1] rounded-xl shadow-lg" />
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
-                    onClick={capturePhoto}>
-                        Prendre une photo
+
+                    <div className="flex justify-center gap-8 mt-6">
+                        <button 
+                            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md hover:scale-110 transition-transform duration-300 scale-110"
+                            onClick={capturePhoto}
+                        >
+                            Prendre une photo
+                        </button>
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
-                    onClick={capturePhoto}>
-                        Ok
-                    </div>
-                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+                    <canvas ref={canvasRef} className="hidden" />
                 </div>
             )}
         </div>

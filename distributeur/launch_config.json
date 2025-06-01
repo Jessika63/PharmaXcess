@@ -8,7 +8,7 @@
             "DB_NAME",
             "MYSQL_ROOT_PASSWORD"
         ],
-        "db_dump_date": "10_02_2025"
+        "db_dump_date": "21_05_2025"
     },
     "application_settings": {
         "debug_logs": "Yes"

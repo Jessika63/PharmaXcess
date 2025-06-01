@@ -1,6 +1,6 @@
-
 import subprocess
 from datetime import datetime
+import os
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -36,14 +36,38 @@ def handle_dump(backend_folder, db_container_name, back_container_name):
         database_user = env_data["DB_USER"]
         dump_file_name = f"database_dump_px_{today}.sql"
 
-        # Construct the command to create a database dump
-        command = (
-            f"printf 'CREATE DATABASE IF NOT EXISTS `{database_name}`;\\nUSE `{database_name}`;\\n' > {dump_file_name} && "
-            f"docker exec -i {db_container_name} mysqldump -uroot "
-            f"-p{env_data['MYSQL_ROOT_PASSWORD']} --databases {database_name} --add-drop-database >> {dump_file_name} && "
-            f"printf 'CREATE USER \\'{database_user}\\'@\\'%%\\' IDENTIFIED BY \\'{env_data['DB_PASSWORD']}\\';\\n' >> {dump_file_name} && "
-            f"printf 'GRANT ALL PRIVILEGES ON `{database_name}`.* TO \\'{database_user}\\'@\\'%%\\';\\n' >> {dump_file_name} && "
-            f"printf 'FLUSH PRIVILEGES;\\n' >> {dump_file_name}"
+        # Define the command template once
+        command_template = (
+            "printf '{create_db}' > {dump_file_name} && "
+            "docker exec -i {db_container_name} mysqldump -uroot -p{root_pw} "
+            "--databases {db_name} --add-drop-database >> {dump_file_name} && "
+            "printf '{create_user}' >> {dump_file_name} && "
+            "printf '{grant_priv}' >> {dump_file_name} && "
+            "printf 'FLUSH PRIVILEGES;{newline}' >> {dump_file_name}"
+        )
+
+        # Define OS-specific variables
+        if os.name == "nt":  # Windows
+            create_db = f"CREATE DATABASE IF NOT EXISTS `{database_name}`;\\nUSE `{database_name}`;\\n"
+            create_user = f"CREATE USER \\'{database_user}\\'@\\'%%\\' IDENTIFIED BY \\'{env_data["DB_PASSWORD"]}\\';\\n"
+            grant_priv = f"GRANT ALL PRIVILEGES ON `{database_name}`.* TO \\'{database_user}\\'@\\'%%\\';\\n"
+            newline = '\\n'
+        else:  # Unix/Linux/Mac
+            create_db = f"CREATE DATABASE IF NOT EXISTS `{database_name}`;\nUSE `{database_name}`;\n"
+            create_user = f"CREATE USER \'{database_user}\'@\'%%\' IDENTIFIED BY \'{env_data["DB_PASSWORD"]}\';\n"
+            grant_priv = f"GRANT ALL PRIVILEGES ON `{database_name}`.* TO \'{database_user}\'@\'%%\';\n"
+            newline = '\n'
+
+        # Build the final command
+        command = command_template.format(
+            create_db=create_db,
+            create_user=create_user,
+            grant_priv=grant_priv,
+            newline=newline,
+            dump_file_name=dump_file_name,
+            db_container_name=db_container_name,
+            root_pw=env_data['MYSQL_ROOT_PASSWORD'],
+            db_name=database_name
         )
 
         # Execute the command in the shell
