@@ -1,4 +1,48 @@
+version: '3.0'
 
-security:
-  ignore-unpinned-requirements: false
-  ignore-vulnerabilities: # Here you can list multiple specific vulnerabilities you want to ignore (optionally for a time period)
+scanning-settings:
+  max-depth: 6
+  exclude: []
+  include-files: []
+  system:
+    targets: []
+
+report:
+  dependency-vulnerabilities:
+    enabled: true
+    auto-ignore-in-report:
+      python:
+        environment-results: true
+        unpinned-requirements: true
+      cvss-severity: []
+
+# This is the critical section for zero tolerance
+fail-scan-with-exit-code:
+  dependency-vulnerabilities:
+    enabled: true
+    fail-on-any-of:
+      cvss-severity:
+        - low
+        - medium
+        - high
+        - critical
+
+security-updates:
+  dependency-vulnerabilities:
+    auto-security-updates-limit:
+      - patch
+
+installation:
+  default-action: allow
+  audit-logging:
+    enabled: true
+  allow:
+    packages: []
+    vulnerabilities: {}
+  deny:
+    packages: {}
+    vulnerabilities:
+      warning-on-any-of:
+        cvss-severity: []
+      block-on-any-of:
+        cvss-severity: []
