@@ -11,7 +11,7 @@
         "app/pharmaXcess_app/package-lock.json",
         "app/pharmaXcess_app/yarn.lock",
         "app/web_server/package-lock.json",
-        "distributeur/backend/database_dump_px_10_02_2025.sql"
+        "distributeur/backend/database_dump_px_21_05_2025.sql"
     ],
     "ignore_dirs": [
         ".git",
