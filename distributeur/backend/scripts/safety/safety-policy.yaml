@@ -7,7 +7,6 @@ scanning-settings:
   system:
     targets: []
 
-
 report:
   dependency-vulnerabilities:
     enabled: true
@@ -17,18 +16,15 @@ report:
         unpinned-requirements: true
       cvss-severity: []
 
-
+# This is the critical section for zero tolerance
 fail-scan-with-exit-code:
   dependency-vulnerabilities:
     enabled: true
     fail-on-any-of:
       cvss-severity:
-        - high
+        - low
         - medium
-        - critical
-      exploitability:
         - high
-        - medium
         - critical
 
 security-updates:
@@ -50,5 +46,3 @@ installation:
         cvss-severity: []
       block-on-any-of:
         cvss-severity: []
-
-
