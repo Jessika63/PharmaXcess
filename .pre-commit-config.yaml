@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: safety
         name: safety
-        entry: bash -c "cd ./distributeur/backend/scripts/safety && ./run_safety.sh"
+        entry: ./distributeur/backend/scripts/safety/run_safety.sh
         language: system
         types: [python]
         pass_filenames: false

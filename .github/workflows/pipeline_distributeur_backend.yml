@@ -26,9 +26,7 @@ jobs:
       run: pip install safety==3.5.1  # Pinned stable version
 
     - name: Run Security Scan
-      run: |
-        chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
-        ./distributeur/backend/scripts/safety/run_safety.sh
+      run: ./distributeur/backend/scripts/safety/run_safety.sh
 
   check_leaks:
     runs-on: ubuntu-latest
