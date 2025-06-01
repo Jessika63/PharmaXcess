@@ -23,7 +23,7 @@ jobs:
         python-version: '3.x'
 
     - name: Install safety
-      run: pip install safety==2.3.5  # Pinned stable version
+      run: pip install safety==3.5.1  # Pinned stable version
 
     - name: Run Security Scan
       run: |
