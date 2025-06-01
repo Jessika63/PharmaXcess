@@ -1,13 +1,13 @@
-
 repos:
   - repo: local
     hooks:
       - id: safety
         name: safety
-        entry: ./distributeur/backend/scripts/safety/run_safety.sh
+        entry: bash distributeur/backend/scripts/safety/run_safety.sh
         language: system
         types: [python]
         pass_filenames: false
+        always_run: true
 
       - id: check-leak
         name: Check for Leaks
