@@ -4,18 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 function DrugStoresAvailable() {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const drug_shops = [
-    { id: 1, label: 'Pharmacie 1' },
-    { id: 2, label: 'Pharmacie 2' },
-    { id: 3, label: 'Pharmacie 3' },
-    { id: 4, label: 'Pharmacie 4' },
-    { id: 5, label: 'Pharmacie 5' },
-    { id: 6, label: 'Pharmacie 6' },
-    { id: 7, label: 'Pharmacie 7' },
-    { id: 8, label: 'Pharmacie 8' },
-    { id: 9, label: 'Pharmacie 9' },
-  ];
+
+  const [drugShops, setDrugShops] = useState([]);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [enterPressed, setEnterPressed] = useState(false);
@@ -25,8 +15,10 @@ function DrugStoresAvailable() {
     console.log('focusedindex = ', focusedIndex);
     event.stopPropagation();
 
+    const maxIndex = buttonsRef.current.length - 1;
+
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      setFocusedIndex((prevIndex) => Math.min(prevIndex + 1, drug_shops.length));
+      setFocusedIndex((prevIndex) => Math.min(prevIndex + 1, maxIndex));
     } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       setFocusedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
     } else if (event.key === "Enter") {
@@ -40,7 +32,7 @@ function DrugStoresAvailable() {
       if (focusedIndex === 0) {
         navigate('/' + (location.state?.from || ''));
       } else {
-        alert(`Vous avez sélectionné : ${drug_shops[focusedIndex - 1].label}`);
+        alert(`Vous avez sélectionné : ${drugShops[focusedIndex - 1].label}`);
       }
       setEnterPressed(false);
     }
@@ -58,6 +50,52 @@ function DrugStoresAvailable() {
       buttonsRef.current[focusedIndex].focus();
     }
   }, [focusedIndex]);
+
+  useEffect(() => {
+    const fetchPharmacies = async (lat, lon) => {
+      try {
+        const radius = 10000;
+        const response = await fetch(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
+        const data = await response.json();
+  
+        if (response.ok) {
+          console.log('ok: ', data)
+          const formatted = data.pharmacies.map((pharmacy, idx) => ({
+            id: idx + 1,
+            label: pharmacy.name || `Pharmacy ${idx + 1}`
+          }));
+          setDrugShops(formatted);
+        } else {
+          console.error("Error while loading pharmacies :", data.error);
+        }
+      } catch (err) {
+        console.error("Networking error :", err);
+      }
+    };
+  
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchPharmacies(latitude, longitude);
+        },
+        (error) => {
+          console.error("Position error :", error);
+          alert("Cannot access to position. Make sure it is activated");
+        }
+      );
+    } else {
+      alert("Postion not supported by browser.");
+    }
+  }, []);
+  
+  useEffect(() => {
+    const btn = buttonsRef.current[focusedIndex];
+    if (btn) {
+      btn.focus();
+    }
+  }, [focusedIndex]);  
+  
 
   return (
     <div
@@ -97,7 +135,7 @@ function DrugStoresAvailable() {
         tabIndex={0}
       >
         <div className="grid grid-cols-1 gap-4 place-items-center">
-          {drug_shops.map((item, index) => (
+          {drugShops.map((item, index) => (
             <button
               key={item.id}
               ref={(el) => (buttonsRef.current[index + 1] = el)}

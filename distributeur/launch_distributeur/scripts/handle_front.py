@@ -20,7 +20,7 @@ def handle_front(frontend_folder, front_app_container_name):
     # Step 1: Install dependencies with npm
     try:
         colored_print("Installing dependencies using npm...", "blue")
-        subprocess.run(["npm", "install"], check=True)
+        # subprocess.run(["npm", "install"], check=True)
         colored_print("Dependencies installed successfully!", "green")
     except FileNotFoundError:
         colored_print("npm is not installed or not found in PATH!", "red")
