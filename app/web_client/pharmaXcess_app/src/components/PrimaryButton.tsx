@@ -1,3 +1,16 @@
+/**
+ * PrimaryButton Component
+ * 
+ * Custom primary button for forms and actions.
+ * Supports:
+ * - Loading state
+ * - Disabled state
+ * - Press feedback (opacity)
+ * - Dynamic font sizing
+ * - Optional icons
+ * - Accessibility integration
+ */
+
 import { useState } from 'react';
 import { Button } from 'react-native-paper';
 import { View, StyleSheet, Text } from 'react-native';
@@ -16,6 +29,14 @@ interface CustomButtonProps {
     hint?: string;
 }
 
+/**
+ * PrimaryButton
+ * 
+ * Customizable primary button component with optional loading and disabled states.
+ * 
+ * @param {CustomButtonProps} props - Component props
+ * @returns {JSX.Element} - Rendered PrimaryButton component
+ */
 const PrimaryButton: React.FC<CustomButtonProps> = ({
     onPress,
     label,

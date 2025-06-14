@@ -1,21 +1,32 @@
+/**
+ * Colors
+ * 
+ * Defines the color palettes used throughout the application.
+ * Provides multiple theme variants including light, dark, and color-blind modes.
+ * Each theme extends the Material Design 3 default colors from react-native-paper
+ * and overrides specific colors for primary, secondary, error, background, surface, and elevation levels.
+ * 
+ * Themes included:
+ * - light: Standard light mode colors.
+ * - dark: Standard dark mode colors.
+ * - colorBlindLight: Light mode adapted for color-blind accessibility.
+ * - colorBlindDark: Dark mode adapted for color-blind accessibility.
+ * 
+ * Each theme includes nested color definitions such as:
+ * - primary, onPrimary, primaryContainer, onPrimaryContainer
+ * - secondary, onSecondary, secondaryContainer, onSecondaryContainer
+ * - tertiary, onTertiary, tertiaryContainer, onTertiaryContainer
+ * - error, onError, errorContainer, onErrorContainer
+ * - background, onBackground
+ * - surface, onSurface, surfaceVariant, onSurfaceVariant
+ * - outline, outlineVariant
+ * - shadow, scrim
+ * - inverseSurface, inverseOnSurface, inversePrimary
+ * - elevation levels (level0 to level5)
+ * - surfaceDisabled, onSurfaceDisabled, backdrop
+ */
+
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
-const primaryColor = '#F57196';
-const primaryColorLight = '#EE9AD0';
-
-const backgroundLight = '#ffffff';
-const backgroundDark = '#2b2d31';
-
-const inputBackgroundLight = '#ebedef';
-const inputBackgroundDark = '#383a40';
-
-const textLight = '#11181C';
-const textDark = '#ECEDEE';
-
-const warningColor = '#B00020';
-const successColor = '#388E3C';
-
-const disabledColor = '#BDBDBD';
-const selectionOpacity  = 0.6; 
 
 export const Colors = {
   light: {
@@ -191,28 +202,3 @@ export const Colors = {
     backdrop: "rgba(51, 47, 55, 0.4)"
   },
 };
-
-// light: {
-//   ...MD3LightTheme.colors,
-//   primary: primaryColor,
-//   primaryLight: primaryColorLight,
-//   background: backgroundLight,
-//   inputBackground: inputBackgroundLight,
-//   text: textLight,
-//   warning: warningColor,
-//   success: successColor,
-//   disabled: disabledColor,
-//   selectionOpacity: selectionOpacity,
-// },
-// dark: {
-//   ...MD3DarkTheme.colors,
-//   primary: primaryColor,
-//   primaryLight: primaryColorLight,
-//   background: backgroundDark,
-//   inputBackground: inputBackgroundDark,
-//   text: textDark,
-//   warning: warningColor,
-//   success: successColor,
-//   disabled: disabledColor,
-//   selectionOpacity: selectionOpacity,
-// },

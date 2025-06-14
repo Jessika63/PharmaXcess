@@ -1,3 +1,15 @@
+/**
+ * AuthTextInput Component
+ * 
+ * Custom text input field for authentication forms.
+ * Supports:
+ * - Error display
+ * - Password visibility toggle
+ * - Icon support
+ * - Accessibility integration
+ * - Dynamic font sizing
+ */
+
 import { StyleSheet, View, TextInputProps, Text, PixelRatio } from 'react-native';
 import { useState } from 'react';
 import { TextInput as PaperTextInput } from 'react-native-paper';
@@ -18,6 +30,14 @@ interface AuthTextInputProps extends TextInputProps {
     errorRef?: React.RefObject<Text>;
 }
 
+/**
+ * AuthTextInput
+ * 
+ * Displays a customizable text input field with optional password visibility toggle and error handling.
+ * 
+ * @param {AuthTextInputProps} props - Component props
+ * @returns {JSX.Element} - Rendered AuthTextInput component
+ */
 const AuthTextInput = ({
     value,
     onChangeText,

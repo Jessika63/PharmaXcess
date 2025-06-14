@@ -1,3 +1,38 @@
+/**
+ * SignUpScreen
+ * 
+ * This screen allows users to create a new account by providing an email address,
+ * a password, and a password confirmation.
+ * 
+ * It includes:
+ * - Email, password, and password confirmation inputs with validation.
+ * - Navigation to the login screen.
+ * - Accessibility announcements and screen reader focus management.
+ * - Keyboard handling for a smooth user experience.
+ * 
+ * Accessibility:
+ * - Announces screen title on mount.
+ * - Announces form errors and success messages.
+ * - Manages screen reader focus for error messages (iOS specific with timed focus).
+ * 
+ * Translation:
+ * - Uses i18n with the "signUpScreen" namespace.
+ * 
+ * Form behavior:
+ * - Validates email format.
+ * - Validates minimum password length.
+ * - Checks password confirmation.
+ * - Displays error messages with accessibility feedback.
+ * 
+ * Features:
+ * - Navigates to login screen via button.
+ * - Keyboard dismisses when tapping outside input fields.
+ * - Adapts to iOS and Android keyboard behaviors.
+ * 
+ * @component
+ * @returns {JSX.Element} The sign up screen component.
+ */
+
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from 'react-native-paper';
@@ -13,6 +48,11 @@ import { announceForAccessibility, setScreenAccessibilityFocus } from '@/src/acc
 
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'SignUp'>;
 
+/**
+ * Sign up screen component.
+ * 
+ * @returns {JSX.Element} A screen where users can create a new account.
+ */
 export default function SignUpScreen () {
     const navigation = useNavigation<NavigationProps>();
     const style = signUpStyles();
@@ -36,6 +76,10 @@ export default function SignUpScreen () {
             announceForAccessibility(t('title'));
     }, []);
 
+    /**
+     * Handles form submission for account creation.
+     * Validates inputs and provides accessibility feedback.
+     */
     const handleSignUp = () => {
         let hasError = false;
         let timer = 0;

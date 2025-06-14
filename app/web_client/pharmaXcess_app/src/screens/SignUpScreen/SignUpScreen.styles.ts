@@ -1,9 +1,46 @@
+/**
+ * SignUpScreen.styles
+ * 
+ * Returns the responsive and dynamic styles for the SignUpScreen.
+ * Styles are adapted based on:
+ * - Device type (phone or tablet)
+ * - Current theme colors
+ * - Font scaling preferences
+ * 
+ * The styles cover:
+ * - Containers
+ * - Titles
+ * - Input fields
+ * - Buttons
+ * - Navigation links (login)
+ * 
+ * @returns {object} The compiled stylesheet object for the SignUpScreen.
+ */
+
 import { StyleSheet, TextStyle } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { moderateScale } from 'react-native-size-matters';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useFontScale } from '@/src/context/FontScaleContext';
 import useDeviceInfo from '@/src/hooks/useDeviceInfo';
+
+/**
+ * Type definition for the style object used in the SignUpScreen.
+ * 
+ * @typedef {object} Styles
+ * @property {object} container - Main container style.
+ * @property {object} titleContainer - Title wrapper style.
+ * @property {object} title - Title text style.
+ * @property {object} formContainer - Form wrapper style.
+ * @property {object} inputContainer - Input field wrapper style.
+ * @property {TextStyle} input - Input text style.
+ * @property {object} signUpButtonContainer - Sign up button wrapper style.
+ * @property {TextStyle} signUpButton - Sign up button text style.
+ * @property {object} logInButtonContainer - Login link wrapper style.
+ * @property {object} logInText - Static login text style.
+ * @property {object} loginButton - Login button style.
+ * @property {object} logInButtonText - Login button text container style.
+ */
 
 interface Styles {
     [key: string]: object;
@@ -21,6 +58,11 @@ interface Styles {
     logInButtonText: object;
 }
 
+/**
+ * Generates and returns the appropriate styles based on the device type.
+ * 
+ * @returns {object} Compiled stylesheet for the SignUpScreen.
+ */
 const signUpStyles = () => {
     const { colors } = useTheme();
     const { deviceType } = useDeviceInfo();

@@ -1,3 +1,22 @@
+/**
+ * LoginScreen.styles
+ * 
+ * Returns the responsive and dynamic styles for the LoginScreen.
+ * Styles are adapted based on:
+ * - Device type (phone or tablet)
+ * - Current theme colors
+ * - Font scaling preferences
+ * 
+ * The styles cover:
+ * - Containers
+ * - Titles
+ * - Inputs
+ * - Buttons
+ * - Informational and error messages
+ * 
+ * @returns {object} The compiled stylesheet object for the LoginScreen.
+ */
+
 import { StyleSheet, TextStyle } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { moderateScale } from 'react-native-size-matters';
@@ -5,6 +24,22 @@ import { useTheme } from '@/src/context/ThemeContext';
 import { useFontScale } from '@/src/context/FontScaleContext';
 import useDeviceInfo from '../../hooks/useDeviceInfo';
 
+/**
+ * Type definition for the style object used in the LoginScreen.
+ * 
+ * @typedef {object} Styles
+ * @property {object} container - Main container style.
+ * @property {object} titleContainer - Title wrapper style.
+ * @property {object} title - Title text style.
+ * @property {object} formContainer - Form wrapper style.
+ * @property {object} inputContainer - Input wrapper style.
+ * @property {TextStyle} input - Input text style.
+ * @property {object} infoMessage - Informational message text style.
+ * @property {object} infoMessageError - Error message text style.
+ * @property {object} submitButtonContainer - Submit button wrapper style.
+ * @property {TextStyle} submitButton - Submit button text style.
+ * @property {object} linksContainer - Links wrapper style (e.g. forgot password, signup).
+ */
 interface Styles {
     [key: string]: object;
     container: object;
@@ -23,6 +58,11 @@ interface Styles {
     ButtonTextContainer: object;
 }
 
+/**
+ * Generates and returns the appropriate styles based on the device type.
+ * 
+ * @returns {object} Compiled stylesheet for the LoginScreen.
+ */
 const loginStyles = () => {
     const { colors } = useTheme();
     const { deviceType } = useDeviceInfo();

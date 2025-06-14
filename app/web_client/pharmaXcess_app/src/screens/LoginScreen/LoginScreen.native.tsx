@@ -1,3 +1,37 @@
+/**
+ * LoginScreen
+ * 
+ * This screen allows users to authenticate by entering their email and password.
+ * It includes:
+ * - Email and password input fields with validation.
+ * - Show/hide password functionality.
+ * - Accessibility announcements and screen reader focus management.
+ * - Navigation to the forgot password and registration screens.
+ * 
+ * Accessibility:
+ * - Announces screen title on mount.
+ * - Announces error messages and success feedback.
+ * - Manages screen reader focus for errors and input fields.
+ * - Handles keyboard accessibility.
+ * 
+ * Translation:
+ * - Uses i18n with the "loginScreen" namespace for all texts.
+ * 
+ * Form behavior:
+ * - Validates email format and password length.
+ * - Displays error messages if inputs are invalid.
+ * - Simulates login process with success or error feedback.
+ * 
+ * Features:
+ * - Password visibility toggle (show/hide password).
+ * - Links to navigate to "Forgot Password" and "Sign Up" screens.
+ * - Handles keyboard dismissal on tap outside inputs.
+ * 
+ * @component
+ * @returns {JSX.Element} The login screen component.
+ */
+
+
 import { View, Text, ScrollView, Platform } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from 'react-native-paper';
@@ -12,8 +46,15 @@ import { getAccessibilityProps, getHiddenAccessibilityProps } from '@/src/access
 import { announceForAccessibility, setScreenAccessibilityFocus } from '@/src/accessibility/screenReader/accessibilityConfig';
 import { login } from '@/src/services/authService';
 
+
 type NavigationProps = StackNavigationProp<AuthStackParamList, 'Login'>;
 
+/**
+ * The main LoginScreen component.
+ *
+ * @function
+ * @returns {JSX.Element} The login form with email, password inputs, and navigation buttons.
+ */
 export default function LoginScreen () {
     const navigation = useNavigation<NavigationProps>();
     const style = loginStyles();
@@ -35,6 +76,15 @@ export default function LoginScreen () {
         announceForAccessibility(t('title'));
     }, []);
 
+    /**
+     * Handles form submission and login logic.
+     * Validates inputs and displays appropriate error messages.
+     * Focuses on error messages for iOS accessibility.
+     *
+     * @async
+     * @function
+     * @returns {Promise<void>}
+     */
     const handleLogin = async () => {
         let hasError = false;
         let timer = 0;
