@@ -1,6 +1,8 @@
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
+from flask_cors import CORS
+
 from routes.find.find_doctor_by_name import find_doctor_by_name_bp
 from routes.find.find_doctor_by_rpps import find_doctor_by_rpps_bp
 from routes.add.add_doctor import add_doctor_bp
@@ -15,6 +17,8 @@ from routes.get_available_medicine import get_available_medicine_bp
 load_dotenv()
 
 app = Flask(__name__)
+
+CORS(app)
 
 # Save blueprints
 app.register_blueprint(find_doctor_by_name_bp)
