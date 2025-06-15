@@ -53,8 +53,7 @@ your app should be running, 'happy dev!'
 
 ## Back to general **distributeur** documentation
 
-The general **distributeur** documentation is available at [here](../Readme.md)
-
+The general **distributeur** documentation is available here: [General readme](../Readme.md)
 
 ## Code configuration
 

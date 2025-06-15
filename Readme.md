@@ -21,11 +21,11 @@ The application will provide several features, including:
 
 ## Distributeur
 
-You can find all **Distributeur** information [here](distributeur/Readme.md)
+You can find all **Distributeur** information here: [Distributeur readme](distributeur/Readme.md)
 
 ## App
 
-You can find all **App** information [here](app/README.md)
+You can find all **App** information here: [Application readme](app/README.md)
 
 ## Common
 
