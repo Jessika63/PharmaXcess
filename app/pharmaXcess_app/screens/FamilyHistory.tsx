@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp } from 'react-native';
+import React, {useState} from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ViewStyle, TextStyle } from 'react-native';
@@ -8,7 +8,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 type FamilyHistoryItem = {
     name: string;
     familyMember: string;
-    age: number;
+    age: string;
     severity: string;
     treatment: string;
 };
@@ -18,32 +18,47 @@ type FamilyHistoryProps = {
 };
 
 export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.Element {
-    const familyHistory: FamilyHistoryItem[] = [
+    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
         {
             name: 'Diabète de type 2',
             familyMember: 'Père',
-            age: 65,
+            age: '65',
             severity: 'Modéré',
             treatment: 'Insuline, régime alimentaire',
         },
         {
             name: 'Hypertension artérielle',
             familyMember: 'Mère',
-            age: 60,
+            age: '60',
             severity: 'Sévère',
             treatment: 'Bêtabloquants, régime alimentaire',
         },
-        {
-            name: 'Asthme',
-            familyMember: 'Frère',
-            age: 30,
-            severity: 'Modéré',
-            treatment: 'Inhalateur, corticostéroïdes',
-        },
-    ];
+    ]);
+
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [newFamilyHistory, setNewFamilyHistory] = useState<FamilyHistoryItem>({
+        name: '',
+        familyMember: '',
+        age: '',
+        severity: '',
+        treatment: '',
+    });
 
     const handleAddPress = (): void => {
-        Alert.alert('Ajouter un antécédent familial', 'Cette fonctionnalité n\'est pas encore implémentée.');
+        if (!newFamilyHistory.name || !newFamilyHistory.familyMember || !newFamilyHistory.age || !newFamilyHistory.severity || !newFamilyHistory.treatment) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        setFamilyHistory([...familyHistory, newFamilyHistory]);
+        setNewFamilyHistory({
+            name: '',
+            familyMember: '',
+            age: '',
+            severity: '',
+            treatment: '',
+        });
+        setIsModalVisible(false);
     };
 
     const handleModifyPress = (): void => {
@@ -82,7 +97,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
@@ -93,6 +108,48 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
+            <Modal animationType="slide" visible={isModalVisible}>
+                <View style={styles.container}>
+                    <Text style={styles.familyTitle}>Ajouter un antécédent familial</Text>
+                    <TextInput
+                        placeholder="Nom de la maladie"
+                        value={newFamilyHistory.name}
+                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, name: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Membre de la famille"
+                        value={newFamilyHistory.familyMember}
+                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Âge"
+                        value={String(newFamilyHistory.age)}
+                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, age: text })}
+                        keyboardType="numeric"
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Sévérité"
+                        value={newFamilyHistory.severity}
+                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, severity: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Traitement"
+                        value={newFamilyHistory.treatment}
+                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
+                        style={styles.input}
+                    />
+                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <Text style={styles.buttonText}>Confirmer</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -170,4 +227,15 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     } as TextStyle,
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
+    }
 });
