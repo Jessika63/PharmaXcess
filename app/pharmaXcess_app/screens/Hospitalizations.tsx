@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
@@ -25,7 +25,7 @@ type HospitalizationsProps = {
 
 export default function Hospitalizations({ navigation }: HospitalizationsProps): JSX.Element {
     const [expanded, setExpanded] = useState<number | null>(null);
-    const hospitalizations: Hospitalization[] = [
+    const [hospitalizations, setHospitalization] = useState<Hospitalization[]>([
         {
             name: 'COVID-19',
             beginDate: '01/01/2021',
@@ -50,34 +50,42 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
             examens: 'Échographie abdominale, prise de sang',
             comments: 'RAS',
         },
-        {
-            name: 'Fracture du poignet',
-            beginDate: '01/01/2019',
-            endDate: '01/01/2019',
-            duration: '1 jour',
-            department: 'Orthopédie',
-            doctor: 'Dr. Lefevre',
-            hospital: 'Hôpital Tenon',
-            medications: 'Doliprane, anti-inflammatoires',
-            examens: 'Radiographie du poignet',
-            comments: 'Très bonne expérience avec le personnel soignant',
-        },
-        {
-            name: 'Appendicite',
-            beginDate: '01/01/2018',
-            endDate: '01/01/2018',
-            duration: '1 jour',
-            department: 'Chirurgie',
-            doctor: 'Dr. Lemoine',
-            hospital: 'Hôpital Robert-Debré',
-            medications: 'Antibiotiques, antalgiques',
-            examens: 'Scanner abdominal, prise de sang',
-            comments: 'Très bonne prise en charge',
-        },
-    ];
+    ]);
+
+    const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [newHospitalization, setNewHospitalization] = useState<Hospitalization>({
+        name: '',
+        beginDate: '',
+        endDate: '',
+        duration: '',
+        department: '',
+        doctor: '',
+        hospital: '',
+        medications: '',
+        examens: '',
+        comments: '',
+    });
 
     const handleAddPress = (): void => {
-        Alert.alert('Ajouter une hospitalisation', 'Cette fonctionnalité n\'est pas encore implémentée.');
+        if (!newHospitalization.name || !newHospitalization.beginDate || !newHospitalization.endDate || !newHospitalization.duration || !newHospitalization.department || !newHospitalization.doctor || !newHospitalization.hospital || !newHospitalization.medications || !newHospitalization.examens || !newHospitalization.comments) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        setHospitalization([...hospitalizations, newHospitalization]);
+        setNewHospitalization({
+            name: '',
+            beginDate: '',
+            endDate: '',
+            duration: '',
+            department: '',
+            doctor: '',
+            hospital: '',
+            medications: '',
+            examens: '',
+            comments: '',
+        });
+        setModalVisible(false);
     };
 
     const handleEditPress = (hospitalizationReason: string): void => {
@@ -135,7 +143,7 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
                     ))}
                 </ScrollView>
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                    <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
                         <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                             <Text style={styles.buttonText}>Ajouter</Text>
                         </LinearGradient>
@@ -146,7 +154,78 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
-            </View>
+
+                <Modal visible={isModalVisible} animationType="slide">
+                    <View style={styles.container}>
+                        <Text style={styles.hospitalizationTitle}>Ajouter une hospitalisation</Text>
+                        <TextInput
+                            placeholder="Raison de l'hospitalisation"
+                            value={newHospitalization.name}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, name: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Date de début"
+                            value={newHospitalization.beginDate}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, beginDate: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Date de fin"
+                            value={newHospitalization.endDate}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, endDate: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Durée"
+                            value={newHospitalization.duration}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, duration: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Service"
+                            value={newHospitalization.department}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, department: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Médecin"
+                            value={newHospitalization.doctor}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, doctor: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Hôpital"
+                            value={newHospitalization.hospital}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, hospital: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Médicaments"
+                            value={newHospitalization.medications}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, medications: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Examens"
+                            value={newHospitalization.examens}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, examens: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Commentaires"
+                            value={newHospitalization.comments}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, comments: text })}
+                            style={styles.input}
+                        />
+                        <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Confirmer</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+        </View> 
     );
 }
 
@@ -217,5 +296,16 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
         textAlign: 'center',
+    } as TextStyle,
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 20,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
     } as TextStyle,
 });
