@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState} from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ViewStyle, TextStyle } from 'react-native';
@@ -19,7 +19,7 @@ type AllergiesProps = {
 };
 
 export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
-    const allergies: Allergy[] = [
+    const [allergies, setAllergies] = useState<Allergy[]>([
         {
             name: 'Pollen',
             beginDate: '01/01/2021',
@@ -36,26 +36,34 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
             medications: 'Éviter les pénicillines',
             comments: 'Allergie connue',
         },
-        {
-            name: 'Arachides',
-            beginDate: '01/01/2019',
-            severity: 'Sévère',
-            symptoms: 'Choc anaphylactique',
-            medications: 'Éviter les arachides',
-            comments: 'Allergie connue',
-        },
-        {
-            name: 'Acariens',
-            beginDate: '01/01/2018',
-            severity: 'Modérée',
-            symptoms: 'Éternuements',
-            medications: 'Antihistaminiques',
-            comments: 'Allergie saisonnière',
-        },
-    ];
+    ]);
+
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [newAllergy, setNewAllergy] = useState<Allergy>({
+        name: '',
+        beginDate: '',
+        severity: '',
+        symptoms: '',
+        medications: '',
+        comments: '',
+    });
 
     const handleAddPress = (): void => {
-        Alert.alert('Ajouter une allergie', 'Cette fonctionnalité n\'est pas encore implémentée.');
+        if (!newAllergy.name || !newAllergy.beginDate || !newAllergy.severity || !newAllergy.symptoms || !newAllergy.medications || !newAllergy.comments) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        setAllergies([...allergies, newAllergy]);
+        setNewAllergy({
+            name: '',
+            beginDate: '',
+            severity: '',
+            symptoms: '',
+            medications: '',
+            comments: '',
+        });
+        setIsModalVisible(false);
     };
 
     const handleEditPress = (allergyName: string): void => {
@@ -98,7 +106,7 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
@@ -109,6 +117,53 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
+            <Modal visible={isModalVisible} animationType="slide">
+                <View style={styles.container}>
+                    <Text style={styles.allergyTitle}>Ajouter une allergie</Text>
+                    <TextInput
+                        placeholder="Nom de l'allergie"
+                        value={newAllergy.name}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Date de début"
+                        value={newAllergy.beginDate}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, beginDate: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Gravité"
+                        value={newAllergy.severity}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Symptômes"
+                        value={newAllergy.symptoms}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, symptoms: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Médicaments"
+                        value={newAllergy.medications}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, medications: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Commentaires"
+                        value={newAllergy.comments}
+                        onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
+                        style={styles.input}
+                    />
+                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <Text style={styles.buttonText}>Ajouter</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -186,4 +241,15 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     } as TextStyle,
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
+    }
 });
