@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, Modal,  TouchableOpacity, ScrollView, Alert, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,7 +18,7 @@ type DoctorsProps = {
 };
 
 export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
-  const doctors: Doctor[] = [
+  const [doctors, setDoctors] = useState<Doctor[]>([
         {
             name: 'Dr. Jean Dupont',
             specialty: 'Cardiologue',
@@ -35,66 +35,35 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
             address: '2 avenue de la médecine, 75000 Paris',
             hospital: 'Hôpital Pitié-Salpêtrière',
         },
-        {
-            name: 'Dr. Pierre Martin',
-            specialty: 'Généraliste',
-            phoneNumber: '01 23 45 67 91',
-            email: 'martin.general@hotmail.com',
-            address: '3 boulevard de la santé, 75000 Paris',
-            hospital: 'Hôpital Bichat',
-        },
-        {
-            name: 'Dr. Sophie Durand',
-            specialty: 'Dermatologue',
-            phoneNumber: '01 23 45 67 92',
-            email: 'durand.dermato@hotmail.com',
-            address: '4 rue de la peau, 75000 Paris',
-            hospital: 'Hôpital Saint-Louis',
-        },
-        {
-            name: 'Dr. Jacques Chirac',
-            specialty: 'Chirurgien',
-            phoneNumber: '01 23 45 67 93',
-            email: 'chirac.chirur@hotmail.com',
-            address: '5 avenue de la chirurgie, 75000 Paris',
-            hospital: 'Hôpital Georges Pompidou',
-        },
-        {
-            name: 'Dr. Claire Fontaine',
-            specialty: 'Pédiatre',
-            phoneNumber: '01 23 45 67 94',
-            email: 'fontaine.pedia@hotmail.com',
-            address: '6 rue des enfants, 75000 Paris',
-            hospital: 'Hôpital Necker-Enfants Malades',
-        },
-        {
-            name: 'Dr. Louis Pasteur',
-            specialty: 'Immunologiste',
-            phoneNumber: '01 23 45 67 95',
-            email: 'pasteur.immuno@hotmail.com',
-            address: '7 boulevard de l’immunité, 75000 Paris',
-            hospital: 'Hôpital Henri Mondor',
-        },
-        {
-            name: 'Dr. Émile Zola',
-            specialty: 'Psychiatre',
-            phoneNumber: '01 23 45 67 96',
-            email: 'zola.psy@hotmail.com',
-            address: '8 avenue de la psychologie, 75000 Paris',
-            hospital: 'Hôpital Sainte-Anne',
-        },
-        {
-            name: 'Dr. Victor Hugo',
-            specialty: 'Neurologue',
-            phoneNumber: '01 23 45 67 97',
-            email: 'hugo.neuro@hotmail.com',
-            address: '9 rue des nerfs, 75000 Paris',
-            hospital: 'Hôpital de la Salpêtrière',
-        },
-  ];
+
+  ]);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newDoctor, setNewDoctor] = useState<Doctor>({
+    name: '',
+    specialty: '',
+    phoneNumber: '',
+    email: '',
+    address: '',
+    hospital: '',
+  });
 
   const handleAddPress = (): void => {
-    Alert.alert('Ajouter un médecin', 'Cette fonctionnalité n\'est pas encore implémentée.');
+    if (!newDoctor.name || !newDoctor.specialty || !newDoctor.phoneNumber || !newDoctor.email || !newDoctor.address || !newDoctor.hospital) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+      return;
+    }
+
+    setDoctors([...doctors, newDoctor]);
+    setNewDoctor({
+      name: '',
+      specialty: '',
+      phoneNumber: '',
+      email: '',
+      address: '',
+      hospital: '',
+    });
+    setIsModalVisible(false);
   };
 
   const handleEditPress = (doctorName: string): void => {
@@ -137,7 +106,7 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+        <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
           <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
             <Text style={styles.buttonText}>Ajouter</Text>
           </LinearGradient>
@@ -148,6 +117,53 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      <Modal animationType="slide" visible={isModalVisible}>
+        <View style={styles.container}>
+          <Text style={styles.doctorTitle}>Ajouter un médecin</Text>
+          <TextInput
+            placeholder="Nom"
+            value={newDoctor.name}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, name: text })}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Spécialité"
+            value={newDoctor.specialty}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, specialty: text })}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Téléphone"
+            value={newDoctor.phoneNumber}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, phoneNumber: text })}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Email"
+            value={newDoctor.email}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, email: text })}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Adresse"
+            value={newDoctor.address}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, address: text })}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Hôpital"
+            value={newDoctor.hospital}
+            onChangeText={(text) => setNewDoctor({ ...newDoctor, hospital: text })}
+            style={styles.input}
+          />
+          <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+              <Text style={styles.buttonText}>Ajouter</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -226,4 +242,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
   } as TextStyle,
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 10,
+    backgroundColor: '#F2F2F2',
+    color: '#333',
+    fontSize: 16,
+  }
 });
