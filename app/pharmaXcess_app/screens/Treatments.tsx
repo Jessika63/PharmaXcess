@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { TextStyle, ViewStyle, StyleProp } from 'react-native';
@@ -22,7 +22,7 @@ type treatmentsProps = {
 export default function Treatments({ navigation }: treatmentsProps): JSX.Element {
     const [expanded, setExpanded] = useState<number | null>(null);
 
-    const treatments: Treatment[] = [
+    const [treatments, setTreatments] =  useState<Treatment[]>([
         {
             name: 'Metformine',
             beginDate: '01/01/2021',
@@ -41,28 +41,36 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
             sideEffects: 'palpitations, tremblements, maux de tête',
             disease: 'Hypothyroïdie',
         },
-        {
-            name: 'Sertraline',
-            beginDate: '01/01/2021',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '1 an',
-            sideEffects: 'insomnie, somnolence, maux de tête',
-            disease: 'Dépression',
-        },
-        {
-            name: 'Atorvastatine',
-            beginDate: '01/01/2020',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '2 ans',
-            sideEffects: 'douleurs musculaires, fatigue, maux de tête',
-            disease: 'Hypercholestérolémie',
-        },
-    ];
+    ]);
+
+    const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [newTreatment, setNewTreatment] = useState<Treatment>({
+        name: '',
+        beginDate: '',
+        endDate: '',
+        dosage: '',
+        duration: '',
+        sideEffects: '',
+        disease: '',
+    });
 
     const handleAddPress = (): void => {
-        Alert.alert('Ajouter un traitement', 'Cette fonctionnalité n\'est pas encore implémentée.');
+        if (!newTreatment.name || !newTreatment.beginDate || !newTreatment.endDate || !newTreatment.dosage || !newTreatment.duration || !newTreatment.sideEffects || !newTreatment.disease) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        setTreatments([...treatments, newTreatment]);
+        setNewTreatment({
+            name: '',
+            beginDate: '',
+            endDate: '',
+            dosage: '',
+            duration: '',
+            sideEffects: '',
+            disease: '',
+        });
+        setModalVisible(false);
     };
 
     const handleEditPress = (treatmentName: string): void => {
@@ -109,7 +117,7 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
@@ -120,6 +128,59 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
+            <Modal visible={isModalVisible} animationType="slide">
+                <View style={styles.container}>
+                    <Text style={styles.treatmentTitle}>Ajouter un traitement</Text>
+                    <TextInput
+                        placeholder="Nom du traitement"
+                        value={newTreatment.name}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, name: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Date de début"
+                        value={newTreatment.beginDate}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, beginDate: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Date de fin"
+                        value={newTreatment.endDate}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, endDate: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Dosage"
+                        value={newTreatment.dosage}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, dosage: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Durée"
+                        value={newTreatment.duration}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, duration: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Effets secondaires"
+                        value={newTreatment.sideEffects}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, sideEffects: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Maladie associée"
+                        value={newTreatment.disease}
+                        onChangeText={(text) => setNewTreatment({ ...newTreatment, disease: text })}
+                        style={styles.input}
+                    />
+                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <Text style={styles.buttonText}>Ajouter</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -190,4 +251,15 @@ const styles = StyleSheet.create({
         width: '100%',
         marginTop: 30,
     },
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#f2f2f2',
+        color: '#333',
+        fontSize: 16,
+    } as TextStyle,
 });
