@@ -36,6 +36,20 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : JSX.El
         emergencyContact: 'Jane Doe, 06 12 34 56 79',
     };
 
+    const labels: { [key in keyof PatientInfo]: string } = {
+        name: 'Nom',
+        birthDate: 'Date de naissance',
+        age: 'Âge',
+        weight: 'Poids',
+        height: 'Taille',
+        bloodType: 'Groupe sanguin',
+        phone: 'Téléphone',
+        email: 'Email',
+        socialSecurityNumber: 'Numéro de sécurité sociale',
+        address: 'Adresse',
+        emergencyContact: 'Contact d\'urgence',
+    };
+
     const handleModifyPress = (): void => {
         Alert.alert('Modifier mes informations', 'Cette fonctionnalité n\'est pas encore implémentée.');
     };
@@ -44,14 +58,14 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : JSX.El
         <ScrollView contentContainerStyle={styles.container}>
             {Object.entries(patientInfo).map(([key, value]) => (
                 <View key={key} style ={styles.infoCard}>
-                    <Text style={styles.label}>{key}</Text>
+                    <Text style={styles.label}>{labels[key as keyof PatientInfo]}</Text>
                     <Text style={styles.value}>{value}</Text>
                 </View>
             ))}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={handleModifyPress}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                        <Text style={styles.buttonText}>Ajouter</Text>
+                        <Text style={styles.buttonText}>Modifier</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>

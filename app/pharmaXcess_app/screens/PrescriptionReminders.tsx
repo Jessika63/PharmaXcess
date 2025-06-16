@@ -93,11 +93,7 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
                 </TouchableOpacity>
             </View>
 
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={isModalVisible}
-                onRequestClose={() => setIsModalVisible(false)}>
+            <Modal animationType="slide" visible={isModalVisible}>
                 <View style={styles.modalView}>
                     <Text style={styles.modalTitle}>Ajouter un rappel</Text>
                     <TextInput
@@ -112,11 +108,16 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
                         onChangeText={(text) => setNewReminder({ ...newReminder, date: text })}
                         style={styles.input}
                     />
-                    <TouchableOpacity
-                        style={styles.saveButton}
-                        onPress={handleAddReminder}>
-                            <Ionicons name="save" size={24} color="#fff" />
-                            <Text style={styles.saveButton}>Enregistrer</Text>
+                    <TextInput
+                        placeholder="Son"
+                        value={newReminder.sound}
+                        onChangeText={(text) => setNewReminder({ ...newReminder, sound: text })}
+                        style={styles.input}
+                    />
+                    <TouchableOpacity style={styles.saveButton} onPress={handleAddReminder}>
+                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <Text style={styles.buttonText}>Enregistrer</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </Modal>
@@ -151,6 +152,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+        textAlign: 'center', 
     },
     title: {
         fontSize: 24,
@@ -191,10 +193,8 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: '#ffffff',
         padding: 20,
-        borderRadius: 10,
-        margin: 20,
     },
     modalContainer: {
         flex: 1,
@@ -206,33 +206,44 @@ const styles = StyleSheet.create({
         margin: 20,
     },
     modalContent: {
-        width: '90%',
-        backgroundColor: '#fff',
-        borderRadius: 10,
+        width: '100%',
         padding: 20,
-        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
         color: '#F57196',
     },
     input: {
+        width: '100%',
+        padding: 10,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5,
-        padding: 10,
-        width: '100%',
         marginBottom: 20,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
     },
     saveButton: {
-        backgroundColor: '#F57196',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
+        marginTop: 20,
+        width: '100%',
         alignItems: 'center',
-        marginTop: 16,
+        justifyContent: 'center',
+        borderRadius: 10,
+        overflow: 'hidden',
+        alignSelf: 'center',
     },
     editButton: {
         position: 'absolute',
