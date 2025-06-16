@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ViewStyle, StyleProp, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, ViewStyle, TextInput, StyleProp, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -20,7 +20,7 @@ type DiseasesProps = {
 export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
     const [expanded, setExpanded] = useState<number | null>(null);
 
-    const diseases: Disease[] = [
+    const [diseases, setDiseases] = useState<Disease[]>([
         {
             name: 'Diabète',
             description: 'Le diabète est une maladie chronique qui se caractérise par un excès de sucre dans le sang.',
@@ -37,30 +37,38 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
             medications: 'diurétiques, bêta-bloquants, inhibiteurs de l\'enzyme de conversion de l\'angiotensine (IECA), antagonistes des récepteurs de l\'angiotensine II (ARA II), inhibiteurs calciques, alpha-bloquants, alpha-bêta-bloquants, vasodilatateurs, antihypertenseurs centraux, antihypertenseurs d\'action directe, antihypertenseurs à action périphérique, antihypertenseurs à action centrale',
             examens: 'mesure de la pression artérielle, électrocardiogramme, échocardiographie, échographie des reins, prise de sang (créatinine, potassium, sodium, cholestérol, glycémie, urée)',
         },
-        {
-            name: 'Asthme',
-            description: 'L\'asthme est une maladie chronique des voies respiratoires caractérisée par une inflammation et un rétrécissement des bronches.',
-            symptoms: 'toux, sifflements, essoufflement, oppression thoracique, douleur thoracique, fatigue, troubles du sommeil',
-            beginDate: '01/01/2010',
-            medications: 'bronchodilatateurs, corticostéroïdes inhalés, corticostéroïdes oraux, antileucotriènes, théophylline, immunothérapie, omalizumab, mepolizumab, reslizumab, benralizumab, dupilumab',
-            examens: 'spirométrie, test de provocation bronchique, test de la sueur, test cutané, prise de sang (éosinophiles, IgE)',
-        },
-        {
-            name: 'Cancer',
-            description: 'Le cancer est une maladie caractérisée par une prolifération cellulaire anormale et incontrôlée.',
-            symptoms: 'tumeur, fatigue, perte de poids, fièvre, douleur, saignements, infections, troubles digestifs, troubles urinaires, troubles respiratoires',
-            beginDate: '01/01/2015',
-            medications: 'chirurgie, radiothérapie, chimiothérapie, immunothérapie, thérapie ciblée, hormonothérapie',
-            examens: 'biopsie, scanner, IRM, TEP, échographie, prise de sang (marqueurs tumoraux)',
-        },
-    ];
+    ]);
+
+    const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [newDisease, setNewDisease] = useState<Disease>({
+        name: '',
+        description: '',
+        symptoms: '',
+        beginDate: '',
+        medications: '',
+        examens: '',
+    });
 
     const toggleCard = (index: number): void => {
         setExpanded(expanded === index ? null : index);
     };
 
     const handleAddPress = (): void => {
-        Alert.alert('Ajouter une maladie', 'Cette fonctionnalité n\'est pas encore implémentée.');
+        if (!newDisease.name || !newDisease.description || !newDisease.symptoms || !newDisease.beginDate || !newDisease.medications || !newDisease.examens) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle maladie.');
+            return;
+        }
+
+        setDiseases([newDisease, ...diseases]);
+        setNewDisease({
+            name: '',
+            description: '',
+            symptoms: '',
+            beginDate: '',
+            medications: '',
+            examens: '',
+        });
+        setModalVisible(false);
     };
 
     const handleEditPress = (diseaseName: string): void => {
@@ -112,7 +120,7 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleAddPress}>
+                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
                     <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
@@ -123,6 +131,53 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
+            <Modal visible={isModalVisible} animationType="slide">
+                <View style={styles.container}>
+                    <Text style={styles.diseaseTitle}>Ajouter une maladie</Text>
+                    <TextInput
+                        placeholder="Nom"
+                        value={newDisease.name}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Description"
+                        value={newDisease.description}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Symptômes"
+                        value={newDisease.symptoms}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Date de début"
+                        value={newDisease.beginDate}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, beginDate: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Traitements"
+                        value={newDisease.medications}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Examens"
+                        value={newDisease.examens}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
+                        style={styles.input}
+                    />
+                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <Text style={styles.buttonText}>Confirmer</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -198,4 +253,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
     } as ViewStyle,
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
+    } as TextStyle,
 });
