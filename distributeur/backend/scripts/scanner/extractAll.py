@@ -86,6 +86,15 @@ def extract_text_paddleocr(image_path):
 import re
 
 def getInfosPrescription(text):
+    """
+    Extracts structured data from a prescription text.
+
+    Parameters:
+    - text (str): Raw OCR-extracted text.
+
+    Returns:
+    - dict: Extracted information including doctor, RPPS, patient, and dates.
+    """
     infos = {}
     spe = "NONE"
 
