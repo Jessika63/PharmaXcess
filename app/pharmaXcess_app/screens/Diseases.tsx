@@ -159,55 +159,60 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
-
             <Modal visible={isModalVisible} animationType="slide">
-                <View style={styles.container}>
-                    <Text style={styles.diseaseTitle}>Ajouter une maladie</Text>
-                    <TextInput
-                        placeholder="Nom"
-                        value={newDisease.name}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Description"
-                        value={newDisease.description}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Symptômes"
-                        value={newDisease.symptoms}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
-                        style={styles.input}
-                    />
-                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Année: {selectedYear}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
-                    </TouchableOpacity>
-                    <TextInput
-                        placeholder="Traitements"
-                        value={newDisease.medications}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Examens"
-                        value={newDisease.examens}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
-                        style={styles.input}
-                    />
-                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Confirmer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
+                <ScrollView
+                    contentContainerStyle={styles.scrollableContainer}
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="automatic"
+                >
+                    <View style={styles.container}>
+                        <Text style={styles.diseaseTitle}>Ajouter une maladie</Text>
+                        <TextInput
+                            placeholder="Nom"
+                            value={newDisease.name}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Description"
+                            value={newDisease.description}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Symptômes"
+                            value={newDisease.symptoms}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
+                            style={styles.input}
+                        />
+                        <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Année: {selectedYear}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
+                        </TouchableOpacity>
+                        <TextInput
+                            placeholder="Traitements"
+                            value={newDisease.medications}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Examens"
+                            value={newDisease.examens}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
+                            style={styles.input}
+                        />
+                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Confirmer</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             </Modal>
             <Modal visible={isYearModalVisible} animationType="slide">
                 <View style={styles.scrollableModal}>
@@ -390,4 +395,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     } as ViewStyle,
+    scrollableContainer: {
+        flexGrow: 1,
+        justifyContent: 'flex-start',
+        paddingBottom: 20,
+        padding: 20,
+        backgroundColor: '#ffffff',
+    },
 });
