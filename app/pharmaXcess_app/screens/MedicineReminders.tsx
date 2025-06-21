@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { TextStyle, ViewStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { FlatList } from 'react-native-gesture-handler';
+import { TextInput } from 'react-native-gesture-handler';
 
 type Alarm = {
     id: string;
@@ -45,8 +44,22 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         sound: '',
     });
 
+    const [selectedDays, setSelectedDays] = useState<string[]>([]);
+    const [selectedSound, setSelectedSound] = useState<string>('Son 1');
+    const [selectedHour, setSelectedHour] = useState<string>('08');
+    const [selectedMinute, setSelectedMinute] = useState<string>('00');
+
+    const [isHourModalVisible, setIsHourModalVisible] = useState(false);
+    const [isMinuteModalVisible, setIsMinuteModalVisible] = useState(false);
+    const [isSoundModalVisible, setIsSoundModalVisible] = useState(false);
+
+    const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const sounds = ['Son 1', 'Son 2', 'Son 3', 'Son 4'];
+    const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+    const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+
     const handleAddAlarm = () => {
-        if (!newAlarm.medicineName || !newAlarm.time || newAlarm.days.length === 0) {
+        if (!newAlarm.medicineName || selectedDays.length === 0) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
@@ -54,9 +67,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         const newAlarmData: Alarm = {
             id: Math.random().toString(),
             medicineName: newAlarm.medicineName,
-            time: newAlarm.time,
-            days: newAlarm.days,
-            sound: newAlarm.sound,
+            time: `${selectedHour}:${selectedMinute}`,
+            days: selectedDays,
+            sound: selectedSound,
         };
 
         setAlarms([...alarms, newAlarmData]);
@@ -67,11 +80,23 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
             days: [],
             sound: '',
         });
+        setSelectedDays([]);
+        setSelectedHour('08');
+        setSelectedMinute('00');
+        setSelectedSound('Son 1');
         setIsModalVisible(false);
     };
 
     const handleEditPress = (name: string): void => {
-        Alert.alert('Modifier le rappel', `Cette fonctionnalité n'est pas encore implémentée pour ${name}.`);
+         Alert.alert('Modifier le rappel', `Cette fonctionnalité n'est pas encore implémentée pour ${name}.`);
+    };
+
+    const toggleDaySelection = (day: string) => {
+        if (selectedDays.includes(day)) {
+            setSelectedDays(selectedDays.filter((d) => d !== day));
+        } else {
+            setSelectedDays([...selectedDays, day]);
+        }
     };
 
     return (
@@ -113,30 +138,93 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         value={newAlarm.medicineName}
                         onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Heure (HH:MM)"
-                        value={newAlarm.time}
-                        onChangeText={(text) => setNewAlarm({ ...newAlarm, time: text })}
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Jours (séparés par des virgules)"
-                        value={newAlarm.days.join(', ')}
-                        onChangeText={(text) => setNewAlarm({ ...newAlarm, days: text.split(', ') })}
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Son"
-                        value={newAlarm.sound}
-                        onChangeText={(text) => setNewAlarm({ ...newAlarm, sound: text })}
-                    />
+                    <Text style={styles.label}>Heure</Text>
+                    <TouchableOpacity onPress={() => setIsHourModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Heure: {selectedHour}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsMinuteModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Minute: {selectedMinute}</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.label}>Jours</Text>
+                    {daysOfWeek.map((day) => (
+                        <TouchableOpacity
+                            key={day}
+                            style={[
+                                styles.dayButton,
+                                selectedDays.includes(day) && styles.selectedDay,
+                            ]}
+                            onPress={() => toggleDaySelection(day)}
+                        >
+                            <Text style={styles.dayText}>{day}</Text>
+                        </TouchableOpacity>
+                    ))}
+                    <Text style={styles.label}>Son</Text>
+                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Son: {selectedSound}</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.saveButton} onPress={handleAddAlarm}>
                         <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                             <Text style={styles.buttonText}>Enregistrer</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
+            </Modal>
+            <Modal visible={isHourModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner l'heure</Text>
+                    <FlatList
+                        data={hours}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedHour(item);
+                                    setIsHourModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{item}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+            </Modal>
+            <Modal visible={isMinuteModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner les minutes</Text>
+                    <FlatList
+                        data={minutes}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedMinute(item);
+                                    setIsMinuteModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{item}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+            </Modal>
+            <Modal visible={isSoundModalVisible} animationType="slide">
+                <ScrollView contentContainerStyle={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Sélectionner un son</Text>
+                    {sounds.map((sound) => (
+                        <TouchableOpacity
+                            key={sound}
+                            style={styles.selectorItem}
+                            onPress={() => {
+                                setSelectedSound(sound);
+                                setIsSoundModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.selectorItemText}>{sound}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </Modal>
         </View>
     );
@@ -147,87 +235,30 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#ffffff',
         padding: 20,
-        alignItems: 'center',
-    } as ViewStyle,
-    saveButton: {
-        marginTop: 20,
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 10,
-        overflow: 'hidden',
-        alignSelf: 'center',
-    } as ViewStyle,
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#F57196',
     },
     alarmCard: {
         padding: 16,
         backgroundColor: '#f0f0f0',
         borderRadius: 8,
         marginBottom: 16,
-        width: '100%',
-    } as ViewStyle,
+    },
+    reminderName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
     alarmText: {
         fontSize: 16,
         color: '#666',
         marginBottom: 10,
-        paddingRight: 20,
-    } as TextStyle,
-    bold: {
-        fontWeight: 'bold',
     },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#ffffff',
-        padding: 20,
-    } as ViewStyle,
-    modalContent: {
-        width: '100%',
-        padding: 20,
-        backgroundColor: '#ffffff',
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 2,
-    } as ViewStyle,
-    modalTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#F57196',
-    } as TextStyle,
-    input: {
-        width: '100%',
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 5,
-        marginBottom: 20,
-        backgroundColor: '#F2F2F2',
-        color: '#333',
-        fontSize: 16,
-    } as TextStyle,
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 16,
     },
     button: {
-        width: '45%', 
-        marginHorizontal: 8,
+        width: '45%',
         borderRadius: 10,
-        overflow: 'hidden',
     },
     gradient: {
         paddingVertical: 15,
@@ -239,11 +270,77 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center', 
     },
-    reminderName: {
-        fontSize: 18,
+    modalContainer: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#ffffff',
+    },
+    modalTitle: {
+        fontSize: 24,
         fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#F57196',
+    },
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 20,
+        backgroundColor: '#F2F2F2',
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    dayButton: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+    },
+    selectedDay: {
+        backgroundColor: '#F57196',
+    },
+    dayText: {
+        color: '#333',
+        textAlign: 'center',
+    },
+    selector: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+    },
+    selectorText: {
+        color: '#333',
+        textAlign: 'center',
+    },
+    selectorItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    selectorItemText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+    },
+    saveButton: {
+        marginTop: 20,
+        borderRadius: 10,
+    },
+    scrollableModal: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#ffffff',
     },
     editButton: {
         position: 'absolute',
@@ -253,5 +350,5 @@ const styles = StyleSheet.create({
         padding: 5,
         borderRadius: 5,
         zIndex: 1,
-    } as ViewStyle,
+    },
 });
