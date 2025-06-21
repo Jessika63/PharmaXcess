@@ -53,13 +53,38 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
         setExpanded(expanded === index ? null : index);
     };
 
+    const [selectedYear, setSelectedYear] = useState<string | null>(null);
+    const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [isYearModalVisible, setIsYearModalVisible] = useState<boolean>(false);
+    const [isMonthModalVisible, setIsMonthModalVisible] = useState<boolean>(false);
+    const [isDayModalVisible, setIsDayModalVisible] = useState<boolean>(false);
+
+    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
+    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+
     const handleAddPress = (): void => {
-        if (!newDisease.name || !newDisease.description || !newDisease.symptoms || !newDisease.beginDate || !newDisease.medications || !newDisease.examens) {
+        if (
+            !newDisease.name ||
+            !newDisease.description ||
+            !newDisease.symptoms ||
+            !selectedYear ||
+            !selectedMonth ||
+            !selectedDay ||
+            !newDisease.medications ||
+            !newDisease.examens
+        ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle maladie.');
             return;
         }
-
-        setDiseases([newDisease, ...diseases]);
+    
+        const newDiseaseData: Disease = {
+            ...newDisease,
+            beginDate: `${selectedYear}-${selectedMonth}-${selectedDay}`,
+        };
+    
+        setDiseases([newDiseaseData, ...diseases]);
         setNewDisease({
             name: '',
             description: '',
@@ -69,6 +94,9 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
             examens: '',
         });
         setModalVisible(false);
+        setSelectedYear('2020');
+        setSelectedMonth('01');
+        setSelectedDay('01');
     };
 
     const handleEditPress = (diseaseName: string): void => {
@@ -153,12 +181,15 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                         onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
                         style={styles.input}
                     />
-                    <TextInput
-                        placeholder="Date de début"
-                        value={newDisease.beginDate}
-                        onChangeText={(text) => setNewDisease({ ...newDisease, beginDate: text })}
-                        style={styles.input}
-                    />
+                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Année: {selectedYear}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
+                    </TouchableOpacity>
                     <TextInput
                         placeholder="Traitements"
                         value={newDisease.medications}
@@ -176,6 +207,63 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                             <Text style={styles.buttonText}>Confirmer</Text>
                         </LinearGradient>
                     </TouchableOpacity>
+                </View>
+            </Modal>
+            <Modal visible={isYearModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner une année</Text>
+                    <ScrollView>
+                        {years.map((year) => (
+                            <TouchableOpacity
+                                key={year}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedYear(year);
+                                    setIsYearModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{year}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+            <Modal visible={isMonthModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner un mois</Text>
+                    <ScrollView>
+                        {months.map((month) => (
+                            <TouchableOpacity
+                                key={month}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedMonth(month);
+                                    setIsMonthModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{month}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+            <Modal visible={isDayModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner un jour</Text>
+                    <ScrollView>
+                        {days.map((day) => (
+                            <TouchableOpacity
+                                key={day}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedDay(day);
+                                    setIsDayModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{day}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -264,4 +352,42 @@ const styles = StyleSheet.create({
         color: '#333',
         fontSize: 16,
     } as TextStyle,
+    selectorItemText: { 
+        fontSize: 18,
+        color: '#333',
+    },
+    selectorItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    } as ViewStyle,
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center',
+    } as TextStyle,
+    scrollableModal: { 
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#ffffff',
+    },
+    selectorText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+    } as TextStyle,
+    selector: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+        color: '#333',
+        fontSize: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    } as ViewStyle,
 });
