@@ -43,7 +43,7 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
     const [isSoundModalVisible, setIsSoundModalVisible] = useState(false);
 
     const sounds = ['Son 1', 'Son 2', 'Son 3', 'Son 4'];
-    const years = Array.from({ length: 10 }, (_, i) => (2023 + i).toString());
+    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
     const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
     const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
