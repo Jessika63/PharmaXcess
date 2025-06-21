@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, Modal, TextInput, GestureResponderEvent } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FlatList } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 
 type Reminder = {
@@ -11,7 +10,7 @@ type Reminder = {
     sound: string;
 };
 
-export default function PrescriptionReminders({ navigation}): JSX.Element {
+export default function PrescriptionReminders({ navigation }): JSX.Element {
     const [reminders, setReminders] = useState<Reminder[]>([
         {
             id: '1',
@@ -35,8 +34,21 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
         sound: '',
     });
 
+    const [selectedYear, setSelectedYear] = useState<string>('2023');
+    const [selectedMonth, setSelectedMonth] = useState<string>('10');
+    const [selectedDay, setSelectedDay] = useState<string>('01');
+    const [isYearModalVisible, setIsYearModalVisible] = useState(false);
+    const [isMonthModalVisible, setIsMonthModalVisible] = useState(false);
+    const [isDayModalVisible, setIsDayModalVisible] = useState(false);
+    const [isSoundModalVisible, setIsSoundModalVisible] = useState(false);
+
+    const sounds = ['Son 1', 'Son 2', 'Son 3', 'Son 4'];
+    const years = Array.from({ length: 10 }, (_, i) => (2023 + i).toString());
+    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+
     const handleAddReminder = () => {
-        if (!newReminder.name || !newReminder.date) {
+        if (!newReminder.name || !selectedYear || !selectedMonth || !selectedDay || !newReminder.sound) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
@@ -44,7 +56,7 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
         const newReminderData: Reminder = {
             id: Math.random().toString(),
             name: newReminder.name,
-            date: newReminder.date,
+            date: `${selectedYear}-${selectedMonth}-${selectedDay}`,
             sound: newReminder.sound,
         };
 
@@ -55,9 +67,11 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
             date: '',
             sound: '',
         });
+        setSelectedYear('2023');
+        setSelectedMonth('10');
+        setSelectedDay('01');
         setIsModalVisible(false);
     };
-
 
     const handleEditPress = (name: string): void => {
         Alert.alert('Modifier le rappel', `Cette fonctionnalité n'est pas encore implémentée pour ${name}.`);
@@ -102,23 +116,99 @@ export default function PrescriptionReminders({ navigation}): JSX.Element {
                         onChangeText={(text) => setNewReminder({ ...newReminder, name: text })}
                         style={styles.input}
                     />
-                    <TextInput
-                        placeholder="Date"
-                        value={newReminder.date}
-                        onChangeText={(text) => setNewReminder({ ...newReminder, date: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Son"
-                        value={newReminder.sound}
-                        onChangeText={(text) => setNewReminder({ ...newReminder, sound: text })}
-                        style={styles.input}
-                    />
+                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Année: {selectedYear}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.selector}>
+                        <Text style={styles.selectorText}>Son: {newReminder.sound || 'Sélectionner un son'}</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.saveButton} onPress={handleAddReminder}>
                         <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
                             <Text style={styles.buttonText}>Enregistrer</Text>
                         </LinearGradient>
                     </TouchableOpacity>
+                </View>
+            </Modal>
+            <Modal visible={isYearModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner une année</Text>
+                    <ScrollView>
+                        {years.map((year) => (
+                            <TouchableOpacity
+                                key={year}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedYear(year);
+                                    setIsYearModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{year}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+            <Modal visible={isMonthModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner un mois</Text>
+                    <ScrollView>
+                        {months.map((month) => (
+                            <TouchableOpacity
+                                key={month}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedMonth(month);
+                                    setIsMonthModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{month}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+            <Modal visible={isDayModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner un jour</Text>
+                    <ScrollView>
+                        {days.map((day) => (
+                            <TouchableOpacity
+                                key={day}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setSelectedDay(day);
+                                    setIsDayModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{day}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+            <Modal visible={isSoundModalVisible} animationType="slide">
+                <View style={styles.scrollableModal}>
+                    <Text style={styles.modalTitle}>Sélectionner un son</Text>
+                    <ScrollView>
+                        {sounds.map((sound) => (
+                            <TouchableOpacity
+                                key={sound}
+                                style={styles.selectorItem}
+                                onPress={() => {
+                                    setNewReminder({ ...newReminder, sound });
+                                    setIsSoundModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.selectorItemText}>{sound}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -152,12 +242,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center', 
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 16,
+        textAlign: 'center',
     },
     reminderItem: {
         padding: 16,
@@ -175,49 +260,12 @@ const styles = StyleSheet.create({
     reminderSound: {
         fontSize: 16,
     },
-    addButton: {
-        backgroundColor: '#F57196',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 16,
-    },
-    addbuttonText: {
-        fontSize: 20,
-        color: '#fff',
-        textAlign: 'center',
-        fontWeight: 'bold',
-    },
     modalView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#ffffff',
         padding: 20,
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        padding: 20,
-        borderRadius: 10,
-        margin: 20,
-    },
-    modalContent: {
-        width: '100%',
-        padding: 20,
-        backgroundColor: '#ffffff',
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 2,
     },
     modalTitle: {
         fontSize: 24,
@@ -236,6 +284,33 @@ const styles = StyleSheet.create({
         color: '#333',
         fontSize: 16,
     },
+    selector: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+    },
+    selectorText: {
+        color: '#333',
+        textAlign: 'center',
+    },
+    scrollableModal: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#ffffff',
+    },
+    selectorItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    selectorItemText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+    },
     saveButton: {
         marginTop: 20,
         width: '100%',
@@ -243,7 +318,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 10,
         overflow: 'hidden',
-        alignSelf: 'center',
     },
     editButton: {
         position: 'absolute',
