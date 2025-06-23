@@ -5,60 +5,87 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, StyleProp, ViewStyle } from 'react-native';
 
-import Home from './screens/Home';
-import MyPrescriptions from './screens/MyPrescriptions';
-import Localisation from './screens/Localisation';
-import ClickAndCollect from './screens/ClickAndCollect';
-import Chat from './screens/Chat';
-import Profile from './screens/Profile';
-import PersonalInfo from './screens/PersonalInfo';
-import Diseases from './screens/Diseases';
-import Treatments from './screens/Treatments';
-import Hospitalizations from './screens/Hospitalizations';
-import Allergies from './screens/Allergies';
-import FamilyHistory from './screens/FamilyHistory';
-import Doctors from './screens/Doctors';
-import MedicineReminders from './screens/MedicineReminders';
-import Settings from './screens/Settings';
-import PrescriptionReminders from './screens/PrescriptionReminders';
-import VisualOptions from './screens/VisualOptions';
-import AudioOptions from './screens/AudioOptions';
-import VolumeOptions from './screens/VolumeOptions';
-import SoundTypeOptions from './screens/SoundTypeOptions';
-import VibrationOptions from './screens/VibrationsOptions';
-import PrivacySecurity from './screens/PrivacySecurity';
-import ConsentOptions from './screens/ConsentOptions';
-import AuthenticationOptions from './screens/AuthenticationOptions';
-import SensibleDataOptions from './screens/SensibleDataOptions';
-import PersonalDataOptions from './screens/PersonalDataOptions';
-import ReglementationOptions from './screens/ReglementationOptions';
-import AdvancedSecurityOptions from './screens/AdvancedSecurityoptions';
-import Notifications from './screens/Notifications';
-import AccountProfile from './screens/AccountProfile';
-import HelpSupport from './screens/HelpSupport';
-import Tutorial from './screens/Tutorial';
-import FirstSteps from './screens/FirstSteps';
-import MedicationManagement from './screens/MedicationManagement';
-import PrescriptionImport from './screens/PrescriptionImport';
-import MedicalProfile from './screens/MedicalProfile';
-import FAQ from './screens/FAQ';
-import GeneralFAQ from './screens/GeneralFAQ';
-import AccountPrivacyFAQ from './screens/AccountPrivacyFAQ';
-import MedicationManagementFAQ from './screens/MedicationManagementFAQ';
-import TechnicalIssuesFAQ from './screens/TechnicalIssuesFAQ';
-import PartnerPharmaciesFAQ from './screens/PartnerPharmaciesFAQ';
-import TechnicalSupport from './screens/TechnicalSupport';
-import ReportIssue from './screens/ReportIssue';
-import AppPreferences from './screens/AppPreferences';
-import AdvancedPrivacy from './screens/AdvancedPrivacy';
-import ViewDocuments from './screens/ViewDocuments';
-import NotificationPreferences from './screens/NotificationPreferences';
-import HistoryTransparency from './screens/HistoryTransparency';
-import PersonalDataUsage from './screens/PersonalDataUsage';
-import CommunicationPreferences from './screens/CommunicationPreferences';
-import CookieManagement from './screens/CookieManagement';
-import ExerciseRights from './screens/ExerciseRights';
-import AccountManagement from './screens/AccountManagement';
+// Common screens 
+import Home from './screens/common/Home';
+// Chat screen for communication
+import Chat from './screens/communication/Chat';
+
+// Health screens 
+// Importing various health-related screens for managing user health records
+import Diseases from './screens/health/Diseases';
+import Allergies from './screens/health/Allergies';
+import FamilyHistory from './screens/health/FamilyHistory';
+import Hospitalizations from './screens/health/Hospitalizations';
+import Doctors from './screens/health/Doctors';
+import MedicalProfile from './screens/health/MedicalProfile';
+
+// Medications screens
+import MyPrescriptions from './screens/medications/MyPrescriptions';
+import Treatments from './screens/medications/Treatments';
+import MedicineReminders from './screens/medications/MedicineReminders';
+import PrescriptionReminders from './screens/medications/PrescriptionReminders';
+import MedicationManagement from './screens/medications/MedicationManagement';
+import PrescriptionImport from './screens/medications/PrescriptionImport';
+import MedicationManagementFAQ from './screens/medications/MedicationManagementFAQ';
+
+// Pharmacy screens
+import Localisation from './screens/pharmacy/Localisation';
+import ClickAndCollect from './screens/pharmacy/ClickAndCollect';
+import PartnerPharmaciesFAQ from './screens/pharmacy/PartnerPharmaciesFAQ';
+
+// Settings screens 
+// Importing various settings screens for user preferences and configurations
+import Settings from './screens/settings/Settings';
+import VisualOptions from './screens/settings/VisualOptions';
+import AudioOptions from './screens/settings/AudioOptions';
+import VolumeOptions from './screens/settings/VolumeOptions';
+import SoundTypeOptions from './screens/settings/SoundTypeOptions';
+import VibrationOptions from './screens/settings/VibrationsOptions';
+import ReglementationOptions from './screens/settings/ReglementationOptions';
+import AppPreferences from './screens/settings/AppPreferences';
+
+// Support screens 
+// Tutorial and FAQ screens for user assistance
+import HelpSupport from './screens/support/HelpSupport';
+import Tutorial from './screens/support/Tutorial';
+import FAQ from './screens/support/FAQ';
+import GeneralFAQ from './screens/support/GeneralFAQ';
+import TechnicalIssuesFAQ from './screens/support/TechnicalIssuesFAQ';
+import TechnicalSupport from './screens/support/TechnicalSupport';
+import ReportIssue from './screens/support/ReportIssue';
+
+// Privacy and security screens
+import PrivacySecurity from './screens/privacy/PrivacySecurity';
+import ConsentOptions from './screens/privacy/ConsentOptions';
+import SensibleDataOptions from './screens/privacy/SensibleDataOptions';
+import AdvancedSecurityOptions from './screens/privacy/AdvancedSecurityoptions';
+import AdvancedPrivacy from './screens/privacy/AdvancedPrivacy';
+import PersonalDataUsage from './screens/privacy/PersonalDataUsage';
+import CookieManagement from './screens/privacy/CookieManagement';
+
+// Account screens
+import Profile from './screens/account/Profile';
+import PersonalInfo from './screens/account/PersonalInfo';
+import PersonalDataOptions from './screens/account/PersonalDataOptions';
+import AccountProfile from './screens/account/AccountProfile';
+import AccountPrivacyFAQ from './screens/account/AccountPrivacyFAQ';
+import AccountManagement from './screens/account/AccountManagement';
+
+// Others screens
+import AuthenticationOptions from './screens/authentication/AuthenticationOptions';
+import ViewDocuments from './screens/documents/ViewDocuments';
+import ExerciseRights from './screens/legal/ExerciseRights';
+
+// Notifications screens 
+// Notification preferences and settings screens
+import Notifications from './screens/notifications/Notifications';
+import NotificationPreferences from './screens/notifications/NotificationPreferences';
+import CommunicationPreferences from './screens/notifications/CommunicationPreferences';
+
+// Onboarding screens
+import FirstSteps from './screens/onboarding/FirstSteps';
+import HistoryTransparency from './screens/onboarding/HistoryTransparency';
+
 
 type TabBarIconProps = {
   color: string;
@@ -67,76 +94,89 @@ type TabBarIconProps = {
 };
 
 const Tab = createBottomTabNavigator();
-const HomeStack = createStackNavigator();
-const ProfileStack = createStackNavigator();
+const Stack = createStackNavigator();
 
-
-function HomeStackScreen(): JSX.Element {
+// Function to create a stack navigator for a given set of screens
+function createStack(screens: { name: string; component: React.ComponentType<any>; title: string }[]): JSX.Element {
   return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen name="Home" component={Home} options={{ headerTitleAlign: 'center', title: 'Accueil' }} />
-      <HomeStack.Screen name="MyPrescriptions" component={MyPrescriptions} options={{ headerTitleAlign: 'center', title: 'Mes ordonnances'}} />
-      <HomeStack.Screen name="MedicineReminders" component={MedicineReminders} options={{ headerTitleAlign: 'center', title: 'Mes rappels médicaments' }} />
-      <HomeStack.Screen name="PrescriptionReminders" component={PrescriptionReminders} options={{ headerTitleAlign: 'center', title: 'Mes rappels ordonnances' }} />
-    </HomeStack.Navigator>
+    <Stack.Navigator>
+      {screens.map((screen) => (
+        <Stack.Screen
+          key={screen.name}
+          name={screen.name}
+          component={screen.component}
+          options={{ headerTitleAlign: 'center', title: screen.title }}
+        />
+      ))}
+    </Stack.Navigator>
   );
 }
 
-function ProfileStackScreen(): JSX.Element {
-  return (
-    <ProfileStack.Navigator>
-      <ProfileStack.Screen name="Profile" component={Profile} options={{ headerTitleAlign: 'center', title: 'Profil' }} />
-      <ProfileStack.Screen name="Settings" component={Settings} options={{ headerTitleAlign: 'center', title: 'Paramètres' }} />
-      <ProfileStack.Screen name="PersonalInfo" component={PersonalInfo} options={{ headerTitleAlign: 'center', title: 'Mes informations' }} />
-      <ProfileStack.Screen name="Diseases" component={Diseases} options={{ headerTitleAlign: 'center', title: 'Maladies' }} />
-      <ProfileStack.Screen name="Treatments" component={Treatments} options={{ headerTitleAlign: 'center', title: 'Traitements' }} />
-      <ProfileStack.Screen name="Hospitalizations" component={Hospitalizations} options={{ headerTitleAlign: 'center', title: 'Hospitalisations' }} />
-      <ProfileStack.Screen name="Allergies" component={Allergies} options={{ headerTitleAlign: 'center', title: 'Allergies' }} />
-      <ProfileStack.Screen name="FamilyHistory" component={FamilyHistory} options={{ headerTitleAlign: 'center', title: 'Antécédents familiaux' }} />
-      <ProfileStack.Screen name="Doctors" component={Doctors} options={{ headerTitleAlign: 'center', title: 'Médecins' }} />
-      <ProfileStack.Screen name="VisualOptions" component={VisualOptions} options={{ headerTitleAlign: 'center', title: 'Options visuelles ' }} />
-      <ProfileStack.Screen name="AudioOptions" component={AudioOptions} options={{ headerTitleAlign: 'center', title: 'Notifications sonores ' }} />
-      <ProfileStack.Screen name="VolumeOptions" component={VolumeOptions} options={{ headerTitleAlign: 'center', title: 'Volume' }} />
-      <ProfileStack.Screen name="SoundTypeOptions" component={SoundTypeOptions} options={{ headerTitleAlign: 'center', title: 'Type de son' }} />
-      <ProfileStack.Screen name="VibrationOptions" component={VibrationOptions} options={{ headerTitleAlign: 'center', title: 'Vibrations' }} />
-      <ProfileStack.Screen name="PrivacySecurity" component={PrivacySecurity} options={{ headerTitleAlign: 'center', title: 'Confidentialité et sécurité' }} />
-      <ProfileStack.Screen name="ConsentOptions" component={ConsentOptions} options={{ headerTitleAlign: 'center', title: 'Consentement et données ' }} />
-      <ProfileStack.Screen name="AuthenticationOptions" component={AuthenticationOptions} options={{ headerTitleAlign: 'center', title: 'Authentification et sécurité' }} />
-      <ProfileStack.Screen name="SensibleDataOptions" component={SensibleDataOptions} options={{ headerTitleAlign: 'center', title: 'Protection des informations sensibles' }} />
-      <ProfileStack.Screen name="PersonalDataOptions" component={PersonalDataOptions} options={{ headerTitleAlign: 'center', title: 'Gestion des données personnelles' }} />
-      <ProfileStack.Screen name="ReglementationOptions" component={ReglementationOptions} options={{ headerTitleAlign: 'center', title: 'Conformité réglementaire' }} />
-      <ProfileStack.Screen name="AdvancedSecurityOptions" component={AdvancedSecurityOptions} options={{ headerTitleAlign: 'center', title: 'Sécurité avancée' }} />
-      <ProfileStack.Screen name="Notifications" component={Notifications} options={{ headerTitleAlign: 'center', title: 'Notifications' }} />
-      <ProfileStack.Screen name="AccountProfile" component={AccountProfile} options={{ headerTitleAlign: 'center', title: 'Compte et profil' }} />
-      <ProfileStack.Screen name="HelpSupport" component={HelpSupport} options={{ headerTitleAlign: 'center', title: 'Aide et support' }} />
-      <ProfileStack.Screen name="Tutorial" component={Tutorial} options={{ headerTitleAlign: 'center', title: 'Tutoriel' }} />
-      <ProfileStack.Screen name="FirstSteps" component={FirstSteps} options={{ headerTitleAlign: 'center', title: 'Premiers pas' }} />
-      <ProfileStack.Screen name="MedicationManagement" component={MedicationManagement} options={{ headerTitleAlign: 'center', title: 'Gestion des médicaments' }} />
-      <ProfileStack.Screen name="PrescriptionImport" component={PrescriptionImport} options={{ headerTitleAlign: 'center', title: 'Importation des ordonnances' }} />
-      <ProfileStack.Screen name="MedicalProfile" component={MedicalProfile} options={{ headerTitleAlign: 'center', title: 'Profil médical' }} />
-      <ProfileStack.Screen name="FAQ" component={FAQ} options={{ headerTitleAlign: 'center', title: 'FAQ' }} />
-      <ProfileStack.Screen name="GeneralFAQ" component={GeneralFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Général' }} />
-      <ProfileStack.Screen name="AccountPrivacyFAQ" component={AccountPrivacyFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Compte et confidentialité' }} />
-      <ProfileStack.Screen name="MedicationManagementFAQ" component={MedicationManagementFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Gestion des médicaments' }} />
-      <ProfileStack.Screen name="TechnicalIssuesFAQ" component={TechnicalIssuesFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Problèmes techniques' }} />
-      <ProfileStack.Screen name="PartnerPharmaciesFAQ" component={PartnerPharmaciesFAQ} options={{ headerTitleAlign: 'center', title: 'FAQ Pharmacies partenaires' }} />
-      <ProfileStack.Screen name="TechnicalSupport" component={TechnicalSupport} options={{ headerTitleAlign: 'center', title: 'Support technique' }} />
-      <ProfileStack.Screen name="ReportIssue" component={ReportIssue} options={{ headerTitleAlign: 'center', title: 'Signaler un problème' }} />
-      <ProfileStack.Screen name="AppPreferences" component={AppPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de l\'application' }} />
-      <ProfileStack.Screen name="AdvancedPrivacy" component={AdvancedPrivacy} options={{ headerTitleAlign: 'center', title: 'Confidentialité avancée' }} />
-      <ProfileStack.Screen name="ViewDocuments" component={ViewDocuments} options={{ headerTitleAlign: 'center', title: 'Consulter nos documents' }} />
-      <ProfileStack.Screen name="NotificationPreferences" component={NotificationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de notification' }} />
-      <ProfileStack.Screen name="HistoryTransparency" component={HistoryTransparency} options={{ headerTitleAlign: 'center', title: 'Historique et transparence' }} />
-      <ProfileStack.Screen name="PersonalDataUsage" component={PersonalDataUsage} options={{ headerTitleAlign: 'center', title: 'Utilisation des données personnelles' }} />
-      <ProfileStack.Screen name="CommunicationPreferences" component={CommunicationPreferences} options={{ headerTitleAlign: 'center', title: 'Préférences de communication' }} />
-      <ProfileStack.Screen name="CookieManagement" component={CookieManagement} options={{ headerTitleAlign: 'center', title: 'Gestion des cookies' }} />
-      <ProfileStack.Screen name='ExerciseRights' component={ExerciseRights} options={{ headerTitleAlign: 'center', title: 'Exercice des droits RGPD' }} />
-      <ProfileStack.Screen name='AccountManagement' component={AccountManagement} options={{ headerTitleAlign: 'center', title: 'Gestion de compte' }} />
-    </ProfileStack.Navigator>
-  );
+const HomeStackScreen = (): JSX.Element => {
+  // The stack navigator for the Home section, which includes screens for home, prescriptions, medicine reminders, and prescription reminders.
+  return createStack([
+    { name: 'Home', component: Home, title: 'Accueil' },
+    { name: 'MyPrescriptions', component: MyPrescriptions, title: 'Mes ordonnances' },
+    { name: 'MedicineReminders', component: MedicineReminders, title: 'Mes rappels médicaments' },
+    { name: 'PrescriptionReminders', component: PrescriptionReminders, title: 'Mes rappels ordonnances' },
+  ]);
+}
+
+const ProfileStackScreen = (): JSX.Element => {
+  // The stack navigator for the Profile section, which includes screens for user profile, settings, personal information, health records, privacy options, and support.
+  return createStack([
+    { name: 'Profile', component: Profile, title: 'Profil' },
+    { name: 'Settings', component: Settings, title: 'Paramètres' },
+    { name: 'PersonalInfo', component: PersonalInfo, title: 'Mes informations' },
+    { name: 'Diseases', component: Diseases, title: 'Maladies' },
+    { name: 'Treatments', component: Treatments, title: 'Traitements' },
+    { name: 'Hospitalizations', component: Hospitalizations, title: 'Hospitalisations' },
+    { name: 'Allergies', component: Allergies, title: 'Allergies' },
+    { name: 'FamilyHistory', component: FamilyHistory, title: 'Antécédents familiaux' },
+    { name: 'Doctors', component: Doctors, title: 'Médecins' },
+    { name: 'VisualOptions', component: VisualOptions, title: 'Options visuelles' },
+    { name: 'AudioOptions', component: AudioOptions, title: 'Notifications sonores' },
+    { name: 'VolumeOptions', component: VolumeOptions, title: 'Volume' },
+    { name: 'SoundTypeOptions', component: SoundTypeOptions, title: 'Type de son' },
+    { name: 'VibrationOptions', component: VibrationOptions, title: 'Vibrations' },
+    { name: 'PrivacySecurity', component: PrivacySecurity, title: 'Confidentialité et sécurité' },
+    { name: 'ConsentOptions', component: ConsentOptions, title: 'Consentement et données' },
+    { name: 'AuthenticationOptions', component: AuthenticationOptions, title: 'Authentification et sécurité' },
+    { name: 'SensibleDataOptions', component: SensibleDataOptions, title: 'Protection des informations sensibles' },
+    { name: 'PersonalDataOptions', component: PersonalDataOptions, title: 'Gestion des données personnelles' },
+    { name: 'ReglementationOptions', component: ReglementationOptions, title: 'Conformité réglementaire' },
+    { name: 'AdvancedSecurityOptions', component: AdvancedSecurityOptions, title: 'Sécurité avancée' },
+    { name: 'Notifications', component: Notifications, title: 'Notifications' },
+    { name: 'AccountProfile', component: AccountProfile, title: 'Compte et profil' },
+    { name: 'HelpSupport', component: HelpSupport, title: 'Aide et support' },
+    { name: 'Tutorial', component: Tutorial, title: 'Tutoriel' },
+    { name: 'FirstSteps', component: FirstSteps, title: 'Premiers pas' },
+    { name: 'MedicationManagement', component: MedicationManagement, title: 'Gestion des médicaments' },
+    { name: 'PrescriptionImport', component: PrescriptionImport, title: 'Importation des ordonnances' },
+    { name: 'MedicalProfile', component: MedicalProfile, title: 'Profil médical' },
+    { name: 'FAQ', component: FAQ, title: 'FAQ' },
+    { name: 'GeneralFAQ', component: GeneralFAQ, title: 'FAQ Général' },
+    { name: 'AccountPrivacyFAQ', component: AccountPrivacyFAQ, title: 'FAQ Compte et confidentialité' },
+    { name: 'MedicationManagementFAQ', component: MedicationManagementFAQ, title: 'FAQ Gestion des médicaments' },
+    { name: 'TechnicalIssuesFAQ', component: TechnicalIssuesFAQ, title: 'FAQ Problèmes techniques' },
+    { name: 'PartnerPharmaciesFAQ', component: PartnerPharmaciesFAQ, title: 'FAQ Pharmacies partenaires' },
+    { name: 'TechnicalSupport', component: TechnicalSupport, title: 'Support technique' },
+    { name: 'ReportIssue', component: ReportIssue, title: 'Signaler un problème' },
+    { name: 'AppPreferences', component: AppPreferences, title: "Préférences de l'application" },
+    { name: 'AdvancedPrivacy', component: AdvancedPrivacy, title:'Confidentialité avancée'},
+    { name:'ViewDocuments', component : ViewDocuments, title:'Consulter nos documents'},
+    { name: 'NotificationPreferences', component: NotificationPreferences, title: 'Préférences de notification' },
+    { name: 'HistoryTransparency', component: HistoryTransparency, title: 'Historique et transparence' },
+    { name: 'PersonalDataUsage', component: PersonalDataUsage, title: 'Utilisation des données personnelles' },
+    { name: 'CommunicationPreferences', component: CommunicationPreferences, title: 'Préférences de communication' },
+    { name: 'CookieManagement', component: CookieManagement, title: 'Gestion des cookies' },
+    { name: 'ExerciseRights', component: ExerciseRights, title: 'Exercice des droits RGPD' },
+    { name: 'AccountManagement', component: AccountManagement, title: 'Gestion de compte' },
+  ]);
 }
 
 export default function AppNavigation(): JSX.Element {
+  // the main navigation container with bottom tab navigation
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -182,6 +222,8 @@ export default function AppNavigation(): JSX.Element {
           },
         })}
       >
+        {/* The tabs */} 
+        {/* The HomeStack includes the Home screen and related screens for managing prescriptions and reminders */}
         <Tab.Screen name="HomeStack" component={HomeStackScreen} options={{ headerShown: false }} />
         <Tab.Screen name="Localisation" component={Localisation} options={{ headerTitleAlign: 'center', title: 'Localisation'}} />
         <Tab.Screen name="Click & Collect" component={ClickAndCollect} options={{ headerTitleAlign: 'center', title: 'Click & Collect'}}/>
