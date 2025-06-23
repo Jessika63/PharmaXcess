@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
+import { FaRedo, FaTimesCircle } from 'react-icons/fa';
 
 function PaymentFailed() {
 
@@ -72,6 +73,7 @@ function PaymentFailed() {
                       hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
                       ${focusedIndex === 0 ? 'scale-105' : ''}`}
               >
+                  <FaRedo className="mr-4" />
                   Réessayer
               </div>
 
@@ -84,6 +86,7 @@ function PaymentFailed() {
                           hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
                           ${focusedIndex === 1 ? 'scale-105' : ''}`}
                   >
+                      <FaTimesCircle className="mr-4" />
                       Annuler la commande
                   </div>
               </Link>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaMapMarkerAlt } from 'react-icons/fa';
 
 function DrugStoresAvailable() {
   const location = useLocation();
@@ -104,17 +105,17 @@ function DrugStoresAvailable() {
     >
       {/* Header */}
       <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
-        <Link
-          to={'/' + (location.state?.from || '')}
-          ref={(el) => (buttonsRef.current[0] = el)}
-          tabIndex={0}
-          className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-14 
-            py-8 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-            duration-300 focus:outline-none ${focusedIndex === 0 ? 'scale-105' : ''}`}
-          onClick={(e) => e.preventDefault()}
-        >
-          Retour
-        </Link>
+        <div className="w-full flex justify-start mb-4">
+          <button
+            ref={(el) => (buttonsRef.current[0] = el)}
+            tabIndex={0}
+            className={`flex items-center px-8 py-4 text-2xl text-gray-800 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+            onClick={() => navigate('/' + (location.state?.from || ''))}
+          >
+            <FaArrowLeft className="mr-4" />
+            Retour
+          </button>
+        </div>
 
         <div className="flex-grow flex justify-center pr-16">
             <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
@@ -149,6 +150,7 @@ function DrugStoresAvailable() {
                 alert(`Vous avez sélectionné : ${item.label}`);
               }} 
             >
+              <FaMapMarkerAlt className="mr-4" />
               {item.label}
             </button>
           ))}

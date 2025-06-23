@@ -1,7 +1,7 @@
 import './css/global.css'
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaArrowLeft, FaMoneyBillWave, FaUndo, FaFilter, FaSync, FaTimes } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
 import './css/global.css'
 
@@ -241,12 +241,11 @@ function NonPrescriptionDrugs() {
                 <Link
                 to="/" 
                 ref={goBackMainButtonRef}
-
                 className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-12 
                     py-8 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-
                     duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
-                        Retour
+                    <FaArrowLeft className="mr-4" />
+                    Retour
                 </Link>
 
                 <div className="flex-grow flex justify-center pr-16">
@@ -257,7 +256,7 @@ function NonPrescriptionDrugs() {
             {isSearchMenuOpen && (
                 <div className="absolute top-24 left-[80%] bg-gradient-to-r 
                 from-pink-500 to-rose-400 shadow-md rounded-lg p-4 w-64">
-                    <p className="font-bold">Filtrer par :</p>
+                    <p className="font-bold flex items-center"><FaFilter className="mr-2" />Filtrer par :</p>
                     <button onClick={() => applyFilter('A-G')}
                     key={"A-G"}
                     ref={searchMenuRefs.current[0]}
@@ -278,14 +277,14 @@ function NonPrescriptionDrugs() {
                     key={"painRelief"}
                     ref={searchMenuRefs.current[4]}
                     tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 4 ? "scale-105" : ""}`}>Anti-douleur</button>
-                    <button onClick={() => applyFilter(null)} 
+                    <button onClick={() => applyFilter(null)}
                     key={"reset"}
                     ref={searchMenuRefs.current[5]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 5 ? "scale-105" : ""}`}>Réinitialiser</button>
+                    tabIndex={0} className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 5 ? "scale-105" : ""}`}><FaSync className="mr-2" />Réinitialiser</button>
                     <button onClick={() => applyFilter(null)} 
                     key={"close"}
                     ref={searchMenuRefs.current[6]}
-                    tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 6 ? "scale-105" : ""}`}>Fermer</button>
+                    tabIndex={0} className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 6 ? "scale-105" : ""}`}><FaTimes className="mr-2" />Fermer</button>
                 </div>
             )}
 
@@ -334,6 +333,7 @@ function NonPrescriptionDrugs() {
                             ${focusedIndexPaymentModal === 0 ? 'scale-105' : ''}`}
                         onClick={closeModal}
                     >
+                        <FaUndo className="mr-2" />
                         Retour
                     </button>
                     <div className="p-6 text-center text-5xl text-gray-800">
@@ -346,6 +346,7 @@ function NonPrescriptionDrugs() {
                         ${focusedIndexPaymentModal === 1 ? 'scale-105' : ''}`}
                         onClick={handlePayment}
                     >
+                        <FaMoneyBillWave className="mr-2" />
                         Payer
                     </button>
                 </ModalStandard>

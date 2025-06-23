@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './css/documents_checking.css'
 import CameraComponent from '../camera_component';
 import ModalCamera from '../modal_camera';
+import { FaArrowLeft, FaFilePrescription, FaIdCard, FaAddressCard } from 'react-icons/fa';
 
 function DocumentsChecking() {
     const [showCamera, setShowCamera] = useState(false);
@@ -84,6 +85,7 @@ function DocumentsChecking() {
                         px-16 py-6 rounded-xl shadow-lg hover:scale-105 transition 
                         focus:outline-none ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
                 >
+                    <FaArrowLeft className="mr-4" />
                     Retour
                 </Link>
     
@@ -100,7 +102,7 @@ function DocumentsChecking() {
                     hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105">
                     <p className="text-3xl text-center">
                         Veuillez insérer les documents :<br />
-                        Ordonnance, Carte Vitale, Carte d’Identité
+                        Ordonnance, Carte Vitale, Carte d'Identité
                     </p>
                 </div>
     
@@ -115,6 +117,7 @@ function DocumentsChecking() {
                             focus:outline-none ${focusedIndex === 1 ? 'scale-105' : ''}`}
                         onClick={handleOpenCamera}
                     >
+                        <FaFilePrescription className="mr-4 text-4xl" />
                         <p className="text-3xl text-center">Ordonnance</p>
                     </div>
     
@@ -128,6 +131,7 @@ function DocumentsChecking() {
                             focus:outline-none ${focusedIndex === 2 ? 'scale-105' : ''}`}
                         onClick={handleOpenCamera}
                     >
+                        <FaAddressCard className="mr-4 text-4xl" />
                         <p className="text-3xl text-center">Carte Vitale</p>
                     </div>
     
@@ -141,6 +145,7 @@ function DocumentsChecking() {
                             focus:outline-none ${focusedIndex === 3 ? 'scale-105' : ''}`}
                         onClick={handleOpenCamera}
                     >
+                        <FaIdCard className="mr-4 text-4xl" />
                         <p className="text-3xl text-center">Carte d'Identité</p>
                     </div>
                 </div>

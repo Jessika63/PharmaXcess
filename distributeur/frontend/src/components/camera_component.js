@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { FaCamera, FaRedo, FaCheck } from 'react-icons/fa';
 
 const CameraComponent = ({ onPhotoCapture, onClose }) => {
     const videoRef = useRef(null);
@@ -106,6 +107,7 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
                             shadow-md transition-transform duration-300 ${selectedButtonIndex === 0 ? 'scale-110' : ''}`} 
                             onClick={handleRetakePhoto}
                         >
+                            <FaRedo className="mr-2" />
                             Prendre une autre photo
                         </button>
                         <button 
@@ -113,6 +115,7 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
                             shadow-md transition-transform duration-300 ${selectedButtonIndex === 1 ? 'scale-110' : ''}`} 
                             onClick={handleValidatePhoto}
                         >
+                            <FaCheck className="mr-2" />
                             OK
                         </button>
                     </div>
@@ -125,10 +128,11 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
 
                     <div className="flex justify-center gap-8 mt-6">
                         <button 
-                            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md hover:scale-110 transition-transform duration-300 scale-110"
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md hover:scale-110 transition-transform duration-300 scale-110`}
                             onClick={capturePhoto}
                         >
+                            <FaCamera className="mr-2" />
                             Prendre une photo
                         </button>
                     </div>

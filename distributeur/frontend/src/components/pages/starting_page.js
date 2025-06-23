@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
+import { FaPrescriptionBottle, FaPills } from 'react-icons/fa';
 
 function StartingPage() {
   const prescriptionButtonRef = useRef(null);
@@ -64,6 +65,7 @@ function StartingPage() {
               transition-transform duration-500 hover:scale-105 focus:ring-4 focus:ring-pink-500
               ${focusedIndex === 0 ? 'scale-105' : ''}`}
           >
+            <FaPrescriptionBottle className="mr-6" />
             Médicaments avec ordonnance
           </div>
         </Link>
@@ -78,6 +80,7 @@ function StartingPage() {
               transition-transform duration-500 hover:scale-105 focus:ring-2 focus:ring-pink-500
               ${focusedIndex === 1 ? 'scale-105' : ''}`}
           >
+            <FaPills className="mr-6" />
             Médicaments sans ordonnance
           </div>
         </Link>

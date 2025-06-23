@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
+import { FaClock, FaMapMarkerAlt } from 'react-icons/fa';
 
 function DrugUnavailable() {
 
@@ -83,6 +84,7 @@ function DrugUnavailable() {
                     hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
                     ${focusedIndex === 0 ? 'scale-105' : ''}`}
             >
+                <FaClock className="mr-4" />
                 Commander le médicament et le récupérer plus tard
             </div>
       
@@ -103,6 +105,7 @@ function DrugUnavailable() {
                     hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
                     ${focusedIndex === 1 ? 'scale-105' : ''}`}
             >
+                <FaMapMarkerAlt className="mr-4" />
                 Liste des pharmacies possédant le médicament
             </div>
 
