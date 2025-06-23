@@ -138,6 +138,7 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
             value={newDoctor.phoneNumber}
             onChangeText={(text) => setNewDoctor({ ...newDoctor, phoneNumber: text })}
             style={styles.input}
+            keyboardType='phone-pad'
           />
           <TextInput
             placeholder="Email"
