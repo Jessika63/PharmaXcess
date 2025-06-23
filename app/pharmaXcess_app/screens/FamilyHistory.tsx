@@ -8,7 +8,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 type FamilyHistoryItem = {
     name: string;
     familyMember: string;
-    age: string;
     severity: string;
     treatment: string;
 };
@@ -22,14 +21,12 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
         {
             name: 'Diabète de type 2',
             familyMember: 'Père',
-            age: '65',
             severity: 'Modéré',
             treatment: 'Insuline, régime alimentaire',
         },
         {
             name: 'Hypertension artérielle',
             familyMember: 'Mère',
-            age: '60',
             severity: 'Sévère',
             treatment: 'Bêtabloquants, régime alimentaire',
         },
@@ -39,13 +36,12 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
     const [newFamilyHistory, setNewFamilyHistory] = useState<FamilyHistoryItem>({
         name: '',
         familyMember: '',
-        age: '',
         severity: '',
         treatment: '',
     });
 
     const handleAddPress = (): void => {
-        if (!newFamilyHistory.name || !newFamilyHistory.familyMember || !newFamilyHistory.age || !newFamilyHistory.severity || !newFamilyHistory.treatment) {
+        if (!newFamilyHistory.name || !newFamilyHistory.familyMember || !newFamilyHistory.severity || !newFamilyHistory.treatment) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
@@ -54,7 +50,6 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
         setNewFamilyHistory({
             name: '',
             familyMember: '',
-            age: '',
             severity: '',
             treatment: '',
         });
@@ -79,10 +74,6 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
                         <Text style={styles.familyText}>
                             <Text style={styles.bold}>Membre de la famille: </Text>
                             {item.familyMember}
-                        </Text>
-                        <Text style={styles.familyText}>
-                            <Text style={styles.bold}>Âge: </Text>
-                            {item.age}
                         </Text>
                         <Text style={styles.familyText}>
                             <Text style={styles.bold}>Sévérité: </Text>
@@ -122,13 +113,6 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
                         placeholder="Membre de la famille"
                         value={newFamilyHistory.familyMember}
                         onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Âge"
-                        value={String(newFamilyHistory.age)}
-                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, age: text })}
-                        keyboardType="numeric"
                         style={styles.input}
                     />
                     <TextInput
