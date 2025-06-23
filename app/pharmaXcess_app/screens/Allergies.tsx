@@ -48,13 +48,38 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
         comments: '',
     });
 
+    const [selectedBeginYear, setSelectedBeginYear] = useState<number | null>(null);
+    const [selectedBeginMonth, setSelectedBeginMonth] = useState<number | null>(null);
+    const [selectedBeginDay, setSelectedBeginDay] = useState<number | null>(null);
+    const [isBeginYearModalVisible, setIsBeginYearModalVisible] = useState(false);
+    const [isBeginMonthModalVisible, setIsBeginMonthModalVisible] = useState(false);
+    const [isBeginDayModalVisible, setIsBeginDayModalVisible] = useState(false);
+
+    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
+    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+
     const handleAddPress = (): void => {
-        if (!newAllergy.name || !newAllergy.beginDate || !newAllergy.severity || !newAllergy.symptoms || !newAllergy.medications || !newAllergy.comments) {
+        if (
+            !newAllergy.name ||
+            !selectedBeginYear ||
+            !selectedBeginMonth ||
+            !selectedBeginDay ||
+            !newAllergy.severity ||
+            !newAllergy.symptoms ||
+            !newAllergy.medications ||
+            !newAllergy.comments
+        ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
 
-        setAllergies([...allergies, newAllergy]);
+        const newAllergyData: Allergy = {
+            ...newAllergy,
+            beginDate: `${selectedBeginDay}/${selectedBeginMonth}/${selectedBeginYear}`,
+        };
+
+        setAllergies([...allergies, newAllergyData]);
         setNewAllergy({
             name: '',
             beginDate: '',
@@ -119,49 +144,93 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
             </View>
 
             <Modal visible={isModalVisible} animationType="slide">
+                <ScrollView contentContainerStyle={styles.scrollableModal} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior='automatic'>
+                    <View style={styles.container}>
+                        <Text style={styles.allergyTitle}>Ajouter une allergie</Text>
+                        <TextInput
+                            placeholder="Nom de l'allergie"
+                            value={newAllergy.name}
+                            onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
+                            style={styles.input}
+                        />
+                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Année de début: {selectedBeginYear || 'Sélectionner une année'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Mois de début: {selectedBeginMonth || 'Sélectionner un mois'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.selector}>
+                            <Text style={styles.selectorText}>Jour de début: {selectedBeginDay || 'Sélectionner un jour'}</Text>
+                        </TouchableOpacity>
+                        <TextInput
+                            placeholder="Gravité"
+                            value={newAllergy.severity}
+                            onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Symptômes"
+                            value={newAllergy.symptoms}
+                            onChangeText={(text) => setNewAllergy({ ...newAllergy, symptoms: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Médicaments"
+                            value={newAllergy.medications}
+                            onChangeText={(text) => setNewAllergy({ ...newAllergy, medications: text })}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Commentaires"
+                            value={newAllergy.comments}
+                            onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
+                            style={styles.input}
+                        />
+                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Ajouter</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </Modal>
+            <Modal visible={isBeginYearModalVisible} animationType="slide">
                 <View style={styles.container}>
-                    <Text style={styles.allergyTitle}>Ajouter une allergie</Text>
-                    <TextInput
-                        placeholder="Nom de l'allergie"
-                        value={newAllergy.name}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Date de début"
-                        value={newAllergy.beginDate}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, beginDate: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Gravité"
-                        value={newAllergy.severity}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Symptômes"
-                        value={newAllergy.symptoms}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, symptoms: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Médicaments"
-                        value={newAllergy.medications}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, medications: text })}
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Commentaires"
-                        value={newAllergy.comments}
-                        onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
-                        style={styles.input}
-                    />
-                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Ajouter</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                    <Text style={styles.allergyTitle}>Sélectionner l'année de début</Text>
+                    {years.map((year) => (
+                        <TouchableOpacity key={year} onPress={() => {
+                            setSelectedBeginYear(parseInt(year));
+                            setIsBeginYearModalVisible(false);
+                        }}>
+                            <Text style={styles.input}>{year}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </Modal>
+            <Modal visible={isBeginMonthModalVisible} animationType="slide">
+                <View style={styles.container}>
+                    <Text style={styles.allergyTitle}>Sélectionner le mois de début</Text>
+                    {months.map((month) => (
+                        <TouchableOpacity key={month} onPress={() => {
+                            setSelectedBeginMonth(parseInt(month));
+                            setIsBeginMonthModalVisible(false);
+                        }}>
+                            <Text style={styles.input}>{month}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </Modal>
+            <Modal visible={isBeginDayModalVisible} animationType="slide">
+                <View style={styles.container}>
+                    <Text style={styles.allergyTitle}>Sélectionner le jour de début</Text>
+                    {days.map((day) => (
+                        <TouchableOpacity key={day} onPress={() => {
+                            setSelectedBeginDay(parseInt(day));
+                            setIsBeginDayModalVisible(false);
+                        }}>
+                            <Text style={styles.input}>{day}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </Modal>
         </View>
@@ -251,5 +320,22 @@ const styles = StyleSheet.create({
         backgroundColor: '#F2F2F2',
         color: '#333',
         fontSize: 16,
-    }
+    },
+    scrollableModal: {
+        flexGrow: 1,
+        padding: 20,
+    } as ViewStyle,
+    selector: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: '#F2F2F2',
+    } as ViewStyle,
+    selectorText: {
+        color: '#333',
+        fontSize: 16,
+    } as TextStyle,
 });
