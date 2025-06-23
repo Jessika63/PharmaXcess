@@ -81,7 +81,7 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
     
         const newDiseaseData: Disease = {
             ...newDisease,
-            beginDate: `${selectedYear}-${selectedMonth}-${selectedDay}`,
+            beginDate: `${selectedDay}/${selectedMonth}/${selectedYear}`,
         };
     
         setDiseases([newDiseaseData, ...diseases]);

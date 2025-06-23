@@ -102,8 +102,8 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
 
         const newTreatmentData: Treatment = {
             ...newTreatment,
-            beginDate: `${selectedBeginYear}-${selectedBeginMonth}-${selectedBeginDay}`,
-            endDate: `${selectedEndYear}-${selectedEndMonth}-${selectedEndDay}`,
+            beginDate: `${selectedBeginDay}/${selectedBeginMonth}/${selectedBeginYear}`,
+            endDate: `${selectedEndDay}/${selectedEndMonth}/${selectedEndYear}`,
             dosage: `${selectedDosage} comprimé(s) par jour`,
             duration: `${selectedDurationValue} ${selectedDurationUnit}`, 
 
