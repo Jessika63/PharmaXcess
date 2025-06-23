@@ -47,8 +47,8 @@ export default function Home({ navigation }: HomeProps): JSX.Element {
                         colors={['#EE9AD0', '#F57196']}
                         style={styles.gradient}
                     >
-                        {item.icon}
                         <Text style={styles.itemText}>{item.title}</Text>
+                        {item.icon}
                     </LinearGradient>
                 </TouchableOpacity>
             ))}
