@@ -6,85 +6,85 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, StyleProp, ViewStyle } from 'react-native';
 
 // Common screens 
-import Home from './screens/common/Home';
+import Home from './screens/common/Home.native';
 // Chat screen for communication
-import Chat from './screens/communication/Chat';
+import Chat from './screens/communication/Chat.native';
 
 // Health screens 
 // Importing various health-related screens for managing user health records
-import Diseases from './screens/health/Diseases';
-import Allergies from './screens/health/Allergies';
-import FamilyHistory from './screens/health/FamilyHistory';
-import Hospitalizations from './screens/health/Hospitalizations';
-import Doctors from './screens/health/Doctors';
-import MedicalProfile from './screens/health/MedicalProfile';
+import Diseases from './screens/health/Diseases.native';
+import Allergies from './screens/health/Allergies.native';
+import FamilyHistory from './screens/health/FamilyHistory.native';
+import Hospitalizations from './screens/health/Hospitalizations.native';
+import Doctors from './screens/health/Doctors.native';
+import MedicalProfile from './screens/health/MedicalProfile.native';
 
 // Medications screens
-import MyPrescriptions from './screens/medications/MyPrescriptions';
-import Treatments from './screens/medications/Treatments';
-import MedicineReminders from './screens/medications/MedicineReminders';
-import PrescriptionReminders from './screens/medications/PrescriptionReminders';
-import MedicationManagement from './screens/medications/MedicationManagement';
-import PrescriptionImport from './screens/medications/PrescriptionImport';
-import MedicationManagementFAQ from './screens/medications/MedicationManagementFAQ';
+import MyPrescriptions from './screens/medications/MyPrescriptions.native';
+import Treatments from './screens/medications/Treatments.native';
+import MedicineReminders from './screens/medications/MedicineReminders.native';
+import PrescriptionReminders from './screens/medications/PrescriptionReminders.native';
+import MedicationManagement from './screens/medications/MedicationManagement.native';
+import PrescriptionImport from './screens/medications/PrescriptionImport.native';
+import MedicationManagementFAQ from './screens/medications/MedicationManagementFAQ.native';
 
 // Pharmacy screens
-import Localisation from './screens/pharmacy/Localisation';
-import ClickAndCollect from './screens/pharmacy/ClickAndCollect';
-import PartnerPharmaciesFAQ from './screens/pharmacy/PartnerPharmaciesFAQ';
+import Localisation from './screens/pharmacy/Localisation.native';
+import ClickAndCollect from './screens/pharmacy/ClickAndCollect.native';
+import PartnerPharmaciesFAQ from './screens/pharmacy/PartnerPharmaciesFAQ.native';
 
 // Settings screens 
 // Importing various settings screens for user preferences and configurations
-import Settings from './screens/settings/Settings';
-import VisualOptions from './screens/settings/VisualOptions';
-import AudioOptions from './screens/settings/AudioOptions';
-import VolumeOptions from './screens/settings/VolumeOptions';
-import SoundTypeOptions from './screens/settings/SoundTypeOptions';
-import VibrationOptions from './screens/settings/VibrationsOptions';
-import ReglementationOptions from './screens/settings/ReglementationOptions';
-import AppPreferences from './screens/settings/AppPreferences';
+import Settings from './screens/settings/Settings.native';
+import VisualOptions from './screens/settings/VisualOptions.native';
+import AudioOptions from './screens/settings/AudioOptions.native';
+import VolumeOptions from './screens/settings/VolumeOptions.native';
+import SoundTypeOptions from './screens/settings/SoundTypeOptions.native';
+import VibrationOptions from './screens/settings/VibrationsOptions.native';
+import ReglementationOptions from './screens/settings/ReglementationOptions.native';
+import AppPreferences from './screens/settings/AppPreferences.native';
 
 // Support screens 
 // Tutorial and FAQ screens for user assistance
-import HelpSupport from './screens/support/HelpSupport';
-import Tutorial from './screens/support/Tutorial';
-import FAQ from './screens/support/FAQ';
-import GeneralFAQ from './screens/support/GeneralFAQ';
-import TechnicalIssuesFAQ from './screens/support/TechnicalIssuesFAQ';
-import TechnicalSupport from './screens/support/TechnicalSupport';
-import ReportIssue from './screens/support/ReportIssue';
+import HelpSupport from './screens/support/HelpSupport.native';
+import Tutorial from './screens/support/Tutorial.native';
+import FAQ from './screens/support/FAQ.native';
+import GeneralFAQ from './screens/support/GeneralFAQ.native';
+import TechnicalIssuesFAQ from './screens/support/TechnicalIssuesFAQ.native';
+import TechnicalSupport from './screens/support/TechnicalSupport.native';
+import ReportIssue from './screens/support/ReportIssue.native';
 
 // Privacy and security screens
-import PrivacySecurity from './screens/privacy/PrivacySecurity';
-import ConsentOptions from './screens/privacy/ConsentOptions';
-import SensibleDataOptions from './screens/privacy/SensibleDataOptions';
-import AdvancedSecurityOptions from './screens/privacy/AdvancedSecurityoptions';
-import AdvancedPrivacy from './screens/privacy/AdvancedPrivacy';
-import PersonalDataUsage from './screens/privacy/PersonalDataUsage';
-import CookieManagement from './screens/privacy/CookieManagement';
+import PrivacySecurity from './screens/privacy/PrivacySecurity.native';
+import ConsentOptions from './screens/privacy/ConsentOptions.native';
+import SensibleDataOptions from './screens/privacy/SensibleDataOptions.native';
+import AdvancedSecurityOptions from './screens/privacy/AdvancedSecurityoptions.native';
+import AdvancedPrivacy from './screens/privacy/AdvancedPrivacy.native';
+import PersonalDataUsage from './screens/privacy/PersonalDataUsage.native';
+import CookieManagement from './screens/privacy/CookieManagement.native';
 
 // Account screens
-import Profile from './screens/account/Profile';
-import PersonalInfo from './screens/account/PersonalInfo';
-import PersonalDataOptions from './screens/account/PersonalDataOptions';
-import AccountProfile from './screens/account/AccountProfile';
-import AccountPrivacyFAQ from './screens/account/AccountPrivacyFAQ';
-import AccountManagement from './screens/account/AccountManagement';
+import Profile from './screens/account/Profile.native';
+import PersonalInfo from './screens/account/PersonalInfo.native';
+import PersonalDataOptions from './screens/account/PersonalDataOptions.native';
+import AccountProfile from './screens/account/AccountProfile.native';
+import AccountPrivacyFAQ from './screens/account/AccountPrivacyFAQ.native';
+import AccountManagement from './screens/account/AccountManagement.native';
 
 // Others screens
-import AuthenticationOptions from './screens/authentication/AuthenticationOptions';
-import ViewDocuments from './screens/documents/ViewDocuments';
-import ExerciseRights from './screens/legal/ExerciseRights';
+import AuthenticationOptions from './screens/authentication/AuthenticationOptions.native';
+import ViewDocuments from './screens/documents/ViewDocuments.native';
+import ExerciseRights from './screens/legal/ExerciseRights.native';
 
 // Notifications screens 
 // Notification preferences and settings screens
-import Notifications from './screens/notifications/Notifications';
-import NotificationPreferences from './screens/notifications/NotificationPreferences';
-import CommunicationPreferences from './screens/notifications/CommunicationPreferences';
+import Notifications from './screens/notifications/Notifications.native';
+import NotificationPreferences from './screens/notifications/NotificationPreferences.native';
+import CommunicationPreferences from './screens/notifications/CommunicationPreferences.native';
 
 // Onboarding screens
-import FirstSteps from './screens/onboarding/FirstSteps';
-import HistoryTransparency from './screens/onboarding/HistoryTransparency';
+import FirstSteps from './screens/onboarding/FirstSteps.native';
+import HistoryTransparency from './screens/onboarding/HistoryTransparency.native';
 
 
 type TabBarIconProps = {
