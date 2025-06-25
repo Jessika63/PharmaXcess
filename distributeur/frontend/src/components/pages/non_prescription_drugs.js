@@ -231,7 +231,7 @@ function NonPrescriptionDrugs() {
                 navigate('/drug-unavailable', { state: { from: 'non-prescription-drugs' } });
             }
         } else {
-            navigate('/payment-failed', { state: { from: 'non-prescription-drugs' } });
+            navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
         }
     };
 
