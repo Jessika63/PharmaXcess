@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './PersonalInfo.style';
+import createStyles from '../../styles/ProfileChat.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type PersonalInfoProps = {
     navigation: StackNavigationProp<any, any>;
@@ -13,7 +14,7 @@ type PatientInfo = {
     birthDate: string;
     age: number;
     weight: string;
-    height: string;
+    height: string; 
     bloodType: string;
     phone: string;
     email: string;
@@ -24,7 +25,11 @@ type PatientInfo = {
 
 
 // The PersonalInfo component displays the personal information of a patient, allowing them to view and modify their details.
-export default function PersonalInfo({ navigation }: PersonalInfoProps) : JSX.Element {
+export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
+
     const patientInfo: PatientInfo = {
         name: 'John Doe',
         birthDate: '01/01/1980',
@@ -62,19 +67,19 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : JSX.El
         <ScrollView contentContainerStyle={styles.container}>
             {/* Map through the patientInfo object to display each piece of information */}
             {Object.entries(patientInfo).map(([key, value]) => (
-                <View key={key} style ={styles.infoCard}>
-                    <Text style={styles.label}>{labels[key as keyof PatientInfo]}</Text>
-                    <Text style={styles.value}>{value}</Text>
+                <View key={key} style ={styles.card}>
+                    <Text style={styles.title}>{labels[key as keyof PatientInfo]}</Text>
+                    <Text style={styles.content}>{value}</Text>
                 </View>
             ))}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={handleModifyPress}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Modifier</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>

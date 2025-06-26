@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './AdvancedSecurityOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The AdvancedSecurityOptions component allows users to configure advanced security settings for their account.
-export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
+export default function AdvancedSecurityOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [securityLevel, setSecurityLevel] = useState('default');
     const [dataEncryption, setDataEncryption] = useState('default');
     const [twoFactorAuth, setTwoFactorAuth] = useState('default');
@@ -15,7 +18,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Chiffrement des données</Text>
+                <Text style={styles.title}>Chiffrement des données</Text>
                 {['default', 'low', 'medium'].map((level) => (
                     <TouchableOpacity
                         key={level}
@@ -25,7 +28,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={securityLevel === level ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {level === 'default'
@@ -38,7 +41,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Backup et Sauvegarde</Text>
+                <Text style={styles.title}>Backup et Sauvegarde</Text>
                 {['default', 'enabled'].map((encryption) => (
                     <TouchableOpacity
                         key={encryption}
@@ -48,7 +51,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataEncryption === encryption ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {encryption === 'default'
@@ -59,7 +62,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Notifications de sécurité </Text>
+                <Text style={styles.title}>Notifications de sécurité </Text>
                 {['default', 'enabled', 'disabled'].map((auth) => (
                     <TouchableOpacity
                         key={auth}
@@ -69,7 +72,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={twoFactorAuth === auth ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {auth === 'default'
@@ -82,7 +85,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Authentification renforcée</Text>
+                <Text style={styles.title}>Authentification renforcée</Text>
                 {['default', 'short', 'medium'].map((timeout) => (
                     <TouchableOpacity
                         key={timeout}
@@ -92,7 +95,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={sessionTimeout === timeout ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {timeout === 'default'
@@ -105,7 +108,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Vérification des appareils </Text>
+                <Text style={styles.title}>Vérification des appareils </Text>
                 {['default', 'enabled', 'disabled', 'approved'].map((backup) => (
                     <TouchableOpacity
                         key={backup}
@@ -115,7 +118,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataBackup === backup ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {backup === 'default'
@@ -130,7 +133,7 @@ export default function AdvancedSecurityOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

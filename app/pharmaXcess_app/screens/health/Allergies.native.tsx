@@ -2,15 +2,15 @@ import React, { useState} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './Allergies.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Allergy = {
     name: string;
     beginDate: string;
     severity: string;
-    symptoms: string;
+    symptoms: string; 
     medications: string;
     comments: string;
 };
@@ -20,7 +20,10 @@ type AllergiesProps = {
 };
 
 // The Allergies component allows users to view, add, and manage their allergies, including details such as severity, symptoms, medications, and comments.
-export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
+export default function Allergies({ navigation }: AllergiesProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors); 
+
     const [allergies, setAllergies] = useState<Allergy[]>([
         {
             name: 'Pollen',
@@ -99,32 +102,32 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.allergyList}>
+            <ScrollView contentContainerStyle={styles.list}>
                 {allergies.map((allergy, index) => (
-                    <View key={index} style={styles.allergyCard}>
+                    <View key={index} style={styles.card}>
                         <TouchableOpacity onPress={() => handleEditPress(allergy.name)} style={styles.editButton}>
-                            <Ionicons name="pencil" size={25} color="#ffffff" />
+                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                         </TouchableOpacity>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.allergyTitle}>{allergy.name}</Text>
+                            <Text style={styles.cardTitle}>{allergy.name}</Text>
                         </View>
-                        <Text style={styles.allergyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
                             {allergy.beginDate}
                         </Text>
-                        <Text style={styles.allergyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Gravité: </Text>
                             {allergy.severity}
                         </Text>
-                        <Text style={styles.allergyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Symptômes: </Text>
                             {allergy.symptoms}
                         </Text>
-                        <Text style={styles.allergyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Médicaments: </Text>
                             {allergy.medications}
                         </Text>
-                        <Text style={styles.allergyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Commentaires: </Text>
                             {allergy.comments}
                         </Text>
@@ -134,35 +137,34 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
 
             <Modal visible={isModalVisible} animationType="slide">
-                <ScrollView contentContainerStyle={styles.scrollableModal} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior='automatic'>
-                    <View style={styles.container}>
-                        <Text style={styles.allergyTitle}>Ajouter une allergie</Text>
+                <ScrollView contentContainerStyle={styles.modalContainer} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior='automatic'>
+                        <Text style={styles.modalTitle}>Ajouter une allergie</Text>
                         <TextInput
                             placeholder="Nom de l'allergie"
                             value={newAllergy.name}
                             onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Année de début: {selectedBeginYear || 'Sélectionner une année'}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.input}>
+                            <Text>Année de début: {selectedBeginYear || 'Sélectionner une année'}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Mois de début: {selectedBeginMonth || 'Sélectionner un mois'}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.input}>
+                            <Text>Mois de début: {selectedBeginMonth || 'Sélectionner un mois'}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Jour de début: {selectedBeginDay || 'Sélectionner un jour'}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.input}>
+                            <Text>Jour de début: {selectedBeginDay || 'Sélectionner un jour'}</Text>
                         </TouchableOpacity>
                         <TextInput
                             placeholder="Gravité"
@@ -189,16 +191,15 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
                             style={styles.input}
                         />
                         <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Ajouter</Text>
                             </LinearGradient>
                         </TouchableOpacity>
-                    </View>
                 </ScrollView>
             </Modal>
             <Modal visible={isBeginYearModalVisible} animationType="slide">
-                <View style={styles.container}>
-                    <Text style={styles.allergyTitle}>Sélectionner l'année de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Sélectionner l'année de début</Text>
                     {years.map((year) => (
                         <TouchableOpacity key={year} onPress={() => {
                             setSelectedBeginYear(parseInt(year));
@@ -210,8 +211,8 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
                 </View>
             </Modal>
             <Modal visible={isBeginMonthModalVisible} animationType="slide">
-                <View style={styles.container}>
-                    <Text style={styles.allergyTitle}>Sélectionner le mois de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Sélectionner le mois de début</Text>
                     {months.map((month) => (
                         <TouchableOpacity key={month} onPress={() => {
                             setSelectedBeginMonth(parseInt(month));
@@ -223,8 +224,8 @@ export default function Allergies({ navigation }: AllergiesProps): JSX.Element {
                 </View>
             </Modal>
             <Modal visible={isBeginDayModalVisible} animationType="slide">
-                <View style={styles.container}>
-                    <Text style={styles.allergyTitle}>Sélectionner le jour de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Sélectionner le jour de début</Text>
                     {days.map((day) => (
                         <TouchableOpacity key={day} onPress={() => {
                             setSelectedBeginDay(parseInt(day));

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TextInput, Modal,  TouchableOpacity, ScrollView
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './Doctors.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Doctor = {
   name: string;
@@ -11,7 +12,7 @@ type Doctor = {
   hospital: string;
   phoneNumber: string;
   email: string;
-  address: string;
+  address: string; 
 };
 
 type DoctorsProps = {
@@ -19,7 +20,10 @@ type DoctorsProps = {
 };
 
 // The Doctors component allows users to view, add, and edit doctors in a list, with a modal for adding new doctors.
-export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
+export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+  
   const [doctors, setDoctors] = useState<Doctor[]>([
         {
             name: 'Dr. Jean Dupont',
@@ -74,32 +78,32 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.doctorList}>
+      <ScrollView contentContainerStyle={styles.list}>
         {doctors.map((doctor, index) => (
-          <View key={index} style={styles.doctorCard}>
+          <View key={index} style={styles.card}>
             <TouchableOpacity onPress={() => handleEditPress(doctor.name)} style={styles.editButton}>
-              <Ionicons name="pencil" size={25} color="#ffffff" />
+              <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
             </TouchableOpacity>
             <View style={styles.cardHeader}>
-              <Text style={styles.doctorTitle}>{doctor.name}</Text>
+              <Text style={styles.cardTitle}>{doctor.name}</Text>
             </View>
-            <Text style={styles.doctorText}>
+            <Text style={styles.cardText}>
               <Text style={styles.bold}>Spécialité: </Text>
               {doctor.specialty}
             </Text>
-            <Text style={styles.doctorText}>
+            <Text style={styles.cardText}>
               <Text style={styles.bold}>Hôpital: </Text>
               {doctor.hospital}
             </Text>
-            <Text style={styles.doctorText}>
+            <Text style={styles.cardText}>
               <Text style={styles.bold}>Téléphone: </Text>
               {doctor.phoneNumber}
             </Text>
-            <Text style={styles.doctorText}>
+            <Text style={styles.cardText}>
               <Text style={styles.bold}>Email: </Text>
               {doctor.email}
             </Text>
-            <Text style={styles.doctorText}>
+            <Text style={styles.cardText}>
               <Text style={styles.bold}>Adresse: </Text>
               {doctor.address}
             </Text>
@@ -109,20 +113,20 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-          <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+          <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
             <Text style={styles.buttonText}>Ajouter</Text>
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-          <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+          <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
             <Text style={styles.buttonText}>Retour</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
 
       <Modal animationType="slide" visible={isModalVisible}>
-        <View style={styles.container}>
-          <Text style={styles.doctorTitle}>Ajouter un médecin</Text>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Ajouter un médecin</Text>
           <TextInput
             placeholder="Nom"
             value={newDoctor.name}
@@ -161,7 +165,7 @@ export default function Doctors({ navigation }: DoctorsProps): JSX.Element {
             style={styles.input}
           />
           <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
               <Text style={styles.buttonText}>Ajouter</Text>
             </LinearGradient>
           </TouchableOpacity>

@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { TextStyle, ViewStyle, StyleProp } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './Treatments.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Treatment = {
     name: string;
@@ -21,7 +22,10 @@ type treatmentsProps = {
 };
 
 // The Treatments component allows users to view, add, and manage their treatments, including details such as dosage, duration, and side effects.
-export default function Treatments({ navigation }: treatmentsProps): JSX.Element {
+export default function Treatments({ navigation }: treatmentsProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [treatments, setTreatments] =  useState<Treatment[]>([
         {
             name: 'Metformine',
@@ -137,36 +141,36 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.treatmentList}>
+            <ScrollView contentContainerStyle={styles.list}>
                 {treatments.map((treatment, index) => (
-                    <View key={index} style={styles.treatmentCard}>
+                    <View key={index} style={styles.card}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.treatmentTitle}>{treatment.name}</Text>
+                            <Text style={styles.cardTitle}>{treatment.name}</Text>
                             <TouchableOpacity onPress={() => handleEditPress(treatment.name)} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color="#ffffff" />
+                                <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
                             {treatment.beginDate}
                         </Text>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de fin: </Text>
                             {treatment.endDate}
                         </Text>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Dosage: </Text>
                             {treatment.dosage}
                         </Text>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Durée: </Text>
                             {treatment.duration}
                         </Text>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Effets secondaires: </Text>
                             {treatment.sideEffects}
                         </Text>
-                        <Text style={styles.treatmentText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Maladie: </Text>
                             {treatment.disease}
                         </Text>
@@ -176,12 +180,12 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -189,44 +193,43 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
 
             <Modal visible={isModalVisible} animationType="slide">
                 <ScrollView
-                    contentContainerStyle={styles.scrollableContainer}
+                    contentContainerStyle={styles.modalContainer}
                     keyboardShouldPersistTaps="handled"
                     contentInsetAdjustmentBehavior="automatic"
                 >
-                    <View style={styles.container}>
-                        <Text style={styles.treatmentTitle}>Ajouter un traitement</Text>
+                        <Text style={styles.modalTitle}>Ajouter un traitement</Text>
                         <TextInput
                             placeholder="Nom du traitement"
                             value={newTreatment.name}
                             onChangeText={(text) => setNewTreatment({ ...newTreatment, name: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Année de début: {selectedBeginYear}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.input}>
+                            <Text>Année de début: {selectedBeginYear}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Mois de début: {selectedBeginMonth}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.input}>
+                            <Text>Mois de début: {selectedBeginMonth}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Jour de début: {selectedBeginDay}</Text>
+                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.input}>
+                            <Text>Jour de début: {selectedBeginDay}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndYearModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Année de fin: {selectedEndYear}</Text>
+                        <TouchableOpacity onPress={() => setIsEndYearModalVisible(true)} style={styles.input}>
+                            <Text>Année de fin: {selectedEndYear}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndMonthModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Mois de fin: {selectedEndMonth}</Text>
+                        <TouchableOpacity onPress={() => setIsEndMonthModalVisible(true)} style={styles.input}>
+                            <Text>Mois de fin: {selectedEndMonth}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndDayModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Jour de fin: {selectedEndDay}</Text>
+                        <TouchableOpacity onPress={() => setIsEndDayModalVisible(true)} style={styles.input}>
+                            <Text>Jour de fin: {selectedEndDay}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDosageModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Dosage: {selectedDosage} comprimé(s) par jour</Text>
+                        <TouchableOpacity onPress={() => setIsDosageModalVisible(true)} style={styles.input}>
+                            <Text>Dosage: {selectedDosage} comprimé(s) par jour</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDurationValueModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Durée: {selectedDurationValue}</Text>
+                        <TouchableOpacity onPress={() => setIsDurationValueModalVisible(true)} style={styles.input}>
+                            <Text>Durée: {selectedDurationValue}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDurationUnitModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Unité: {selectedDurationUnit}</Text>
+                        <TouchableOpacity onPress={() => setIsDurationUnitModalVisible(true)} style={styles.input}>
+                            <Text>Unité: {selectedDurationUnit}</Text>
                         </TouchableOpacity>
                         <TextInput
                             placeholder="Effets secondaires"
@@ -241,73 +244,69 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
                             style={styles.input}
                         />
                         <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Ajouter</Text>
                             </LinearGradient>
                         </TouchableOpacity>
-                    </View>
                 </ScrollView>
             </Modal>
             <Modal visible={isBeginYearModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner une année de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner une année de début</Text>
                     <ScrollView>
                         {years.map((year) => (
                             <TouchableOpacity
                                 key={year}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedBeginYear(year);
                                     setIsBeginYearModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{year}</Text>
+                                <Text style={styles.input}>{year}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isBeginMonthModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner un mois de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner un mois de début</Text>
                     <ScrollView>
                         {months.map((month) => (
                             <TouchableOpacity
                                 key={month}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedBeginMonth(month);
                                     setIsBeginMonthModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{month}</Text>
+                                <Text style={styles.input}>{month}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isBeginDayModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner un jour de début</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner un jour de début</Text>
                     <ScrollView>
                         {days.map((day) => (
                             <TouchableOpacity
                                 key={day}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedBeginDay(day);
                                     setIsBeginDayModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{day}</Text>
+                                <Text style={styles.input}>{day}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isEndYearModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner l'année de fin</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner l'année de fin</Text>
                     {years.map((year) => (
                         <TouchableOpacity key={year} onPress={() => {
                             setSelectedEndYear(year);
@@ -319,8 +318,8 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
                 </View>
             </Modal>
             <Modal visible={isEndMonthModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner le mois de fin</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner le mois de fin</Text>
                     {months.map((month) => (
                         <TouchableOpacity key={month} onPress={() => {
                             setSelectedEndMonth(month);
@@ -332,8 +331,8 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
                 </View>
             </Modal>
             <Modal visible={isEndDayModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner le jour de fin</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner le jour de fin</Text>
                     {days.map((day) => (
                         <TouchableOpacity key={day} onPress={() => {
                             setSelectedEndDay(day);
@@ -345,57 +344,54 @@ export default function Treatments({ navigation }: treatmentsProps): JSX.Element
                 </View>
             </Modal>
             <Modal visible={isDosageModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner le dosage</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner le dosage</Text>
                     <ScrollView>
                         {dosageOptions.map((dosage) => (
                             <TouchableOpacity
                                 key={dosage}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedDosage(dosage);
                                     setIsDosageModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{dosage} comprimé(s)</Text>
+                                <Text style={styles.input}>{dosage} comprimé(s)</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isDurationValueModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner la durée</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner la durée</Text>
                     <ScrollView>
                         {durationValues.map((value) => (
                             <TouchableOpacity
                                 key={value}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedDurationValue(value);
                                     setIsDurationValueModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{value}</Text>
+                                <Text style={styles.input}>{value}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isDurationUnitModalVisible} animationType="slide">
-                <View style={styles.scrollableContainer}>
-                    <Text style={styles.treatmentTitle}>Sélectionner l'unité de durée</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.cardTitle}>Sélectionner l'unité de durée</Text>
                     <ScrollView>
                         {durationUnits.map((unit) => (
                             <TouchableOpacity
                                 key={unit}
-                                style={styles.selector}
                                 onPress={() => {
                                     setSelectedDurationUnit(unit);
                                     setIsDurationUnitModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorText}>{unit}</Text>
+                                <Text style={styles.input}>{unit}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>

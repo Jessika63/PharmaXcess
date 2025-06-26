@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, StyleProp, ViewStyle } from 'react-native';
+import { useTheme } from './context/ThemeContext';
 
 // Common screens 
 import Home from './screens/common/Home.native';
@@ -97,33 +98,49 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 // Function to create a stack navigator for a given set of screens
-function createStack(screens: { name: string; component: React.ComponentType<any>; title: string }[]): JSX.Element {
+function createStack(screens: { name: string; component: React.ComponentType<any>; title: string }[], colors: any): React.JSX.Element {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerTitleAlign: 'center',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+          color: colors.headerText,
+        },
+        headerStyle: {
+          backgroundColor: colors.headerBackground,
+          borderBottomColor: colors.border,
+        },
+        headerTintColor: colors.headerText, 
+        headerBackTitleVisible: false,
+      }}
+    >
       {screens.map((screen) => (
         <Stack.Screen
           key={screen.name}
           name={screen.name}
           component={screen.component}
-          options={{ headerTitleAlign: 'center', title: screen.title }}
+          options={{ title: screen.title }}
         />
       ))}
     </Stack.Navigator>
   );
 }
 
-const HomeStackScreen = (): JSX.Element => {
+const HomeStackScreen = (): React.JSX.Element => {
   // The stack navigator for the Home section, which includes screens for home, prescriptions, medicine reminders, and prescription reminders.
+  const { colors } = useTheme();
   return createStack([
     { name: 'Home', component: Home, title: 'Accueil' },
     { name: 'MyPrescriptions', component: MyPrescriptions, title: 'Mes ordonnances' },
     { name: 'MedicineReminders', component: MedicineReminders, title: 'Mes rappels médicaments' },
     { name: 'PrescriptionReminders', component: PrescriptionReminders, title: 'Mes rappels ordonnances' },
-  ]);
+  ], colors);
 }
 
-const ProfileStackScreen = (): JSX.Element => {
+const ProfileStackScreen = (): React.JSX.Element => {
   // The stack navigator for the Profile section, which includes screens for user profile, settings, personal information, health records, privacy options, and support.
+  const { colors } = useTheme();
   return createStack([
     { name: 'Profile', component: Profile, title: 'Profil' },
     { name: 'Settings', component: Settings, title: 'Paramètres' },
@@ -172,16 +189,18 @@ const ProfileStackScreen = (): JSX.Element => {
     { name: 'CookieManagement', component: CookieManagement, title: 'Gestion des cookies' },
     { name: 'ExerciseRights', component: ExerciseRights, title: 'Exercice des droits RGPD' },
     { name: 'AccountManagement', component: AccountManagement, title: 'Gestion de compte' },
-  ]);
+  ], colors);
 }
 
-export default function AppNavigation(): JSX.Element {
+export default function AppNavigation(): React.JSX.Element {
+  const { colors } = useTheme();
+  
   // the main navigation container with bottom tab navigation
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size, focused }: TabBarIconProps): JSX.Element => {
+          tabBarIcon: ({ color, size, focused }: TabBarIconProps): React.JSX.Element => {
             let iconName: keyof typeof Ionicons.glyphMap = 'help-outline'; // Default value
 
             if (route.name === 'HomeStack') {
@@ -204,7 +223,7 @@ export default function AppNavigation(): JSX.Element {
                     style={{
                       width: size,
                       height: 3,
-                      backgroundColor: '#F57196',
+                      backgroundColor: colors.tabBarActive,
                       borderRadius: 1.5,
                       marginTop: 4,
                     } as StyleProp<ViewStyle>}
@@ -214,20 +233,42 @@ export default function AppNavigation(): JSX.Element {
             );
           },
           tabBarShowLabel: false,
-          tabBarActiveTintColor: '#F57196',
-          tabBarInactiveTintColor: '#F7C5E0',
+          tabBarActiveTintColor: colors.tabBarActive,
+          tabBarInactiveTintColor: colors.tabBarInactive,
+          tabBarStyle: {
+            backgroundColor: colors.headerBackground,
+            borderTopColor: colors.border,
+          },
           headerTitleAlign: 'center',
           headerTitleStyle: {
             fontWeight: 'bold',
+            color: colors.headerText,
           },
+          headerStyle: {
+            backgroundColor: colors.headerBackground,
+            borderBottomColor: colors.border,
+          },
+          headerTintColor: colors.headerText, 
         })}
       >
         {/* The tabs */} 
         {/* The HomeStack includes the Home screen and related screens for managing prescriptions and reminders */}
         <Tab.Screen name="HomeStack" component={HomeStackScreen} options={{ headerShown: false }} />
-        <Tab.Screen name="Localisation" component={Localisation} options={{ headerTitleAlign: 'center', title: 'Localisation'}} />
-        <Tab.Screen name="Click & Collect" component={ClickAndCollect} options={{ headerTitleAlign: 'center', title: 'Click & Collect'}}/>
-        <Tab.Screen name="Chat" component={Chat} options={{ headerTitleAlign: 'center', title: 'Mes discussions'}} />
+        <Tab.Screen name="Localisation" component={Localisation} options={{ 
+          headerTitleAlign: 'center', 
+          title: 'Localisation',
+          headerTintColor: colors.headerText
+        }} />
+        <Tab.Screen name="Click & Collect" component={ClickAndCollect} options={{ 
+          headerTitleAlign: 'center', 
+          title: 'Click & Collect',
+          headerTintColor: colors.headerText
+        }}/>
+        <Tab.Screen name="Chat" component={Chat} options={{ 
+          headerTitleAlign: 'center', 
+          title: 'Mes discussions',
+          headerTintColor: colors.headerText
+        }} />
         <Tab.Screen name="ProfileStack" component={ProfileStackScreen} options={{ headerShown: false }} />
       </Tab.Navigator>
     </NavigationContainer>

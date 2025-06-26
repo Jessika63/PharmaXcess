@@ -5,7 +5,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './Hospitalization.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Hospitalization = {
     name: string;
@@ -26,7 +27,9 @@ type HospitalizationsProps = {
 
 
 // The Hospitalizations component allows users to view, add, and edit hospitalizations in a list, with a modal for adding new hospitalizations.
-export default function Hospitalizations({ navigation }: HospitalizationsProps): JSX.Element {
+export default function Hospitalizations({ navigation }: HospitalizationsProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [expanded, setExpanded] = useState<number | null>(null);
     const [hospitalizations, setHospitalization] = useState<Hospitalization[]>([
         {
@@ -147,48 +150,48 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.hospitalizationList}>
+            <ScrollView contentContainerStyle={styles.list}>
                 {hospitalizations.map((hospitalization, index) => (
-                    <View key={index} style={styles.hospitalizationCard}>
+                    <View key={index} style={styles.card}>
                         <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
-                            <Ionicons name="pencil" size={25} color="#ffffff" />
+                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                         </TouchableOpacity>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.hospitalizationTitle}>{hospitalization.name}</Text>
+                            <Text style={styles.cardTitle}>{hospitalization.name}</Text>
                         </View>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
                             {hospitalization.beginDate}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de fin: </Text>
                             {hospitalization.endDate}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Durée: </Text>
                             {hospitalization.duration}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Service: </Text>
                             {hospitalization.department}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Médecin: </Text>
                             {hospitalization.doctor}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Hôpital: </Text>
                             {hospitalization.hospital}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Médicaments: </Text>
                             {hospitalization.medications}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Examens: </Text>
                             {hospitalization.examens}
                         </Text>
-                        <Text style={styles.hospitalizationText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Commentaires: </Text>
                             {hospitalization.comments}
                         </Text>
@@ -197,50 +200,49 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
                 </ScrollView>
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.buttonText}>Ajouter</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.buttonText}>Retour</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
 
                 <Modal visible={isModalVisible} animationType="slide">
-                    <ScrollView contentContainerStyle={styles.scrollableModal} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior='automatic'> 
-                        <View style={styles.container}>
-                            <Text style={styles.hospitalizationTitle}>Ajouter une hospitalisation</Text>
+                    <ScrollView contentContainerStyle={styles.modalContainer} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior='automatic'> 
+                            <Text style={styles.modalTitle}>Ajouter une hospitalisation</Text>
                             <TextInput
                                 placeholder="Raison de l'hospitalisation"
                                 value={newHospitalization.name}
                                 onChangeText={(text) => setNewHospitalization({ ...newHospitalization, name: text })}
                                 style={styles.input}
                             />
-                            <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Année de début: {selectedBeginYear}</Text>
+                            <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.input}>
+                                <Text>Année de début: {selectedBeginYear}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Mois de début: {selectedBeginMonth}</Text>
+                            <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.input}>
+                                <Text>Mois de début: {selectedBeginMonth}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Jour de début: {selectedBeginDay}</Text>
+                            <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.input}>
+                                <Text>Jour de début: {selectedBeginDay}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsEndYearModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Année de fin: {selectedEndYear}</Text>
+                            <TouchableOpacity onPress={() => setIsEndYearModalVisible(true)} style={styles.input}>
+                                <Text>Année de fin: {selectedEndYear}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsEndMonthModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Mois de fin: {selectedEndMonth}</Text>
+                            <TouchableOpacity onPress={() => setIsEndMonthModalVisible(true)} style={styles.input}>
+                                <Text>Mois de fin: {selectedEndMonth}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsEndDayModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Jour de fin: {selectedEndDay}</Text>
+                            <TouchableOpacity onPress={() => setIsEndDayModalVisible(true)} style={styles.input}>
+                                <Text>Jour de fin: {selectedEndDay}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsDurationValueModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Durée: {selectedDurationValue}</Text>
+                            <TouchableOpacity onPress={() => setIsDurationValueModalVisible(true)} style={styles.input}>
+                                <Text>Durée: {selectedDurationValue}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsDurationUnitModalVisible(true)} style={styles.selector}>
-                                <Text style={styles.selectorText}>Unité de durée: {selectedDurationUnit}</Text>
+                            <TouchableOpacity onPress={() => setIsDurationUnitModalVisible(true)} style={styles.input}>
+                                <Text>Unité de durée: {selectedDurationUnit}</Text>
                             </TouchableOpacity>
                             <TextInput
                                 placeholder="Service"
@@ -279,160 +281,151 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
                                 style={styles.input}
                             />
                             <TouchableOpacity style={styles.button} onPress={handleAddPress}>
-                                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Confirmer</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
-                        </View>
                     </ScrollView>
                 </Modal>
                 <Modal visible={isBeginYearModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner une année de début</Text>
                         <ScrollView>
                             {years.map((year) => (
                                 <TouchableOpacity
                                     key={year}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedBeginYear(year);
                                         setIsBeginYearModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{year}</Text>
+                                    <Text style={styles.input}>{year}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isBeginMonthModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner un mois de début</Text>
                         <ScrollView>
                             {months.map((month) => (
                                 <TouchableOpacity
                                     key={month}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedBeginMonth(month);
                                         setIsBeginMonthModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{month}</Text>
+                                    <Text style={styles.input}>{month}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isBeginDayModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner un jour de début</Text>
                         <ScrollView>
                             {days.map((day) => (
                                 <TouchableOpacity
                                     key={day}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedBeginDay(day);
                                         setIsBeginDayModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{day}</Text>
+                                    <Text style={styles.input}>{day}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isEndYearModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner une année de fin</Text>
                         <ScrollView>
                             {years.map((year) => (
                                 <TouchableOpacity
                                     key={year}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedEndYear(year);
                                         setIsEndYearModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{year}</Text>
+                                    <Text style={styles.input}>{year}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isEndMonthModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner un mois de fin</Text>
                         <ScrollView>
                             {months.map((month) => (
                                 <TouchableOpacity
                                     key={month}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedEndMonth(month);
                                         setIsEndMonthModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{month}</Text>
+                                    <Text style={styles.input}>{month}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isEndDayModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner un jour de fin</Text>
                         <ScrollView>
                             {days.map((day) => (
                                 <TouchableOpacity
                                     key={day}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedEndDay(day);
                                         setIsEndDayModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{day}</Text>
+                                    <Text style={styles.input}>{day}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isDurationValueModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner une durée</Text>
                         <ScrollView>
                             {durationValues.map((value) => (
                                 <TouchableOpacity
                                     key={value}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedDurationValue(value);
                                         setIsDurationValueModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{value}</Text>
+                                    <Text style={styles.input}>{value}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
                 </Modal>
                 <Modal visible={isDurationUnitModalVisible} animationType="slide">
-                    <View style={styles.scrollableModal}>
+                    <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Sélectionner une unité de durée</Text>
                         <ScrollView>
                             {durationUnits.map((unit) => (
                                 <TouchableOpacity
                                     key={unit}
-                                    style={styles.selectorItem}
                                     onPress={() => {
                                         setSelectedDurationUnit(unit);
                                         setIsDurationUnitModalVisible(false);
                                     }}
                                 >
-                                    <Text style={styles.selectorItemText}>{unit}</Text>
+                                    <Text style={styles.input}>{unit}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>

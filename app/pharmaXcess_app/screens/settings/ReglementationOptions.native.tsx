@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './ReglementationOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The ReglementationOptions component allows users to customize their GDPR compliance settings, including data access rights, privacy policy notifications, and certification visibility.
-export default function ReglementationOptions({ navigation }): JSX.Element {
+export default function ReglementationOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [reglementationType, setReglementationType] = useState('default');
     const [reglementationDuration, setReglementationDuration] = useState('default');
     const [reglementationAccess, setReglementationAccess] = useState('default');
@@ -15,7 +18,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Statut RGPD</Text>
+                <Text style={styles.title}>Statut RGPD</Text>
                 {['default', 'type1', 'type2'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -25,7 +28,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={reglementationType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -38,7 +41,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Droit d'accès</Text>
+                <Text style={styles.title}>Droit d'accès</Text>
                 {['default', 'short', 'medium', 'long'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -48,7 +51,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={reglementationDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -63,7 +66,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Politique de confidentialité</Text>
+                <Text style={styles.title}>Politique de confidentialité</Text>
                 {['default', 'public'].map((access) => (
                     <TouchableOpacity
                         key={access}
@@ -73,7 +76,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={reglementationAccess === access ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {access === 'default'
@@ -84,7 +87,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Mises à jours des conditions</Text>
+                <Text style={styles.title}>Mises à jours des conditions</Text>
                 {['default', 'immediate', 'weekly'].map((confirmation) => (
                     <TouchableOpacity
                         key={confirmation}
@@ -94,7 +97,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={reglementationConfirmation === confirmation ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {confirmation === 'default'
@@ -107,7 +110,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Certifications et normes</Text>
+                <Text style={styles.title}>Certifications et normes</Text>
                 {['default', 'high', 'medium', 'low'].map((confidentiality) => (
                     <TouchableOpacity
                         key={confidentiality}
@@ -117,7 +120,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={reglementationConfidentiality === confidentiality ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {confidentiality === 'default'
@@ -133,7 +136,7 @@ export default function ReglementationOptions({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

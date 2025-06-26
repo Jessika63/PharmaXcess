@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './Chat.style';
+import createStyles from '../../styles/ProfileChat.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type ChatItem = {
     id: string;
     title: string;
     name: string;
     question: string;
-    date: string;
+    date: string; 
 };
 
 // The Chat component allows users to view and manage their chat tickets, including creating new tickets for questions or issues related to prescriptions or medications.
-export default function Chat(): JSX.Element {
+export default function Chat(): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [chats, setChats] = useState<ChatItem[]>([
         { id: '1', title: 'Problème de prescription', name: 'Jean Dupont', question: 'Comment renouveler ma prescription ?', date: '2023-10-01' },
         { id: '2', title: 'Question sur un médicament', name: 'Marie Curie', question: 'Quels sont les effets secondaires ?', date: '2023-10-02' },
@@ -57,19 +60,19 @@ export default function Chat(): JSX.Element {
                 data={chats}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View style={styles.chatCard}>
-                        <Text style={styles.chatTitle}>Sujet : {item.title}</Text>
-                        <Text style={styles.chatQuestion}>Question : {item.question}</Text>
-                        <Text style={styles.chatDate}>Date : {item.date}</Text>
+                    <View style={styles.card}>
+                        <Text style={styles.title}>Sujet : {item.title}</Text>
+                        <Text style={styles.content}>Question : {item.question}</Text>
+                        <Text style={styles.date}>Date : {item.date}</Text>
                     </View>
                 )}
             />
 
             {/* Bouton Ouvrir un ticket */}
-            <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                    <Ionicons name="add" size={24} color="#fff" />
-                    <Text style={styles.addButtonText}>Ouvrir un ticket</Text>
+            <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Ionicons name="add" size={24} color={colors.iconPrimary} />
+                    <Text style={styles.buttonText}>Ouvrir un ticket</Text>
                 </LinearGradient>
             </TouchableOpacity>
 
@@ -96,7 +99,7 @@ export default function Chat(): JSX.Element {
                         onChangeText={(text) => setNewTicket({ ...newTicket, question: text })}
                     />
                     <TouchableOpacity style={styles.saveButton} onPress={handleAddTicket}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.saveButtonText}>Confirmer</Text>
                         </LinearGradient>
                     </TouchableOpacity>

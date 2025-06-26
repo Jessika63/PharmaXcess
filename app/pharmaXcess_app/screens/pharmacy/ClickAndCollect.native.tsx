@@ -3,10 +3,13 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Ale
 import { CameraView, CameraCapturedPicture, Camera } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import styles from './ClickAndCollect.style';
+import createStyles from '../../styles/ClickAndCollect.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The ClickAndCollect component allows users to take a photo of their prescription, validate it, and receive confirmation from a pharmacist.
-export default function ClickAndCollect(): JSX.Element {
+export default function ClickAndCollect(): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   // State to manage camera permissions, visibility, photo capture, and validation status
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraVisible, setCameraVisible] = useState<boolean>(false);
@@ -63,10 +66,18 @@ export default function ClickAndCollect(): JSX.Element {
   };
 
   if (hasPermission === null) {
-    return <Text>Demande de permission de la caméra...</Text>;
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Demande de permission de la caméra...</Text>
+      </View>
+    );
   }
   if (hasPermission === false) {
-    return <Text>Accès à la caméra refusé. Veuillez activer les permissions dans les paramètres.</Text>;
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Accès à la caméra refusé. Veuillez activer les permissions dans les paramètres.</Text>
+      </View>
+    );
   }
 
   return (
@@ -75,8 +86,8 @@ export default function ClickAndCollect(): JSX.Element {
         // The camera view is the camera is visible. 
         <CameraView style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
           {/* Display a title and a button to take a picture */}
-          <TouchableOpacity style={styles.button} onPress={takePicture}>
-            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+          <TouchableOpacity style={styles.cameraButton} onPress={takePicture}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
               <Text style={styles.buttonText}>Prendre la photo</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -84,22 +95,22 @@ export default function ClickAndCollect(): JSX.Element {
       ) : isWaiting ? (
         // Display a loading indicator while the prescription is being validated
         <View style={styles.centeredContent}>
-          <Text>Votre ordonnance est en cours de validation...</Text>
-          <ActivityIndicator size="large" color="#F57196" />
+          <Text style={styles.loadingText}>Votre ordonnance est en cours de validation...</Text>
+          <ActivityIndicator size="large" color={colors.secondary} />
         </View>
       ) : isValidatedByPharmacist !== null ? (
         // Display the result of the validation process
         <View style={styles.centeredContent}>
           {isValidatedByPharmacist ? (
             <>
-              <Text>Votre ordonnance a été validée !</Text>
-              <QRCode value="https://pharmaxcess.fr" size={150} color="#F57196" />
+              <Text style={styles.loadingText}>Votre ordonnance a été validée !</Text>
+              <QRCode value="https://pharmaxcess.fr" size={150} color={colors.secondary} />
             </>
           ) : (
             <>
-              <Text>Erreur : le format de l'ordonnance n'est pas valide.</Text>
+              <Text style={styles.loadingText}>Erreur : le format de l'ordonnance n'est pas valide.</Text>
               <TouchableOpacity style={styles.button} onPress={resetProcess}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                   <Text style={styles.buttonText}>Recommencer</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -111,22 +122,22 @@ export default function ClickAndCollect(): JSX.Element {
         <View style={styles.centeredContent}>
             {!photo ? (
                 <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Prendre une photo de votre ordonnance</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             ) : (
                 <>
                     <Image source={{ uri: photo.uri }} style={styles.image} />
-                    <Text>Voulez-vous valider cette photo ou recommencer ?</Text>
+                    <Text style={styles.loadingText}>Voulez-vous valider cette photo ou recommencer ?</Text>
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity style={styles.button} onPress={resetProcess}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Recommencer</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.button} onPress={handleImageValidation}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Valider</Text>
                             </LinearGradient>
                         </TouchableOpacity>

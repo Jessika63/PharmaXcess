@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './VibrationsOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The VibrationOptions component allows users to customize vibration settings for the application, including vibration intensity, pattern, and association with sound.
-export default function VibrationOptions({ navigation }): JSX.Element {
+export default function VibrationOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [vibrationType, setVibrationType] = useState('default');
     const [vibrationDuration, setVibrationDuration] = useState('default');
     const [vibrationAssociation, setVibrationAssociation] = useState('default');
@@ -14,7 +17,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
         <ScrollView contentContainerStyle={styles.container}>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Intensité</Text>
+                <Text style={styles.title}>Intensité</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -24,7 +27,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={vibrationType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -40,7 +43,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Schéma de vibration</Text>
+                <Text style={styles.title}>Schéma de vibration</Text>
                 {['default', 'short', 'medium', 'long', 'sos'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -50,7 +53,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={vibrationDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -68,7 +71,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Association vibration/son</Text>
+                <Text style={styles.title}>Association vibration/son</Text>
                 {['default', 'short', 'medium', 'long'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -78,7 +81,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={vibrationAssociation === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -94,7 +97,7 @@ export default function VibrationOptions({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, ScrollView, StyleSheet } from '
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import styles from './Settings.style';
+import createStyles from '../../styles/CardGrid.style';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Item {
     title: string;
@@ -11,8 +12,14 @@ interface Item {
     icon: React.ComponentProps<typeof Ionicons>['name'];
 }
 
+type Props = {
+    navigation: StackNavigationProp<any, any>;
+};
+
 // The Settings component provides a list of settings options for the user, allowing navigation to different configuration screens such as visual options, audio options, privacy settings, and more.
-export default function Settings({ navigation }): JSX.Element {
+export default function Settings({ navigation }: Props): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     const items: Item[] = [
         { title: 'Options visuelles', route: 'VisualOptions', icon: 'eye-outline' },
@@ -29,9 +36,9 @@ export default function Settings({ navigation }): JSX.Element {
         <ScrollView contentContainerStyle={styles.container}>
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
                         <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
                     </LinearGradient>
                 </TouchableOpacity>
             ))}

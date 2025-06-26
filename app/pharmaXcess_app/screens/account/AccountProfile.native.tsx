@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './AccountProfile.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 
 // The AccountProfile component allows users to manage their health profile settings, including treatment management, prescription synchronization, data export/import, and medical contacts.
-export default function AccountProfile({ navigation }): JSX.Element {
+export default function AccountProfile({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [profileType, setProfileType] = useState('default');
     const [profileDuration, setProfileDuration] = useState('default');
     const [exports, setExports] = useState('default');
-    const [contacts, setContacts] = useState('default');
+    const [contacts, setContacts] = useState('default'); 
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -26,7 +29,7 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         <Ionicons
                             name={profileType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -50,7 +53,7 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         <Ionicons
                             name={profileDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -71,7 +74,7 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         <Ionicons
                             name={exports === exportType ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {exportType === 'default'
@@ -96,7 +99,7 @@ export default function AccountProfile({ navigation }): JSX.Element {
                         <Ionicons
                             name={contacts === contactType ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {contactType === 'default'
@@ -110,7 +113,7 @@ export default function AccountProfile({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

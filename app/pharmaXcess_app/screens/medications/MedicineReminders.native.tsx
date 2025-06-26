@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { TextInput } from 'react-native-gesture-handler';
-import styles from './MedicineReminders.style';
+import createStyles from '../../styles/Reminders.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Alarm = {
     id: string;
@@ -19,7 +20,10 @@ type MedicineRemindersProps = {
 };
 
 // MedicineReminders component allows users to manage their medication reminders, including adding, editing, and viewing reminders for medications.
-export default function MedicineReminders({ navigation }: MedicineRemindersProps): JSX.Element {
+export default function MedicineReminders({ navigation }: MedicineRemindersProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [alarms, setAlarms] = useState<Alarm[]>([
         {
             id: '1',
@@ -108,9 +112,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.alarmCard}>
-                        <Text style={styles.reminderName}>Médicament: {item.medicineName}</Text>
+                        <Text style={styles.alarmName}>Médicament: {item.medicineName}</Text>
                         <TouchableOpacity onPress={() => handleEditPress(item.medicineName)} style={styles.editButton}>
-                            <Ionicons name="create-outline" size={20} color="#fff" />
+                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                         </TouchableOpacity>
                         <Text style={styles.alarmText}>Heure: {item.time}</Text>
                         <Text style={styles.alarmText}>Jours: {item.days.join(', ')}</Text>
@@ -120,12 +124,12 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
             />
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -141,18 +145,18 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
                     />
                     <Text style={styles.label}>Heure</Text>
-                    <TouchableOpacity onPress={() => setIsHourModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Heure: {selectedHour}</Text>
+                    <TouchableOpacity onPress={() => setIsHourModalVisible(true)} style={styles.input}>
+                        <Text>Heure: {selectedHour}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsMinuteModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Minute: {selectedMinute}</Text>
+                    <TouchableOpacity onPress={() => setIsMinuteModalVisible(true)} style={styles.input}>
+                        <Text>Minute: {selectedMinute}</Text>
                     </TouchableOpacity>
                     <Text style={styles.label}>Jours</Text>
                     {daysOfWeek.map((day) => (
                         <TouchableOpacity
                             key={day}
                             style={[
-                                styles.dayButton,
+                                styles.input,
                                 selectedDays.includes(day) && styles.selectedDay,
                             ]}
                             onPress={() => toggleDaySelection(day)}
@@ -161,51 +165,49 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         </TouchableOpacity>
                     ))}
                     <Text style={styles.label}>Son</Text>
-                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Son: {selectedSound}</Text>
+                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.input}>
+                        <Text>Son: {selectedSound}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={handleAddAlarm}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <TouchableOpacity style={styles.button} onPress={handleAddAlarm}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.buttonText}>Enregistrer</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </Modal>
             <Modal visible={isHourModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner l'heure</Text>
                     <FlatList
                         data={hours}
                         keyExtractor={(item) => item}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                style={styles.selectorItem}
                                 onPress={() => {
                                     setSelectedHour(item);
                                     setIsHourModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{item}</Text>
+                                <Text style={styles.input}>{item}</Text>
                             </TouchableOpacity>
                         )}
                     />
                 </View>
             </Modal>
             <Modal visible={isMinuteModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner les minutes</Text>
                     <FlatList
                         data={minutes}
                         keyExtractor={(item) => item}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                style={styles.selectorItem}
                                 onPress={() => {
                                     setSelectedMinute(item);
                                     setIsMinuteModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{item}</Text>
+                                <Text style={styles.input}>{item}</Text>
                             </TouchableOpacity>
                         )}
                     />
@@ -217,13 +219,12 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                     {sounds.map((sound) => (
                         <TouchableOpacity
                             key={sound}
-                            style={styles.selectorItem}
                             onPress={() => {
                                 setSelectedSound(sound);
                                 setIsSoundModalVisible(false);
                             }}
                         >
-                            <Text style={styles.selectorItemText}>{sound}</Text>
+                            <Text style={styles.input}>{sound}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>

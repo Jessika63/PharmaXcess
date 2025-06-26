@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { FlatList, TextInput } from 'react-native-gesture-handler';
-import styles from './Localisation.style';
+import createStyles from '../../styles/Localisation.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Distributor = {
   id: number;
@@ -15,7 +16,9 @@ type Distributor = {
 };
 
 // The Localisation component allows users to view their current location on a map, find nearby pharmacies, and navigate to a selected pharmacy.
-export default function Localisation(): JSX.Element {
+export default function Localisation(): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     // State to manage the user's current location, list of distributors, selected distributor, start location, and route coordinates
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -113,7 +116,7 @@ export default function Localisation(): JSX.Element {
                 {routeCoordinates.length > 0 && (
                     <Polyline
                         coordinates={routeCoordinates}
-                        strokeColor="#F57196"
+                        strokeColor={colors.secondary}
                         strokeWidth={4}
                     />
                 )}
@@ -126,17 +129,27 @@ export default function Localisation(): JSX.Element {
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                     <TouchableOpacity
-                    style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: '#F7C5E0' }]}
+                    style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: colors.accent }]}
                     onPress={() => setSelectedDistributor(item)}
                     >
-                        <Text style={styles.distributorText}>{item.name}</Text>
-                        <Text style={styles.distanceText}>{item.distance} km</Text>
+                        <Text style={[
+                            styles.distributorText, 
+                            selectedDistributor?.id === item.id && { color: colors.background }
+                        ]}>
+                            {item.name}
+                        </Text>
+                        <Text style={[
+                            styles.distanceText, 
+                            selectedDistributor?.id === item.id && { color: colors.background }
+                        ]}>
+                            {item.distance} km
+                        </Text>
                     </TouchableOpacity>
                     )}
                 />
                 {selectedDistributor && (
                     <View style={styles.selectedDistributor}>
-                        <Text style={styles.routeText}>Destination : {selectedDistributor.name}</Text>
+                        <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Départ"
@@ -162,8 +175,8 @@ export default function Localisation(): JSX.Element {
                             }}
                         />
                         <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradientButton}>
-                                <Text style={styles.goButtonText}>Aller à la pharmacie</Text>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
+                                <Text style={styles.text}>Aller à la pharmacie</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>

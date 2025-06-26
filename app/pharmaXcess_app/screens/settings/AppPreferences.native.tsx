@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './AppPreferences.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // AppPreferences component allows users to customize their app settings such as language, date format, time format, synchronization frequency, and more.
-export default function AppPreferences({ navigation }): JSX.Element {
+export default function AppPreferences({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [language, setLanguage] = useState('French');
     const [date, setDate] = useState('DD/MM/YYYY');
     const [time, setTime] = useState('24h');
@@ -19,7 +22,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Langue</Text>
+                <Text style={styles.title}>Langue</Text>
                 {['French', 'English', 'Spanish', 'German', 'Italian', 'Nederlands', 'Portugues'].map((lang) => (
                     <TouchableOpacity
                         key={lang}
@@ -29,7 +32,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={language === lang ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {lang === 'French'
@@ -51,7 +54,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Format de date</Text>
+                <Text style={styles.title}>Format de date</Text>
                 {['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'].map((format) => (
                     <TouchableOpacity
                         key={format}
@@ -61,7 +64,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={date === format ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {format === 'DD/MM/YYYY'
@@ -75,7 +78,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Format d'heure</Text>
+                <Text style={styles.title}>Format d'heure</Text>
                 {['24h', '12h'].map((format) => (
                     <TouchableOpacity
                         key={format}
@@ -85,7 +88,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={time === format ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {format === '24h' ? '24 heures' : '12 heures (AM/PM) '}
@@ -95,7 +98,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Fréquence de synchronisation </Text>
+                <Text style={styles.title}>Fréquence de synchronisation </Text>
                 {['Real time', 'Hour', 'Daily', 'Wi-fi '].map((freq) => (
                     <TouchableOpacity
                         key={freq}
@@ -105,7 +108,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={frequency === freq ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {freq === 'Real time'
@@ -121,7 +124,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Éléments à synchroniser </Text>
+                <Text style={styles.title}>Éléments à synchroniser </Text>
                 {['Treatments', 'Appointment', 'Prescriptions', 'Profile'].map((elem) => (
                     <TouchableOpacity
                         key={elem}
@@ -131,7 +134,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={elements === elem ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {elem === 'Treatments'
@@ -147,7 +150,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Sauvegarde</Text>
+                <Text style={styles.title}>Sauvegarde</Text>
                 {['Local', 'Cloud'].map((saveOption) => (
                     <TouchableOpacity
                         key={saveOption}
@@ -157,7 +160,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={save === saveOption ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {saveOption === 'Local'
@@ -169,7 +172,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Fonctionnalités disponibles hors-lignes </Text>
+                <Text style={styles.title}>Fonctionnalités disponibles hors-lignes </Text>
                 {['Medicine', 'Alarm', 'Profil', 'Check'].map((func) => (
                     <TouchableOpacity
                         key={func}
@@ -179,7 +182,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={fonctionality === func ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {func === 'Medicine'
@@ -195,7 +198,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Téléchargement</Text>
+                <Text style={styles.title}>Téléchargement</Text>
                 {['Important', 'Wi-fi', 'Ask '].map((downloadOption) => (
                     <TouchableOpacity
                         key={downloadOption}
@@ -205,7 +208,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={download === downloadOption ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {downloadOption === 'Important'
@@ -219,7 +222,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Notifications hors-ligne </Text>
+                <Text style={styles.title}>Notifications hors-ligne </Text>
                 {['All', 'Alarm', 'Nothing '].map((notify) => (
                     <TouchableOpacity
                         key={notify}
@@ -229,7 +232,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={notifications === notify ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {notify === 'All'
@@ -243,7 +246,7 @@ export default function AppPreferences({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

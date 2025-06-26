@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './FamilyHistory.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type FamilyHistoryItem = {
     name: string;
@@ -18,7 +19,10 @@ type FamilyHistoryProps = {
 };
 
 // The FamilyHistory component allows users to view, add, and modify family medical history items.
-export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.Element {
+export default function FamilyHistory({ navigation }: FamilyHistoryProps) : React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
         {
             name: 'Diabète de type 2',
@@ -64,24 +68,24 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.familyList}>
+            <ScrollView contentContainerStyle={styles.list}>
                 {familyHistory.map((item, index) => (
-                    <View key={index} style={styles.familyCard}>
+                    <View key={index} style={styles.card}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.familyTitle}>{item.name}</Text>
+                            <Text style={styles.cardTitle}>{item.name}</Text>
                             <TouchableOpacity onPress={() => handleModifyPress()} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color="#ffffff" />
+                                <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.familyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Membre de la famille: </Text>
                             {item.familyMember}
                         </Text>
-                        <Text style={styles.familyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Sévérité: </Text>
                             {item.severity}
                         </Text>
-                        <Text style={styles.familyText}>
+                        <Text style={styles.cardText}>
                             <Text style={styles.bold}>Traitement: </Text>
                             {item.treatment}
                         </Text>
@@ -91,20 +95,20 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
 
             <Modal animationType="slide" visible={isModalVisible}>
-                <View style={styles.container}>
-                    <Text style={styles.familyTitle}>Ajouter un antécédent familial</Text>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Ajouter un antécédent familial</Text>
                     <TextInput
                         placeholder="Nom de la maladie"
                         value={newFamilyHistory.name}
@@ -130,7 +134,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : JSX.
                         style={styles.input}
                     />
                     <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.buttonText}>Confirmer</Text>
                         </LinearGradient>
                     </TouchableOpacity>

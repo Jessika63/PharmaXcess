@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Camera, CameraView } from 'expo-camera';
-import styles from './MyPrescriptions.style';
+import createStyles from '../../styles/MyPrescriptions.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Prescription = {
     name: string;
@@ -14,7 +15,10 @@ type Prescription = {
 };
 
 // The MyPrescriptions component allows users to view, add, and manage their prescriptions, including taking photos of new prescriptions using the camera.
-export default function MyPrescriptions({ navigation }): JSX.Element {
+export default function MyPrescriptions({ navigation }): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([
     {
       name: 'Ordonnance 1',
@@ -86,7 +90,7 @@ export default function MyPrescriptions({ navigation }): JSX.Element {
         // Display the camera view when the user wants to take a photo
         <CameraView style={styles.camera} ref={cameraRef}>
           <TouchableOpacity style={styles.button} onPress={takePicture}>
-            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
               <Text style={styles.buttonText}>Prendre une photo</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -99,7 +103,7 @@ export default function MyPrescriptions({ navigation }): JSX.Element {
                 <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
                 <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
                 <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
-                <Text style={styles.prescriptionMedications}>Médicaments: {prescription.medications}</Text>
+                <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
               </View>
             ))}
             {photo && (
@@ -109,12 +113,12 @@ export default function MyPrescriptions({ navigation }): JSX.Element {
                 <Text>Voulez-vous valider cette photo ou recommencer ?</Text>
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity style={styles.button} onPress={handleValidatePhoto}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                       <Text style={styles.buttonText}>Valider</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.button} onPress={handleCancelPhoto}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                       <Text style={styles.buttonText}>Recommencer</Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -124,12 +128,12 @@ export default function MyPrescriptions({ navigation }): JSX.Element {
           </ScrollView>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(true)}>
-              <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Ajouter</Text>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-              <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Retour</Text>
               </LinearGradient>
             </TouchableOpacity>

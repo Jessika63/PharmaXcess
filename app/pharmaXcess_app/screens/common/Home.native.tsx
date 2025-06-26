@@ -5,35 +5,39 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import styles from './Home.style';
+import { useTheme } from '../../context/ThemeContext';
+import createStyles from '../../styles/Home.style';
 
 type HomeProps = {
-    navigation: StackNavigationProp<any, any>;
+    navigation: StackNavigationProp<any, any>; 
 };
 
 type Item = {
     title: string;
     route: string;
-    icon: JSX.Element;
+    icon: React.JSX.Element;
 };
 
 // The Home component serves as the main dashboard for the application, providing quick access to various features such as prescriptions, medication reminders, and prescription reminders.
-export default function Home({ navigation }: HomeProps): JSX.Element {
+export default function Home({ navigation }: HomeProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+    
     const items: Item[] = [
         {
             title: 'Mes ordonnances',
             route: 'MyPrescriptions',
-            icon: <Ionicons name="document-text-outline" size={24} color="white" />,
+            icon: <Ionicons name="document-text-outline" size={24} color={colors.iconPrimary} />,
         },
         {
             title: 'Mes rappels médicaments',
             route: 'MedicineReminders',
-            icon: <MaterialCommunityIcons name="pill" size={24} color="white" />,
+            icon: <MaterialCommunityIcons name="pill" size={24} color={colors.iconPrimary} />,
         },
         {
             title: 'Mes rappels ordonnances',
             route: 'PrescriptionReminders',
-            icon: <Ionicons name="newspaper-outline" size={24} color="white" />,
+            icon: <Ionicons name="newspaper-outline" size={24} color={colors.iconPrimary} />,
         },
     ];
 
@@ -47,7 +51,7 @@ export default function Home({ navigation }: HomeProps): JSX.Element {
                     onPress={() => navigation.navigate(item.route)}
                 >
                     <LinearGradient
-                        colors={['#EE9AD0', '#F57196']}
+                        colors={[colors.primary, colors.secondary]}
                         style={styles.gradient}
                     >
                         <Text style={styles.itemText}>{item.title}</Text>

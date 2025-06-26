@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './MedicalProfile.style';
+import createStyles from '../../styles/CardGrid.style';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Item {
     title: string;
@@ -11,7 +12,9 @@ interface Item {
 }
 
 // The MedicalProfile component displays a list of options related to medical profile management, allowing users to navigate to different screens.
-export default function MedicalProfile({ navigation }): JSX.Element {
+export default function MedicalProfile({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     const items: Item[] = [
         { title: 'Configuration du profil médical', route: 'ProfileSetup', icon: 'person-add-outline' },
@@ -23,9 +26,9 @@ export default function MedicalProfile({ navigation }): JSX.Element {
         <ScrollView contentContainerStyle={styles.container}>
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                        <Text style={styles.itemText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
+                        <Text style={styles.cardText}>{item.title}</Text>
+                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
                     </LinearGradient>
                 </TouchableOpacity>
             ))}

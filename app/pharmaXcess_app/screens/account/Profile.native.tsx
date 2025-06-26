@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, StyleProp, ViewStyle, ImageStyle, TextStyle } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import styles from './Profile.style';
+import createStyles from '../../styles/CardGrid.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -16,13 +17,15 @@ type Item = {
 };
 
 // The Profile component displays the user's profile information and allows navigation to various health-related sections of the app.
-export default function Profile({ navigation }: ProfileProps): JSX.Element {
+export default function Profile({ navigation }: ProfileProps): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     // Use React's useLayoutEffect to set the header options for the navigation
     React.useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.headerButton}>
-                    <Ionicons name="settings-outline" size={24} color="black" />
+                    <Ionicons name="settings-outline" size={24} color={colors.profileText} />
                 </TouchableOpacity>
             ),
         });
@@ -47,9 +50,9 @@ export default function Profile({ navigation }: ProfileProps): JSX.Element {
             {/* Map through the items array to create a card for each profile item */}
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
                         <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
                     </LinearGradient>
                 </TouchableOpacity>
             ))}

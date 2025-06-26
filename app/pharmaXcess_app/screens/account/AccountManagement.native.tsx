@@ -1,8 +1,11 @@
-import react, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StackNavigationProp } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './AccountManagement.style';
+import createStyles from '../../styles/CardGrid.style';
+import { useTheme } from '../../context/ThemeContext';
+ 
 
 interface Item {
     title: string;
@@ -10,8 +13,14 @@ interface Item {
     icon: React.ComponentProps<typeof Ionicons>['name'];
 }
 
+type Props = {
+    navigation: StackNavigationProp<any, any>;
+};
+
 // The AccountManagement component allows users to manage their account settings, including temporary deactivation, permanent deletion, and selective data retention.
-export default function AccountManagement({ navigation }): JSX.Element {
+export default function AccountManagement({ navigation }: Props): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     const items: Item[] = [
         { title: 'Désactivation temporaire', route: 'TemporaryDeactivation', icon: 'pause-circle-outline' },
@@ -24,9 +33,9 @@ export default function AccountManagement({ navigation }): JSX.Element {
             {/* Render each item as a card with a gradient background and an icon */}
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.cardGradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
                         <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
                     </LinearGradient>
                 </TouchableOpacity>
             ))}

@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './SensibleDataOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The SensibleDataOptions component allows users to configure options for sensitive data handling in the application.
-export default function SensibleDataOptions({ navigation }): JSX.Element {
+export default function SensibleDataOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [dataType, setDataType] = useState('default');
     const [dataDuration, setDataDuration] = useState('default');
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Masque des informations</Text>
+                <Text style={styles.title}>Masque des informations</Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => ( 
                     <TouchableOpacity
                         key={type}
@@ -22,7 +25,7 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -37,7 +40,7 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Verrouillage par section</Text>
+                <Text style={styles.title}>Verrouillage par section</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -47,7 +50,7 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -61,7 +64,7 @@ export default function SensibleDataOptions({ navigation }): JSX.Element {
             </View>
             
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

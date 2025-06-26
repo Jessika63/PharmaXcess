@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './VisualOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The VisualOptions component allows users to customize visual settings such as font size, contrast modes, and application theme.
-export default function VisualOptions({ navigation }): JSX.Element {
+export default function VisualOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [fontSize, setFontSize] = useState('medium');
     const [contrast, setContrast] = useState('standard');
     const [theme, setTheme] = useState('light');
@@ -13,7 +16,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Options de police</Text>
+                <Text style={styles.title}>Options de police</Text>
                     {['small', 'medium', 'large'].map((size) => (
                         <TouchableOpacity
                             key={size}
@@ -23,7 +26,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
                             <Ionicons
                                 name={fontSize === size ? 'checkmark-circle' : 'ellipse-outline'}
                                 size={24}
-                                color="white"
+                                color={colors.iconPrimary}
                             />
                             <Text style={styles.optionText}>
                                 {size === 'small' 
@@ -37,7 +40,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Options de contraste</Text>
+                <Text style={styles.title}>Options de contraste</Text>
                 {['standard', 'deuteranopia', 'protanopia', 'tritanopia'].map((mode) => (
                     <TouchableOpacity
                         key={mode}
@@ -47,7 +50,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={contrast === mode ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {mode === 'standard' 
@@ -63,7 +66,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Thème de l'application</Text>
+                <Text style={styles.title}>Thème de l'application</Text>
                 {['light', 'dark'].map((themeOption) => (
                     <TouchableOpacity
                         key={themeOption}
@@ -73,7 +76,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={theme === themeOption ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {themeOption === 'light' 
@@ -88,7 +91,7 @@ export default function VisualOptions({ navigation }): JSX.Element {
                 style={styles.returnButton}
                 onPress={() => navigation.goBack()}
             >
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

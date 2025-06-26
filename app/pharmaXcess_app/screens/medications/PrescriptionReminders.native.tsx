@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import styles from './PrescriptionReminders.style';
+import { StackNavigationProp } from '@react-navigation/stack';
+import createStyles from '../../styles/Reminders.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Reminder = {
     id: string;
@@ -11,19 +13,26 @@ type Reminder = {
     sound: string;
 };
 
+type Props = {
+    navigation: StackNavigationProp<any, any>;
+};
+
 // The PrescriptionReminders component allows users to manage their prescription reminders, including adding new reminders with specific dates and sounds.
-export default function PrescriptionReminders({ navigation }): JSX.Element {
+export default function PrescriptionReminders({ navigation }: Props): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [reminders, setReminders] = useState<Reminder[]>([
         {
             id: '1',
             name: 'Ordonnance 1',
-            date: '2023-10-01',
+            date: '01/10/2023',
             sound: 'Son 1',
         },
         {
             id: '2',
             name: 'Ordonnance 2',
-            date: '2023-10-02',
+            date: '02/10/2023',
             sound: 'Son 2',
         },
     ]);
@@ -39,6 +48,8 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
     const [selectedYear, setSelectedYear] = useState<string>('2023');
     const [selectedMonth, setSelectedMonth] = useState<string>('10');
     const [selectedDay, setSelectedDay] = useState<string>('01');
+    const [selectedSound, setSelectedSound] = useState<string>('Son 1');
+    
     const [isYearModalVisible, setIsYearModalVisible] = useState(false);
     const [isMonthModalVisible, setIsMonthModalVisible] = useState(false);
     const [isDayModalVisible, setIsDayModalVisible] = useState(false);
@@ -50,7 +61,7 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
     const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
     const handleAddReminder = () => {
-        if (!newReminder.name || !selectedYear || !selectedMonth || !selectedDay || !newReminder.sound) {
+        if (!newReminder.name || !selectedYear || !selectedMonth || !selectedDay) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
@@ -58,8 +69,8 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
         const newReminderData: Reminder = {
             id: Math.random().toString(),
             name: newReminder.name,
-            date: `${selectedYear}-${selectedMonth}-${selectedDay}`,
-            sound: newReminder.sound,
+            date: `${selectedDay}/${selectedMonth}/${selectedYear}`,
+            sound: selectedSound,
         };
 
         setReminders([...reminders, newReminderData]);
@@ -72,6 +83,7 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
         setSelectedYear('2023');
         setSelectedMonth('10');
         setSelectedDay('01');
+        setSelectedSound('Son 1');
         setIsModalVisible(false);
     };
 
@@ -85,133 +97,136 @@ export default function PrescriptionReminders({ navigation }): JSX.Element {
                 data={reminders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View style={styles.reminderItem}>
+                    <View style={styles.alarmCard}>
+                        <Text style={styles.alarmName}>Ordonnance: {item.name}</Text>
                         <TouchableOpacity onPress={() => handleEditPress(item.name)} style={styles.editButton}>
-                            <Ionicons name="create-outline" size={20} color="#fff" />
+                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                         </TouchableOpacity>
-                        <Text style={styles.reminderName}>Ordonnance: {item.name}</Text>
-                        <Text style={styles.reminderDate}>Date: {item.date}</Text>
-                        <Text style={styles.reminderSound}>Son: {item.sound}</Text>
+                        <Text style={styles.alarmText}>Date: {item.date}</Text>
+                        <Text style={styles.alarmText}>Son: {item.sound}</Text>
                     </View>
                 )}
             />
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
 
-            <Modal animationType="slide" visible={isModalVisible}>
-                <View style={styles.modalView}>
+            <Modal visible={isModalVisible} animationType="slide">
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Ajouter un rappel</Text>
                     <TextInput
+                        style={styles.input}
                         placeholder="Nom de l'ordonnance"
                         value={newReminder.name}
                         onChangeText={(text) => setNewReminder({ ...newReminder, name: text })}
-                        style={styles.input}
                     />
-                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Année: {selectedYear}</Text>
+                    <Text style={styles.label}>Date</Text>
+                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.input}>
+                        <Text>Année: {selectedYear}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
+                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.input}>
+                        <Text>Mois: {selectedMonth}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
+                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.input}>
+                        <Text>Jour: {selectedDay}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.selector}>
-                        <Text style={styles.selectorText}>Son: {newReminder.sound || 'Sélectionner un son'}</Text>
+                    <Text style={styles.label}>Son</Text>
+                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.input}>
+                        <Text>Son: {selectedSound}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={handleAddReminder}>
-                        <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <TouchableOpacity style={styles.button} onPress={handleAddReminder}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                             <Text style={styles.buttonText}>Enregistrer</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </Modal>
+            
             <Modal visible={isYearModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner une année</Text>
-                    <ScrollView>
-                        {years.map((year) => (
+                    <FlatList
+                        data={years}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
                             <TouchableOpacity
-                                key={year}
-                                style={styles.selectorItem}
                                 onPress={() => {
-                                    setSelectedYear(year);
+                                    setSelectedYear(item);
                                     setIsYearModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{year}</Text>
+                                <Text style={styles.input}>{item}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                        )}
+                    />
                 </View>
             </Modal>
+            
             <Modal visible={isMonthModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner un mois</Text>
-                    <ScrollView>
-                        {months.map((month) => (
+                    <FlatList
+                        data={months}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
                             <TouchableOpacity
-                                key={month}
-                                style={styles.selectorItem}
                                 onPress={() => {
-                                    setSelectedMonth(month);
+                                    setSelectedMonth(item);
                                     setIsMonthModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{month}</Text>
+                                <Text style={styles.input}>{item}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                        )}
+                    />
                 </View>
             </Modal>
+            
             <Modal visible={isDayModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner un jour</Text>
-                    <ScrollView>
-                        {days.map((day) => (
+                    <FlatList
+                        data={days}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
                             <TouchableOpacity
-                                key={day}
-                                style={styles.selectorItem}
                                 onPress={() => {
-                                    setSelectedDay(day);
+                                    setSelectedDay(item);
                                     setIsDayModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{day}</Text>
+                                <Text style={styles.input}>{item}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                        )}
+                    />
                 </View>
             </Modal>
+            
             <Modal visible={isSoundModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <ScrollView contentContainerStyle={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner un son</Text>
-                    <ScrollView>
-                        {sounds.map((sound) => (
-                            <TouchableOpacity
-                                key={sound}
-                                style={styles.selectorItem}
-                                onPress={() => {
-                                    setNewReminder({ ...newReminder, sound });
-                                    setIsSoundModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.selectorItemText}>{sound}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
+                    {sounds.map((sound) => (
+                        <TouchableOpacity
+                            key={sound}
+                            onPress={() => {
+                                setSelectedSound(sound);
+                                setIsSoundModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.input}>{sound}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </Modal>
         </View>
     );

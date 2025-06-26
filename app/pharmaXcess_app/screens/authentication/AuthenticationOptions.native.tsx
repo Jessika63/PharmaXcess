@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './AuthenticationOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The AuthenticationOptions component allows users to select their preferred authentication methods and options for two-factor authentication.
-export default function AuthenticationOptions({ navigation }): JSX.Element {
+export default function AuthenticationOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     // State variables to track the selected authentication type and duration for two-factor authentication.
     const [authType, setAuthType] = useState('default');
-    const [authDuration, setAuthDuration] = useState('default');
+    const [authDuration, setAuthDuration] = useState('default'); 
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Méthodes de connexion</Text>
+                <Text style={styles.title}>Méthodes de connexion</Text>
                 {['default', 'type1', 'type2', 'type3', 'type4'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -23,7 +26,7 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={authType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -41,7 +44,7 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Options double authentification</Text>
+                <Text style={styles.title}>Options double authentification</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -51,7 +54,7 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={authDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -65,7 +68,7 @@ export default function AuthenticationOptions({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

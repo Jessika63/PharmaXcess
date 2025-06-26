@@ -2,10 +2,13 @@ import react, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './Notifications.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The Notifications component allows users to customize their notification settings, including medical alerts, medication reminders, push notifications, reminder frequency, and advanced personalization options.
-export default function Notifications({ navigation }): JSX.Element {
+export default function Notifications({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [fontSize, setFontSize] = useState('medium');
     const [contrast, setContrast] = useState('standard');
     const [theme, setTheme] = useState('light');
@@ -15,7 +18,7 @@ export default function Notifications({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Gestion des alertes médicales </Text>
+                <Text style={styles.title}>Gestion des alertes médicales </Text>
                 {['small', 'medium', 'large'].map((size) => (
                     <TouchableOpacity
                         key={size}
@@ -25,7 +28,7 @@ export default function Notifications({ navigation }): JSX.Element {
                         <Ionicons
                             name={fontSize === size ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {size === 'small' 
@@ -39,7 +42,7 @@ export default function Notifications({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Rappels de médicaments</Text>
+                <Text style={styles.title}>Rappels de médicaments</Text>
                 {['standard', 'deuteranopia', 'protanopia', 'tritanopia'].map((mode) => (
                     <TouchableOpacity
                         key={mode}
@@ -49,7 +52,7 @@ export default function Notifications({ navigation }): JSX.Element {
                         <Ionicons
                             name={contrast === mode ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {mode === 'standard' 
@@ -65,7 +68,7 @@ export default function Notifications({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Notifications push </Text>
+                <Text style={styles.title}>Notifications push </Text>
                 {['light', 'dark', 'discret'].map((themeOption) => (
                     <TouchableOpacity
                         key={themeOption}
@@ -75,7 +78,7 @@ export default function Notifications({ navigation }): JSX.Element {
                         <Ionicons
                             name={theme === themeOption ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {themeOption === 'light' 
@@ -89,7 +92,7 @@ export default function Notifications({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Fréquence des rappels </Text>
+                <Text style={styles.title}>Fréquence des rappels </Text>
                 {['daily', 'weekly'].map((freq) => (
                     <TouchableOpacity
                         key={freq}
@@ -99,7 +102,7 @@ export default function Notifications({ navigation }): JSX.Element {
                         <Ionicons
                             name={frequency === freq ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {freq === 'daily' 
@@ -111,7 +114,7 @@ export default function Notifications({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Personnalisation avancée </Text>
+                <Text style={styles.title}>Personnalisation avancée </Text>
                 {['enabled', 'disabled', 'vocal', 'silent'].map((option) => (
                     <TouchableOpacity
                         key={option}
@@ -121,7 +124,7 @@ export default function Notifications({ navigation }): JSX.Element {
                         <Ionicons
                             name={personnalisation === option ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {option === 'enabled' 
@@ -137,7 +140,7 @@ export default function Notifications({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

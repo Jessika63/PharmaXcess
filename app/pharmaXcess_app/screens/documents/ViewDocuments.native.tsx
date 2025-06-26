@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './ViewDocuments.style';
+import createStyles from '../../styles/CardGrid.style';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Item {
     title: string;
@@ -11,7 +12,9 @@ interface Item {
 }
 
 // The ViewDocuments component displays a list of documents related to privacy policies and allows users to navigate to different sections or download them in PDF format.
-export default function ViewDocuments({ navigation }): JSX.Element {
+export default function ViewDocuments({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     const items: Item[] = [
         { title: 'Politique de confidentialité complète ', route: 'PrivacyPolicy', icon: 'document-text-outline' },
@@ -24,9 +27,9 @@ export default function ViewDocuments({ navigation }): JSX.Element {
             {/* Map through the items array to create a card for each document */}
             {items.map((item, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.cardGradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
                         <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color="white" style={styles.icon} />
+                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
                     </LinearGradient>
                 </TouchableOpacity>
             ))}

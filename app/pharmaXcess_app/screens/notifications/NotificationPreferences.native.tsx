@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './NotificationPreferences.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The NotificationPreferences component allows users to customize their notification preferences, including the frequency of notifications they receive.
-export default function NotificationPreferences({ navigation }): JSX.Element {
+export default function NotificationPreferences({ navigation }): React.JSX.Element {
     const [notificationFrequency, setNotificationFrequency] = useState('default');
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Fréquence des notifications</Text>
+                <Text style={styles.title}>Fréquence des notifications</Text>
                 {['default', 'daily', 'weekly'].map((frequency) => (
                     <TouchableOpacity
                         key={frequency}
@@ -21,7 +24,7 @@ export default function NotificationPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={notificationFrequency === frequency ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {frequency === 'default'
@@ -35,7 +38,7 @@ export default function NotificationPreferences({ navigation }): JSX.Element {
             </View>
             
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.returnButtonGradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './CommunicationPreferences.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The CommunicationPreferences component allows users to set their communication preferences regarding features, partnerships, clinical trials, and surveys.
-export default function CommunicationPreferences({ navigation }): JSX.Element {
+export default function CommunicationPreferences({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [communicationMethod, setCommunicationMethod] = useState('default');
     const [partnershipCommunication, setPartnershipCommunication] = useState('default');
     const [tryInformation, setTryInformation] = useState('default');
@@ -14,7 +17,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Communication sur les fonctionnalités</Text>
+                <Text style={styles.title}>Communication sur les fonctionnalités</Text>
                 {['default', 'email'].map((method) => (
                     <TouchableOpacity
                         key={method}
@@ -24,7 +27,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={communicationMethod === method ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {method === 'default'
@@ -35,7 +38,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Communication avec les partenaires</Text>
+                <Text style={styles.title}>Communication avec les partenaires</Text>
                 {['default', 'yes'].map((option) => (
                     <TouchableOpacity
                         key={option}
@@ -45,7 +48,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={partnershipCommunication === option ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {option === 'default'
@@ -56,7 +59,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Informations sur les essais cliniques</Text>
+                <Text style={styles.title}>Informations sur les essais cliniques</Text>
                 {['default', 'yes'].map((option) => (
                     <TouchableOpacity
                         key={option}
@@ -66,7 +69,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={tryInformation === option ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {option === 'default'
@@ -77,7 +80,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Sondages et retours d'expérience </Text>
+                <Text style={styles.title}>Sondages et retours d'expérience </Text>
                 {['default', 'yes'].map((option) => (
                     <TouchableOpacity
                         key={option}
@@ -87,7 +90,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
                         <Ionicons
                             name={askPatient === option ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {option === 'default'
@@ -99,7 +102,7 @@ export default function CommunicationPreferences({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.returnButtonGradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>

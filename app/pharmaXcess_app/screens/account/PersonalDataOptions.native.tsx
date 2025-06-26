@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './PersonalDataOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The PersonalDataOptions component allows users to customize their personal data management settings, including data download options, data deletion preferences, anonymization settings, and data retention periods.
-export default function PersonalDataOptions({ navigation }): JSX.Element {
+export default function PersonalDataOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [dataType, setDataType] = useState('default');
     const [dataDuration, setDataDuration] = useState('default');
     const [dataAssociation, setDataAssociation] = useState('default');
@@ -14,7 +17,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Téléchargement des données </Text>
+                <Text style={styles.title}>Téléchargement des données </Text>
                 {['default', 'type1', 'type2', 'type3'].map((type) => (
                     <TouchableOpacity
                         key={type}
@@ -24,7 +27,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataType === type ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {type === 'default'
@@ -40,7 +43,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Suppression des données</Text>
+                <Text style={styles.title}>Suppression des données</Text>
                 {['default', 'short', 'medium'].map((duration) => (
                     <TouchableOpacity
                         key={duration}
@@ -50,7 +53,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataDuration === duration ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {duration === 'default'
@@ -64,7 +67,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Anonymisation</Text>
+                <Text style={styles.title}>Anonymisation</Text>
                 {['default', 'short', 'medium'].map((regulation) => (
                     <TouchableOpacity
                         key={regulation}
@@ -74,7 +77,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataRegulation === regulation ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {regulation === 'default'
@@ -87,7 +90,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                 ))}
             </View>
             <View style={styles.section}>
-                <Text style={styles.subtitle}>Période de conservation</Text>
+                <Text style={styles.title}>Période de conservation</Text>
                 {['default', 'short', 'medium'].map((association) => (
                     <TouchableOpacity
                         key={association}
@@ -97,7 +100,7 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
                         <Ionicons
                             name={dataAssociation === association ? 'checkmark-circle' : 'ellipse-outline'}
                             size={24}
-                            color="white"
+                            color={colors.iconPrimary}
                         />
                         <Text style={styles.optionText}>
                             {association === 'default'
@@ -111,10 +114,11 @@ export default function PersonalDataOptions({ navigation }): JSX.Element {
             </View>
 
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </ScrollView>
     );
 }
+ 

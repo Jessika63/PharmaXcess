@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Vie
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
-import styles from './Diseases.style';
+import createStyles from '../../styles/ProfileInfos.style';
+import { useTheme } from '../../context/ThemeContext';
 
 type Disease = {
-    name : string;
+    name : string; 
     description : string;
     symptoms : string;
     beginDate : string;
@@ -19,7 +20,9 @@ type DiseasesProps = {
 };
 
 // The Diseases component allows users to view, add, and manage their diseases, including details such as symptoms, medications, and examinations.
-export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
+export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [expanded, setExpanded] = useState<number | null>(null);
 
     const [diseases, setDiseases] = useState<Disease[]>([
@@ -99,7 +102,7 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
         setModalVisible(false);
         setSelectedYear('2020');
         setSelectedMonth('01');
-        setSelectedDay('01');
+        setSelectedDay('01'); 
     };
 
     const handleEditPress = (diseaseName: string): void => {
@@ -108,33 +111,33 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.diseaseList}>
+            <ScrollView contentContainerStyle={styles.list}>
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
-                        <View style={styles.diseaseCard}>
+                        <View style={styles.card}>
                             <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color="#ffffff" />
+                                <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
                             </TouchableOpacity>
                             <View style={styles.cardHeader}>
-                                <Text style={styles.diseaseTitle}>{disease.name}</Text>
+                                <Text style={styles.cardTitle}>{disease.name}</Text>
                             </View>
-                            <Text style={styles.diseaseText}>
+                            <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Description: </Text>
                                 {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
                             </Text>
-                            <Text style={styles.diseaseText}>
+                            <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Symptômes: </Text>
                                 {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
                             </Text>
-                            <Text style={styles.diseaseText}>
+                            <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Date de début: </Text>
                                 {expanded === index ? disease.beginDate : `${disease.beginDate.slice(0, 25)}`}
                             </Text>
-                            <Text style={styles.diseaseText}>
+                            <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Traitements: </Text>
                                 {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
                             </Text>
-                            <Text style={styles.diseaseText}>
+                            <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Examens: </Text>
                                 {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
                             </Text>
@@ -142,7 +145,7 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                                 <Ionicons
                                     name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
                                     size={24}
-                                    color="black"
+                                    color={colors.iconPrimary}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -152,24 +155,23 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                    <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Retour</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
             <Modal visible={isModalVisible} animationType="slide">
                 <ScrollView
-                    contentContainerStyle={styles.scrollableContainer}
+                    contentContainerStyle={styles.modalContainer}
                     keyboardShouldPersistTaps="handled"
                     contentInsetAdjustmentBehavior="automatic"
                 >
-                    <View style={styles.container}>
-                        <Text style={styles.diseaseTitle}>Ajouter une maladie</Text>
+                        <Text style={styles.modalTitle}>Ajouter une maladie</Text>
                         <TextInput
                             placeholder="Nom"
                             value={newDisease.name}
@@ -188,14 +190,14 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                             onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Année: {selectedYear}</Text>
+                        <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.input}>
+                            <Text>Année: {selectedYear}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Mois: {selectedMonth}</Text>
+                        <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.input}>
+                            <Text>Mois: {selectedMonth}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.selector}>
-                            <Text style={styles.selectorText}>Jour: {selectedDay}</Text>
+                        <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.input}>
+                            <Text>Jour: {selectedDay}</Text>
                         </TouchableOpacity>
                         <TextInput
                             placeholder="Traitements"
@@ -210,65 +212,61 @@ export default function Diseases({ navigation }: DiseasesProps) : JSX.Element {
                             style={styles.input}
                         />
                         <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Confirmer</Text>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Ajouter</Text>
                             </LinearGradient>
                         </TouchableOpacity>
-                    </View>
                 </ScrollView>
             </Modal>
             <Modal visible={isYearModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner une année</Text>
                     <ScrollView>
                         {years.map((year) => (
                             <TouchableOpacity
                                 key={year}
-                                style={styles.selectorItem}
                                 onPress={() => {
                                     setSelectedYear(year);
                                     setIsYearModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{year}</Text>
+                                <Text style={styles.input}>{year}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isMonthModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner un mois</Text>
                     <ScrollView>
                         {months.map((month) => (
                             <TouchableOpacity
                                 key={month}
-                                style={styles.selectorItem}
                                 onPress={() => {
                                     setSelectedMonth(month);
                                     setIsMonthModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{month}</Text>
+                                <Text style={styles.input}>{month}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
                 </View>
             </Modal>
             <Modal visible={isDayModalVisible} animationType="slide">
-                <View style={styles.scrollableModal}>
+                <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Sélectionner un jour</Text>
                     <ScrollView>
                         {days.map((day) => (
                             <TouchableOpacity
                                 key={day}
-                                style={styles.selectorItem}
                                 onPress={() => {
                                     setSelectedDay(day);
                                     setIsDayModalVisible(false);
                                 }}
                             >
-                                <Text style={styles.selectorItemText}>{day}</Text>
+                                <Text style={styles.input}>{day}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>

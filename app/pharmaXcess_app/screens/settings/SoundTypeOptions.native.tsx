@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import styles from './SoundTypeOptions.style';
+import createStyles from '../../styles/SettingsCheck.style';
+import { useTheme } from '../../context/ThemeContext';
 
 // The SoundTypeOptions component allows users to customize notification sound types and durations for the application.
-export default function SoundTypeOptions({ navigation }): JSX.Element {
+export default function SoundTypeOptions({ navigation }): React.JSX.Element {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [soundType, setSoundType] = useState('default');
     const [soundDuration, setSoundDuration] = useState('default');
 
@@ -22,7 +25,7 @@ export default function SoundTypeOptions({ navigation }): JSX.Element {
                             <Ionicons
                                 name={soundType === type ? 'checkmark-circle' : 'ellipse-outline'}
                                 size={24}
-                                color="white"
+                                color={colors.iconPrimary}
                             />
                             <Text style={styles.optionText}>
                                 {type === 'default'
@@ -50,7 +53,7 @@ export default function SoundTypeOptions({ navigation }): JSX.Element {
                             <Ionicons
                                 name={soundDuration === type ? 'checkmark-circle' : 'ellipse-outline'}
                                 size={24}
-                                color="white"
+                                color={colors.iconPrimary}
                             />
                             <Text style={styles.optionText}>
                                 {type === 'default'
@@ -67,7 +70,7 @@ export default function SoundTypeOptions({ navigation }): JSX.Element {
 
             {/* Bouton Retour */}
             <TouchableOpacity style={styles.returnButton} onPress={() => navigation.goBack()}>
-                <LinearGradient colors={['#EE9AD0', '#F57196']} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.returnButtonText}>Retour</Text>
                 </LinearGradient>
             </TouchableOpacity>
