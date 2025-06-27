@@ -7,6 +7,7 @@ import DrugUnavailable from './components/pages/drug_unavailable';
 import DrugStoresAvailable from './components/pages/drug_stores_available';
 import InsufficientStock from './components/pages/insufficient_stock';
 import DirectionsMapPage from './components/pages/DirectionsMapPage';
+import Preorder from './components/pages/preorder';
 
 function AppRoutes() {
     return (
@@ -19,6 +20,7 @@ function AppRoutes() {
                 <Route path="/insufficient-stock" element={<InsufficientStock />} />
                 <Route path="/non-prescription-drugs" element={<NonPrescriptionDrugs />} />
                 <Route path="/directions-map" element={<DirectionsMapPage />} />
+                <Route path="/preorder" element={<Preorder />} />
             </Routes>
         </Router>
     );

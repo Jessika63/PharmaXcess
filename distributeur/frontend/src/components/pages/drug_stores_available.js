@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaMapMarkerAlt } from 'react-icons/fa';
 import ErrorPage from '../ErrorPage';
+import fetchWithTimeout from '../../utils/fetchWithTimeout';
+import ModalStandard from '../modal_standard';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function DrugStoresAvailable() {
   const location = useLocation();
@@ -13,6 +16,9 @@ function DrugStoresAvailable() {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [enterPressed, setEnterPressed] = useState(false);
   const buttonsRef = useRef([]);
+
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  useInactivityRedirect(() => setShowInactivityModal(true));
 
   const handleKeyDown = (event) => {
     console.log('focusedindex = ', focusedIndex);
@@ -58,7 +64,7 @@ function DrugStoresAvailable() {
     const fetchPharmacies = async (lat, lon) => {
       try {
         const radius = 10000;
-        const response = await fetch(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
+        const response = await fetchWithTimeout(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
         const data = await response.json();
   
         if (response.ok) {
@@ -71,7 +77,11 @@ function DrugStoresAvailable() {
           setError(data.error || 'Server Error');
         }
       } catch (err) {
-        setError('Network Error');
+        if (err.message === 'Timeout') {
+          setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+        } else {
+          setError('Network Error');
+        }
       }
     };
   
@@ -98,70 +108,87 @@ function DrugStoresAvailable() {
     }
   }, [focusedIndex]);  
   
+  useEffect(() => {
+    if (!showInactivityModal) return;
+    const dismiss = () => setShowInactivityModal(false);
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(event => window.addEventListener(event, dismiss));
+    return () => events.forEach(event => window.removeEventListener(event, dismiss));
+  }, [showInactivityModal]);
+
   if (error) {
     return <ErrorPage message={error} />;
   }
 
   return (
-    <div
-      className="w-full h-screen flex flex-col items-center bg-background_color p-8"
-      tabIndex={-1}
-    >
-      {/* Header */}
-      <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
-        <div className="w-full flex justify-start mb-4">
-          <button
-            ref={(el) => (buttonsRef.current[0] = el)}
-            tabIndex={0}
-            className={`flex items-center px-8 py-4 text-2xl text-gray-800 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
-            onClick={() => navigate('/' + (location.state?.from || ''))}
-          >
-            <FaArrowLeft className="mr-4" />
-            Retour
-          </button>
-        </div>
-
-        <div className="flex-grow flex justify-center pr-16">
-            <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
-        </div>
-      </div>
-
-      {/* Main message */}
+    <>
+      {showInactivityModal && (
+        <ModalStandard onClose={() => setShowInactivityModal(false)}>
+          <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
+          <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+          <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+        </ModalStandard>
+      )}
       <div
-        className="w-2/3 h-32 flex items-center justify-center text-center text-gray-800 text-3xl 
-        bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 mb-12"
+        className="w-full h-screen flex flex-col items-center bg-background_color p-8"
+        tabIndex={-1}
       >
-        Voici la liste des pharmacies disposant du médicament souhaité :
-      </div>
-
-      {/* List of pharmacies */}
-      <div
-        className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
-        tabIndex={0}
-      >
-        <div className="grid grid-cols-1 gap-4 place-items-center">
-          {drugShops.map((item, index) => (
+        {/* Header */}
+        <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
+          <div className="w-full flex justify-start mb-4">
             <button
-              key={item.id}
-              ref={(el) => (buttonsRef.current[index + 1] = el)}
+              ref={(el) => (buttonsRef.current[0] = el)}
               tabIndex={0}
-              type="button"
-              className={`w-2/5 h-20 flex items-center justify-center text-2xl text-gray-800
-              bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg
-              hover:scale-105 transition-transform duration-300 cursor-pointer
-              ${focusedIndex === index + 1 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
-              onClick={(event) => {
-                event.preventDefault();
-                alert(`Vous avez sélectionné : ${item.label}`);
-              }} 
+              className={`flex items-center px-8 py-4 text-2xl text-gray-800 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+              onClick={() => navigate('/' + (location.state?.from || ''))}
             >
-              <FaMapMarkerAlt className="mr-4" />
-              {item.label}
+              <FaArrowLeft className="mr-4" />
+              Retour
             </button>
-          ))}
+          </div>
+
+          <div className="flex-grow flex justify-center pr-16">
+              <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
+          </div>
+        </div>
+
+        {/* Main message */}
+        <div
+          className="w-2/3 h-32 flex items-center justify-center text-center text-gray-800 text-3xl 
+          bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 mb-12"
+        >
+          Voici la liste des pharmacies disposant du médicament souhaité :
+        </div>
+
+        {/* List of pharmacies */}
+        <div
+          className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+          tabIndex={0}
+        >
+          <div className="grid grid-cols-1 gap-4 place-items-center">
+            {drugShops.map((item, index) => (
+              <button
+                key={item.id}
+                ref={(el) => (buttonsRef.current[index + 1] = el)}
+                tabIndex={0}
+                type="button"
+                className={`w-2/5 h-20 flex items-center justify-center text-2xl text-gray-800
+                bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg
+                hover:scale-105 transition-transform duration-300 cursor-pointer
+                ${focusedIndex === index + 1 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  alert(`Vous avez sélectionné : ${item.label}`);
+                }} 
+              >
+                <FaMapMarkerAlt className="mr-4" />
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

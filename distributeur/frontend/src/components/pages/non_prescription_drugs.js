@@ -5,6 +5,8 @@ import { FaSearch, FaArrowLeft, FaMoneyBillWave, FaUndo, FaFilter, FaSync, FaTim
 import ModalStandard from '../modal_standard';
 import './css/global.css'
 import ErrorPage from '../ErrorPage';
+import fetchWithTimeout from '../../utils/fetchWithTimeout';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 const categories = {
     antiInflammatory: 'Désinflammatoire',
@@ -53,6 +55,9 @@ function NonPrescriptionDrugs() {
     // Modal popup focus system
     const [modalFocusIndex, setModalFocusIndex] = useState(0);
 
+    const [showInactivityModal, setShowInactivityModal] = useState(false);
+    useInactivityRedirect(() => setShowInactivityModal(true));
+
     // Reset modal focus when modal opens
     useEffect(() => {
         if (isModalOpen) {
@@ -97,31 +102,43 @@ function NonPrescriptionDrugs() {
         const fetchDrugs = async () => {
             setLoading(true);
             setError(null);
+            const MIN_LOADING_TIME = 500; // ms
+            const start = Date.now();
+            let dataToUse = null;
             if (availableMedicineCache) {
-                setDrugsItems(availableMedicineCache);
-                setFilteredDrugs(availableMedicineCache);
-                setLoading(false);
-                return;
-            }
-            if (availableMedicineFetched) {
-                // Prevent double fetch in Strict Mode
-                setLoading(false);
-                return;
-            }
-            availableMedicineFetched = true;
-            try {
-                const response = await fetch("http://localhost:5000/get_available_medicine");
-                const data = await response.json();
-                if (response.ok) {
-                    setDrugsItems(data.medicine);
-                    setFilteredDrugs(data.medicine);
-                    availableMedicineCache = data.medicine;
-                } else {
-                    setError(data.error || 'Server Error');
+                dataToUse = availableMedicineCache;
+            } else if (!availableMedicineFetched) {
+                availableMedicineFetched = true;
+                try {
+                    const response = await fetchWithTimeout("http://localhost:5000/get_available_medicine");
+                    const data = await response.json();
+                    if (response.ok) {
+                        dataToUse = data.medicine;
+                        availableMedicineCache = data.medicine;
+                    } else {
+                        setError(data.error || 'Server Error');
+                        availableMedicineCache = null;
+                        availableMedicineFetched = false;
+                    }
+                } catch (error) {
+                    if (error.message === 'Timeout') {
+                        setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+                    } else {
+                        setError('Network Error');
+                    }
+                    availableMedicineCache = null;
+                    availableMedicineFetched = false;
                 }
-            } catch (error) {
-                setError('Network Error');
-            } finally {
+            }
+            if (dataToUse) {
+                setDrugsItems(dataToUse);
+                setFilteredDrugs(dataToUse);
+            }
+            const elapsed = Date.now() - start;
+            const remaining = MIN_LOADING_TIME - elapsed;
+            if (remaining > 0) {
+                setTimeout(() => setLoading(false), remaining);
+            } else {
                 setLoading(false);
             }
         };
@@ -248,6 +265,15 @@ function NonPrescriptionDrugs() {
             navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
         }
     };
+
+    // Dismiss inactivity modal on user activity
+    useEffect(() => {
+        if (!showInactivityModal) return;
+        const dismiss = () => setShowInactivityModal(false);
+        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+        events.forEach(event => window.addEventListener(event, dismiss));
+        return () => events.forEach(event => window.removeEventListener(event, dismiss));
+    }, [showInactivityModal]);
 
     if (error) {
         return <ErrorPage message={error} />;
@@ -382,6 +408,14 @@ function NonPrescriptionDrugs() {
                     <div className="p-6 text-center text-2xl text-gray-800">
                         <h2>Paiement réussi !</h2>
                     </div>
+                </ModalStandard>
+            )}
+
+            {showInactivityModal && (
+                <ModalStandard onClose={() => setShowInactivityModal(false)}>
+                    <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
+                    <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+                    <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
                 </ModalStandard>
             )}
         </div>

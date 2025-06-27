@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
 import { FaClock, FaMapMarkerAlt } from 'react-icons/fa';
+import ModalStandard from '../modal_standard';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function DrugUnavailable() {
 
@@ -12,6 +14,7 @@ function DrugUnavailable() {
   const drug_store_list = useRef(null);
   
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
 
   const handleKeyDown = (event) => {
     if (event.key === "ArrowRight") {
@@ -37,6 +40,15 @@ function DrugUnavailable() {
     };
   }, []);
 
+  useInactivityRedirect(() => setShowInactivityModal(true));
+  useEffect(() => {
+    if (!showInactivityModal) return;
+    const dismiss = () => setShowInactivityModal(false);
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(event => window.addEventListener(event, dismiss));
+    return () => events.forEach(event => window.removeEventListener(event, dismiss));
+  }, [showInactivityModal]);
+
   const goToDrugStores = (event) => {
     event.stopPropagation();
     setTimeout(() => {
@@ -45,7 +57,15 @@ function DrugUnavailable() {
   };  
 
   return (
-    <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
+    <>
+      {showInactivityModal && (
+        <ModalStandard onClose={() => setShowInactivityModal(false)}>
+          <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
+          <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+          <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+        </ModalStandard>
+      )}
+      <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
 
         {/* Header */}
         <div className="w-4/5 h-36 flex justify-center items-center mt-4">
@@ -98,6 +118,7 @@ function DrugUnavailable() {
 
         </div>
     </div>
+    </>
   );
 
 }

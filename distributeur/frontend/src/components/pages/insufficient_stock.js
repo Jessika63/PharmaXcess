@@ -4,6 +4,8 @@ import '../../App.css'
 import { FaRedo, FaTimesCircle, FaClock, FaMapMarkerAlt, FaTimes, FaWalking, FaBicycle, FaBus, FaCar } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
 import ErrorPage from '../ErrorPage';
+import fetchWithTimeout from '../../utils/fetchWithTimeout';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function InsufficientStock() {
 
@@ -12,6 +14,7 @@ function InsufficientStock() {
 
   const retryButtonRef = useRef(null);
   const cancelButtonRef = useRef(null);
+  const goBackButtonRef = useRef(null);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [pharmaciesModalOpen, setPharmaciesModalOpen] = useState(false);
@@ -42,29 +45,41 @@ function InsufficientStock() {
   // Add a cache for pharmacies
   const pharmaciesCache = useRef({});
 
-  const handleKeyDown = (event) => {
-    if (event.key === "ArrowRight") {
-      setFocusedIndex((prevIndex) => (prevIndex < 1 ? prevIndex + 1 : prevIndex));
-    } else if (event.key === "ArrowLeft") {
-      setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
-    }
-  };
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  useInactivityRedirect(() => setShowInactivityModal(true));
+
+  // Dismiss inactivity modal on user activity
+  useEffect(() => {
+    if (!showInactivityModal) return;
+    const dismiss = () => setShowInactivityModal(false);
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(event => window.addEventListener(event, dismiss));
+    return () => events.forEach(event => window.removeEventListener(event, dismiss));
+  }, [showInactivityModal]);
+
+  const buttonRefs = [goBackButtonRef, retryButtonRef, cancelButtonRef];
+  const buttonCount = buttonRefs.length;
 
   useEffect(() => {
-    if (focusedIndex === 0 && retryButtonRef.current) {
-      retryButtonRef.current.focus();
-    } else if (focusedIndex === 1 && cancelButtonRef.current) {
-      cancelButtonRef.current.focus();
-    }
-  }, [focusedIndex]);
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+    const handleKeyDown = (event) => {
+      if (pharmaciesModalOpen || transportModalOpen) return; // Don't interfere with modal navigation
+      if (event.key === 'ArrowRight') {
+        setFocusedIndex((prev) => (prev + 1) % buttonCount);
+        event.preventDefault();
+      } else if (event.key === 'ArrowLeft') {
+        setFocusedIndex((prev) => (prev - 1 + buttonCount) % buttonCount);
+        event.preventDefault();
+      }
     };
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [pharmaciesModalOpen, transportModalOpen, buttonCount]);
+
+  useEffect(() => {
+    if (buttonRefs[focusedIndex] && buttonRefs[focusedIndex].current) {
+      buttonRefs[focusedIndex].current.focus();
+    }
+  }, [focusedIndex, buttonRefs]);
 
   useEffect(() => {
     if (pharmaciesModalOpen && modalContentRef.current) {
@@ -125,14 +140,18 @@ function InsufficientStock() {
         return;
       }
       try {
-        const response = await fetch(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}`);
+        const response = await fetchWithTimeout(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}`);
         const data = await response.json();
         if (data.pharmacies && data.pharmacies.length > 0) {
           setPharmaciesList(data.pharmacies);
           pharmaciesCache.current[cacheKey] = data.pharmacies;
         }
       } catch (err) {
-        console.log('Error loading pharmacies');
+        if (err.message === 'Timeout') {
+          setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+        } else {
+          setError('Network Error');
+        }
       }
     }
     setLoadingPharmacies(false);
@@ -147,47 +166,49 @@ function InsufficientStock() {
   };
 
   return (
-      <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
+      <div className="bg-background_color min-h-screen w-full flex flex-col items-center justify-center">
 
           {/* Go Back Button */}
-          <div className="w-4/5 flex items-center mt-8 mb-2">
+          <div className="w-4/5 flex items-center mt-6 mb-2">
             <button
-              onClick={() => navigate(-1)}
-              className="text-2xl bg-gradient-to-r from-pink-500 to-rose-400 px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none flex items-center"
+              ref={goBackButtonRef}
+              tabIndex={0}
+              className={`text-2xl bg-gradient-to-r from-pink-500 to-rose-400 px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none flex items-center ${focusedIndex === 0 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
+              onClick={() => navigate('/non-prescription-drugs')}
             >
               <FaRedo className="mr-3" /> Retour
             </button>
           </div>
 
           {/* Header */}
-          <div className="w-4/5 h-32 flex justify-center items-center mb-8 mt-8">
+          <div className="w-4/5 h-28 flex justify-center items-center mb-4 mt-2">
               {/* Logo */}
               <div className="flex justify-center items-center w-full">
-                  <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-96 h-24" />
+                  <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-80 h-20" />
               </div>
           </div>
 
           {/* Information Message Container */}
-          <div className="w-3/4 bg-background_color p-6 rounded-xl text-center mb-8">
-              <p className="text-3xl text-gray-800">
+          <div className="w-3/4 bg-background_color p-4 rounded-xl text-center mb-4">
+              <p className="text-2xl text-gray-800">
                   Le stock est insuffisant pour ce médicament.<br />
                   Que souhaitez-vous faire ?
               </p>
           </div>
 
           {/* Container for centering both buttons */}
-          <div className="flex flex-col items-center space-y-12 w-full">
+          <div className="flex flex-col items-center space-y-6 w-full max-w-xl">
       
               {/* Button 'Précommander ou récupérer plus tard' */}
               <button
                   ref={retryButtonRef}
                   tabIndex={0}
-                  onClick={() => navigate('/' + (location.state?.from || '/#'))}
-                  className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
-                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl cursor-pointer
+                  onClick={() => navigate('/preorder')}
+                  className={`w-full h-24 flex items-center justify-center rounded-2xl shadow-lg 
+                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-2xl cursor-pointer
                       transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
                       hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
-                      ${focusedIndex === 0 ? 'scale-105' : ''}`}
+                      ${focusedIndex === 1 ? 'scale-105' : ''}`}
               >
                   <FaClock className="mr-4" />
                   Précommander ou récupérer plus tard
@@ -198,11 +219,11 @@ function InsufficientStock() {
                   ref={cancelButtonRef}
                   tabIndex={0}
                   onClick={openPharmaciesModal}
-                  className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
-                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl
+                  className={`w-full h-24 flex items-center justify-center rounded-2xl shadow-lg 
+                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-2xl
                       transition-transform duration-500 hover:from-[#d45b93] focus:outline-none
                       hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
-                      ${focusedIndex === 1 ? 'scale-105' : ''}`}
+                      ${focusedIndex === 2 ? 'scale-105' : ''}`}
               >
                   <FaMapMarkerAlt className="mr-4" />
                   Aller dans une autre pharmacie
@@ -365,6 +386,14 @@ function InsufficientStock() {
                       </div>
                   </div>
               </ModalStandard>
+          )}
+
+          {showInactivityModal && (
+            <ModalStandard onClose={() => setShowInactivityModal(false)}>
+              <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
+              <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+              <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+            </ModalStandard>
           )}
       </div>
   );
