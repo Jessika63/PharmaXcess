@@ -82,9 +82,6 @@ def extract_text_paddleocr(image_path):
             output_text.append(word_info[1][0])
     return "\n".join(output_text)
 
-
-import re
-
 def getInfosPrescription(text):
     """
     Extracts structured data from a prescription text.
