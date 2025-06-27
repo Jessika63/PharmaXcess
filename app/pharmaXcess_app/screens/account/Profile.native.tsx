@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useAuth } from '../../context/AuthContext';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -21,17 +22,44 @@ type Item = {
 export default function Profile({ navigation }: ProfileProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { user, logout } = useAuth();
     const styles = createStyles(colors, fontScale);
+
+    // Function to handle logout
+    const handleLogout = () => {
+        Alert.alert(
+            'Déconnexion',
+            'Êtes-vous sûr de vouloir vous déconnecter ?',
+            [
+                {
+                    text: 'Annuler',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Déconnexion',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await logout();
+                    },
+                },
+            ]
+        );
+    };
     // Use React's useLayoutEffect to set the header options for the navigation
     React.useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.headerButton}>
-                    <Ionicons name="settings-outline" size={24} color={colors.profileText} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={handleLogout} style={[styles.headerButton, { marginRight: 10 }]}>
+                        <Ionicons name="log-out-outline" size={24} color={colors.profileText} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.headerButton}>
+                        <Ionicons name="settings-outline" size={24} color={colors.profileText} />
+                    </TouchableOpacity>
+                </View>
             ),
         });
-    }, [navigation]);
+    }, [navigation, handleLogout]);
 
     const items: Item[] = [
         { title: 'Mes informations', route: 'PersonalInfo', icon: 'person-outline' },
@@ -47,7 +75,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.profileContainer}>
                 <Image source={{ uri: 'https://www.w3schools.com/w3images/avatar2.png' }} style={styles.profileImage} />
-                <Text style={styles.profileName}>John Doe</Text>
+                <Text style={styles.profileName}>{user?.name || 'Utilisateur'}</Text>
             </View>
             {/* Map through the items array to create a card for each profile item */}
             {items.map((item, index) => (
@@ -58,6 +86,14 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                     </LinearGradient>
                 </TouchableOpacity>
             ))}
+            
+            {/* Logout button */}
+            <TouchableOpacity style={[styles.card, { marginTop: 20 }]} onPress={handleLogout}>
+                <LinearGradient colors={['#ff6b6b', '#ee5a52']} style={styles.cardGradient}>
+                    <Text style={styles.cardText}>Se déconnecter</Text>
+                    <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
+                </LinearGradient>
+            </TouchableOpacity>
         </ScrollView>
     );
 }

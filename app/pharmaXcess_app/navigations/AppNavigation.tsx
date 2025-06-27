@@ -1,91 +1,90 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, StyleProp, ViewStyle } from 'react-native';
-import { useTheme } from './context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 // Common screens 
-import Home from './screens/common/Home.native';
+import Home from '../screens/common/Home.native';
 // Chat screen for communication
-import Chat from './screens/communication/Chat.native';
+import Chat from '../screens/communication/Chat.native';
 
 // Health screens 
 // Importing various health-related screens for managing user health records
-import Diseases from './screens/health/Diseases.native';
-import Allergies from './screens/health/Allergies.native';
-import FamilyHistory from './screens/health/FamilyHistory.native';
-import Hospitalizations from './screens/health/Hospitalizations.native';
-import Doctors from './screens/health/Doctors.native';
-import MedicalProfile from './screens/health/MedicalProfile.native';
+import Diseases from '../screens/health/Diseases.native';
+import Allergies from '../screens/health/Allergies.native';
+import FamilyHistory from '../screens/health/FamilyHistory.native';
+import Hospitalizations from '../screens/health/Hospitalizations.native';
+import Doctors from '../screens/health/Doctors.native';
+import MedicalProfile from '../screens/health/MedicalProfile.native';
 
 // Medications screens
-import MyPrescriptions from './screens/medications/MyPrescriptions.native';
-import Treatments from './screens/medications/Treatments.native';
-import MedicineReminders from './screens/medications/MedicineReminders.native';
-import PrescriptionReminders from './screens/medications/PrescriptionReminders.native';
-import MedicationManagement from './screens/medications/MedicationManagement.native';
-import PrescriptionImport from './screens/medications/PrescriptionImport.native';
-import MedicationManagementFAQ from './screens/medications/MedicationManagementFAQ.native';
+import MyPrescriptions from '../screens/medications/MyPrescriptions.native';
+import Treatments from '../screens/medications/Treatments.native';
+import MedicineReminders from '../screens/medications/MedicineReminders.native';
+import PrescriptionReminders from '../screens/medications/PrescriptionReminders.native';
+import MedicationManagement from '../screens/medications/MedicationManagement.native';
+import PrescriptionImport from '../screens/medications/PrescriptionImport.native';
+import MedicationManagementFAQ from '../screens/medications/MedicationManagementFAQ.native';
 
 // Pharmacy screens
-import Localisation from './screens/pharmacy/Localisation.native';
-import ClickAndCollect from './screens/pharmacy/ClickAndCollect.native';
-import PartnerPharmaciesFAQ from './screens/pharmacy/PartnerPharmaciesFAQ.native';
+import Localisation from '../screens/pharmacy/Localisation.native';
+import ClickAndCollect from '../screens/pharmacy/ClickAndCollect.native';
+import PartnerPharmaciesFAQ from '../screens/pharmacy/PartnerPharmaciesFAQ.native';
 
 // Settings screens 
 // Importing various settings screens for user preferences and configurations
-import Settings from './screens/settings/Settings.native';
-import VisualOptions from './screens/settings/VisualOptions.native';
-import AudioOptions from './screens/settings/AudioOptions.native';
-import VolumeOptions from './screens/settings/VolumeOptions.native';
-import SoundTypeOptions from './screens/settings/SoundTypeOptions.native';
-import VibrationOptions from './screens/settings/VibrationsOptions.native';
-import ReglementationOptions from './screens/settings/ReglementationOptions.native';
-import AppPreferences from './screens/settings/AppPreferences.native';
+import Settings from '../screens/settings/Settings.native';
+import VisualOptions from '../screens/settings/VisualOptions.native';
+import AudioOptions from '../screens/settings/AudioOptions.native';
+import VolumeOptions from '../screens/settings/VolumeOptions.native';
+import SoundTypeOptions from '../screens/settings/SoundTypeOptions.native';
+import VibrationOptions from '../screens/settings/VibrationsOptions.native';
+import ReglementationOptions from '../screens/settings/ReglementationOptions.native';
+import AppPreferences from '../screens/settings/AppPreferences.native';
 
 // Support screens 
 // Tutorial and FAQ screens for user assistance
-import HelpSupport from './screens/support/HelpSupport.native';
-import Tutorial from './screens/support/Tutorial.native';
-import FAQ from './screens/support/FAQ.native';
-import GeneralFAQ from './screens/support/GeneralFAQ.native';
-import TechnicalIssuesFAQ from './screens/support/TechnicalIssuesFAQ.native';
-import TechnicalSupport from './screens/support/TechnicalSupport.native';
-import ReportIssue from './screens/support/ReportIssue.native';
+import HelpSupport from '../screens/support/HelpSupport.native';
+import Tutorial from '../screens/support/Tutorial.native';
+import FAQ from '../screens/support/FAQ.native';
+import GeneralFAQ from '../screens/support/GeneralFAQ.native';
+import TechnicalIssuesFAQ from '../screens/support/TechnicalIssuesFAQ.native';
+import TechnicalSupport from '../screens/support/TechnicalSupport.native';
+import ReportIssue from '../screens/support/ReportIssue.native';
 
 // Privacy and security screens
-import PrivacySecurity from './screens/privacy/PrivacySecurity.native';
-import ConsentOptions from './screens/privacy/ConsentOptions.native';
-import SensibleDataOptions from './screens/privacy/SensibleDataOptions.native';
-import AdvancedSecurityOptions from './screens/privacy/AdvancedSecurityoptions.native';
-import AdvancedPrivacy from './screens/privacy/AdvancedPrivacy.native';
-import PersonalDataUsage from './screens/privacy/PersonalDataUsage.native';
-import CookieManagement from './screens/privacy/CookieManagement.native';
+import PrivacySecurity from '../screens/privacy/PrivacySecurity.native';
+import ConsentOptions from '../screens/privacy/ConsentOptions.native';
+import SensibleDataOptions from '../screens/privacy/SensibleDataOptions.native';
+import AdvancedSecurityOptions from '../screens/privacy/AdvancedSecurityoptions.native';
+import AdvancedPrivacy from '../screens/privacy/AdvancedPrivacy.native';
+import PersonalDataUsage from '../screens/privacy/PersonalDataUsage.native';
+import CookieManagement from '../screens/privacy/CookieManagement.native';
 
 // Account screens
-import Profile from './screens/account/Profile.native';
-import PersonalInfo from './screens/account/PersonalInfo.native';
-import PersonalDataOptions from './screens/account/PersonalDataOptions.native';
-import AccountProfile from './screens/account/AccountProfile.native';
-import AccountPrivacyFAQ from './screens/account/AccountPrivacyFAQ.native';
-import AccountManagement from './screens/account/AccountManagement.native';
+import Profile from '../screens/account/Profile.native';
+import PersonalInfo from '../screens/account/PersonalInfo.native';
+import PersonalDataOptions from '../screens/account/PersonalDataOptions.native';
+import AccountProfile from '../screens/account/AccountProfile.native';
+import AccountPrivacyFAQ from '../screens/account/AccountPrivacyFAQ.native';
+import AccountManagement from '../screens/account/AccountManagement.native';
 
 // Others screens
-import AuthenticationOptions from './screens/authentication/AuthenticationOptions.native';
-import ViewDocuments from './screens/documents/ViewDocuments.native';
-import ExerciseRights from './screens/legal/ExerciseRights.native';
+import AuthenticationOptions from '../screens/authentication/AuthenticationOptions.native';
+import ViewDocuments from '../screens/documents/ViewDocuments.native';
+import ExerciseRights from '../screens/legal/ExerciseRights.native';
 
 // Notifications screens 
 // Notification preferences and settings screens
-import Notifications from './screens/notifications/Notifications.native';
-import NotificationPreferences from './screens/notifications/NotificationPreferences.native';
-import CommunicationPreferences from './screens/notifications/CommunicationPreferences.native';
+import Notifications from '../screens/notifications/Notifications.native';
+import NotificationPreferences from '../screens/notifications/NotificationPreferences.native';
+import CommunicationPreferences from '../screens/notifications/CommunicationPreferences.native';
 
 // Onboarding screens
-import FirstSteps from './screens/onboarding/FirstSteps.native';
-import HistoryTransparency from './screens/onboarding/HistoryTransparency.native';
+import FirstSteps from '../screens/onboarding/FirstSteps.native';
+import HistoryTransparency from '../screens/onboarding/HistoryTransparency.native';
 
 
 type TabBarIconProps = {
@@ -197,7 +196,6 @@ export default function AppNavigation(): React.JSX.Element {
   
   // the main navigation container with bottom tab navigation
   return (
-    <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ color, size, focused }: TabBarIconProps): React.JSX.Element => {
@@ -271,6 +269,5 @@ export default function AppNavigation(): React.JSX.Element {
         }} />
         <Tab.Screen name="ProfileStack" component={ProfileStackScreen} options={{ headerShown: false }} />
       </Tab.Navigator>
-    </NavigationContainer>
   );
 }
