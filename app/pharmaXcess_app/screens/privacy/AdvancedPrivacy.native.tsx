@@ -4,18 +4,24 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 interface Item {
     title: string;
     route: string;
     icon: React.ComponentProps<typeof Ionicons>['name'];
 }
+type AdvancedPrivacyProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 
 // AdvancedPrivacy component displays a list of advanced privacy options for users to manage their data and preferences.
-export default function AdvancedPrivacy({ navigation }): React.JSX.Element {
+export default function AdvancedPrivacy({ navigation }: AdvancedPrivacyProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Consulter nos documents', route: 'ViewDocuments', icon: 'document-text-outline' },

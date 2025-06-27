@@ -5,6 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -19,7 +20,8 @@ type Item = {
 // The Profile component displays the user's profile information and allows navigation to various health-related sections of the app.
 export default function Profile({ navigation }: ProfileProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     // Use React's useLayoutEffect to set the header options for the navigation
     React.useLayoutEffect(() => {
         navigation.setOptions({

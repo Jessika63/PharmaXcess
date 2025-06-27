@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,18 @@ interface Item {
 }
 
 // The ExerciseRights component allows users to exercise their rights regarding personal data, such as requesting data copies, limiting processing, and correcting inaccuracies.
-export default function ExerciseRights({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type ExerciseRightsScreenNavigationProp = StackNavigationProp<any>;
+
+interface ExerciseRightsProps {
+    navigation: ExerciseRightsScreenNavigationProp;
+}
+
+export default function ExerciseRights({ navigation }: ExerciseRightsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Demander une copie complète de mes données personnelles', route: 'RequestData', icon: 'document-text-outline' },

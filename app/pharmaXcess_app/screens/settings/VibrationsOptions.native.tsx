@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type VibrationOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The VibrationOptions component allows users to customize vibration settings for the application, including vibration intensity, pattern, and association with sound.
-export default function VibrationOptions({ navigation }): React.JSX.Element {
+export default function VibrationOptions({ navigation }: VibrationOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [vibrationType, setVibrationType] = useState('default');
     const [vibrationDuration, setVibrationDuration] = useState('default');
     const [vibrationAssociation, setVibrationAssociation] = useState('default');

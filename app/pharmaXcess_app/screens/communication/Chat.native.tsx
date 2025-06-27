@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type ChatItem = {
     id: string;
@@ -16,7 +17,8 @@ type ChatItem = {
 // The Chat component allows users to view and manage their chat tickets, including creating new tickets for questions or issues related to prescriptions or medications.
 export default function Chat(): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [chats, setChats] = useState<ChatItem[]>([
         { id: '1', title: 'Problème de prescription', name: 'Jean Dupont', question: 'Comment renouveler ma prescription ?', date: '2023-10-01' },
         { id: '2', title: 'Question sur un médicament', name: 'Marie Curie', question: 'Quels sont les effets secondaires ?', date: '2023-10-02' },

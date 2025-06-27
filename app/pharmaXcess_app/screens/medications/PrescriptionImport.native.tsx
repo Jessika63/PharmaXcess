@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
  
 // The PrescriptionImport component allows users to import prescriptions by scanning them, validating the information, and synchronizing with a pharmacy.
-export default function PrescriptionImport({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+interface PrescriptionImportProps {
+    navigation: StackNavigationProp<any, any>;
+}
+
+export default function PrescriptionImport({ navigation }: PrescriptionImportProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Scanner une ordonnance', route: 'ScanPrescription', icon: 'camera-outline' },

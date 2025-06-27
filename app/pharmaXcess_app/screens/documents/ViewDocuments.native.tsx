@@ -4,6 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 interface Item {
     title: string;
@@ -11,10 +13,15 @@ interface Item {
     icon: React.ComponentProps<typeof Ionicons>['name'];
 }
 
+type DocProps = {
+    navigation: StackNavigationProp<any, any>; 
+};
+
 // The ViewDocuments component displays a list of documents related to privacy policies and allows users to navigate to different sections or download them in PDF format.
-export default function ViewDocuments({ navigation }): React.JSX.Element {
+export default function ViewDocuments({ navigation }: DocProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Politique de confidentialité complète ', route: 'PrivacyPolicy', icon: 'document-text-outline' },

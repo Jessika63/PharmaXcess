@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Doctor = {
   name: string;
@@ -22,8 +23,9 @@ type DoctorsProps = {
 // The Doctors component allows users to view, add, and edit doctors in a list, with a modal for adding new doctors.
 export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
-  
+    const { fontScale } = useFontScale();
+  const styles = createStyles(colors, fontScale);
+
   const [doctors, setDoctors] = useState<Doctor[]>([
         {
             name: 'Dr. Jean Dupont',

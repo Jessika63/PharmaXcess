@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 } 
 
 // The MedicationManagement component allows users to manage their medication-related tasks, including adding new treatments, configuring reminders, and tracking medication history.
-export default function MedicationManagement({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type MedicationManagementProps = {
+    navigation: StackNavigationProp<any, any>;
+};
+
+export default function MedicationManagement({ navigation }: MedicationManagementProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Ajouter un nouveau traitement', route: 'AddTreatment', icon: 'add-circle-outline' },

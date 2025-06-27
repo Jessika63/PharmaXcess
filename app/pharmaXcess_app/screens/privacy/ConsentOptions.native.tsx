@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type ConsentOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The ConsentOptions component allows users to manage their consent preferences for data collection and sharing.
-export default function ConsentOptions({ navigation }): React.JSX.Element {
+export default function ConsentOptions({ navigation }: ConsentOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [consentType, setConsentType] = useState('default');
     const [consentDuration, setConsentDuration] = useState('default');
 

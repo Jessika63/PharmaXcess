@@ -2,14 +2,14 @@ import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
         backgroundColor: colors.background,
     },
     title: {
-        fontSize: 24,
+        fontSize: 24 * fontScale,
         fontWeight: 'bold',
         marginBottom: 10,
         color: colors.settingsTitle,
@@ -32,7 +32,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         marginBottom: 10,
         overflow: 'hidden',    },
     optionText: {
-        fontSize: 18,
+        fontSize: 18 * fontScale,
         color: colors.text,
         marginLeft: 10,
     },
@@ -45,7 +45,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         alignItems: 'center',
     },
     returnButtonText: {
-        fontSize: 18,
+        fontSize: 18 * fontScale,
         color: colors.text,
         fontWeight: 'bold',
     },

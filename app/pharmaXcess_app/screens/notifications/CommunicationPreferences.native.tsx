@@ -4,11 +4,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The CommunicationPreferences component allows users to set their communication preferences regarding features, partnerships, clinical trials, and surveys.
-export default function CommunicationPreferences({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type CommunicationPreferencesProps = {
+    navigation: StackNavigationProp<any, any>;
+};
+
+export default function CommunicationPreferences({ navigation }: CommunicationPreferencesProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [communicationMethod, setCommunicationMethod] = useState('default');
     const [partnershipCommunication, setPartnershipCommunication] = useState('default');
     const [tryInformation, setTryInformation] = useState('default');

@@ -4,11 +4,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The PersonalDataOptions component allows users to customize their personal data management settings, including data download options, data deletion preferences, anonymization settings, and data retention periods.
-export default function PersonalDataOptions({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type PersonalDataOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function PersonalDataOptions({ navigation }: PersonalDataOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [dataType, setDataType] = useState('default');
     const [dataDuration, setDataDuration] = useState('default');
     const [dataAssociation, setDataAssociation] = useState('default');

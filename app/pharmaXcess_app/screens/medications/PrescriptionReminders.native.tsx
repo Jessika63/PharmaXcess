@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Reminder = {
     id: string;
@@ -20,7 +21,8 @@ type Props = {
 // The PrescriptionReminders component allows users to manage their prescription reminders, including adding new reminders with specific dates and sounds.
 export default function PrescriptionReminders({ navigation }: Props): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const [reminders, setReminders] = useState<Reminder[]>([
         {

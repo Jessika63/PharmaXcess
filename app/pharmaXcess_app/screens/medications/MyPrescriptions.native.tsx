@@ -6,6 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Camera, CameraView } from 'expo-camera';
 import createStyles from '../../styles/MyPrescriptions.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Prescription = {
     name: string;
@@ -15,9 +16,14 @@ type Prescription = {
 };
 
 // The MyPrescriptions component allows users to view, add, and manage their prescriptions, including taking photos of new prescriptions using the camera.
-export default function MyPrescriptions({ navigation }): React.JSX.Element {
+type MyPrescriptionsProps = {
+  navigation: StackNavigationProp<any>;
+};
+
+export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): React.JSX.Element {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+  const styles = createStyles(colors, fontScale);
 
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([
     {

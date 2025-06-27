@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
@@ -18,7 +19,9 @@
     "expo-linear-gradient": "~14.1.4",
     "expo-location": "~18.1.4",
     "expo-status-bar": "~2.2.3",
+    "i18next": "^25.2.1",
     "react": "19.0.0",
+    "react-i18next": "^15.5.3",
     "react-native": "0.79.2",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-linear-gradient": "^2.8.3",

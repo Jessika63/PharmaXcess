@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AppPreferencesProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // AppPreferences component allows users to customize their app settings such as language, date format, time format, synchronization frequency, and more.
-export default function AppPreferences({ navigation }): React.JSX.Element {
+export default function AppPreferences({ navigation }: AppPreferencesProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [language, setLanguage] = useState('French');
     const [date, setDate] = useState('DD/MM/YYYY');
     const [time, setTime] = useState('24h');

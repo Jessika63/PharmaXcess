@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AdvancedSecurityOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The AdvancedSecurityOptions component allows users to configure advanced security settings for their account.
-export default function AdvancedSecurityOptions({ navigation }): React.JSX.Element {
+export default function AdvancedSecurityOptions({ navigation }: AdvancedSecurityOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [securityLevel, setSecurityLevel] = useState('default');
     const [dataEncryption, setDataEncryption] = useState('default');
     const [twoFactorAuth, setTwoFactorAuth] = useState('default');

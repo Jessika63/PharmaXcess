@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
@@ -29,7 +29,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         flexDirection: 'column', 
     },
     cardText: {
-        fontSize: 20,
+        fontSize: 20 * fontScale,
         color: colors.text,
         fontWeight: 'bold',
         marginLeft: 10,
@@ -52,7 +52,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         marginBottom: 10,
     },
     profileName: {
-        fontSize: 20,
+        fontSize: 20 * fontScale,
         fontWeight: 'bold',
         color: colors.profileText,
         marginTop: 10,

@@ -5,7 +5,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/Home.style';
 
 type HomeProps = {
@@ -21,8 +23,10 @@ type Item = {
 // The Home component serves as the main dashboard for the application, providing quick access to various features such as prescriptions, medication reminders, and prescription reminders.
 export default function Home({ navigation }: HomeProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
-    
+    const { fontScale } = useFontScale();
+    const { t } = useTranslation('common');
+    const styles = createStyles(colors, fontScale);
+
     const items: Item[] = [
         {
             title: 'Mes ordonnances',

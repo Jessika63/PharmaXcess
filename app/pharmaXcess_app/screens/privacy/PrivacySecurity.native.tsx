@@ -4,6 +4,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type PrivacySecurityProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 interface Item {
     title: string;
@@ -12,9 +18,10 @@ interface Item {
 }
  
 // The PrivacySecurity component allows users to manage their privacy and security settings within the application.
-export default function PrivacySecurity({ navigation }): React.JSX.Element {
+export default function PrivacySecurity({ navigation }: PrivacySecurityProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Gestion du consentement et des données', route: 'ConsentOptions', icon: 'shield-checkmark-outline' },

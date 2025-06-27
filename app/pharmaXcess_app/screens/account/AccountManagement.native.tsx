@@ -5,6 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
  
 
 interface Item {
@@ -20,7 +21,8 @@ type Props = {
 // The AccountManagement component allows users to manage their account settings, including temporary deactivation, permanent deletion, and selective data retention.
 export default function AccountManagement({ navigation }: Props): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Désactivation temporaire', route: 'TemporaryDeactivation', icon: 'pause-circle-outline' },

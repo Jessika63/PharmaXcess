@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // GeneralFAQ component provides a list of frequently asked questions related to the application, allowing users to navigate to specific FAQ sections such as PharmaXcess Info, Data Protection, and Offline Functionality.
-export default function GeneralFAQ({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type GeneralFAQProps = {
+    navigation: StackNavigationProp<any, any>;
+};
+
+export default function GeneralFAQ({ navigation }: GeneralFAQProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Qu\'est-ce que PharmaXcess ?', route: 'PharmaXcessInfo', icon: 'information-circle-outline' },

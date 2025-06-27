@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,10 +13,19 @@ interface Item {
 }
 
 // FAQ component provides a list of frequently asked questions (FAQ) categories, allowing users to navigate to specific FAQ sections such as General, Account Privacy, Medication Management, Technical Issues, and Partner Pharmacies.
-export default function FAQ({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type FAQScreenNavigationProp = StackNavigationProp<any>;
+
+interface FAQProps {
+    navigation: FAQScreenNavigationProp;
+}
+
+export default function FAQ({ navigation }: FAQProps): React.JSX.Element {
 
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Général', route: 'GeneralFAQ', icon: 'help-circle-outline' },

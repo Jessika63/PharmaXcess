@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
@@ -21,17 +21,17 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         elevation: 3,
     },
     title: {
-        fontSize: 18,
+        fontSize: 18 * fontScale,
         fontWeight: 'bold',
         color: colors.infoTitle,
     },
     content: {
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         color: colors.infoText,
         marginTop: 4,
     },
     date: {
-        fontSize: 14,
+        fontSize: 14 * fontScale,
         color: colors.infoTextSecondary,
         marginTop: 4,
     },
@@ -42,7 +42,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     buttonText: {
         color: colors.text,
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 16 * fontScale,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -66,7 +66,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         padding: 20,
     },
     modalTitle: {
-        fontSize: 24,
+        fontSize: 24 * fontScale,
         fontWeight: 'bold',
         marginBottom: 20,
         color: colors.settingsTitle,
@@ -79,7 +79,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         borderRadius: 5,
         marginBottom: 20,
         backgroundColor: colors.inputBackground,
-        fontSize: 16,
+        fontSize: 16 * fontScale,
     },
     saveButton: {
         marginTop: 20,
@@ -91,7 +91,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     },
     saveButtonText: {
         color: colors.text,
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         fontWeight: 'bold',
     },
 });

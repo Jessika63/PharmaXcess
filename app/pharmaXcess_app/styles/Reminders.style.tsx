@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
@@ -18,12 +18,12 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         backgroundColor: colors.card,
     },
     alarmName: {
-        fontSize: 18,
+        fontSize: 18 * fontScale,
         fontWeight: 'bold',
         color: colors.infoTitle,
     },
     alarmText: {
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         color: colors.infoText,
         marginVertical: 5,
         padding: 5,
@@ -47,7 +47,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     },
     buttonText: {
         color: colors.text,
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         fontWeight: 'bold',
     },
     modalContainer: {
@@ -58,7 +58,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         flexGrow: 1,
     },
     modalTitle: {
-        fontSize: 24,
+        fontSize: 24 * fontScale,
         fontWeight: 'bold',
         marginBottom: 20,
         color: colors.settingsTitle,
@@ -71,10 +71,10 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
         backgroundColor: colors.inputBackground,
-        fontSize: 16,
+        fontSize: 16 * fontScale,
     },
     label: {
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         fontWeight: 'bold',
         marginBottom: 10,
         color: colors.settingsTitle,

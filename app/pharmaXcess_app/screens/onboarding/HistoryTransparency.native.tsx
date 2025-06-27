@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // The HistoryTransparency component provides a list of options for users to view and manage their version history, recent changes, and version comparisons.
-export default function HistoryTransparency({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type HistoryTransparencyProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function HistoryTransparency({ navigation }: HistoryTransparencyProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Consulter l\'historique des versions', route: 'VersionHistory', icon: 'document-text-outline' },

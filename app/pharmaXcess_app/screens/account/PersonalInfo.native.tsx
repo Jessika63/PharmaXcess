@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type PersonalInfoProps = {
     navigation: StackNavigationProp<any, any>;
@@ -27,7 +28,8 @@ type PatientInfo = {
 // The PersonalInfo component displays the personal information of a patient, allowing them to view and modify their details.
 export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
 
     const patientInfo: PatientInfo = {
@@ -38,7 +40,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
         height: '180 cm',
         bloodType: 'A+',
         phone: '06 12 34 56 78',
-        email: 'johndoe@hotmailcom',
+        email: 'johndoe@hotmail.com',
         socialSecurityNumber: '123-45-6789',
         address: '1 rue de la paix, 75000 Paris',
         emergencyContact: 'Jane Doe, 06 12 34 56 79',

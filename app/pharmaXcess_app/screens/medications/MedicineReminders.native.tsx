@@ -6,6 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { TextInput } from 'react-native-gesture-handler';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Alarm = {
     id: string;
@@ -22,7 +23,8 @@ type MedicineRemindersProps = {
 // MedicineReminders component allows users to manage their medication reminders, including adding, editing, and viewing reminders for medications.
 export default function MedicineReminders({ navigation }: MedicineRemindersProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const [alarms, setAlarms] = useState<Alarm[]>([
         {

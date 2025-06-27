@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // The MedicalProfile component displays a list of options related to medical profile management, allowing users to navigate to different screens.
-export default function MedicalProfile({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type MedicalProfileProps = {
+    navigation: StackNavigationProp<any, any>;
+};
+
+export default function MedicalProfile({ navigation }: MedicalProfileProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Configuration du profil médical', route: 'ProfileSetup', icon: 'person-add-outline' },

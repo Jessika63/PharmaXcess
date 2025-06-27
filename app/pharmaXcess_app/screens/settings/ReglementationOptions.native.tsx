@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type ReglementationOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The ReglementationOptions component allows users to customize their GDPR compliance settings, including data access rights, privacy policy notifications, and certification visibility.
-export default function ReglementationOptions({ navigation }): React.JSX.Element {
+export default function ReglementationOptions({ navigation }: ReglementationOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [reglementationType, setReglementationType] = useState('default');
     const [reglementationDuration, setReglementationDuration] = useState('default');
     const [reglementationAccess, setReglementationAccess] = useState('default');

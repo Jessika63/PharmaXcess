@@ -7,6 +7,7 @@ import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Hospitalization = {
     name: string;
@@ -29,7 +30,8 @@ type HospitalizationsProps = {
 // The Hospitalizations component allows users to view, add, and edit hospitalizations in a list, with a modal for adding new hospitalizations.
 export default function Hospitalizations({ navigation }: HospitalizationsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [expanded, setExpanded] = useState<number | null>(null);
     const [hospitalizations, setHospitalization] = useState<Hospitalization[]>([
         {

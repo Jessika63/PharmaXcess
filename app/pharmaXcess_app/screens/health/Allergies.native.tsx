@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Allergy = {
     name: string;
@@ -22,7 +23,8 @@ type AllergiesProps = {
 // The Allergies component allows users to view, add, and manage their allergies, including details such as severity, symptoms, medications, and comments.
 export default function Allergies({ navigation }: AllergiesProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors); 
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const [allergies, setAllergies] = useState<Allergy[]>([
         {

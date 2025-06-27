@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // The PartnerPharmaciesFAQ component displays a list of frequently asked questions related to partner pharmacies.
-export default function PartnerPharmaciesFAQ({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type PartnerPharmaciesFAQProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function PartnerPharmaciesFAQ({ navigation }: PartnerPharmaciesFAQProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Comment trouver une pharmacie compatible ?', route: 'FindCompatiblePharmacy', icon: 'search-outline' },

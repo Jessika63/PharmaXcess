@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
       flexGrow: 1,
       padding: 20,
@@ -48,7 +48,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     buttonText: {
       color: colors.text,
       fontWeight: 'bold',
-      fontSize: 16,
+      fontSize: 16 * fontScale,
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -57,7 +57,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
       marginTop: 30,
     },
     loadingText: {
-      fontSize: 18,
+      fontSize: 18 * fontScale,
       color: colors.profileText,
       marginBottom: 20,
       textAlign: 'center',

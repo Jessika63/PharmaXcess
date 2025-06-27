@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
       flexGrow: 1,
       padding: 20,
@@ -38,7 +38,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         borderBottomColor: colors.border,
     },
     distributorText: {
-        fontSize: 16,
+        fontSize: 16 * fontScale,
         fontWeight: 'bold',
         color: colors.secondary,
     },
@@ -52,7 +52,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     text: {
       color: colors.text,
       fontWeight: 'bold',
-      fontSize: 16,
+      fontSize: 16 * fontScale,
     },
     input: {
         width: '100%',
@@ -62,7 +62,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
         backgroundColor: colors.inputBackground,
-        fontSize: 16,
+        fontSize: 16 * fontScale,
     },
     goButton: {
         padding: 10,
@@ -75,14 +75,14 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
         alignItems: 'center',
     },
     loadingText: {
-        fontSize: 18,
+        fontSize: 18 * fontScale,
         fontWeight: 'bold',
         color: colors.profileText,
         textAlign: 'center',
         marginTop: 20,
     },
     distanceText: {
-        fontSize: 14,
+        fontSize: 14 * fontScale,
         color: colors.infoTextSecondary,
     },
     selectedDistributor: {

@@ -4,11 +4,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The AuthenticationOptions component allows users to select their preferred authentication methods and options for two-factor authentication.
-export default function AuthenticationOptions({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AuthenticationOptionsProps = {
+    navigation: StackNavigationProp<any, any>;
+};
+
+export default function AuthenticationOptions({ navigation }: AuthenticationOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     // State variables to track the selected authentication type and duration for two-factor authentication.
     const [authType, setAuthType] = useState('default');
     const [authDuration, setAuthDuration] = useState('default'); 

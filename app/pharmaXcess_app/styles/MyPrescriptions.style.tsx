@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
 
-const createStyles = (colors: ColorScheme) => StyleSheet.create({
+const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
@@ -22,13 +22,13 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
       backgroundColor: colors.card,
     },
     prescriptionTitle: {
-        fontSize: 20,
+        fontSize: 20 * fontScale,
         fontWeight: 'bold',
         color: colors.infoTitle,
         marginBottom: 10,
     },
     prescriptionText: {
-      fontSize: 16,
+      fontSize: 16 * fontScale,
       color: colors.infoText,
       marginVertical: 5,
       padding: 5,
@@ -67,7 +67,7 @@ const createStyles = (colors: ColorScheme) => StyleSheet.create({
     buttonText: {
       color: colors.text,
       fontWeight: 'bold',
-      fontSize: 16,
+      fontSize: 16 * fontScale,
     },
 });
 export default createStyles;

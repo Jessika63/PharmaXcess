@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type VisualOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The VisualOptions component allows users to customize visual settings such as font size, contrast modes, and application theme.
-export default function VisualOptions({ navigation }): React.JSX.Element {
+export default function VisualOptions({ navigation }: VisualOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [fontSize, setFontSize] = useState('medium');
     const [contrast, setContrast] = useState('standard');
     const [theme, setTheme] = useState('light');

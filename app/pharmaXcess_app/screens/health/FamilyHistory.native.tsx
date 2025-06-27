@@ -6,6 +6,7 @@ import { ViewStyle, TextStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type FamilyHistoryItem = {
     name: string;
@@ -21,7 +22,8 @@ type FamilyHistoryProps = {
 // The FamilyHistory component allows users to view, add, and modify family medical history items.
 export default function FamilyHistory({ navigation }: FamilyHistoryProps) : React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
         {

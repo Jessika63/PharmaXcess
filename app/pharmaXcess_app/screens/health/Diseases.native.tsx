@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Disease = {
     name : string; 
@@ -22,7 +23,8 @@ type DiseasesProps = {
 // The Diseases component allows users to view, add, and manage their diseases, including details such as symptoms, medications, and examinations.
 export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [expanded, setExpanded] = useState<number | null>(null);
 
     const [diseases, setDiseases] = useState<Disease[]>([

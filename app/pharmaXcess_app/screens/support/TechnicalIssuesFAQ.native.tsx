@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // The TechnicalIssuesFAQ component provides a list of frequently asked questions related to technical issues, allowing users to navigate to specific sections such as App Sync Issues, Connection Issues, and Notification Issues.
-export default function TechnicalIssuesFAQ({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type TechnicalIssuesFAQProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function TechnicalIssuesFAQ({ navigation }: TechnicalIssuesFAQProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'L\'application ne se synchronise pas', route: 'AppSyncIssues', icon: 'sync-outline' },

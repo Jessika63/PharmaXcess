@@ -4,11 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type SoundTypeOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The SoundTypeOptions component allows users to customize notification sound types and durations for the application.
-export default function SoundTypeOptions({ navigation }): React.JSX.Element {
+export default function SoundTypeOptions({ navigation }: SoundTypeOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [soundType, setSoundType] = useState('default');
     const [soundDuration, setSoundDuration] = useState('default');
 

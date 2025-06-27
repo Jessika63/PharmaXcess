@@ -6,6 +6,7 @@ import { TextStyle, ViewStyle, StyleProp } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Treatment = {
     name: string;
@@ -24,7 +25,8 @@ type treatmentsProps = {
 // The Treatments component allows users to view, add, and manage their treatments, including details such as dosage, duration, and side effects.
 export default function Treatments({ navigation }: treatmentsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const [treatments, setTreatments] =  useState<Treatment[]>([
         {

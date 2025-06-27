@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/Report.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Props = {
     navigation: StackNavigationProp<any, any>;
@@ -12,7 +13,8 @@ type Props = {
 // The ReportIssue component allows users to report issues with the application, providing fields for issue type, severity, detailed description, and reproduction steps, along with options to attach files and confirm the report.
 export default function ReportIssue({ navigation }: Props): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [phone, setPhone] = useState<string>('');

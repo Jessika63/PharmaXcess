@@ -4,12 +4,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 
 // The AccountProfile component allows users to manage their health profile settings, including treatment management, prescription synchronization, data export/import, and medical contacts.
-export default function AccountProfile({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AccountProfileProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function AccountProfile({ navigation }: AccountProfileProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [profileType, setProfileType] = useState('default');
     const [profileDuration, setProfileDuration] = useState('default');
     const [exports, setExports] = useState('default');

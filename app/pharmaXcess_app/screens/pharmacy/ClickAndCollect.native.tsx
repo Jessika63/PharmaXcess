@@ -5,11 +5,13 @@ import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import createStyles from '../../styles/ClickAndCollect.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The ClickAndCollect component allows users to take a photo of their prescription, validate it, and receive confirmation from a pharmacist.
 export default function ClickAndCollect(): React.JSX.Element {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const { fontScale } = useFontScale();
+  const styles = createStyles(colors, fontScale);
   // State to manage camera permissions, visibility, photo capture, and validation status
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraVisible, setCameraVisible] = useState<boolean>(false);

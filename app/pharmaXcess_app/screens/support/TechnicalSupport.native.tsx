@@ -3,11 +3,19 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Touchable, Alert,
 import { LinearGradient } from 'expo-linear-gradient';
 import createStyles from '../../styles/Report.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The TechnicalSupport component allows users to submit technical support requests, providing fields for user information, request type, description, and file attachment, enhancing user support experience.
-export default function TechnicalSupport({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type TechnicalSupportProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function TechnicalSupport({ navigation }: TechnicalSupportProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [phone, setPhone] = useState<string>('');

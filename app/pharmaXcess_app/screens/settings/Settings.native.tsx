@@ -5,6 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -19,7 +20,8 @@ type Props = {
 // The Settings component provides a list of settings options for the user, allowing navigation to different configuration screens such as visual options, audio options, privacy settings, and more.
 export default function Settings({ navigation }: Props): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Options visuelles', route: 'VisualOptions', icon: 'eye-outline' },

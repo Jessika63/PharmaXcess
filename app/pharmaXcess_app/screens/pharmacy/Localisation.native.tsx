@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { FlatList, TextInput } from 'react-native-gesture-handler';
 import createStyles from '../../styles/Localisation.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 type Distributor = {
   id: number;
@@ -18,7 +19,8 @@ type Distributor = {
 // The Localisation component allows users to view their current location on a map, find nearby pharmacies, and navigate to a selected pharmacy.
 export default function Localisation(): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     // State to manage the user's current location, list of distributors, selected distributor, start location, and route coordinates
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [distributors, setDistributors] = useState<Distributor[]>([]);

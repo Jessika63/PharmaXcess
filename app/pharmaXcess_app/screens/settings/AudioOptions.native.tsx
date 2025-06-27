@@ -4,6 +4,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AudioOptionsProps = {
+    navigation: StackNavigationProp<any>;
+};
 interface Item {
     title: string;
     route: string;
@@ -11,9 +17,10 @@ interface Item {
 } 
 
 // The AudioOptions component allows users to customize audio settings such as volume, sound type, and vibrations within the application.
-export default function AudioOptions({ navigation }): React.JSX.Element {
+export default function AudioOptions({ navigation }: AudioOptionsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Volume', route: 'VolumeOptions', icon: 'volume-high-outline' },

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 interface Item {
     title: string;
@@ -12,9 +13,16 @@ interface Item {
 }
 
 // The AccountPrivacyFAQ component provides a list of frequently asked questions related to account privacy, allowing users to navigate to specific sections for more information.
-export default function AccountPrivacyFAQ({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type AccountPrivacyFAQProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function AccountPrivacyFAQ({ navigation }: AccountPrivacyFAQProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
         { title: 'Comment supprimer mon compte ?', route: 'DeleteAccount', icon: 'trash-outline' },

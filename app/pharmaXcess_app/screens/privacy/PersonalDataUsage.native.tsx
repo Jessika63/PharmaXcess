@@ -4,13 +4,20 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type PersonalDataUsageProps = {
+    navigation: StackNavigationProp<any>;
+};
 
 // The PersonalDataUsage component allows users to manage their personal data usage preferences.
-export default function PersonalDataUsage({ navigation }): React.JSX.Element {
+export default function PersonalDataUsage({ navigation }: PersonalDataUsageProps): React.JSX.Element {
 
     const [dataRegulation, setDataRegulation] = useState("default");
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>

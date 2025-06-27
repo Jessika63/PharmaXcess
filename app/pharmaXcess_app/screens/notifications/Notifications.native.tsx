@@ -4,11 +4,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/SettingsCheck.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
 
 // The Notifications component allows users to customize their notification settings, including medical alerts, medication reminders, push notifications, reminder frequency, and advanced personalization options.
-export default function Notifications({ navigation }): React.JSX.Element {
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type NotificationsProps = {
+    navigation: StackNavigationProp<any>;
+};
+
+export default function Notifications({ navigation }: NotificationsProps): React.JSX.Element {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
     const [fontSize, setFontSize] = useState('medium');
     const [contrast, setContrast] = useState('standard');
     const [theme, setTheme] = useState('light');
