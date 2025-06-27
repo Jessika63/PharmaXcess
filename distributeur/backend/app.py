@@ -12,6 +12,7 @@ from routes.take_picture import take_picture_bp
 from routes.read_text import read_text_bp
 from routes.get_pharmacies import get_pharmacies_bp
 from routes.get_available_medicine import get_available_medicine_bp
+from routes.get_directions import get_directions_bp
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,6 +31,7 @@ app.register_blueprint(take_picture_bp)
 app.register_blueprint(read_text_bp)
 app.register_blueprint(get_pharmacies_bp)
 app.register_blueprint(get_available_medicine_bp)
+app.register_blueprint(get_directions_bp)
 
 @app.route('/')
 def home():

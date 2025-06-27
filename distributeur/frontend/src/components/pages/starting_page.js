@@ -26,7 +26,6 @@ function StartingPage() {
   };  
 
   useEffect(() => {
-    console.log('index effect: ', focusedIndex)
     if (focusedIndex === 0 && prescriptionButtonRef.current) {
       prescriptionButtonRef.current.focus();
     } else if (focusedIndex === 1 && nonPrescriptionButtonRef.current) {

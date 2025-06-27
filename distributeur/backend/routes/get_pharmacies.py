@@ -82,14 +82,14 @@ def get_pharmacies():
 
             # Filter out pharmacies with name 'Unknown'
             named_pharmacies = [ph for ph in pharmacies if ph['name'] != 'Unknown']
+            if current_radius > max_radius:
+                pharmacies = named_pharmacies  # Return as many as found
+                break
             if len(named_pharmacies) >= 10:
                 pharmacies = named_pharmacies[:10]
                 break
             else:
                 current_radius *= 2
-                if current_radius > max_radius:
-                    pharmacies = named_pharmacies  # Return as many as found
-                    break
         except requests.exceptions.Timeout:
             print("Error: The request to Overpass API timed out.")
             return jsonify({"error": "Request to Overpass API timed out. Please try again later."}), 500
@@ -101,13 +101,13 @@ def get_pharmacies():
             return jsonify({"error": str(e)}), 500
 
     # Return pharmacies if any are found
-    if pharmacies:
+    if pharmacies and len(pharmacies) > 0:
         return jsonify(
             {
                 "pharmacies": pharmacies,
                 "message": "Pharmacies sent successfully"
             }
         ), 200  # 200 OK response
-
-    # If no pharmacies were found, return a 404 response
-    return jsonify({"error": "No pharmacies found in the specified area"}), 404
+    else:
+        # If no pharmacies were found, return a 404 response
+        return jsonify({"error": "No pharmacies found in the specified area"}), 404

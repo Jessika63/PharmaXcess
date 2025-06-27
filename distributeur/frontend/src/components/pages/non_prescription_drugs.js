@@ -4,11 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaSearch, FaArrowLeft, FaMoneyBillWave, FaUndo, FaFilter, FaSync, FaTimes } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
 import './css/global.css'
+import ErrorPage from '../ErrorPage';
 
 const categories = {
     antiInflammatory: 'Désinflammatoire',
     painRelief: 'Anti-douleur',
 };
+
+// Module-level cache for available medicines
+let availableMedicineCache = null;
+let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,9 +35,8 @@ function NonPrescriptionDrugs() {
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
     
+    // Focus index: -2 = go back, -1 = search/filter, 0...N-1 = drug cards
     const [focusedIndex, setFocusedIndex] = useState(0);
-    const [focusedIndexPaymentModal, setFocusedIndexPaymentModal] = useState(0);
-    const [focusedIndexBackBtn, setFocusedIndexBackBtn] = useState(0);
 
     const itemRefs = useRef([]);
 
@@ -42,22 +46,85 @@ function NonPrescriptionDrugs() {
         , "painRelief", "reset", "close"];
     const searchMenuRefs = useRef([]);
 
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const cacheRef = useRef(null);
+
+    // Modal popup focus system
+    const [modalFocusIndex, setModalFocusIndex] = useState(0);
+
+    // Reset modal focus when modal opens
+    useEffect(() => {
+        if (isModalOpen) {
+            setModalFocusIndex(0);
+        }
+    }, [isModalOpen]);
+
+    // Focus management for modal
+    useEffect(() => {
+        if (!isModalOpen) return;
+        if (modalFocusIndex === 0 && backButtonRef.current) {
+            backButtonRef.current.focus();
+        } else if (modalFocusIndex === 1 && payButtonRef.current) {
+            payButtonRef.current.focus();
+        }
+    }, [modalFocusIndex, isModalOpen]);
+
+    // Keyboard navigation for modal
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const handleModalKeyDown = (event) => {
+            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                event.preventDefault();
+            }
+            if (event.key === "ArrowLeft") {
+                setModalFocusIndex((prev) => Math.max(0, prev - 1));
+            } else if (event.key === "ArrowRight") {
+                setModalFocusIndex((prev) => Math.min(1, prev + 1));
+            } else if (event.key === "Enter") {
+                if (modalFocusIndex === 0) {
+                    closeModal();
+                } else if (modalFocusIndex === 1) {
+                    handlePayment();
+                }
+            }
+        };
+        document.addEventListener("keydown", handleModalKeyDown);
+        return () => document.removeEventListener("keydown", handleModalKeyDown);
+    }, [isModalOpen, modalFocusIndex]);
+
     useEffect(() => {
         const fetchDrugs = async () => {
+            setLoading(true);
+            setError(null);
+            if (availableMedicineCache) {
+                setDrugsItems(availableMedicineCache);
+                setFilteredDrugs(availableMedicineCache);
+                setLoading(false);
+                return;
+            }
+            if (availableMedicineFetched) {
+                // Prevent double fetch in Strict Mode
+                setLoading(false);
+                return;
+            }
+            availableMedicineFetched = true;
             try {
                 const response = await fetch("http://localhost:5000/get_available_medicine");
                 const data = await response.json();
                 if (response.ok) {
                     setDrugsItems(data.medicine);
                     setFilteredDrugs(data.medicine);
+                    availableMedicineCache = data.medicine;
                 } else {
-                    console.error("Server Error:", data.error);
+                    setError(data.error || 'Server Error');
                 }
             } catch (error) {
-                console.error("Network Error:", error);
+                setError('Network Error');
+            } finally {
+                setLoading(false);
             }
         };
-    
         fetchDrugs();
     }, []);
 
@@ -65,75 +132,14 @@ function NonPrescriptionDrugs() {
         itemRefs.current = itemRefs.current.slice(0, drugsItems.length);
     }, [drugsItems]);
 
-    const handleKeyDownPaymentModal = (event) => {
-        if (event.key === "ArrowRight") {
-            event.preventDefault();
-            setFocusedIndexPaymentModal(prevIndex => (prevIndex < 1 ? prevIndex + 1 : prevIndex));
-        } else if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            setFocusedIndexPaymentModal(prevIndex => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
-        }
-    };
-
-
+    // Focus management effect
     useEffect(() => {
-        if (isModalOpen) {
-            if (focusedIndexPaymentModal === 0 && backButtonRef.current) {
-                backButtonRef.current.focus();
-            } else if (focusedIndexPaymentModal === 1 && payButtonRef.current) {
-                payButtonRef.current.focus();
-            }
-        }
-    }, [focusedIndexPaymentModal, isModalOpen]);
-
-    const handleKeyDown = (event) => {
-        const currentLength = filteredDrugs.length;
-        const filteredIds = filteredDrugs.map(item => item.id);
-
-        if (event.key === "ArrowRight") {
-            event.preventDefault();
-            setFocusedIndexBackBtn(0);
-            goBackMainButtonRef.current?.blur();
-            searchButtonRef.current?.blur();
-            
-            if (focusedIndex === -2) {
-                setFocusedIndex(-1);
-                searchButtonRef.current?.focus();
-            } else if (focusedIndex === -1) {
-                setFocusedIndex(0);
-            } else if (focusedIndex < currentLength - 1) {
-                setFocusedIndex((prevIndex) => prevIndex + 1);
-            }
-        } else if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            
-            if (focusedIndex >= 0 && focusedIndex < currentLength) {
-                setFocusedIndex((prevIndex) => prevIndex - 1);
-            } else if (focusedIndex === 0) {
-                setFocusedIndex(-1);
-                searchButtonRef.current?.focus();
-            } else if (focusedIndex === -1) {
-                setFocusedIndex(-2);
-                goBackMainButtonRef.current?.focus();
-                setFocusedIndexBackBtn(1);
-            }
-        } else if (event.key === "Enter") {
-            event.preventDefault();
-            if (focusedIndex >= 0 && focusedIndex < currentLength) {
-                const focusedId = filteredIds[focusedIndex];
-                const item = drugsItems.find(drug => drug.id === focusedId);
-                openModal(item);
-            } else if (focusedIndex === -1) {
-                searchButtonRef.current?.click();
-                toggleFilterMenu();
-            } else if (focusedIndex === -2) {
-                goBackMainButtonRef.current?.click();
-            }
-        }
-    };    
-
-    useEffect(() => {
-        if (itemRefs.current[focusedIndex]) {
+        if (loading) return;
+        if (focusedIndex === -2 && goBackMainButtonRef.current) {
+            goBackMainButtonRef.current.focus();
+        } else if (focusedIndex === -1 && searchButtonRef.current) {
+            searchButtonRef.current.focus();
+        } else if (focusedIndex >= 0 && itemRefs.current[focusedIndex]) {
             itemRefs.current[focusedIndex].focus();
             itemRefs.current[focusedIndex].scrollIntoView({
                 behavior: 'smooth',
@@ -141,50 +147,58 @@ function NonPrescriptionDrugs() {
                 inline: 'center',
             });
         }
-    }, [focusedIndex]); 
-       
-    const handleKeyDownSearchMenu = (event) => {
-        if (event.key === "ArrowRight") {
-            event.preventDefault();
-            setFocusedIndexSearch((prevIndex) =>
-                prevIndex < searchMenuOptions.length - 1 ? prevIndex + 1 : prevIndex
-            );
-        } else if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            setFocusedIndexSearch((prevIndex) =>
-                prevIndex > 0 ? prevIndex - 1 : prevIndex
-            );
-        } else if (event.key === "Enter") {
-            event.preventDefault();
-            applyFilter(searchMenuOptions[focusedIndexSearch]);
-            setIsSearchMenuOpen(false);
-        } else if (event.key === "Escape") {
-            setIsSearchMenuOpen(false);
-        }
+    }, [focusedIndex, loading, filteredDrugs]);
 
-    };
-    
+    // Set initial focus after loading
     useEffect(() => {
-        if (isSearchMenuOpen) {
-            searchMenuRefs.current[focusedIndexSearch]?.current?.focus();
-        }
-    }, [focusedIndexSearch, isSearchMenuOpen]);
-
-    useEffect(() => {
-        const handleKeydownEvent = (event) => {
-            if (isSearchMenuOpen) {
-                handleKeyDownSearchMenu(event);
-            } else if (isModalOpen) {
-                handleKeyDownPaymentModal(event);
+        if (!loading) {
+            if (filteredDrugs.length > 0) {
+                setFocusedIndex(0);
             } else {
-                handleKeyDown(event);
+                setFocusedIndex(-1);
+            }
+        }
+    }, [loading, filteredDrugs.length]);
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (loading) return;
+        const handleKeyDown = (event) => {
+            if (isSearchMenuOpen || isModalOpen) return; // Let modal/search handle their own keys
+            if (filteredDrugs.length === 0) return;
+            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                event.preventDefault();
+            }
+            if (event.key === "ArrowLeft") {
+                if (focusedIndex > 0) {
+                    setFocusedIndex(focusedIndex - 1);
+                } else if (focusedIndex === 0) {
+                    setFocusedIndex(-1);
+                } else if (focusedIndex === -1) {
+                    setFocusedIndex(-2);
+                }
+            } else if (event.key === "ArrowRight") {
+                if (focusedIndex === -2) {
+                    setFocusedIndex(-1);
+                } else if (focusedIndex === -1) {
+                    setFocusedIndex(0);
+                } else if (focusedIndex < filteredDrugs.length - 1) {
+                    setFocusedIndex(focusedIndex + 1);
+                }
+            } else if (event.key === "Enter") {
+                if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    openModal(filteredDrugs[focusedIndex]);
+                } else if (focusedIndex === -1) {
+                    toggleFilterMenu();
+                } else if (focusedIndex === -2) {
+                    goBackMainButtonRef.current?.click();
+                }
             }
         };
-    
-        document.addEventListener("keydown", handleKeydownEvent);
-        return () => document.removeEventListener("keydown", handleKeydownEvent);
-    }, [isSearchMenuOpen, isModalOpen, focusedIndex, focusedIndexPaymentModal, focusedIndexSearch]);
-    
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [focusedIndex, loading, filteredDrugs, isSearchMenuOpen, isModalOpen]);
+
     const toggleFilterMenu = () => setIsSearchMenuOpen(!isSearchMenuOpen);
     const applyFilter = (filter) => {
         setSelectedFilter(filter);
@@ -235,6 +249,18 @@ function NonPrescriptionDrugs() {
         }
     };
 
+    if (error) {
+        return <ErrorPage message={error} />;
+    }
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-background_color">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
+                <div className="text-2xl text-gray-600">Chargement des médicaments...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full h-screen flex flex-col items-center p-8 bg-background_color">
             <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-2">
@@ -243,9 +269,9 @@ function NonPrescriptionDrugs() {
                 ref={goBackMainButtonRef}
                 className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-12 
                     py-8 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-                    duration-300 focus:outline-none ${focusedIndexBackBtn === 1 ? 'scale-105' : ''}`}>
+                    duration-300 focus:outline-none ${focusedIndex === -2 ? 'scale-105' : ''}`}>
                     <FaArrowLeft className="mr-4" />
-                    Retour
+                        Retour
                 </Link>
 
                 <div className="flex-grow flex justify-center pr-16">
@@ -277,7 +303,7 @@ function NonPrescriptionDrugs() {
                     key={"painRelief"}
                     ref={searchMenuRefs.current[4]}
                     tabIndex={0} className={`block w-full text-left py-2 ${focusedIndexSearch === 4 ? "scale-105" : ""}`}>Anti-douleur</button>
-                    <button onClick={() => applyFilter(null)}
+                    <button onClick={() => applyFilter(null)} 
                     key={"reset"}
                     ref={searchMenuRefs.current[5]}
                     tabIndex={0} className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 5 ? "scale-105" : ""}`}><FaSync className="mr-2" />Réinitialiser</button>
@@ -304,20 +330,19 @@ function NonPrescriptionDrugs() {
             >
                 <div className="grid grid-cols-3 gap-6">
                     {filteredDrugs.map((item, index) => (
-                        <div
+                        <button
                             key={item.id}
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
-
+                            type="button"
                             className={`h-24 flex items-center justify-center text-4xl text-gray-800 
-
                                 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg cursor-pointer 
                                 transition-transform duration-300 ${index === focusedIndex ? 'scale-105 ring-4 ring-pink-300' : ''}`}
                             onClick={() => openModal(item)}
                         >
                             {item.label}
-                        </div>                    
+                        </button>                    
                     ))}
                 </div>
 
@@ -330,7 +355,7 @@ function NonPrescriptionDrugs() {
                         className={`w-40 h-20 absolute top-4 left-4 text-3xl text-white 
                             bg-red-500 rounded-xl px-3 py-2
                             hover:bg-red-600 focus:outline-none transition-transform duration-300
-                            ${focusedIndexPaymentModal === 0 ? 'scale-105' : ''}`}
+                            ${modalFocusIndex === 0 ? 'scale-105' : ''}`}
                         onClick={closeModal}
                     >
                         <FaUndo className="mr-2" />
@@ -343,7 +368,7 @@ function NonPrescriptionDrugs() {
                         ref={payButtonRef}
                         className={`w-1/3 h-32 mx-auto mt-16 py-3 font-semibold bg-green-500 
                         text-white rounded-lg shadow-lg transition-transform duration-300 text-4xl
-                        ${focusedIndexPaymentModal === 1 ? 'scale-105' : ''}`}
+                        ${modalFocusIndex === 1 ? 'scale-105' : ''}`}
                         onClick={handlePayment}
                     >
                         <FaMoneyBillWave className="mr-2" />

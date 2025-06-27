@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaMapMarkerAlt } from 'react-icons/fa';
+import ErrorPage from '../ErrorPage';
 
 function DrugStoresAvailable() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [drugShops, setDrugShops] = useState([]);
+  const [error, setError] = useState(null);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [enterPressed, setEnterPressed] = useState(false);
@@ -60,17 +62,16 @@ function DrugStoresAvailable() {
         const data = await response.json();
   
         if (response.ok) {
-          console.log('ok: ', data)
           const formatted = data.pharmacies.map((pharmacy, idx) => ({
             id: idx + 1,
             label: pharmacy.name || `Pharmacy ${idx + 1}`
           }));
           setDrugShops(formatted);
         } else {
-          console.error("Error while loading pharmacies :", data.error);
+          setError(data.error || 'Server Error');
         }
       } catch (err) {
-        console.error("Networking error :", err);
+        setError('Network Error');
       }
     };
   
@@ -97,6 +98,9 @@ function DrugStoresAvailable() {
     }
   }, [focusedIndex]);  
   
+  if (error) {
+    return <ErrorPage message={error} />;
+  }
 
   return (
     <div
@@ -141,6 +145,7 @@ function DrugStoresAvailable() {
               key={item.id}
               ref={(el) => (buttonsRef.current[index + 1] = el)}
               tabIndex={0}
+              type="button"
               className={`w-2/5 h-20 flex items-center justify-center text-2xl text-gray-800
               bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg
               hover:scale-105 transition-transform duration-300 cursor-pointer

@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
-import { FaRedo, FaTimesCircle, FaClock, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import { FaRedo, FaTimesCircle, FaClock, FaMapMarkerAlt, FaTimes, FaWalking, FaBicycle, FaBus, FaCar } from 'react-icons/fa';
 import ModalStandard from '../modal_standard';
+import ErrorPage from '../ErrorPage';
 
 function InsufficientStock() {
 
@@ -18,6 +19,16 @@ function InsufficientStock() {
   const [userCoords, setUserCoords] = useState({ lat: null, lon: null });
   const [selectedPharmacyIndex, setSelectedPharmacyIndex] = useState(0);
   const [loadingPharmacies, setLoadingPharmacies] = useState(false);
+  const [error, setError] = useState(null);
+  const [transportModalOpen, setTransportModalOpen] = useState(false);
+  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
+  const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
+  const transportModes = [
+    { mode: 'foot', label: 'À pied', icon: <FaWalking /> },
+    { mode: 'bicycle', label: 'Vélo', icon: <FaBicycle /> },
+    { mode: 'transit', label: 'Transports', icon: <FaBus /> },
+    { mode: 'car', label: 'Voiture', icon: <FaCar /> },
+  ];
   
   const modalContentRef = useRef(null);
   const cardRefs = useRef([]);
@@ -127,6 +138,14 @@ function InsufficientStock() {
     setLoadingPharmacies(false);
   };
 
+  const handleTransportSelect = (mode) => {
+    setTransportModalOpen(false);
+    setPharmaciesModalOpen(false);
+    console.log('handleTransportSelect called with:', mode);
+    console.log('Navigating to /directions-map with:', selectedPharmacy, mode);
+    navigate(`/directions-map?lat=${selectedPharmacy.latitude}&lon=${selectedPharmacy.longitude}&name=${encodeURIComponent(selectedPharmacy.name)}&transport=${mode}`);
+  };
+
   return (
       <div className="bg-background_color w-full h-screen flex flex-col justify-center items-center">
 
@@ -160,14 +179,10 @@ function InsufficientStock() {
           <div className="flex flex-col items-center space-y-12 w-full">
       
               {/* Button 'Précommander ou récupérer plus tard' */}
-              <div tabIndex={0}
+              <button
                   ref={retryButtonRef}
+                  tabIndex={0}
                   onClick={() => navigate('/' + (location.state?.from || '/#'))}
-                  onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                          navigate('/' + (location.state?.from || '/#'));
-                      }
-                  }}
                   className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
                       bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl cursor-pointer
                       transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
@@ -176,17 +191,13 @@ function InsufficientStock() {
               >
                   <FaClock className="mr-4" />
                   Précommander ou récupérer plus tard
-              </div>
+              </button>
 
               {/* Button 'Aller dans une autre pharmacie' */}
-              <div tabIndex={0}
+              <button
                   ref={cancelButtonRef}
+                  tabIndex={0}
                   onClick={openPharmaciesModal}
-                  onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                          openPharmaciesModal();
-                      }
-                  }}
                   className={`w-2/5 h-36 flex items-center justify-center rounded-2xl shadow-lg 
                       bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl
                       transition-transform duration-500 hover:from-[#d45b93] focus:outline-none
@@ -195,7 +206,7 @@ function InsufficientStock() {
               >
                   <FaMapMarkerAlt className="mr-4" />
                   Aller dans une autre pharmacie
-              </div>
+              </button>
 
           </div>
 
@@ -271,6 +282,21 @@ function InsufficientStock() {
                                           hover:scale-105 hover:ring-4 hover:ring-pink-300 hover:shadow-2xl focus:outline-none`}
                                           tabIndex={selectedPharmacyIndex === i ? 0 : -1}
                                           style={{ minHeight: '140px', flex: '0 0 auto' }}
+                                          onClick={e => {
+                                              e.stopPropagation();
+                                              setSelectedPharmacy(ph);
+                                              setTransportModalOpen(true);
+                                              setFocusedTransportIndex(0);
+                                          }}
+                                          onKeyDown={e => {
+                                              if (e.key === 'Enter') {
+                                                  e.preventDefault();
+                                                  e.stopPropagation();
+                                                  setSelectedPharmacy(ph);
+                                                  setTransportModalOpen(true);
+                                                  setFocusedTransportIndex(0);
+                                              }
+                                          }}
                                       >
                                           <div className="text-base font-semibold mb-1">{ph.name}</div>
                                           {ph.address && <div className="text-sm text-gray-600 mb-1">{ph.address}</div>}
@@ -283,6 +309,60 @@ function InsufficientStock() {
                               <div className="w-64 flex-shrink-0" style={{ minHeight: '140px' }}></div>
                           </div>
                       )}
+                  </div>
+              </ModalStandard>
+          )}
+
+          {/* Transport Modal */}
+          {transportModalOpen && selectedPharmacy && (
+              <ModalStandard onClose={() => setTransportModalOpen(false)}>
+                  <div
+                      className="flex flex-col items-center"
+                      tabIndex={0}
+                      onKeyDown={e => {
+                          // Trap arrow keys and tab inside modal
+                          if (["ArrowRight", "ArrowLeft", "Tab"].includes(e.key)) {
+                              e.stopPropagation();
+                              if (e.key === "ArrowRight") {
+                                  setFocusedTransportIndex((prev) => (prev + 1) % transportModes.length);
+                                  e.preventDefault();
+                              } else if (e.key === "ArrowLeft") {
+                                  setFocusedTransportIndex((prev) => (prev - 1 + transportModes.length) % transportModes.length);
+                                  e.preventDefault();
+                              } else if (e.key === "Tab") {
+                                  // Trap tab within modal
+                                  e.preventDefault();
+                                  setFocusedTransportIndex((prev) => {
+                                      if (!e.shiftKey) {
+                                          return (prev + 1) % transportModes.length;
+                                      } else {
+                                          return (prev - 1 + transportModes.length) % transportModes.length;
+                                      }
+                                  });
+                              }
+                          } else if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleTransportSelect(transportModes[focusedTransportIndex].mode);
+                          }
+                      }}
+                  >
+                      <div className="text-2xl font-bold mb-4">Choisissez le mode de transport</div>
+                      <div className="flex flex-row gap-6">
+                          {transportModes.map((t, idx) => (
+                              <button
+                                  key={t.mode}
+                                  className={`flex flex-col items-center px-6 py-4 rounded-xl text-xl font-semibold border-2 transition-all duration-200 focus:outline-none 
+                                    ${focusedTransportIndex === idx ? 'border-pink-500 ring-4 ring-pink-300 scale-110 bg-white' : 'border-gray-300 bg-gray-100'}
+                                  `}
+                                  tabIndex={focusedTransportIndex === idx ? 0 : -1}
+                                  onClick={() => handleTransportSelect(t.mode)}
+                                  autoFocus={focusedTransportIndex === idx}
+                              >
+                                  <span className="text-4xl mb-2">{t.icon}</span>
+                                  {t.label}
+                              </button>
+                          ))}
+                      </div>
                   </div>
               </ModalStandard>
           )}

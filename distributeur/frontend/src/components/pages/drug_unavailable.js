@@ -67,17 +67,10 @@ function DrugUnavailable() {
         <div className="flex flex-col items-center space-y-10 w-full">
       
             {/* Button 'Commander plus tard' */}
-            <div 
-                tabIndex={0} 
+            <button
+                tabIndex={0}
                 ref={order_later}
-                onClick={() => navigate('/' + (location.state?.from ?? '#'))} 
-                onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.stopPropagation();
-                      event.preventDefault();
-                      navigate('/' + (location.state?.from ?? '#'))
-                    }
-                }}
+                onClick={() => navigate('/' + (location.state?.from ?? '#'))}
                 className={`w-2/5 h-36 flex items-center justify-center text-center rounded-2xl shadow-lg 
                     bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-3xl cursor-pointer
                     transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
@@ -86,17 +79,11 @@ function DrugUnavailable() {
             >
                 <FaClock className="mr-4" />
                 Commander le médicament et le récupérer plus tard
-            </div>
+            </button>
       
             {/* Button 'Liste des pharmacies' */}
-            <div
-                onClick={() => navigate('/drug-stores-available', { state: { from: 'drug-unavailable' } })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    goToDrugStores(event);
-                  }
-                }}
+            <button
+                onClick={goToDrugStores}
                 tabIndex={0}
                 ref={drug_store_list}
                 className={`w-2/5 h-36 flex items-center justify-center text-center rounded-2xl shadow-lg 
@@ -107,7 +94,7 @@ function DrugUnavailable() {
             >
                 <FaMapMarkerAlt className="mr-4" />
                 Liste des pharmacies possédant le médicament
-            </div>
+            </button>
 
         </div>
     </div>
