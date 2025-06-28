@@ -173,7 +173,7 @@ function DocumentsChecking() {
     
                 {isModalOpen && showCamera && (
                     <ModalCamera onClose={closeModal}>
-                        <CameraComponent onPhotoCapture={closeModal} />
+                        <CameraComponent onPhotoCapture={closeModal} onClose={closeModal} />
                     </ModalCamera>
                 )}
             </div>

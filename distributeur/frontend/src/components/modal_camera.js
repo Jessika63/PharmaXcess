@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 const ModalCamera = ({ children, onClose }) => {
+    const [focusedButtonIndex, setFocusedButtonIndex] = useState(0);
+
     return (
         <div>
             {/* Darkened Overlay */}
@@ -16,7 +19,7 @@ const ModalCamera = ({ children, onClose }) => {
                 text-gray-800 flex flex-col justify-center items-center 
                 rounded-2xl shadow-lg p-8 z-50"
             >
-                {children} {/* Modal Content */}
+                {React.cloneElement(children, { focusedButtonIndex, setFocusedButtonIndex })}
             </div>
         </div>
     );

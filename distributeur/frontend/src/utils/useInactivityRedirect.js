@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Usage: useInactivityRedirect(() => setShowWarning(true));
-export default function useInactivityRedirect(onWarn, warnDelay = 2 * 60 * 1000, redirectDelay = 3 * 60 * 1000) {
+export default function useInactivityRedirect(onWarn, warnDelay = 2 * 60 * 1000, redirectDelay = 1 * 60 * 1000) {
   const navigate = useNavigate();
   const warnTimeout = useRef();
   const redirectTimeout = useRef();

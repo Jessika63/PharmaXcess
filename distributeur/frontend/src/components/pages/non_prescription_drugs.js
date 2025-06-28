@@ -9,7 +9,7 @@ import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 const categories = {
-    antiInflammatory: 'Désinflammatoire',
+    antiInflammatory: 'Anti-inflammatoire',
     painRelief: 'Anti-douleur',
 };
 
@@ -356,7 +356,7 @@ function NonPrescriptionDrugs() {
                     key={"antiInflammatory"}
                     ref={el => searchMenuRefs.current[3] = el}
                     tabIndex={focusedIndexSearch === 3 ? 0 : -1} 
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 3 ? config.scaleEffects.focus : ""}`}>Désinflammatoire</button>
+                    className={`block w-full text-left py-2 ${focusedIndexSearch === 3 ? config.scaleEffects.focus : ""}`}>Anti-inflammatoire</button>
                     <button onClick={() => applyFilter('painRelief')}
                     key={"painRelief"}
                     ref={el => searchMenuRefs.current[4] = el}

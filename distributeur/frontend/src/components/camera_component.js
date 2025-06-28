@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaCamera, FaRedo, FaCheck } from 'react-icons/fa';
+import config from '../config';
 
-const CameraComponent = ({ onPhotoCapture, onClose }) => {
+const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocusedButtonIndex }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
     const [isPhotoTaken, setIsPhotoTaken] = useState(false);
-    const [selectedButtonIndex, setSelectedButtonIndex] = useState(0);
 
     const startCamera = async () => {
         try {
@@ -46,13 +46,14 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
             const imageSrc = canvas.toDataURL('image/png');
             setImage(imageSrc);
             setIsPhotoTaken(true);
+            setFocusedButtonIndex(0); // Reset focus to first button after photo is taken
         }
     };
 
     const handleRetakePhoto = () => {
         setImage(null);
         setIsPhotoTaken(false);
-        setSelectedButtonIndex(0);
+        setFocusedButtonIndex(0);
         startCamera();
     };
 
@@ -62,25 +63,46 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
         }
     };
 
+    const handleClose = () => {
+        onClose();
+    };
+
+    // Get the total number of buttons based on current state
+    const getTotalButtons = () => {
+        if (!isPhotoTaken) {
+            return 2; // Take photo + Close
+        } else {
+            return 3; // Retake + OK + Close
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
 
-            if (!isPhotoTaken) {
-                if (event.key === "Enter") {
-                    capturePhoto();
-                }
-            } else {
-                if (event.key === "ArrowLeft") {
-                    setSelectedButtonIndex(0);
-                } else if (event.key === "ArrowRight") {
-                    setSelectedButtonIndex(1);
-                } else if (event.key === "Enter") {
-                    if (selectedButtonIndex === 0) {
+            const totalButtons = getTotalButtons();
+
+            if (event.key === "ArrowRight") {
+                setFocusedButtonIndex((prev) => (prev + 1) % totalButtons);
+            } else if (event.key === "ArrowLeft") {
+                setFocusedButtonIndex((prev) => (prev - 1 + totalButtons) % totalButtons);
+            } else if (event.key === "Enter") {
+                if (!isPhotoTaken) {
+                    if (focusedButtonIndex === 0) { // Take photo button
+                        capturePhoto();
+                    } else if (focusedButtonIndex === 1) { // Close button
+                        handleClose();
+                    }
+                } else {
+                    if (focusedButtonIndex === 0) { // Retake photo button
                         handleRetakePhoto();
-                    } else {
+                    } else if (focusedButtonIndex === 1) { // OK button
                         handleValidatePhoto();
+                    } else if (focusedButtonIndex === 2) { // Close button
+                        handleClose();
                     }
                 }
             }
@@ -91,7 +113,7 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
         return () => {
             document.removeEventListener("keydown", handleKeyDown, true);
         };
-    }, [isPhotoTaken, selectedButtonIndex]);
+    }, [isPhotoTaken, focusedButtonIndex]);
 
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -104,19 +126,30 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
                     <div className="flex justify-center gap-8 mt-6">
                         <button 
                             className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 0 ? 'scale-110' : ''}`} 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`} 
                             onClick={handleRetakePhoto}
+                            tabIndex={focusedButtonIndex === 0 ? 0 : -1}
                         >
                             <FaRedo className="mr-2" />
                             Prendre une autre photo
                         </button>
                         <button 
                             className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${selectedButtonIndex === 1 ? 'scale-110' : ''}`} 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''}`} 
                             onClick={handleValidatePhoto}
+                            tabIndex={focusedButtonIndex === 1 ? 0 : -1}
                         >
                             <FaCheck className="mr-2" />
                             OK
+                        </button>
+                        <button 
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 2 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                            onClick={handleClose}
+                            tabIndex={focusedButtonIndex === 2 ? 0 : -1}
+                        >
+                            <config.icons.times className="mr-2" />
+                            Fermer
                         </button>
                     </div>
                 </div>
@@ -129,11 +162,21 @@ const CameraComponent = ({ onPhotoCapture, onClose }) => {
                     <div className="flex justify-center gap-8 mt-6">
                         <button 
                             className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md hover:scale-110 transition-transform duration-300 scale-110`}
+                            shadow-md hover:scale-110 transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`}
                             onClick={capturePhoto}
+                            tabIndex={focusedButtonIndex === 0 ? 0 : -1}
                         >
                             <FaCamera className="mr-2" />
                             Prendre une photo
+                        </button>
+                        <button 
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                            onClick={handleClose}
+                            tabIndex={focusedButtonIndex === 1 ? 0 : -1}
+                        >
+                            <config.icons.times className="mr-2" />
+                            Fermer
                         </button>
                     </div>
 
