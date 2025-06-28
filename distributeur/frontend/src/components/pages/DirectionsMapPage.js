@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import L from 'leaflet';
 import polyline from 'polyline';
 import 'leaflet/dist/leaflet.css';
+import config from '../../config';
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import ModalStandard from '../modal_standard';
@@ -65,17 +66,14 @@ function DirectionsMapPage() {
         const { latitude, longitude } = pos.coords;
         setUserCoords([latitude, longitude]);
         const url =
-          `http://localhost:5000/get_direction?origin=${latitude},${longitude}` +
+          `${config.backendUrl}/get_direction?origin=${latitude},${longitude}` +
           `&destination=${pharmacy.latitude},${pharmacy.longitude}` +
           `&mode=${transport}`;
-        console.log('DirectionsMapPage: Fetching directions with URL:', url);
         fetchWithTimeout(url, undefined, 5000)
           .then((res) => {
-            console.log('DirectionsMapPage: fetchWithTimeout response:', res);
             return res.json();
           })
           .then((data) => {
-            console.log('DirectionsMapPage: Directions API response:', data);
             if (data.error) {
               setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
             } else if (data.routes && data.routes.length > 0) {
@@ -94,7 +92,6 @@ function DirectionsMapPage() {
             setLoading(false);
           })
           .catch((err) => {
-            console.error('DirectionsMapPage: fetchWithTimeout error:', err);
             if (err.message === 'Timeout') {
               setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
             } else {
@@ -141,9 +138,9 @@ function DirectionsMapPage() {
   if (error) return <ErrorPage message={error} />;
   if (loading) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-background_color">
+      <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
-        <div className="text-2xl text-gray-600">Chargement de l'itinéraire...</div>
+        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement de l'itinéraire...</div>
       </div>
     );
   }
@@ -155,40 +152,40 @@ function DirectionsMapPage() {
     <>
       {showInactivityModal && (
         <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
-          <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-          <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
+          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+          <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
         </ModalStandard>
       )}
-      <div className="w-full h-screen flex flex-col items-center bg-background_color p-8">
+      <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
         <div className="flex flex-row gap-6 mb-4">
           <button
             ref={goBackRef}
             tabIndex={focusedIndex === 0 ? 0 : -1}
-            className={`px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300 ${focusedIndex === 0 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
-            onClick={() => { console.log('Go Back button clicked (mouse or keyboard)'); navigate('/insufficient-stock'); }}
+            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            onClick={() => { navigate('/insufficient-stock'); }}
           >
-            Retour
+            <config.icons.arrowLeft className="mr-2" /> Retour
           </button>
           <button
             ref={medListRef}
             tabIndex={focusedIndex === 1 ? 0 : -1}
-            className={`px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300 ${focusedIndex === 1 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
-            onClick={() => { console.log('Liste des médicaments button clicked (mouse or keyboard)'); navigate('/non-prescription-drugs'); }}
+            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            onClick={() => { navigate('/non-prescription-drugs'); }}
           >
-            Liste des médicaments
+            <config.icons.pills className="mr-2" /> Liste des médicaments
           </button>
           <button
             ref={homeRef}
             tabIndex={focusedIndex === 2 ? 0 : -1}
-            className={`px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300 ${focusedIndex === 2 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
-            onClick={e => { e.preventDefault(); console.log('Accueil button clicked (mouse or keyboard)'); navigate('/'); }}
+            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 2 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            onClick={e => { e.preventDefault(); navigate('/'); }}
           >
-            Accueil
+            <config.icons.home className="mr-2" /> Accueil
           </button>
         </div>
         <div className="w-full h-full flex flex-col items-center">
-          <h2 className="text-3xl font-bold mb-4">Itinéraire vers {pharmacy.name}</h2>
+          <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
           <div
             ref={mapRef}
             tabIndex={focusedIndex === 3 ? 0 : -1}

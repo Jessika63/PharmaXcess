@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../../App.css'
-import { FaRedo, FaTimesCircle, FaClock, FaMapMarkerAlt, FaTimes, FaWalking, FaBicycle, FaBus, FaCar } from 'react-icons/fa';
+import config from '../../config';
 import ModalStandard from '../modal_standard';
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
@@ -27,10 +27,10 @@ function InsufficientStock() {
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
   const transportModes = [
-    { mode: 'foot', label: 'À pied', icon: <FaWalking /> },
-    { mode: 'bicycle', label: 'Vélo', icon: <FaBicycle /> },
-    { mode: 'transit', label: 'Transports', icon: <FaBus /> },
-    { mode: 'car', label: 'Voiture', icon: <FaCar /> },
+    { mode: 'foot', label: 'À pied', icon: <config.icons.walking /> },
+    { mode: 'bicycle', label: 'Vélo', icon: <config.icons.bicycle /> },
+    { mode: 'transit', label: 'Transports', icon: <config.icons.bus /> },
+    { mode: 'car', label: 'Voiture', icon: <config.icons.car /> },
   ];
   
   const modalContentRef = useRef(null);
@@ -106,6 +106,55 @@ function InsufficientStock() {
     }
   }, [selectedPharmacyIndex, pharmaciesModalOpen]);
 
+  // Keyboard navigation for pharmacy modal
+  useEffect(() => {
+    if (!pharmaciesModalOpen) return;
+    const handlePharmacyKeyDown = (event) => {
+      if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (event.key === "ArrowRight") {
+        setSelectedPharmacyIndex((prev) => Math.min(prev + 1, pharmaciesList.length - 1));
+      } else if (event.key === "ArrowLeft") {
+        setSelectedPharmacyIndex((prev) => Math.max(prev - 1, -1));
+      } else if (event.key === "Enter") {
+        if (selectedPharmacyIndex === -1) {
+          setPharmaciesModalOpen(false);
+        } else if (selectedPharmacyIndex >= 0 && selectedPharmacyIndex < pharmaciesList.length) {
+          setSelectedPharmacy(pharmaciesList[selectedPharmacyIndex]);
+          setTransportModalOpen(true);
+          setFocusedTransportIndex(0);
+        }
+      }
+    };
+    document.addEventListener("keydown", handlePharmacyKeyDown);
+    return () => document.removeEventListener("keydown", handlePharmacyKeyDown);
+  }, [pharmaciesModalOpen, selectedPharmacyIndex, pharmaciesList]);
+
+  // Keyboard navigation for transport modal
+  useEffect(() => {
+    if (!transportModalOpen) return;
+    const handleTransportKeyDown = (event) => {
+      if (["ArrowLeft", "ArrowRight", "Enter", "Escape"].includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (event.key === "ArrowRight") {
+        setFocusedTransportIndex((prev) => (prev + 1) % transportModes.length);
+      } else if (event.key === "ArrowLeft") {
+        setFocusedTransportIndex((prev) => (prev - 1 + transportModes.length) % transportModes.length);
+      } else if (event.key === "Enter") {
+        handleTransportSelect(transportModes[focusedTransportIndex].mode);
+      } else if (event.key === "Escape") {
+        setTransportModalOpen(false);
+        setPharmaciesModalOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleTransportKeyDown);
+    return () => document.removeEventListener("keydown", handleTransportKeyDown);
+  }, [transportModalOpen, focusedTransportIndex, transportModes]);
+
   const openPharmaciesModal = async () => {
     setPharmaciesModalOpen(true);
     setSelectedPharmacyIndex(0);
@@ -122,14 +171,13 @@ function InsufficientStock() {
               resolve();
             },
             (error) => {
-              console.log('Geolocation denied');
               resolve();
             }
           );
         });
       }
     } catch (geoError) {
-      console.log('Geolocation error');
+      // Geolocation error handled silently
     }
     if (lat && lon) {
       setUserCoords({ lat, lon });
@@ -140,7 +188,7 @@ function InsufficientStock() {
         return;
       }
       try {
-        const response = await fetchWithTimeout(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}`);
+        const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}`);
         const data = await response.json();
         if (data.pharmacies && data.pharmacies.length > 0) {
           setPharmaciesList(data.pharmacies);
@@ -160,23 +208,21 @@ function InsufficientStock() {
   const handleTransportSelect = (mode) => {
     setTransportModalOpen(false);
     setPharmaciesModalOpen(false);
-    console.log('handleTransportSelect called with:', mode);
-    console.log('Navigating to /directions-map with:', selectedPharmacy, mode);
     navigate(`/directions-map?lat=${selectedPharmacy.latitude}&lon=${selectedPharmacy.longitude}&name=${encodeURIComponent(selectedPharmacy.name)}&transport=${mode}`);
   };
 
   return (
-      <div className="bg-background_color min-h-screen w-full flex flex-col items-center justify-center">
+      <div className={`bg-background_color min-h-screen w-full flex flex-col items-center justify-center`}>
 
           {/* Go Back Button */}
           <div className="w-4/5 flex items-center mt-6 mb-2">
             <button
               ref={goBackButtonRef}
               tabIndex={0}
-              className={`text-2xl bg-gradient-to-r from-pink-500 to-rose-400 px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none flex items-center ${focusedIndex === 0 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
+              className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${config.focusStates.outline} flex items-center ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
               onClick={() => navigate('/non-prescription-drugs')}
             >
-              <FaRedo className="mr-3" /> Retour
+              <config.icons.arrowLeft className="mr-3" /> Retour
             </button>
           </div>
 
@@ -184,33 +230,33 @@ function InsufficientStock() {
           <div className="w-4/5 h-28 flex justify-center items-center mb-4 mt-2">
               {/* Logo */}
               <div className="flex justify-center items-center w-full">
-                  <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-80 h-20" />
+                  <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-80 h-20" />
               </div>
           </div>
 
           {/* Information Message Container */}
-          <div className="w-3/4 bg-background_color p-4 rounded-xl text-center mb-4">
-              <p className="text-2xl text-gray-800">
+          <div className={`w-3/4 bg-background_color ${config.padding.modal} ${config.borderRadius.md} text-center mb-4`}>
+              <p className={`${config.fontSizes.md} ${config.textColors.primary}`}>
                   Le stock est insuffisant pour ce médicament.<br />
                   Que souhaitez-vous faire ?
               </p>
           </div>
 
           {/* Container for centering both buttons */}
-          <div className="flex flex-col items-center space-y-6 w-full max-w-xl">
+          <div className={`flex flex-col items-center ${config.spacing.sm} w-full max-w-xl`}>
       
               {/* Button 'Précommander ou récupérer plus tard' */}
               <button
                   ref={retryButtonRef}
                   tabIndex={0}
                   onClick={() => navigate('/preorder')}
-                  className={`w-full h-24 flex items-center justify-center rounded-2xl shadow-lg 
-                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-2xl cursor-pointer
-                      transition-transform duration-500 hover:from-[#d45b93] focus:ring-opacity-50
-                      hover:to-[#e65866] hover:scale-105 focus:ring-4 focus:ring-pink-500
-                      ${focusedIndex === 1 ? 'scale-105' : ''}`}
+                  className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                      ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} cursor-pointer
+                      ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
+                      ${config.scaleEffects.hover} ${config.focusStates.ring}
+                      ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
               >
-                  <FaClock className="mr-4" />
+                  <config.icons.clock className="mr-4" />
                   Précommander ou récupérer plus tard
               </button>
 
@@ -219,13 +265,13 @@ function InsufficientStock() {
                   ref={cancelButtonRef}
                   tabIndex={0}
                   onClick={openPharmaciesModal}
-                  className={`w-full h-24 flex items-center justify-center rounded-2xl shadow-lg 
-                      bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 text-2xl
-                      transition-transform duration-500 hover:from-[#d45b93] focus:outline-none
-                      hover:to-[#e65866] hover:scale-105 focus:ring-2 focus:ring-pink-500
-                      ${focusedIndex === 2 ? 'scale-105' : ''}`}
+                  className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                      ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md}
+                      ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.outline}
+                      ${config.scaleEffects.hover} ${config.focusStates.ring}
+                      ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
               >
-                  <FaMapMarkerAlt className="mr-4" />
+                  <config.icons.mapMarker className="mr-4" />
                   Aller dans une autre pharmacie
               </button>
 
@@ -236,17 +282,26 @@ function InsufficientStock() {
               <ModalStandard onClose={() => setPharmaciesModalOpen(false)}>
                   <div
                       ref={modalContentRef}
-                      tabIndex={0}
-                      autoFocus
+                      tabIndex={transportModalOpen ? -1 : 0}
+                      autoFocus={!transportModalOpen}
                       className="w-full max-w-6xl flex flex-col items-center justify-center p-8"
                       onKeyDown={(e) => {
+                          
+                          // Don't handle keys if transport modal is open
+                          if (transportModalOpen) {
+                              return;
+                          }
+                          
                           if (["ArrowRight", "ArrowLeft"].includes(e.key)) {
                               e.stopPropagation();
                               e.preventDefault();
+                              
                               if (e.key === "ArrowRight") {
-                                  setSelectedPharmacyIndex((prev) => Math.min(prev + 1, pharmaciesList.length - 1));
+                                  const newIndex = Math.min(selectedPharmacyIndex + 1, pharmaciesList.length - 1);
+                                  setSelectedPharmacyIndex(newIndex);
                               } else if (e.key === "ArrowLeft") {
-                                  setSelectedPharmacyIndex((prev) => Math.max(prev - 1, -1));
+                                  const newIndex = Math.max(selectedPharmacyIndex - 1, -1);
+                                  setSelectedPharmacyIndex(newIndex);
                               }
                           } else if (e.key === "Tab") {
                             // Trap focus to close button and cards
@@ -260,23 +315,35 @@ function InsufficientStock() {
                   >
                       <button
                           ref={closeButtonRef}
-                          className={`absolute top-6 right-8 flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-xl text-xl shadow hover:bg-red-600 transition focus:ring-4 focus:ring-red-300 ${selectedPharmacyIndex === -1 ? 'ring-4 ring-red-400 scale-105 z-10' : ''}`}
-                          tabIndex={-1}
+                          className={`absolute top-6 right-8 flex items-center gap-2 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md} ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default} ${config.focusStates.ring} ${selectedPharmacyIndex === -1 ? `${config.focusStates.ring} ${config.scaleEffects.focus} z-10` : ''}`}
+                          tabIndex={0}
                           style={{ zIndex: 10 }}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setPharmaciesModalOpen(false);
                             setTimeout(() => {
                               if (cancelButtonRef.current) cancelButtonRef.current.focus();
                             }, 100);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setPharmaciesModalOpen(false);
+                              setTimeout(() => {
+                                if (cancelButtonRef.current) cancelButtonRef.current.focus();
+                              }, 100);
+                            }
+                          }}
                       >
-                          <FaTimes className="mr-2" /> Fermer
+                          <config.icons.times className="mr-2" /> Fermer
                       </button>
-                      <div className="text-2xl text-gray-800 font-bold mb-6">Pharmacies à proximité</div>
+                      <div className={`${config.fontSizes.md} ${config.textColors.primary} font-bold mb-6`}>Pharmacies à proximité</div>
                       {loadingPharmacies ? (
                           <div className="flex flex-col items-center justify-center w-full h-64">
                               <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-pink-500 border-solid mb-4"></div>
-                              <div className="text-lg text-gray-600">Chargement...</div>
+                              <div className={`${config.fontSizes.sm} ${config.textColors.secondary}`}>Chargement...</div>
                           </div>
                       ) : (
                           <div className="flex flex-row items-center gap-4 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" style={{ minHeight: '220px' }}>
@@ -298,24 +365,30 @@ function InsufficientStock() {
                                       <div
                                           key={i}
                                           ref={el => cardRefs.current[i] = el}
-                                          className={`bg-gradient-to-r from-pink-100 to-rose-100 rounded-2xl shadow-lg p-3 w-64 flex flex-col items-start border-2 transition-transform duration-300 cursor-pointer 
+                                          className={`bg-gradient-to-r from-pink-100 to-rose-100 ${config.borderRadius.lg} ${config.shadows.md} p-3 w-64 flex flex-col items-start border-2 ${config.transitions.default} cursor-pointer 
                                           ${selectedPharmacyIndex === i ? 'border-pink-500 scale-105 ring-4 ring-pink-300 z-10' : 'border-pink-200'} 
-                                          hover:scale-105 hover:ring-4 hover:ring-pink-300 hover:shadow-2xl focus:outline-none`}
-                                          tabIndex={selectedPharmacyIndex === i ? 0 : -1}
+                                          ${config.scaleEffects.hover} ${config.focusStates.ring} ${config.shadows.lg} ${config.focusStates.outline}`}
+                                          tabIndex={transportModalOpen ? -1 : (selectedPharmacyIndex === i ? 0 : -1)}
                                           style={{ minHeight: '140px', flex: '0 0 auto' }}
                                           onClick={e => {
                                               e.stopPropagation();
                                               setSelectedPharmacy(ph);
-                                              setTransportModalOpen(true);
-                                              setFocusedTransportIndex(0);
+                                              setPharmaciesModalOpen(false);
+                                              setTimeout(() => {
+                                                  setTransportModalOpen(true);
+                                                  setFocusedTransportIndex(0);
+                                              }, 100);
                                           }}
                                           onKeyDown={e => {
                                               if (e.key === 'Enter') {
                                                   e.preventDefault();
                                                   e.stopPropagation();
                                                   setSelectedPharmacy(ph);
-                                                  setTransportModalOpen(true);
-                                                  setFocusedTransportIndex(0);
+                                                  setPharmaciesModalOpen(false);
+                                                  setTimeout(() => {
+                                                      setTransportModalOpen(true);
+                                                      setFocusedTransportIndex(0);
+                                                  }, 100);
                                               }
                                           }}
                                       >
@@ -337,49 +410,47 @@ function InsufficientStock() {
           {/* Transport Modal */}
           {transportModalOpen && selectedPharmacy && (
               <ModalStandard onClose={() => setTransportModalOpen(false)}>
-                  <div
-                      className="flex flex-col items-center"
-                      tabIndex={0}
-                      onKeyDown={e => {
-                          // Trap arrow keys and tab inside modal
-                          if (["ArrowRight", "ArrowLeft", "Tab"].includes(e.key)) {
-                              e.stopPropagation();
-                              if (e.key === "ArrowRight") {
-                                  setFocusedTransportIndex((prev) => (prev + 1) % transportModes.length);
-                                  e.preventDefault();
-                              } else if (e.key === "ArrowLeft") {
-                                  setFocusedTransportIndex((prev) => (prev - 1 + transportModes.length) % transportModes.length);
-                                  e.preventDefault();
-                              } else if (e.key === "Tab") {
-                                  // Trap tab within modal
-                                  e.preventDefault();
-                                  setFocusedTransportIndex((prev) => {
-                                      if (!e.shiftKey) {
-                                          return (prev + 1) % transportModes.length;
-                                      } else {
-                                          return (prev - 1 + transportModes.length) % transportModes.length;
-                                      }
-                                  });
-                              }
-                          } else if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleTransportSelect(transportModes[focusedTransportIndex].mode);
-                          }
-                      }}
-                  >
-                      <div className="text-2xl font-bold mb-4">Choisissez le mode de transport</div>
+                  <div className="flex flex-col items-center">
+                      <button
+                          className={`absolute top-4 right-4 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md} ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default} ${config.focusStates.ring}`}
+                          onClick={() => {
+                              setTransportModalOpen(false);
+                              setPharmaciesModalOpen(false);
+                          }}
+                      >
+                          <config.icons.times className="mr-2" /> Fermer
+                      </button>
+                      <div className={`${config.fontSizes.md} font-bold mb-4`}>Choisissez le mode de transport</div>
                       <div className="flex flex-row gap-6">
                           {transportModes.map((t, idx) => (
                               <button
                                   key={t.mode}
-                                  className={`flex flex-col items-center px-6 py-4 rounded-xl text-xl font-semibold border-2 transition-all duration-200 focus:outline-none 
+                                  className={`flex flex-col items-center ${config.padding.button} ${config.borderRadius.md} ${config.fontSizes.sm} font-semibold border-2 ${config.transitions.default} ${config.focusStates.outline} 
                                     ${focusedTransportIndex === idx ? 'border-pink-500 ring-4 ring-pink-300 scale-110 bg-white' : 'border-gray-300 bg-gray-100'}
                                   `}
                                   tabIndex={focusedTransportIndex === idx ? 0 : -1}
-                                  onClick={() => handleTransportSelect(t.mode)}
+                                  onClick={() => {
+                                      handleTransportSelect(t.mode);
+                                  }}
+                                  onKeyDown={(e) => {
+                                      if (e.key === "ArrowRight") {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          const newIndex = (focusedTransportIndex + 1) % transportModes.length;
+                                          setFocusedTransportIndex(newIndex);
+                                      } else if (e.key === "ArrowLeft") {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          const newIndex = (focusedTransportIndex - 1 + transportModes.length) % transportModes.length;
+                                          setFocusedTransportIndex(newIndex);
+                                      } else if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          handleTransportSelect(t.mode);
+                                      }
+                                  }}
                                   autoFocus={focusedTransportIndex === idx}
                               >
-                                  <span className="text-4xl mb-2">{t.icon}</span>
+                                  <span className={`${config.fontSizes.xl} mb-2`}>{t.icon}</span>
                                   {t.label}
                               </button>
                           ))}
@@ -390,9 +461,9 @@ function InsufficientStock() {
 
           {showInactivityModal && (
             <ModalStandard onClose={() => setShowInactivityModal(false)}>
-              <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
-              <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-              <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+              <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
+              <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+              <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
             </ModalStandard>
           )}
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaMapMarkerAlt } from 'react-icons/fa';
+import config from '../../config';
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import ModalStandard from '../modal_standard';
@@ -21,7 +21,6 @@ function DrugStoresAvailable() {
   useInactivityRedirect(() => setShowInactivityModal(true));
 
   const handleKeyDown = (event) => {
-    console.log('focusedindex = ', focusedIndex);
     event.stopPropagation();
 
     const maxIndex = buttonsRef.current.length - 1;
@@ -64,7 +63,7 @@ function DrugStoresAvailable() {
     const fetchPharmacies = async (lat, lon) => {
       try {
         const radius = 10000;
-        const response = await fetchWithTimeout(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
+        const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
         const data = await response.json();
   
         if (response.ok) {
@@ -124,13 +123,13 @@ function DrugStoresAvailable() {
     <>
       {showInactivityModal && (
         <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className="text-3xl font-bold mb-4">Inactivité détectée</div>
-          <div className="text-xl mb-4">Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-          <button className="px-8 py-4 bg-white text-pink-500 text-2xl rounded-xl shadow hover:scale-105 transition-transform duration-300" onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
+          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+          <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
         </ModalStandard>
       )}
       <div
-        className="w-full h-screen flex flex-col items-center bg-background_color p-8"
+        className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}
         tabIndex={-1}
       >
         {/* Header */}
@@ -139,23 +138,23 @@ function DrugStoresAvailable() {
             <button
               ref={(el) => (buttonsRef.current[0] = el)}
               tabIndex={0}
-              className={`flex items-center px-8 py-4 text-2xl text-gray-800 bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer ${focusedIndex === 0 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+              className={`flex items-center ${config.padding.button} ${config.fontSizes.md} ${config.textColors.primary} ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} cursor-pointer ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
               onClick={() => navigate('/' + (location.state?.from || ''))}
             >
-              <FaArrowLeft className="mr-4" />
+              <config.icons.arrowLeft className="mr-3" />
               Retour
             </button>
           </div>
 
           <div className="flex-grow flex justify-center pr-16">
-              <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
+              <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-124 h-32" />
           </div>
         </div>
 
         {/* Main message */}
         <div
-          className="w-2/3 h-32 flex items-center justify-center text-center text-gray-800 text-3xl 
-          bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 mb-12"
+          className={`w-2/3 h-32 flex items-center justify-center text-center ${config.textColors.primary} ${config.fontSizes.lg} 
+          ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} mb-12`}
         >
           Voici la liste des pharmacies disposant du médicament souhaité :
         </div>
@@ -165,23 +164,23 @@ function DrugStoresAvailable() {
           className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
           tabIndex={0}
         >
-          <div className="grid grid-cols-1 gap-4 place-items-center">
+          <div className={config.layout.buttonGrid}>
             {drugShops.map((item, index) => (
               <button
                 key={item.id}
                 ref={(el) => (buttonsRef.current[index + 1] = el)}
                 tabIndex={0}
                 type="button"
-                className={`w-2/5 h-20 flex items-center justify-center text-2xl text-gray-800
-                bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg
-                hover:scale-105 transition-transform duration-300 cursor-pointer
-                ${focusedIndex === index + 1 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
+                className={`w-2/5 h-20 flex items-center justify-center ${config.fontSizes.md} ${config.textColors.primary}
+                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md}
+                ${config.scaleEffects.hover} ${config.transitions.default} cursor-pointer
+                ${focusedIndex === index + 1 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
                 onClick={(event) => {
                   event.preventDefault();
                   alert(`Vous avez sélectionné : ${item.label}`);
                 }} 
               >
-                <FaMapMarkerAlt className="mr-4" />
+                <config.icons.mapMarker className="mr-4" />
                 {item.label}
               </button>
             ))}
