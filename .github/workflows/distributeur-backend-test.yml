@@ -40,6 +40,8 @@ jobs:
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           DB_NAME=${{ secrets.DB_NAME }}
           MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          OPENROUTESERVICE_API_KEY=${{ secrets.OPENROUTESERVICE_API_KEY }}
+          
           EOF
 
       - name: Install build tools and dependencies
