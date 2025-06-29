@@ -93,12 +93,21 @@ def getInfosPrescription(text):
     - dict: Extracted information including doctor, RPPS, patient, and dates.
     """
     infos = {}
+    spe = "NONE"
 
-    doctor_pattern = r"Dr\s+([A-Za-z]+)\s+([A-Za-z]+)"
+    doctor_pattern = r"Dr\s+([A-Za-zÀ-ÿ]+)\s+([A-Za-zÀ-ÿ]+)"
     doctors = re.findall(doctor_pattern, text)
     if doctors:
         firstname, lastname = doctors[0]
-        infos["medecin"] = {"prenom": firstname, "nom": lastname}
+        specialty_pattern = r"(MEDECIN\s+[A-Zéèêîàç\-]+|CARDIOLOGUE|DERMATOLOGUE|PEDIATRE|GYNECOLOGUE|OPHTALMOLOGISTE|PSYCHIATRE)"
+        specialty_match = re.search(specialty_pattern, text, re.IGNORECASE)
+        if specialty_match:
+            spe = specialty_match.group(0).strip()
+        infos["medecin"] = {
+            "prenom": firstname,
+            "nom": lastname,
+            "speciality": spe
+        }
 
     rpps_pattern = r"RPPS[:\s]*([0-9]{11})"
     rpps_match = re.search(rpps_pattern, text)
@@ -109,14 +118,52 @@ def getInfosPrescription(text):
     patient = re.search(patient_pattern, text)
     if patient:
         last_name, first_name = patient.groups()
-        infos["patient"] = {"prenom": first_name, "nom": last_name}
+        infos["patient"] = {
+            "prenom": first_name,
+            "nom": last_name
+        }
 
-    date_pattern = r"\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
-    dates = re.findall(date_pattern, text)
-    if dates:
-        infos["dates"] = dates
+    # date_pattern = r"\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}"
+    # dates = re.findall(date_pattern, text)
+    # if dates:
+    #     infos["dates"] = dates
+
+    date_presc_match = re.search(r"Le\s+(\d{1,2}\s+[a-zéû]+\s+\d{4})", text, re.IGNORECASE)
+    if date_presc_match:
+        infos["date_prescription"] = date_presc_match.group(1)
+
+    lines = text.splitlines()
+    meds = []
+    current_med = None
+    capture_started = False
+
+    for line in lines:
+        line = line.strip()
+
+        if not capture_started and re.search(r"né\(e\)|née le", line, re.IGNORECASE):
+            capture_started = True
+            continue
+
+        if not capture_started:
+            continue
+
+        if not line:
+            continue
+
+        if re.search(r"[A-Z]{3,}.*\b(mg|ml|g|%|cp|comprimé|sol|solution|pulv|capsule|pommade|sirop|gelule)\b", line, re.IGNORECASE):
+            current_med = {"nom": line, "posologie": ""}
+            meds.append(current_med)
+        elif current_med:
+            current_med["posologie"] += line + " "
+
+    for med in meds:
+        med["posologie"] = med["posologie"].strip()
+
+    if meds:
+        infos["medicaments"] = meds
 
     return infos
+
 
 def getInfosRectoID(text):
     """
