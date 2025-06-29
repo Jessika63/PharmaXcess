@@ -1,18 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import config from '../../config';
+import ErrorPage from '../ErrorPage';
+import fetchWithTimeout from '../../utils/fetchWithTimeout';
+import ModalStandard from '../modal_standard';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function DrugStoresAvailable() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [drugShops, setDrugShops] = useState([]);
+  const [error, setError] = useState(null);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [enterPressed, setEnterPressed] = useState(false);
   const buttonsRef = useRef([]);
 
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  useInactivityRedirect(() => setShowInactivityModal(true));
+
   const handleKeyDown = (event) => {
-    console.log('focusedindex = ', focusedIndex);
     event.stopPropagation();
 
     const maxIndex = buttonsRef.current.length - 1;
@@ -55,21 +63,24 @@ function DrugStoresAvailable() {
     const fetchPharmacies = async (lat, lon) => {
       try {
         const radius = 10000;
-        const response = await fetch(`http://localhost:5000/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
+        const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
         const data = await response.json();
   
         if (response.ok) {
-          console.log('ok: ', data)
           const formatted = data.pharmacies.map((pharmacy, idx) => ({
             id: idx + 1,
             label: pharmacy.name || `Pharmacy ${idx + 1}`
           }));
           setDrugShops(formatted);
         } else {
-          console.error("Error while loading pharmacies :", data.error);
+          setError(data.error || 'Server Error');
         }
       } catch (err) {
-        console.error("Networking error :", err);
+        if (err.message === 'Timeout') {
+          setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+        } else {
+          setError('Network Error');
+        }
       }
     };
   
@@ -96,65 +107,87 @@ function DrugStoresAvailable() {
     }
   }, [focusedIndex]);  
   
+  useEffect(() => {
+    if (!showInactivityModal) return;
+    const dismiss = () => setShowInactivityModal(false);
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(event => window.addEventListener(event, dismiss));
+    return () => events.forEach(event => window.removeEventListener(event, dismiss));
+  }, [showInactivityModal]);
+
+  if (error) {
+    return <ErrorPage message={error} />;
+  }
 
   return (
-    <div
-      className="w-full h-screen flex flex-col items-center bg-background_color p-8"
-      tabIndex={-1}
-    >
-      {/* Header */}
-      <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
-        <Link
-          to={'/' + (location.state?.from || '')}
-          ref={(el) => (buttonsRef.current[0] = el)}
-          tabIndex={0}
-          className={`text-4xl bg-gradient-to-r from-pink-500 to-rose-400 px-14 
-            py-8 rounded-2xl shadow-lg hover:scale-105 transition-transform 
-            duration-300 focus:outline-none ${focusedIndex === 0 ? 'scale-105' : ''}`}
-          onClick={(e) => e.preventDefault()}
-        >
-          Retour
-        </Link>
-
-        <div className="flex-grow flex justify-center pr-16">
-            <img src={require('./../../assets/logo.png')} alt="Logo PharmaXcess" className="w-124 h-32" />
-        </div>
-      </div>
-
-      {/* Main message */}
+    <>
+      {showInactivityModal && (
+        <ModalStandard onClose={() => setShowInactivityModal(false)}>
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
+          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+          <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+        </ModalStandard>
+      )}
       <div
-        className="w-2/3 h-32 flex items-center justify-center text-center text-gray-800 text-3xl 
-        bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 mb-12"
+        className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}
+        tabIndex={-1}
       >
-        Voici la liste des pharmacies disposant du médicament souhaité :
-      </div>
-
-      {/* List of pharmacies */}
-      <div
-        className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
-        tabIndex={0}
-      >
-        <div className="grid grid-cols-1 gap-4 place-items-center">
-          {drugShops.map((item, index) => (
+        {/* Header */}
+        <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
+          <div className="w-full flex justify-start mb-4">
             <button
-              key={item.id}
-              ref={(el) => (buttonsRef.current[index + 1] = el)}
+              ref={(el) => (buttonsRef.current[0] = el)}
               tabIndex={0}
-              className={`w-2/5 h-20 flex items-center justify-center text-2xl text-gray-800
-              bg-gradient-to-r from-pink-500 to-rose-400 rounded-2xl shadow-lg
-              hover:scale-105 transition-transform duration-300 cursor-pointer
-              ${focusedIndex === index + 1 ? 'scale-105 ring-4 ring-pink-300' : ''}`}
-              onClick={(event) => {
-                event.preventDefault();
-                alert(`Vous avez sélectionné : ${item.label}`);
-              }} 
+              className={`flex items-center ${config.padding.button} ${config.fontSizes.md} ${config.textColors.primary} ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} cursor-pointer ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+              onClick={() => navigate('/' + (location.state?.from || ''))}
             >
-              {item.label}
+              <config.icons.arrowLeft className="mr-3" />
+              Retour
             </button>
-          ))}
+          </div>
+
+          <div className="flex-grow flex justify-center pr-16">
+              <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-124 h-32" />
+          </div>
+        </div>
+
+        {/* Main message */}
+        <div
+          className={`w-2/3 h-32 flex items-center justify-center text-center ${config.textColors.primary} ${config.fontSizes.lg} 
+          ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} mb-12`}
+        >
+          Voici la liste des pharmacies disposant du médicament souhaité :
+        </div>
+
+        {/* List of pharmacies */}
+        <div
+          className="w-4/5 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+          tabIndex={0}
+        >
+          <div className={config.layout.buttonGrid}>
+            {drugShops.map((item, index) => (
+              <button
+                key={item.id}
+                ref={(el) => (buttonsRef.current[index + 1] = el)}
+                tabIndex={0}
+                type="button"
+                className={`w-2/5 h-20 flex items-center justify-center ${config.fontSizes.md} ${config.textColors.primary}
+                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md}
+                ${config.scaleEffects.hover} ${config.transitions.default} cursor-pointer
+                ${focusedIndex === index + 1 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  alert(`Vous avez sélectionné : ${item.label}`);
+                }} 
+              >
+                <config.icons.mapMarker className="mr-4" />
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

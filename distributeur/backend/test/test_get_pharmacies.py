@@ -1,4 +1,3 @@
-
 import pytest
 import json
 from unittest.mock import patch
@@ -137,3 +136,95 @@ def test_get_pharmacies_timeout(mock_get, client):
 
     assert response.status_code == 500  # Expect 500 Internal Server Error
     assert b"Request to Overpass API timed out" in response.data  # Check error message
+
+@pytest.mark.order(1)  # LOX n°4
+@patch("requests.get")
+def test_get_pharmacies_max_radius_few_named_pharmacies(mock_get, client):
+    """
+    Test case: Radius exceeds max and there are fewer than 10 named pharmacies.
+    Should return as many as found (not 404).
+    """
+    # Simulate Overpass API returning only 2 named pharmacies, even after radius increases
+    mock_data = {
+        "elements": [
+            {"lat": 53.22, "lon": 6.53, "tags": {"name": "Pharmacy A"}},
+            {"lat": 53.23, "lon": 6.54, "tags": {"name": "Pharmacy B"}},
+            {"lat": 53.24, "lon": 6.55, "tags": {}}  # Unknown name
+        ]
+    }
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = mock_data
+
+    response = client.get("/get_pharmacies", query_string={"lat": 53.24, "lon": 6.53, "radius": 1000001})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "pharmacies" in data
+    assert len(data["pharmacies"]) == 2
+    names = {ph["name"] for ph in data["pharmacies"]}
+    assert names == {"Pharmacy A", "Pharmacy B"}
+    assert data["message"] == "Pharmacies sent successfully"
+
+@pytest.mark.order(1)  # LOX n°4
+@patch("requests.get")
+def test_get_pharmacies_max_radius_no_named_pharmacies(mock_get, client):
+    """
+    Test case: Radius exceeds max and there are no named pharmacies (all are 'Unknown').
+    Should return 404.
+    """
+    # Simulate Overpass API returning only pharmacies with no name
+    mock_data = {
+        "elements": [
+            {"lat": 53.22, "lon": 6.53, "tags": {}},
+            {"lat": 53.23, "lon": 6.54, "tags": {}},
+        ]
+    }
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = mock_data
+
+    response = client.get("/get_pharmacies", query_string={"lat": 53.24, "lon": 6.53, "radius": 1000001})
+    assert response.status_code == 404
+    data = response.get_json()
+    assert "error" in data
+    assert data["error"] == "No pharmacies found in the specified area"
+
+@pytest.mark.order(1)  # LOX n°4
+@patch("requests.get")
+def test_get_pharmacies_no_pharmacies_at_all(mock_get, client):
+    """
+    Test case: Overpass API returns no pharmacies at all (empty elements list).
+    Should return 404.
+    """
+    mock_data = {"elements": []}
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = mock_data
+
+    response = client.get("/get_pharmacies", query_string={"lat": 53.24, "lon": 6.53, "radius": 1000})
+    assert response.status_code == 404
+    data = response.get_json()
+    assert "error" in data
+    assert data["error"] == "No pharmacies found in the specified area"
+
+@pytest.mark.order(1)  # LOX n°4
+@patch("requests.get")
+def test_get_pharmacies_more_than_10_named_pharmacies(mock_get, client):
+    """
+    Test case: Overpass API returns more than 10 named pharmacies, should return only the 10 nearest.
+    """
+    mock_data = {
+        "elements": [
+            {"lat": 53.20 + i * 0.01, "lon": 6.50 + i * 0.01, "tags": {"name": f"Pharmacy {i+1}"}}
+            for i in range(15)
+        ]
+    }
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = mock_data
+
+    response = client.get("/get_pharmacies", query_string={"lat": 53.24, "lon": 6.53, "radius": 1000})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "pharmacies" in data
+    assert len(data["pharmacies"]) == 10
+    assert data["message"] == "Pharmacies sent successfully"
+    # Ensure the names are the first 10 sorted by distance
+    names = [ph["name"] for ph in data["pharmacies"]]
+    assert all(name.startswith("Pharmacy ") for name in names)

@@ -10,7 +10,7 @@ These dispensers will serve two purposes. Once connected to the medication distr
 
 ## Launch
 
-You can found every information about the launching script and the launching process [here](Launch_Readme.md)
+You can found every information about the launching script and the launching process [in this readme](Launch_Readme.md)
 
 It is recommended to used the script but you can launch it manually and following the readme in each parts.
 
@@ -20,8 +20,8 @@ We have divided the **distributeur** into two parts, the frontend and the backen
 
 ### Front-end
 
-You can find all **Distributeur** **Frontend** information [here](frontend/README.md)
+You can find all **Distributeur** **Frontend** information [in this frontend readme](frontend/README.md)
 
 ### Back-end
 
-You can find all **Distributeur** **Backend** information [here](backend/README.md)
+You can find all **Distributeur** **Backend** information [in this backend readme](backend/README.md)
