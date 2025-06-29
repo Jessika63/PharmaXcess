@@ -16,11 +16,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      docker:
-        image: docker:24.0.7-dind
-        privileged: true
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
