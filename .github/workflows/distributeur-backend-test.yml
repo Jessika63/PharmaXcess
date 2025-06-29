@@ -61,6 +61,7 @@ jobs:
           GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
           FLUSH PRIVILEGES;
           EOF
+          cat distributeur/backend/db/database.sql >> distributeur/backend/temp_fake_database_dump_px.sql
 
       - name: Run backend tests
         working-directory: distributeur
