@@ -16,3 +16,4 @@ pillow==10.3.0
 paddleocr==2.7.3
 requests==2.31.0
 urllib3==1.26.18
+charset-normalizer==3.3.2
