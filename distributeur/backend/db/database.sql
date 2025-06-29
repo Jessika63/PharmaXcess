@@ -1,7 +1,7 @@
 connect db_distributeur
 
-CREATE DATABASE IF NOT EXISTS doctors_db;
-USE doctors_db;
+CREATE DATABASE IF NOT EXISTS __DB_NAME__;
+USE __DB_NAME__;
 
 CREATE TABLE IF NOT EXISTS doctors (
     id INT AUTO_INCREMENT PRIMARY KEY,

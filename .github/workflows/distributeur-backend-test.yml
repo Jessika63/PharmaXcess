@@ -63,6 +63,11 @@ jobs:
           EOF
           cat distributeur/backend/db/database.sql >> distributeur/backend/temp_fake_database_dump_px.sql
 
+      - name: Replace DB_NAME placeholder in SQL
+        if: env.CI == 'true'
+        run: |
+          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
+
       - name: Run backend tests
         working-directory: distributeur
         run: |
