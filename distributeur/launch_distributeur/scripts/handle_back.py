@@ -41,7 +41,12 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
-        colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
+        if os.environ.get("CI", "false").lower() == "true":
+            colored_print(f"Dump file '{dump_file_name}' not found, but running in CI, so continuing without it.", "yellow")
+            return  # Skip the dump import in CI
+        else:
+            colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
+            return
 
     try:
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
