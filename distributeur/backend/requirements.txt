@@ -3,7 +3,7 @@ PyMySQL==1.1.1
 python-dotenv==1.0.0
 numpy==1.26.4
 opencv-python==4.8.1.78
-tensorflow==2.14.1
+tensorflow==2.18.1
 pytest==8.3.3
 pytesseract>=0.3.10
 pytest-mock==3.10.0
