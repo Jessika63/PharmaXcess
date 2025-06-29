@@ -40,6 +40,12 @@ jobs:
           MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
           EOF
 
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r distributeur/backend/requirements.txt
+          pip install -r distributeur/backend/requirements_ignored.txt
+
       - name: Run backend tests
         working-directory: distributeur
         run: |
