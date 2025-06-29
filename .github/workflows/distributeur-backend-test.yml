@@ -53,3 +53,7 @@ jobs:
           python3 launch.py --verif
           python3 launch.py --back
           python3 launch.py --test
+
+      - name: Show backend container logs on failure
+        if: failure()
+        run: docker logs distributeur-backend-app || true
