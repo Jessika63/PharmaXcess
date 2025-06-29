@@ -1,0 +1,53 @@
+
+name: Distributeur Backend Tests
+
+on:
+  push:
+    paths:
+      - 'distributeur/backend/**'
+      - 'distributeur/launch_distributeur/**'
+      - '.github/workflows/distributeur-backend-test.yml'
+  pull_request:
+    paths:
+      - 'distributeur/backend/**'
+      - 'distributeur/launch_distributeur/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker:24.0.7-dind
+        privileged: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Create .env file
+        run: |
+          cat <<EOF > distributeur/backend/.env
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          EOF
+
+      - name: Run backend tests
+        working-directory: distributeur
+        run: |
+          python3 launch.py --verif
+          python3 launch.py --back
+          python3 launch.py --test
