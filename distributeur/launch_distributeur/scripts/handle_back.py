@@ -38,7 +38,11 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     env_data = load_env_file(".env")
 
     # Step 4: Execute the database dump
-    dump_file_name = f"database_dump_px_{db_dump_date}.sql"
+    # Use the fake dump in CI, otherwise use the real one
+    if os.environ.get("CI", "false").lower() == "true":
+        dump_file_name = "temp_fake_database_dump_px.sql"
+    else:
+        dump_file_name = f"database_dump_px_{db_dump_date}.sql"
 
     if not os.path.exists(dump_file_name):
         if os.environ.get("CI", "false").lower() == "true":

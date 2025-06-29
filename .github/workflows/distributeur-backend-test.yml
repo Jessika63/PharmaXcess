@@ -49,6 +49,17 @@ jobs:
           pip install -r distributeur/backend/requirements.txt --no-deps
           pip install -r distributeur/backend/requirements_ignored.txt --no-deps
 
+      - name: Create fake database dump for CI
+        if: env.CI == 'true'
+        run: |
+          cat <<EOF > distributeur/backend/temp_fake_database_dump_px.sql
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
+          USE \`${{ secrets.DB_NAME }}\`;
+          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
+          FLUSH PRIVILEGES;
+          EOF
+
       - name: Run backend tests
         working-directory: distributeur
         run: |
