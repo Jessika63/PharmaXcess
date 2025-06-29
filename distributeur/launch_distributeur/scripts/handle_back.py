@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 
@@ -30,7 +29,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
 
     # Step 1: Start containers with docker-compose in detached mode
     start_containers()
-    verify_backend_is_up(back_app_container_name, nb_of_retry=2)
+    verify_backend_is_up(back_app_container_name, nb_of_retry=10)
 
     # Step 2: Wait for the database container to be ready
     verify_database_is_up(db_container_name, nb_of_retry=10)

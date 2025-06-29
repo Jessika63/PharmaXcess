@@ -1,4 +1,3 @@
-
 import subprocess
 
 from helpers.colored_print import colored_print
@@ -19,7 +18,7 @@ def handle_test(backend_folder, db_container_name, back_container_name):
 
     # Step 1: Check if containers is ready
     verify_database_is_up(db_container_name)
-    verify_backend_is_up(back_container_name, nb_of_retry=2)
+    verify_backend_is_up(back_container_name, nb_of_retry=10)
 
     # Step 2: Run tests using docker-compose
     try:
