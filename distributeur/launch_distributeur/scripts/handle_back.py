@@ -59,7 +59,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
         result = subprocess.run(
             [
                 "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
-                "-p" + env_data["MYSQL_ROOT_PASSWORD"], env_data["DB_NAME"]
+                "-p" + env_data["MYSQL_ROOT_PASSWORD"]
             ],
             input=dump_content,  # Pass the string content
             text=True,           # Ensure subprocess expects a string
