@@ -1,5 +1,3 @@
-connect db_distributeur
-
 CREATE DATABASE IF NOT EXISTS __DB_NAME__;
 USE __DB_NAME__;
 

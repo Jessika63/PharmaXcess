@@ -1,4 +1,3 @@
-
 # Function to print with colors
 def colored_print(message, color):
     """
@@ -17,6 +16,7 @@ def colored_print(message, color):
         "yellow": "\033[93m",
         "green": "\033[92m",
         "blue": "\033[94m",
+        "violet": "\033[95m",
         "reset": "\033[0m",
     }
 
@@ -25,6 +25,7 @@ def colored_print(message, color):
         "yellow": "[WARNING]: ",
         "green": "[SUCCESS]: ",
         "blue": "[INFO]: ",
+        "violet": "[DEBUG]: ",
     }
 
     prefix = prefixes.get(color, "")

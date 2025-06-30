@@ -58,20 +58,20 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
             dump_content = dump_file.read()  # Read the SQL dump as a string
 
         # Debug: print environment variables and dump file name
-        print(f"[DEBUG] CI: {os.environ.get('CI')}")
-        print(f"[DEBUG] DB_NAME: {env_data.get('DB_NAME')}")
-        print(f"[DEBUG] DB_USER: {env_data.get('DB_USER')}")
-        print(f"[DEBUG] DB_PASSWORD: {env_data.get('DB_PASSWORD')}")
-        print(f"[DEBUG] MYSQL_ROOT_PASSWORD: {env_data.get('MYSQL_ROOT_PASSWORD')}")
-        print(f"[DEBUG] Using dump file: {dump_file_name}")
+        colored_print(f"CI: {os.environ.get('CI')}", "violet")
+        colored_print(f"DB_NAME: {env_data.get('DB_NAME')}", "violet")
+        colored_print(f"DB_USER: {env_data.get('DB_USER')}", "violet")
+        colored_print(f"DB_PASSWORD: {env_data.get('DB_PASSWORD')}", "violet")
+        colored_print(f"MYSQL_ROOT_PASSWORD: {env_data.get('MYSQL_ROOT_PASSWORD')}", "violet")
+        colored_print(f"Using dump file: {dump_file_name}", "violet")
         if os.path.exists(dump_file_name):
             with open(dump_file_name, 'r', encoding='utf-8') as f:
                 dump_preview = f.read(1000)
-                print(f"[DEBUG] First 1000 chars of dump file:\n{dump_preview}")
+                colored_print(f"First 1000 chars of dump file:\n{dump_preview}", "violet")
         else:
-            print(f"[DEBUG] Dump file {dump_file_name} does not exist!")
+            colored_print(f"Dump file {dump_file_name} does not exist!", "violet")
 
-        print(f"[DEBUG] Running command: docker exec -i {db_container_name} mysql -uroot -p<hidden>")
+        colored_print(f"Running command: docker exec -i {db_container_name} mysql -uroot -p<hidden>", "violet")
         result = subprocess.run(
             [
                 "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
