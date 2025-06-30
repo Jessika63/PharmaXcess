@@ -3,14 +3,19 @@ name: Distributeur Backend Tests
 
 on:
   push:
+    branches:
+      - main
+      - dev
     paths:
-      - 'distributeur/backend/**'
-      - 'distributeur/launch_distributeur/**'
-      - '.github/workflows/distributeur-backend-test.yml'
+      - '**'
+      - 'distributeur/**'
   pull_request:
+    branches:
+      - main
+      - dev
     paths:
-      - 'distributeur/backend/**'
-      - 'distributeur/launch_distributeur/**'
+      - '**'
+      - 'distributeur/**'
 
 jobs:
   test:

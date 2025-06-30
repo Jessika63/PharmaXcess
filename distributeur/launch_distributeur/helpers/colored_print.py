@@ -1,4 +1,6 @@
 # Function to print with colors
+import datetime
+
 def colored_print(message, color):
     """
     Print a message in the terminal with the specified color and prefix based on the type.
@@ -31,8 +33,9 @@ def colored_print(message, color):
     prefix = prefixes.get(color, "")
     color_code = colors.get(color, colors["reset"])
     reset_code = colors["reset"]
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    print(f"{color_code}{prefix}{message}{reset_code}")
+    print(f"{color_code}[{timestamp}] {prefix}{message}{reset_code}")
 
     if color == "red":
         exit(1)
