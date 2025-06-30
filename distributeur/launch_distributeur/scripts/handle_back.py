@@ -56,6 +56,22 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
         with open(dump_file_name, "r", encoding="utf-8") as dump_file:
             dump_content = dump_file.read()  # Read the SQL dump as a string
+
+        # Debug: print environment variables and dump file name
+        print(f"[DEBUG] CI: {os.environ.get('CI')}")
+        print(f"[DEBUG] DB_NAME: {env_data.get('DB_NAME')}")
+        print(f"[DEBUG] DB_USER: {env_data.get('DB_USER')}")
+        print(f"[DEBUG] DB_PASSWORD: {env_data.get('DB_PASSWORD')}")
+        print(f"[DEBUG] MYSQL_ROOT_PASSWORD: {env_data.get('MYSQL_ROOT_PASSWORD')}")
+        print(f"[DEBUG] Using dump file: {dump_file_name}")
+        if os.path.exists(dump_file_name):
+            with open(dump_file_name, 'r', encoding='utf-8') as f:
+                dump_preview = f.read(1000)
+                print(f"[DEBUG] First 1000 chars of dump file:\n{dump_preview}")
+        else:
+            print(f"[DEBUG] Dump file {dump_file_name} does not exist!")
+
+        print(f"[DEBUG] Running command: docker exec -i {db_container_name} mysql -uroot -p<hidden>")
         result = subprocess.run(
             [
                 "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
