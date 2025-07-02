@@ -265,8 +265,7 @@ def main(image_path, doc_type):
     corrected_image = correct_orientation(image_path)
     text = extract_text_paddleocr(corrected_image)
 
-    print("\n=== TEXTE OCR ===\n")
-    print(text)
+    print(text, file=sys.stderr)
 
     data = {}
 
@@ -277,12 +276,11 @@ def main(image_path, doc_type):
     elif doc_type == "V":
         data = getInfosVersoID(text)
     else:
-        print("Unknown. Use P, R, V.")
-        return
+        print("ERREUR: Veuillez réessayer", file=sys.stderr)
+        sys.exit(1)
 
-    print("\n=== INFOS JSON ===\n")
-    print(json.dumps(data, indent=2, ensure_ascii=False))
     return data
+
 
 if __name__ == "__main__":
     """
@@ -292,9 +290,11 @@ if __name__ == "__main__":
         python3 script.py <image_path> <P|R|V>
     """
     if len(sys.argv) != 3:
-        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
+        print("Usage: python3 extractAll.py <image_path> <P|R|V>", file=sys.stderr)
         sys.exit(1)
 
     img_path = sys.argv[1]
     doc_type = sys.argv[2].upper()
-    main(img_path, doc_type)
+    data = main(img_path, doc_type)
+
+    print(json.dumps(data, ensure_ascii=False))
