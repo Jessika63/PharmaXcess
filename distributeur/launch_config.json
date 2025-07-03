@@ -6,7 +6,8 @@
             "DB_USER",
             "DB_PASSWORD",
             "DB_NAME",
-            "MYSQL_ROOT_PASSWORD"
+            "MYSQL_ROOT_PASSWORD",
+            "OPENROUTESERVICE_API_KEY"
         ],
         "db_dump_date": "21_05_2025"
     },
