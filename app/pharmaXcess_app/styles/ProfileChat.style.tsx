@@ -82,8 +82,9 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontSize: 16 * fontScale,
     },
     saveButton: {
+        flex: 1,
+        marginHorizontal: 10,
         marginTop: 20,
-        width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 10,

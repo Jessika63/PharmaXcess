@@ -100,11 +100,19 @@ export default function Chat(): React.JSX.Element {
                         value={newTicket.question}
                         onChangeText={(text) => setNewTicket({ ...newTicket, question: text })}
                     />
-                    <TouchableOpacity style={styles.saveButton} onPress={handleAddTicket}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.saveButtonText}>Confirmer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleAddTicket}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.saveButtonText}>Confirmer</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
+                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <Text style={styles.saveButtonText}>Annuler</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Modal>
         </View>

@@ -25,6 +25,15 @@ export default function ReportIssue({ navigation }: Props): React.JSX.Element {
         Alert.alert('Confirmation', 'Votre problème a été signalé avec succès.');
     };
 
+    const handleCancel = () => {
+        setName('');
+        setEmail('');
+        setPhone('');
+        setIssueType('');
+        setAttachment('');
+        Alert.alert('Annulation', 'Les champs ont été effacés.');
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <TextInput style={styles.input} placeholder="Type de problème" value={name} onChangeText={setName} />
@@ -39,6 +48,11 @@ export default function ReportIssue({ navigation }: Props): React.JSX.Element {
             <TouchableOpacity style={styles.button} onPress={handleConfirm}>
                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.buttonText}>Confirmer</Text>
+                </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleCancel}>
+                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                    <Text style={styles.buttonText}>Annuler</Text>
                 </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>

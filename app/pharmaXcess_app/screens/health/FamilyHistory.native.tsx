@@ -135,11 +135,34 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                         onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
                         style={styles.input}
                     />
-                    <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Confirmer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                    
+                    <View style={styles.modalButtonContainer}>
+                        {/* Confirm button - saves the family history data */}
+                        <TouchableOpacity onPress={handleAddPress} style={styles.modalButton}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Confirmer</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        {/* Cancel button - closes modal and resets all family history form fields */}
+                        <TouchableOpacity 
+                            style={styles.modalButton}
+                            onPress={() => {
+                                setIsModalVisible(false);
+                                // Reset all family history form fields to initial empty state
+                                setNewFamilyHistory({
+                                    name: '',
+                                    familyMember: '',
+                                    severity: '',
+                                    treatment: '',
+                                });
+                            }}
+                        >
+                            {/* Standardized gray gradient for cancel buttons across the app */}
+                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Annuler</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Modal>
         </View>

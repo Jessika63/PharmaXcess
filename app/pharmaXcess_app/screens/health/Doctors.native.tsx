@@ -166,11 +166,37 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
             onChangeText={(text) => setNewDoctor({ ...newDoctor, hospital: text })}
             style={styles.input}
           />
-          <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-              <Text style={styles.buttonText}>Ajouter</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          
+          {/* Modal action buttons container - Confirm and Cancel side by side */}
+          <View style={styles.modalButtonContainer}>
+            {/* Confirm button - saves the doctor data */}
+            <TouchableOpacity onPress={handleAddPress} style={styles.modalButton}>
+              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                <Text style={styles.buttonText}>Confirmer</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            {/* Cancel button - closes modal and resets all doctor form fields */}
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => {
+                setIsModalVisible(false);
+                // Reset all doctor form fields to initial empty state
+                setNewDoctor({
+                  name: '',
+                  specialty: '',
+                  phoneNumber: '',
+                  email: '',
+                  address: '',
+                  hospital: '',
+                });
+              }}
+            >
+              {/* Standardized gray gradient for cancel buttons across the app */}
+              <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                <Text style={styles.buttonText}>Annuler</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>

@@ -6,6 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { CustomPicker } from '../../components';
 
 type Reminder = {
     id: string;
@@ -47,23 +48,15 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         sound: '',
     });
 
-    const [selectedYear, setSelectedYear] = useState<string>('2023');
-    const [selectedMonth, setSelectedMonth] = useState<string>('10');
-    const [selectedDay, setSelectedDay] = useState<string>('01');
+    const [selectedYear, setSelectedYear] = useState<number>(2024);
+    const [selectedMonth, setSelectedMonth] = useState<number>(1);
+    const [selectedDay, setSelectedDay] = useState<number>(1);
     const [selectedSound, setSelectedSound] = useState<string>('Son 1');
-    
-    const [isYearModalVisible, setIsYearModalVisible] = useState(false);
-    const [isMonthModalVisible, setIsMonthModalVisible] = useState(false);
-    const [isDayModalVisible, setIsDayModalVisible] = useState(false);
-    const [isSoundModalVisible, setIsSoundModalVisible] = useState(false);
 
     const sounds = ['Son 1', 'Son 2', 'Son 3', 'Son 4'];
-    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
     const handleAddReminder = () => {
-        if (!newReminder.name || !selectedYear || !selectedMonth || !selectedDay) {
+        if (!newReminder.name) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
@@ -71,7 +64,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         const newReminderData: Reminder = {
             id: Math.random().toString(),
             name: newReminder.name,
-            date: `${selectedDay}/${selectedMonth}/${selectedYear}`,
+            date: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
             sound: selectedSound,
         };
 
@@ -82,9 +75,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
             date: '',
             sound: '',
         });
-        setSelectedYear('2023');
-        setSelectedMonth('10');
-        setSelectedDay('01');
+        setSelectedYear(2024);
+        setSelectedMonth(1);
+        setSelectedDay(1);
         setSelectedSound('Son 1');
         setIsModalVisible(false);
     };
@@ -132,103 +125,68 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                         value={newReminder.name}
                         onChangeText={(text) => setNewReminder({ ...newReminder, name: text })}
                     />
-                    <Text style={styles.label}>Date</Text>
-                    <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.input}>
-                        <Text>Année: {selectedYear}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.input}>
-                        <Text>Mois: {selectedMonth}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.input}>
-                        <Text>Jour: {selectedDay}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.label}>Son</Text>
-                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.input}>
-                        <Text>Son: {selectedSound}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={handleAddReminder}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Enregistrer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-            
-            <Modal visible={isYearModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner une année</Text>
-                    <FlatList
-                        data={years}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedYear(item);
-                                    setIsYearModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{item}</Text>
-                            </TouchableOpacity>
-                        )}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ flex: 1, marginRight: 5 }}>
+                            <CustomPicker
+                                label="Jour"
+                                selectedValue={selectedDay}
+                                onValueChange={(value) => setSelectedDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ 
+                                    label: (i + 1).toString().padStart(2, '0'), 
+                                    value: i + 1 
+                                }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginHorizontal: 5 }}>
+                            <CustomPicker
+                                label="Mois"
+                                selectedValue={selectedMonth}
+                                onValueChange={(value) => setSelectedMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ 
+                                    label: (i + 1).toString().padStart(2, '0'), 
+                                    value: i + 1 
+                                }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 5 }}>
+                            <CustomPicker
+                                label="Année"
+                                selectedValue={selectedYear}
+                                onValueChange={(value) => setSelectedYear(Number(value))}
+                                options={Array.from({ length: 10 }, (_, i) => ({ 
+                                    label: (2024 + i).toString(), 
+                                    value: 2024 + i 
+                                }))}
+                                placeholder="2024"
+                            />
+                        </View>
+                    </View>
+                    <CustomPicker
+                        label="Son"
+                        selectedValue={selectedSound}
+                        onValueChange={(value) => {
+                            console.log('Son sélectionné:', value);
+                            setSelectedSound(String(value));
+                        }}
+                        options={sounds.map(sound => ({ label: sound, value: sound }))}
+                        placeholder="Choisir un son"
                     />
-                </View>
-            </Modal>
-            
-            <Modal visible={isMonthModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un mois</Text>
-                    <FlatList
-                        data={months}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedMonth(item);
-                                    setIsMonthModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{item}</Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            </Modal>
-            
-            <Modal visible={isDayModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un jour</Text>
-                    <FlatList
-                        data={days}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedDay(item);
-                                    setIsDayModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{item}</Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            </Modal>
-            
-            <Modal visible={isSoundModalVisible} animationType="slide">
-                <ScrollView contentContainerStyle={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un son</Text>
-                    {sounds.map((sound) => (
-                        <TouchableOpacity
-                            key={sound}
-                            onPress={() => {
-                                setSelectedSound(sound);
-                                setIsSoundModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.input}>{sound}</Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.button} onPress={handleAddReminder}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Enregistrer</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                        
+                        <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
+                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Annuler</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </Modal>
         </View>
     );

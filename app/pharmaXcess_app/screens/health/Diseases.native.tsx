@@ -6,6 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { CustomPicker } from '../../components';
 
 type Disease = {
     name : string; 
@@ -61,25 +62,15 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
         setExpanded(expanded === index ? null : index);
     };
 
-    const [selectedYear, setSelectedYear] = useState<string | null>(null);
-    const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-    const [selectedDay, setSelectedDay] = useState<string | null>(null);
-    const [isYearModalVisible, setIsYearModalVisible] = useState<boolean>(false);
-    const [isMonthModalVisible, setIsMonthModalVisible] = useState<boolean>(false);
-    const [isDayModalVisible, setIsDayModalVisible] = useState<boolean>(false);
-
-    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const [selectedYear, setSelectedYear] = useState<number>(2024);
+    const [selectedMonth, setSelectedMonth] = useState<number>(1);
+    const [selectedDay, setSelectedDay] = useState<number>(1);
 
     const handleAddPress = (): void => {
         if (
             !newDisease.name ||
             !newDisease.description ||
             !newDisease.symptoms ||
-            !selectedYear ||
-            !selectedMonth ||
-            !selectedDay ||
             !newDisease.medications ||
             !newDisease.examens
         ) {
@@ -89,7 +80,7 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
     
         const newDiseaseData: Disease = {
             ...newDisease,
-            beginDate: `${selectedDay}/${selectedMonth}/${selectedYear}`,
+            beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
         };
     
         setDiseases([newDiseaseData, ...diseases]);
@@ -102,9 +93,9 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
             examens: '',
         });
         setModalVisible(false);
-        setSelectedYear('2020');
-        setSelectedMonth('01');
-        setSelectedDay('01'); 
+        setSelectedYear(2024);
+        setSelectedMonth(1);
+        setSelectedDay(1); 
     };
 
     const handleEditPress = (diseaseName: string): void => {
@@ -192,15 +183,44 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                             onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsYearModalVisible(true)} style={styles.input}>
-                            <Text>Année: {selectedYear}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsMonthModalVisible(true)} style={styles.input}>
-                            <Text>Mois: {selectedMonth}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDayModalVisible(true)} style={styles.input}>
-                            <Text>Jour: {selectedDay}</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={selectedDay}
+                                    onValueChange={(value) => setSelectedDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={selectedMonth}
+                                    onValueChange={(value) => setSelectedMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={selectedYear}
+                                    onValueChange={(value) => setSelectedYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
                         <TextInput
                             placeholder="Traitements"
                             value={newDisease.medications}
@@ -213,66 +233,20 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                             onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Ajouter</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.button}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                 </ScrollView>
-            </Modal>
-            <Modal visible={isYearModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner une année</Text>
-                    <ScrollView>
-                        {years.map((year) => (
-                            <TouchableOpacity
-                                key={year}
-                                onPress={() => {
-                                    setSelectedYear(year);
-                                    setIsYearModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{year}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isMonthModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un mois</Text>
-                    <ScrollView>
-                        {months.map((month) => (
-                            <TouchableOpacity
-                                key={month}
-                                onPress={() => {
-                                    setSelectedMonth(month);
-                                    setIsMonthModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{month}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isDayModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un jour</Text>
-                    <ScrollView>
-                        {days.map((day) => (
-                            <TouchableOpacity
-                                key={day}
-                                onPress={() => {
-                                    setSelectedDay(day);
-                                    setIsDayModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{day}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
             </Modal>
         </View>
     );

@@ -7,6 +7,7 @@ import { TextInput } from 'react-native-gesture-handler';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { TimePicker, CustomPicker } from '../../components';
 
 type Alarm = {
     id: string;
@@ -54,17 +55,11 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
 
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [selectedSound, setSelectedSound] = useState<string>('Son 1');
-    const [selectedHour, setSelectedHour] = useState<string>('08');
-    const [selectedMinute, setSelectedMinute] = useState<string>('00');
-
-    const [isHourModalVisible, setIsHourModalVisible] = useState(false);
-    const [isMinuteModalVisible, setIsMinuteModalVisible] = useState(false);
-    const [isSoundModalVisible, setIsSoundModalVisible] = useState(false);
+    const [selectedHour, setSelectedHour] = useState<number>(8);
+    const [selectedMinute, setSelectedMinute] = useState<number>(0);
 
     const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const sounds = ['Son 1', 'Son 2', 'Son 3', 'Son 4'];
-    const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-    const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
     const handleAddAlarm = () => {
         if (!newAlarm.medicineName || selectedDays.length === 0) {
@@ -75,7 +70,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         const newAlarmData: Alarm = {
             id: Math.random().toString(),
             medicineName: newAlarm.medicineName,
-            time: `${selectedHour}:${selectedMinute}`,
+            time: `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`,
             days: selectedDays,
             sound: selectedSound,
         };
@@ -89,8 +84,8 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
             sound: '',
         });
         setSelectedDays([]);
-        setSelectedHour('08');
-        setSelectedMinute('00');
+        setSelectedHour(8);
+        setSelectedMinute(0);
         setSelectedSound('Son 1');
         setIsModalVisible(false);
     };
@@ -146,13 +141,32 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         value={newAlarm.medicineName}
                         onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
                     />
-                    <Text style={styles.label}>Heure</Text>
-                    <TouchableOpacity onPress={() => setIsHourModalVisible(true)} style={styles.input}>
-                        <Text>Heure: {selectedHour}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsMinuteModalVisible(true)} style={styles.input}>
-                        <Text>Minute: {selectedMinute}</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                            <CustomPicker
+                                label="Heure"
+                                selectedValue={selectedHour}
+                                onValueChange={(value) => setSelectedHour(Number(value))}
+                                options={Array.from({ length: 24 }, (_, i) => ({ 
+                                    label: i.toString().padStart(2, '0'), 
+                                    value: i 
+                                }))}
+                                placeholder="00"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                            <CustomPicker
+                                label="Minutes"
+                                selectedValue={selectedMinute}
+                                onValueChange={(value) => setSelectedMinute(Number(value))}
+                                options={Array.from({ length: 60 }, (_, i) => ({ 
+                                    label: i.toString().padStart(2, '0'), 
+                                    value: i 
+                                }))}
+                                placeholder="00"
+                            />
+                        </View>
+                    </View>
                     <Text style={styles.label}>Jours</Text>
                     {daysOfWeek.map((day) => (
                         <TouchableOpacity
@@ -166,70 +180,30 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                             <Text style={styles.dayText}>{day}</Text>
                         </TouchableOpacity>
                     ))}
-                    <Text style={styles.label}>Son</Text>
-                    <TouchableOpacity onPress={() => setIsSoundModalVisible(true)} style={styles.input}>
-                        <Text>Son: {selectedSound}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={handleAddAlarm}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Enregistrer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-            <Modal visible={isHourModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner l'heure</Text>
-                    <FlatList
-                        data={hours}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedHour(item);
-                                    setIsHourModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{item}</Text>
-                            </TouchableOpacity>
-                        )}
+                    <CustomPicker
+                        label="Son"
+                        selectedValue={selectedSound}
+                        onValueChange={(value) => {
+                            console.log('Son sélectionné:', value);
+                            setSelectedSound(String(value));
+                        }}
+                        options={sounds.map(sound => ({ label: sound, value: sound }))}
+                        placeholder="Choisir un son"
                     />
-                </View>
-            </Modal>
-            <Modal visible={isMinuteModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner les minutes</Text>
-                    <FlatList
-                        data={minutes}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedMinute(item);
-                                    setIsMinuteModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{item}</Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            </Modal>
-            <Modal visible={isSoundModalVisible} animationType="slide">
-                <ScrollView contentContainerStyle={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner un son</Text>
-                    {sounds.map((sound) => (
-                        <TouchableOpacity
-                            key={sound}
-                            onPress={() => {
-                                setSelectedSound(sound);
-                                setIsSoundModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.input}>{sound}</Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.button} onPress={handleAddAlarm}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Enregistrer</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                        
+                        <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
+                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Annuler</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </Modal>
         </View>
     );

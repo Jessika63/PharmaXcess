@@ -27,6 +27,16 @@ export default function TechnicalSupport({ navigation }: TechnicalSupportProps):
         Alert.alert('Confirmation', 'Votre demande a été envoyée avec succès.');
     };
 
+    const handleCancel = () => {
+        setName('');
+        setEmail('');
+        setPhone('');
+        setRequestType('');
+        setDescription('');
+        setAttachment('');
+        Alert.alert('Annulation', 'Les champs ont été effacés.');
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <TextInput style={styles.input} placeholder="Nom et prénom" value={name} onChangeText={setName} />
@@ -42,6 +52,11 @@ export default function TechnicalSupport({ navigation }: TechnicalSupportProps):
             <TouchableOpacity style={styles.button} onPress={handleConfirm}>
                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                     <Text style={styles.buttonText}>Confirmer</Text>
+                </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleCancel}>
+                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                    <Text style={styles.buttonText}>Annuler</Text>
                 </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>

@@ -6,6 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { CustomPicker } from '../../components';
 
 type Allergy = {
     name: string;
@@ -55,23 +56,13 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         comments: '',
     });
 
-    const [selectedBeginYear, setSelectedBeginYear] = useState<number | null>(null);
-    const [selectedBeginMonth, setSelectedBeginMonth] = useState<number | null>(null);
-    const [selectedBeginDay, setSelectedBeginDay] = useState<number | null>(null);
-    const [isBeginYearModalVisible, setIsBeginYearModalVisible] = useState(false);
-    const [isBeginMonthModalVisible, setIsBeginMonthModalVisible] = useState(false);
-    const [isBeginDayModalVisible, setIsBeginDayModalVisible] = useState(false);
-
-    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const [selectedBeginYear, setSelectedBeginYear] = useState<number>(2024);
+    const [selectedBeginMonth, setSelectedBeginMonth] = useState<number>(1);
+    const [selectedBeginDay, setSelectedBeginDay] = useState<number>(1);
 
     const handleAddPress = (): void => {
         if (
             !newAllergy.name ||
-            !selectedBeginYear ||
-            !selectedBeginMonth ||
-            !selectedBeginDay ||
             !newAllergy.severity ||
             !newAllergy.symptoms ||
             !newAllergy.medications ||
@@ -83,7 +74,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
 
         const newAllergyData: Allergy = {
             ...newAllergy,
-            beginDate: `${selectedBeginDay}/${selectedBeginMonth}/${selectedBeginYear}`,
+            beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
         };
 
         setAllergies([...allergies, newAllergyData]);
@@ -95,6 +86,9 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             medications: '',
             comments: '',
         });
+        setSelectedBeginYear(2024);
+        setSelectedBeginMonth(1);
+        setSelectedBeginDay(1);
         setIsModalVisible(false);
     };
 
@@ -159,15 +153,44 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.input}>
-                            <Text>Année de début: {selectedBeginYear || 'Sélectionner une année'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.input}>
-                            <Text>Mois de début: {selectedBeginMonth || 'Sélectionner un mois'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.input}>
-                            <Text>Jour de début: {selectedBeginDay || 'Sélectionner un jour'}</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={selectedBeginDay}
+                                    onValueChange={(value) => setSelectedBeginDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={selectedBeginMonth}
+                                    onValueChange={(value) => setSelectedBeginMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={selectedBeginYear}
+                                    onValueChange={(value) => setSelectedBeginYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
                         <TextInput
                             placeholder="Gravité"
                             value={newAllergy.severity}
@@ -192,51 +215,20 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Ajouter</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.button}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                 </ScrollView>
-            </Modal>
-            <Modal visible={isBeginYearModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner l'année de début</Text>
-                    {years.map((year) => (
-                        <TouchableOpacity key={year} onPress={() => {
-                            setSelectedBeginYear(parseInt(year));
-                            setIsBeginYearModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{year}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Modal>
-            <Modal visible={isBeginMonthModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner le mois de début</Text>
-                    {months.map((month) => (
-                        <TouchableOpacity key={month} onPress={() => {
-                            setSelectedBeginMonth(parseInt(month));
-                            setIsBeginMonthModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{month}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Modal>
-            <Modal visible={isBeginDayModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Sélectionner le jour de début</Text>
-                    {days.map((day) => (
-                        <TouchableOpacity key={day} onPress={() => {
-                            setSelectedBeginDay(parseInt(day));
-                            setIsBeginDayModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{day}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
             </Modal>
         </View>
     );

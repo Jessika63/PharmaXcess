@@ -97,6 +97,53 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         padding: 20,
         flexGrow: 1,
     },
+    // Field title style for section headers in modals (e.g., "Date de début", "Durée")
+    fieldTitle: {
+        fontSize: 18 * fontScale,
+        color: colors.settingsTitle,
+        marginVertical: 8,
+        fontWeight: 'bold',
+    },
+    // Container for date picker dropdowns arranged horizontally (day, month, year)
+    dateContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 15,
+        paddingHorizontal: 2,
+    },
+    // Individual date picker dropdown style within dateContainer
+    datePicker: {
+        flex: 1,
+        marginHorizontal: 2,
+        minWidth: 0, 
+    },
+    // Container for dosage/duration picker dropdowns arranged horizontally (value, unit)
+    dosageContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 15,
+        paddingHorizontal: 2,
+    },
+    // Individual dosage/duration picker dropdown style within dosageContainer
+    dosagePicker: {
+        flex: 1,
+        marginHorizontal: 2,
+        minWidth: 0, 
+    },
+    // Container for modal action buttons (Confirm/Cancel) arranged horizontally
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 20,
+    },
+    // Individual modal button style within modalButtonContainer
+    modalButton: {
+        flex: 1,
+        marginHorizontal: 5,
+    },
 });
 
 export default createStyles;

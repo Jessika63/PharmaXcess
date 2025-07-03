@@ -7,6 +7,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { CustomPicker, QuantityPicker } from '../../components';
 
 type Treatment = {
     name: string;
@@ -60,45 +61,30 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         disease: '',
     });
 
-    const [selectedBeginYear, setSelectedBeginYear] = useState<string>('');
-    const [selectedBeginMonth, setSelectedBeginMonth] = useState<string>('');
-    const [selectedBeginDay, setSelectedBeginDay] = useState<string>('');
-    const [isBeginYearModalVisible, setIsBeginYearModalVisible] = useState<boolean>(false);
-    const [isBeginMonthModalVisible, setIsBeginMonthModalVisible] = useState<boolean>(false);
-    const [isBeginDayModalVisible, setIsBeginDayModalVisible] = useState<boolean>(false);
-    const [selectedDosage, setSelectedDosage] = useState<string>('');
-    const [isDosageModalVisible, setIsDosageModalVisible] = useState<boolean>(false);
+    // Simplified state using our new picker components
+    const [beginDay, setBeginDay] = useState<number>(1);
+    const [beginMonth, setBeginMonth] = useState<number>(1);
+    const [beginYear, setBeginYear] = useState<number>(new Date().getFullYear());
+    
+    const [endDay, setEndDay] = useState<number>(1);
+    const [endMonth, setEndMonth] = useState<number>(1);
+    const [endYear, setEndYear] = useState<number>(new Date().getFullYear());
+    
+    const [dosagePerDay, setDosagePerDay] = useState<number>(1);
+    const [durationValue, setDurationValue] = useState<number>(1);
+    const [durationUnit, setDurationUnit] = useState<string>('mois');
 
-    const [selectedEndYear, setSelectedEndYear] = useState<string>('');
-    const [selectedEndMonth, setSelectedEndMonth] = useState<string>('');
-    const [selectedEndDay, setSelectedEndDay] = useState<string>('');
-    const [isEndYearModalVisible, setIsEndYearModalVisible] = useState<boolean>(false);
-    const [isEndMonthModalVisible, setIsEndMonthModalVisible] = useState<boolean>(false);
-    const [isEndDayModalVisible, setIsEndDayModalVisible] = useState<boolean>(false);
-    const [selectedDurationValue, setSelectedDurationValue] = useState<string>('');
-    const [selectedDurationUnit, setSelectedDurationUnit] = useState<string>('mois');
-    const [isDurationValueModalVisible, setIsDurationValueModalVisible] = useState<boolean>(false);
-    const [isDurationUnitModalVisible, setIsDurationUnitModalVisible] = useState<boolean>(false);
-
-    const years = Array.from({ length: 10 }, (_, i) => (2020 + i).toString());
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const dosageOptions = Array.from({ length: 10 }, (_, i) => (i + 1).toString()); 
     const durationUnits = ['jour(s)', 'semaine(s)', 'mois', 'an(s)'];
-    const durationValues = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+
+    const formatDate = (day: number, month: number, year: number): string => {
+        const dayStr = day.toString().padStart(2, '0');
+        const monthStr = month.toString().padStart(2, '0');
+        return `${dayStr}/${monthStr}/${year}`;
+    };
 
     const handleAddPress = (): void => {
         if ( 
             !newTreatment.name || 
-            !selectedBeginYear ||
-            !selectedBeginMonth ||
-            !selectedBeginDay || 
-            !selectedEndYear || 
-            !selectedEndMonth || 
-            !selectedEndDay || 
-            !selectedDosage || 
-            !selectedDurationValue ||
-            !selectedDurationUnit ||
             !newTreatment.sideEffects ||
             !newTreatment.disease
         ) { 
@@ -108,11 +94,10 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
 
         const newTreatmentData: Treatment = {
             ...newTreatment,
-            beginDate: `${selectedBeginDay}/${selectedBeginMonth}/${selectedBeginYear}`,
-            endDate: `${selectedEndDay}/${selectedEndMonth}/${selectedEndYear}`,
-            dosage: `${selectedDosage} comprimé(s) par jour`,
-            duration: `${selectedDurationValue} ${selectedDurationUnit}`, 
-
+            beginDate: formatDate(beginDay, beginMonth, beginYear),
+            endDate: formatDate(endDay, endMonth, endYear),
+            dosage: `${dosagePerDay} comprimé(s) par jour`,
+            duration: `${durationValue} ${durationUnit}`,
         };
 
         setTreatments([...treatments, newTreatmentData]); 
@@ -126,15 +111,17 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
             disease: '',
         });
         setModalVisible(false);
-        setSelectedBeginYear('2023');
-        setSelectedBeginMonth('01');
-        setSelectedBeginDay('01');
-        setSelectedEndYear('2023');
-        setSelectedEndMonth('01');
-        setSelectedEndDay('01');
-        setSelectedDosage('1');
-        setSelectedDurationValue('1');
-        setSelectedDurationUnit('mois');
+        // Reset picker values
+        const today = new Date();
+        setBeginDay(1);
+        setBeginMonth(1);
+        setBeginYear(today.getFullYear());
+        setEndDay(1);
+        setEndMonth(1);
+        setEndYear(today.getFullYear());
+        setDosagePerDay(1);
+        setDurationValue(1);
+        setDurationUnit('mois');
     };
 
     const handleEditPress = (treatmentName: string): void => {
@@ -200,204 +187,162 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                     contentInsetAdjustmentBehavior="automatic"
                 >
                         <Text style={styles.modalTitle}>Ajouter un traitement</Text>
+                        
                         <TextInput
                             placeholder="Nom du traitement"
                             value={newTreatment.name}
                             onChangeText={(text) => setNewTreatment({ ...newTreatment, name: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={() => setIsBeginYearModalVisible(true)} style={styles.input}>
-                            <Text>Année de début: {selectedBeginYear}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginMonthModalVisible(true)} style={styles.input}>
-                            <Text>Mois de début: {selectedBeginMonth}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsBeginDayModalVisible(true)} style={styles.input}>
-                            <Text>Jour de début: {selectedBeginDay}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndYearModalVisible(true)} style={styles.input}>
-                            <Text>Année de fin: {selectedEndYear}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndMonthModalVisible(true)} style={styles.input}>
-                            <Text>Mois de fin: {selectedEndMonth}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEndDayModalVisible(true)} style={styles.input}>
-                            <Text>Jour de fin: {selectedEndDay}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDosageModalVisible(true)} style={styles.input}>
-                            <Text>Dosage: {selectedDosage} comprimé(s) par jour</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDurationValueModalVisible(true)} style={styles.input}>
-                            <Text>Durée: {selectedDurationValue}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsDurationUnitModalVisible(true)} style={styles.input}>
-                            <Text>Unité: {selectedDurationUnit}</Text>
-                        </TouchableOpacity>
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Date de début</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={beginDay}
+                                    onValueChange={(value) => setBeginDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={beginMonth}
+                                    onValueChange={(value) => setBeginMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={beginYear}
+                                    onValueChange={(value) => setBeginYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Date de fin</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={endDay}
+                                    onValueChange={(value) => setEndDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={endMonth}
+                                    onValueChange={(value) => setEndMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={endYear}
+                                    onValueChange={(value) => setEndYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Dosage</Text>
+                        <CustomPicker
+                            label="Comprimés par jour"
+                            selectedValue={dosagePerDay}
+                            onValueChange={(value) => setDosagePerDay(Number(value))}
+                            options={Array.from({ length: 10 }, (_, i) => ({ 
+                                label: (i + 1).toString(), 
+                                value: i + 1 
+                            }))}
+                            placeholder="1"
+                        />
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Durée</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 10 }}>
+                                <CustomPicker
+                                    label="Valeur"
+                                    selectedValue={durationValue}
+                                    onValueChange={(value) => setDurationValue(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString(), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="1"
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <CustomPicker
+                                    label="Unité"
+                                    selectedValue={durationUnit}
+                                    onValueChange={(value) => setDurationUnit(String(value))}
+                                    options={durationUnits.map(unit => ({ 
+                                        label: unit, 
+                                        value: unit 
+                                    }))}
+                                    placeholder="Sélectionner"
+                                />
+                            </View>
+                        </View>
+                        
                         <TextInput
                             placeholder="Effets secondaires"
                             value={newTreatment.sideEffects}
                             onChangeText={(text) => setNewTreatment({ ...newTreatment, sideEffects: text })}
                             style={styles.input}
                         />
+                        
                         <TextInput
                             placeholder="Maladie associée"
                             value={newTreatment.disease}
                             onChangeText={(text) => setNewTreatment({ ...newTreatment, disease: text })}
                             style={styles.input}
                         />
-                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Ajouter</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.button}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                 </ScrollView>
-            </Modal>
-            <Modal visible={isBeginYearModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner une année de début</Text>
-                    <ScrollView>
-                        {years.map((year) => (
-                            <TouchableOpacity
-                                key={year}
-                                onPress={() => {
-                                    setSelectedBeginYear(year);
-                                    setIsBeginYearModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{year}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isBeginMonthModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner un mois de début</Text>
-                    <ScrollView>
-                        {months.map((month) => (
-                            <TouchableOpacity
-                                key={month}
-                                onPress={() => {
-                                    setSelectedBeginMonth(month);
-                                    setIsBeginMonthModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{month}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isBeginDayModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner un jour de début</Text>
-                    <ScrollView>
-                        {days.map((day) => (
-                            <TouchableOpacity
-                                key={day}
-                                onPress={() => {
-                                    setSelectedBeginDay(day);
-                                    setIsBeginDayModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{day}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isEndYearModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner l'année de fin</Text>
-                    {years.map((year) => (
-                        <TouchableOpacity key={year} onPress={() => {
-                            setSelectedEndYear(year);
-                            setIsEndYearModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{year}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Modal>
-            <Modal visible={isEndMonthModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner le mois de fin</Text>
-                    {months.map((month) => (
-                        <TouchableOpacity key={month} onPress={() => {
-                            setSelectedEndMonth(month);
-                            setIsEndMonthModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{month}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Modal>
-            <Modal visible={isEndDayModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner le jour de fin</Text>
-                    {days.map((day) => (
-                        <TouchableOpacity key={day} onPress={() => {
-                            setSelectedEndDay(day);
-                            setIsEndDayModalVisible(false);
-                        }}>
-                            <Text style={styles.input}>{day}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Modal>
-            <Modal visible={isDosageModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner le dosage</Text>
-                    <ScrollView>
-                        {dosageOptions.map((dosage) => (
-                            <TouchableOpacity
-                                key={dosage}
-                                onPress={() => {
-                                    setSelectedDosage(dosage);
-                                    setIsDosageModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{dosage} comprimé(s)</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isDurationValueModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner la durée</Text>
-                    <ScrollView>
-                        {durationValues.map((value) => (
-                            <TouchableOpacity
-                                key={value}
-                                onPress={() => {
-                                    setSelectedDurationValue(value);
-                                    setIsDurationValueModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{value}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-            <Modal visible={isDurationUnitModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.cardTitle}>Sélectionner l'unité de durée</Text>
-                    <ScrollView>
-                        {durationUnits.map((unit) => (
-                            <TouchableOpacity
-                                key={unit}
-                                onPress={() => {
-                                    setSelectedDurationUnit(unit);
-                                    setIsDurationUnitModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.input}>{unit}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
             </Modal>
         </View>
     );
