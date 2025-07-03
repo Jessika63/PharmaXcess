@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import '../App.css';
+import { FaCamera, FaRedo, FaCheck } from 'react-icons/fa';
+import config from '../config';
 
-const CameraComponent = ({ onPhotoCapture }) => {
+const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocusedButtonIndex }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
@@ -20,95 +21,166 @@ const CameraComponent = ({ onPhotoCapture }) => {
 
     useEffect(() => {
         startCamera();
-        
-        return () => {
-            const currentVideoRef = videoRef.current;
 
-            if (currentVideoRef && currentVideoRef.srcObject) {
-                const tracks = currentVideoRef.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
+        return () => {
+            if (videoRef.current?.srcObject) {
+                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
         };
     }, []);
 
     const capturePhoto = () => {
-        const canvas = canvasRef.current;
-        const video = videoRef.current;
+        if (canvasRef.current && videoRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
 
-        if (canvas && video) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             const ctx = canvas.getContext('2d');
 
             ctx.save();
-            ctx.scale(-1, 1); // image mirroring
+            ctx.scale(-1, 1);
             ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
             ctx.restore();
 
             const imageSrc = canvas.toDataURL('image/png');
             setImage(imageSrc);
             setIsPhotoTaken(true);
-
-            onPhotoCapture(imageSrc);
+            setFocusedButtonIndex(0); // Reset focus to first button after photo is taken
         }
     };
 
     const handleRetakePhoto = () => {
         setImage(null);
         setIsPhotoTaken(false);
+        setFocusedButtonIndex(0);
         startCamera();
     };
 
+    const handleValidatePhoto = () => {
+        if (image) {
+            onPhotoCapture(image);
+        }
+    };
+
+    const handleClose = () => {
+        onClose();
+    };
+
+    // Get the total number of buttons based on current state
+    const getTotalButtons = () => {
+        if (!isPhotoTaken) {
+            return 2; // Take photo + Close
+        } else {
+            return 3; // Retake + OK + Close
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const totalButtons = getTotalButtons();
+
+            if (event.key === "ArrowRight") {
+                setFocusedButtonIndex((prev) => (prev + 1) % totalButtons);
+            } else if (event.key === "ArrowLeft") {
+                setFocusedButtonIndex((prev) => (prev - 1 + totalButtons) % totalButtons);
+            } else if (event.key === "Enter") {
+                if (!isPhotoTaken) {
+                    if (focusedButtonIndex === 0) { // Take photo button
+                        capturePhoto();
+                    } else if (focusedButtonIndex === 1) { // Close button
+                        handleClose();
+                    }
+                } else {
+                    if (focusedButtonIndex === 0) { // Retake photo button
+                        handleRetakePhoto();
+                    } else if (focusedButtonIndex === 1) { // OK button
+                        handleValidatePhoto();
+                    } else if (focusedButtonIndex === 2) { // Close button
+                        handleClose();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown, true);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown, true);
+        };
+    }, [isPhotoTaken, focusedButtonIndex]);
+
     return (
-        <div style={{ position: 'relative', width: '265%', height: '78%'
-            , top: '9%', left: '-85%'
-         }}>
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
             {isPhotoTaken ? (
-                <div style={{position: 'relative', top: '1%'
-                    , width: '95%', height: '96%', left: '2%'}}>
-                    <div style={{position: 'relative', width: '87%', height: '87%'
-                        , left: '10%', top: '1%'
-                    }}>
-                        <img src={image} alt="Captured" style={{ width: '100%', height: '100%'
-                            , objectFit: 'contain'
-                         }} />
+                <div className="relative w-[95%] h-[96%] flex flex-col items-center">
+                    <div className="w-[87%] h-[87%] flex justify-center items-center">
+                        <img src={image} alt="Captured" className="w-full h-full object-contain rounded-xl shadow-lg" />
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
-                    onClick={handleRetakePhoto}>
-                        Prendre une autre photo
-                    </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
-                    onClick={handleRetakePhoto}>
-                        Ok
+
+                    <div className="flex justify-center gap-8 mt-6">
+                        <button 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`} 
+                            onClick={handleRetakePhoto}
+                            tabIndex={focusedButtonIndex === 0 ? 0 : -1}
+                        >
+                            <FaRedo className="mr-2" />
+                            Prendre une autre photo
+                        </button>
+                        <button 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''}`} 
+                            onClick={handleValidatePhoto}
+                            tabIndex={focusedButtonIndex === 1 ? 0 : -1}
+                        >
+                            <FaCheck className="mr-2" />
+                            OK
+                        </button>
+                        <button 
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 2 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                            onClick={handleClose}
+                            tabIndex={focusedButtonIndex === 2 ? 0 : -1}
+                        >
+                            <config.icons.times className="mr-2" />
+                            Fermer
+                        </button>
                     </div>
                 </div>
             ) : (
-                <div style={{position: 'relative', top: '1%'
-                    , width: '95%', height: '96%', left: '2%'}}>
-                    <div style={{position: 'relative', width: '87%', height: '87%'
-                        , left: '10%', top: '1%'
-                    }}>
-                        <video ref={videoRef} autoPlay style={
-                            { transform: 'scaleX(-1)', width: '100%', height: '100%' }}/>
+                <div className="relative w-[95%] h-[96%] flex flex-col items-center">
+                    <div className="w-[87%] h-[87%] flex justify-center items-center">
+                        <video ref={videoRef} autoPlay className="w-full h-full transform scale-x-[-1] rounded-xl shadow-lg" />
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '37.5%', top: '13%' }}
-                    onClick={capturePhoto}>
-                        Prendre une photo
+
+                    <div className="flex justify-center gap-8 mt-6">
+                        <button 
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                            shadow-md hover:scale-110 transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`}
+                            onClick={capturePhoto}
+                            tabIndex={focusedButtonIndex === 0 ? 0 : -1}
+                        >
+                            <FaCamera className="mr-2" />
+                            Prendre une photo
+                        </button>
+                        <button 
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                            onClick={handleClose}
+                            tabIndex={focusedButtonIndex === 1 ? 0 : -1}
+                        >
+                            <config.icons.times className="mr-2" />
+                            Fermer
+                        </button>
                     </div>
-                    <div
-                    className='rectangle'
-                    style={{ cursor: 'pointer', width: '20%', height: '10%', left: '67.5%', top: '3%' }}
-                    onClick={capturePhoto}>
-                        Ok
-                    </div>
-                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+                    <canvas ref={canvasRef} className="hidden" />
                 </div>
             )}
         </div>

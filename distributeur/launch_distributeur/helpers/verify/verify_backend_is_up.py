@@ -1,18 +1,17 @@
-
 import time
 import subprocess
 import requests
 
 from colored_print import colored_print
 
-def verify_backend_is_up(backend_container_name, nb_of_retry=1):
+def verify_backend_is_up(backend_container_name, nb_of_retry=10):
     """
     Verifies that the backend app is ready.
 
     :param backend_container_name: The name of the backend container to check.
-    :param nb_of_retry: The number of retries before failing (default is 1).
+    :param nb_of_retry: The number of retries before failing (default is 10).
     """
-    waiting_time = 10  # Time in seconds between retries
+    waiting_time = 60  # Time in seconds between retries
 
     time.sleep(waiting_time)  # Wait starting the checks
 

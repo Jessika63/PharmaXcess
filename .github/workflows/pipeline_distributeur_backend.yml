@@ -5,17 +5,20 @@ on:
     branches:
       - main
       - dev
+    paths:
+      - 'distributeur/**'
 
 jobs:
   vulnerability_check:
     runs-on: ubuntu-latest
+    env:
+      SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
-    - name: Change Permission
-      run: chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
+      with:
+        fetch-depth: 0  # Required for git rev-parse to work
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -23,10 +26,12 @@ jobs:
         python-version: '3.x'
 
     - name: Install safety
-      run: pip install safety==3.2.10
+      run: pip install safety==3.5.1
 
-    - name: Run Safety check
-      run: ./distributeur/backend/scripts/safety/run_safety.sh
+    - name: Run Security Scan
+      run: |
+        chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
+        ./distributeur/backend/scripts/safety/run_safety.sh
 
   check_leaks:
     runs-on: ubuntu-latest

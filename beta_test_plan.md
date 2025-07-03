@@ -1,13 +1,16 @@
+
 # **BETA TEST PLAN – PHARMAXCESS**
 
 ## **1. Introduction**
 
 ### **1.1 Contexte du projet**
+
 PharmaXcess, un distributeur automatique de médicaments, est disponible sans interruption, 24h/24 et 7j/7, pour permettre aux patients d'accéder à leurs médicaments à tout moment. Il est installé à l'extérieur des pharmacies, fonctionne comme un distributeur automatique de billets tout en garantissant la sécurité des médicaments, qui sont acheminés via un système pneumatique depuis les réserves des pharmacies. En supplément, une application compagnon permet aux utilisateurs de suivre leur consommation de médicaments, de gérer leurs ordonnances (par exemple, dates de renouvellement), localiser les distributeurs les plus proches, utiliser un système de Click & Collect en envoyant leur ordonnance à un pharmacien, et bénéficier d'un chat en temps réel avec un professionnel de santé.
 
 ---
 
 ### **1.2 Objectifs du beta test plan**
+
 Ce beta-test plan vise à évaluer la stabilité, l'efficacité et la convivialité du distributeur PharmaXcess ainsi que son application mobile. Cela facilitera la détection d'éventuelles erreurs et l'adaptation du produit avant sa mise en place à grande échelle. 
 
 ---

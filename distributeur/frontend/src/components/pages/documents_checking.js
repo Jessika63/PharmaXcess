@@ -1,25 +1,25 @@
-import React, {useState} from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './css/documents_checking.css'
 import CameraComponent from '../camera_component';
 import ModalCamera from '../modal_camera';
+import config from '../../config';
+import ModalStandard from '../modal_standard';
+import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function DocumentsChecking() {
-
     const [showCamera, setShowCamera] = useState(false);
-    const [image, setImage] = useState(null);
-    const [isPhotoTaken, setIsPhotoTaken] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(1);
+    const focusedIndexRef = useRef(1);
+    const buttonsRef = useRef([]);
+    const [showInactivityModal, setShowInactivityModal] = useState(false);
+
+    const navigate = useNavigate();
 
     const handleOpenCamera = () => {
         setShowCamera(true);
         setIsModalOpen(true);
-    };
-
-    const handlePhotoCapture = (capturedImage) => {
-        setImage(capturedImage);
-        setIsPhotoTaken(true);
     };
 
     const closeModal = () => {
@@ -27,95 +27,159 @@ function DocumentsChecking() {
         setShowCamera(false);
     };
 
+    const handleKeyDown = useCallback((event) => {
+        if (event.key === "ArrowRight") {
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex < 3 ? prevIndex + 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
+        } else if (event.key === "ArrowLeft") {
+            setFocusedIndex((prevIndex) => {
+                const newIndex = prevIndex > 0 ? prevIndex - 1 : prevIndex;
+                focusedIndexRef.current = newIndex;
+                return newIndex;
+            });
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            if (focusedIndexRef.current >= 1) {
+                handleOpenCamera();
+            } else {
+                navigate('/');
+            }
+        }
+    }, [navigate, handleOpenCamera]);
+
+    useInactivityRedirect(() => setShowInactivityModal(true));
+    useEffect(() => {
+        if (!showInactivityModal) return;
+        const dismiss = () => setShowInactivityModal(false);
+        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+        events.forEach(event => window.addEventListener(event, dismiss));
+        return () => events.forEach(event => window.removeEventListener(event, dismiss));
+    }, [showInactivityModal]);
+
+    useEffect(() => {
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [handleKeyDown]);
+
+    useEffect(() => {
+        if (buttonsRef.current[focusedIndex]) {
+            buttonsRef.current[focusedIndex].focus();
+        }
+    }, [focusedIndex]);
+
+    useEffect(() => {
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
+    useEffect(() => {
+    }, [focusedIndex]);
+    
+
     return (
-        <div className="dc_App">
-
-            {/* header container */}
-            <div className="dc_header_container">
-
-                {/* Rectangle 'go back rectangle' */}
-                <Link to="/" style={{ textDecoration: 'none' }}>
-                    <div className="rectangle dc_back_button" style={{cursor: 'pointer'}}>
-                        <p style={{ fontSize: '2.5em' }}>Retour</p>
+        <>
+            {showInactivityModal && (
+                <ModalStandard onClose={() => setShowInactivityModal(false)}>
+                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
+                    <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
+                    <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+                </ModalStandard>
+            )}
+            <div className={`bg-background_color w-full h-screen flex flex-col items-center`}>
+    
+                {/* Header */}
+                <div className="w-4/5 h-40 flex justify-between items-center mb-6 mt-12">
+                    {/* Go Back */}
+                    <Link
+                        to="/"
+                        ref={(el) => (buttonsRef.current[-1] = el)}
+                        tabIndex={0}
+                        className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} 
+                            ${config.padding.button} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} 
+                            ${config.focusStates.outline} flex items-center ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+                    >
+                        <config.icons.arrowLeft className="mr-3" />
+                        Retour
+                    </Link>
+    
+                    {/* Logo */}
+                    <div className="flex-grow flex justify-center pr-64">
+                        <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-96 h-24" />
                     </div>
-                </Link>
-
-                {/* logo container */}
-                <div className="dc_logo_container">
-                    {/* logo PharmaXcess */}
-                    <img
-                        src={require('./../../assets/logo.png')}
-                        alt="Logo PharmaXcess"
-                        className="logo"
-                    />
                 </div>
-
-            </div>
-
-            <div className='dc_body_page'>
-
-                {/* Rectangle 'main rectangle' */}
-                <div className="rectangle" style={{top: '20%', left: '50%'}}>
-                    <p style={{ fontSize: '3em', textAlign: 'center' }}>
-                    Veuillez insérer les documents <br/>
-                    suivants : ordonnance, carte vitale <br/>
-                    et carte d’identité
-                    </p>
-                </div>
-
-                {/* insertion buttons group */}
-                <div style={{position: 'relative', top: '10%'
-                    , width: '100%', height: '45%', display: 'flex'}}>
-
-                    {/* Rectangle 'Ordonnance' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '22%', top: '50%', left: '17%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em' }}>
-                            Ordonnance
+    
+                {/* Main Content */}
+                <div className="w-2/3 h-2/3 flex flex-col items-center mt-2 space-y-16">
+                    <div className={`w-2/3 h-56 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                        ${config.buttonColors.textBackground} ${config.textColors.primary} ${config.transitions.slow}
+                        ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}`}>
+                        <p className={`${config.fontSizes.lg} text-center`}>
+                            Veuillez insérer les documents :<br />
+                            Ordonnance, Carte Vitale, Carte d'Identité
                         </p>
                     </div>
-
-                    {/* Rectangle 'Carte Vitale' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '25%', top: '50%', left: '28%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em' }}>
-                            Carte Vitale
-                        </p>
+    
+                    <div className="w-full flex space-x-8">
+                        {/* Button 'Ordonnance' */}
+                        <div
+                            ref={(el) => (buttonsRef.current[0] = el)}
+                            tabIndex={0}
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                                ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
+                                ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
+                                ${config.focusStates.outline} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
+                            onClick={handleOpenCamera}
+                        >
+                            <config.icons.filePrescription className="mr-4 text-4xl" />
+                            <p className={`${config.fontSizes.lg} text-center`}>Ordonnance</p>
+                        </div>
+    
+                        {/* Button 'Carte Vitale' */}
+                        <div
+                            ref={(el) => (buttonsRef.current[1] = el)}
+                            tabIndex={0}
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                                ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
+                                ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
+                                ${config.focusStates.outline} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
+                            onClick={handleOpenCamera}
+                        >
+                            <config.icons.addressCard className="mr-4 text-4xl" />
+                            <p className={`${config.fontSizes.lg} text-center`}>Carte Vitale</p>
+                        </div>
+    
+                        {/* Button 'Carte d'Identité' */}
+                        <div
+                            ref={(el) => (buttonsRef.current[2] = el)}
+                            tabIndex={0}
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                                ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
+                                ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
+                                ${config.focusStates.outline} ${focusedIndex === 3 ? config.scaleEffects.focus : ''}`}
+                            onClick={handleOpenCamera}
+                        >
+                            <config.icons.idCard className="mr-4 text-4xl" />
+                            <p className={`${config.fontSizes.lg} text-center`}>Carte d'Identité</p>
+                        </div>
                     </div>
-
-                    {/* Rectangle 'Carte d'Identité' */}
-                    <div className="rectangle" style={{position: 'relative', height: '50%'
-                        , width: '20%', top: '50%', left: '35%', cursor: 'pointer'}}
-                        onClick={handleOpenCamera}>
-                        <p style={{ fontSize: '3em', textAlign: 'center'}}>
-                            Carte <br/>
-                            d'Identité
-                        </p>
-                    </div>
-
                 </div>
-
+    
                 {isModalOpen && showCamera && (
                     <ModalCamera onClose={closeModal}>
-
-                        <div style={{
-                            
-                            marginTop: '20px'
-                        }}>
-                            <CameraComponent onPhotoCapture={handlePhotoCapture} />
-                            {/* <button onClick={closeModal} style={{ marginTop: '10px' }}>
-                                Close camera
-                            </button> */}
-                        </div>
+                        <CameraComponent onPhotoCapture={closeModal} onClose={closeModal} />
                     </ModalCamera>
                 )}
-
             </div>
-
-        </div>
+        </>
     );
+    
 }
 
 export default DocumentsChecking;

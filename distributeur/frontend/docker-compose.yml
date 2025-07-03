@@ -8,4 +8,5 @@ services:
       - .:/app
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     container_name: "distributeur-frontend-app"
