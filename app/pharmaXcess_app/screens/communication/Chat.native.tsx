@@ -57,7 +57,6 @@ export default function Chat(): React.JSX.Element {
 
     return (
         <View style={styles.container}>
-            {/* Liste des tickets */}
             <FlatList
                 data={chats}
                 keyExtractor={(item) => item.id}
@@ -68,17 +67,19 @@ export default function Chat(): React.JSX.Element {
                         <Text style={styles.date}>Date : {item.date}</Text>
                     </View>
                 )}
+                contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                showsVerticalScrollIndicator={true}
             />
 
-            {/* Bouton Ouvrir un ticket */}
-            <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                    <Ionicons name="add" size={24} color={colors.iconPrimary} />
-                    <Text style={styles.buttonText}>Ouvrir un ticket</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.fixedButtonContainer}>
+                <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                        <Ionicons name="add" size={24} color={colors.iconPrimary} />
+                        <Text style={styles.buttonText}>Ouvrir un ticket</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
 
-            {/* Modal pour créer un ticket */}
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Créer un ticket</Text>

@@ -3,10 +3,46 @@ import { ColorScheme } from './Colors';
 
 const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
+        backgroundColor: colors.background,
+        position: 'relative',
+    },
+    listContainer: {
+        flex: 1,
+        padding: 20,
+        paddingBottom: 0,
+    },
+    bottomButtonContainer: {
+        padding: 20,
+        paddingTop: 10,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.inputBorder,
+    },
+    openTicketButton: {
+        width: '100%',
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    fixedButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         padding: 20,
         backgroundColor: colors.background,
-        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: colors.inputBorder,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    addButton: {
+        width: '100%',
+        borderRadius: 10,
+        overflow: 'hidden',
     },
     card: {
         width: '100%',
