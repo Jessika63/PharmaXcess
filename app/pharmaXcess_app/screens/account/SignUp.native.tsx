@@ -252,11 +252,10 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
             keyboardShouldPersistTaps="handled"
             accessibilityLabel="Écran d'inscription"
         >
-            <View style={styles.container}>
-                {/* Header */}
-                <Text style={styles.title} accessibilityRole="header">
-                    Bienvenue !
-                </Text>
+            {/* Header */}
+            <Text style={styles.title} accessibilityRole="header">
+                Bienvenue !
+            </Text>
 
                 {/* General error message */}
                 {errors.general && (
@@ -557,7 +556,6 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
                     style={styles.accessibilityAnnouncement}
                     accessibilityLiveRegion="polite"
                 />
-            </View>
         </ScrollView>
     );
 }

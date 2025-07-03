@@ -2,18 +2,15 @@ import { StyleSheet } from 'react-native';
 import { ColorScheme } from './Colors';
 
 const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
+    scrollContainer: {
+        flexGrow: 1,
+        backgroundColor: colors.background,
+        padding: 20,
+    },
     container: {
         flex: 1,
         padding: 20,
-        justifyContent: 'center',
         backgroundColor: colors.background,
-    },
-    scrollContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-        padding: 20,
     },
     title: {
         fontSize: 30 * fontScale,
@@ -105,6 +102,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         alignItems: 'flex-start',
         marginVertical: 20,
         paddingHorizontal: 5,
+        width: '100%',
     },
     checkbox: {
         width: 20,
@@ -122,8 +120,10 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         borderColor: colors.primary,
     },
     checkboxText: {
+        flex: 1,
         color: colors.profileText,
         fontSize: 16 * fontScale,
+        lineHeight: 22 * fontScale,
     },
     termsLink: {
         color: colors.primary,
