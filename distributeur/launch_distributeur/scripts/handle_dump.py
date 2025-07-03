@@ -23,7 +23,7 @@ def handle_dump(backend_folder, db_container_name, back_container_name):
 
     # Verify that the database and backend are running before proceeding
     verify_database_is_up(db_container_name)
-    verify_backend_is_up(back_container_name, nb_of_retry=2)
+    verify_backend_is_up(back_container_name, nb_of_retry=10)
 
     try:
         # Get the current date formatted as DD_MM_YYYY

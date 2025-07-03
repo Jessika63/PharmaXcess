@@ -1,4 +1,3 @@
-
 import os
 import argparse
 
@@ -10,8 +9,8 @@ from launch_distributeur.scripts.handle_test import handle_test
 from launch_distributeur.scripts.handle_update import handle_update
 from launch_distributeur.scripts.handle_down import handle_down
 from launch_distributeur.scripts.handle_dump import handle_dump
-from launch_distributeur.scripts.handle_export_image import handle_export_image
-from launch_distributeur.scripts.handle_import_image import handle_import_image
+from launch_distributeur.scripts.handle_export import handle_export_images
+from launch_distributeur.scripts.handle_import import handle_import_images
 
 # Main script
 if __name__ == "__main__":
@@ -31,9 +30,9 @@ if __name__ == "__main__":
     parser.add_argument("--dump", action="store_true",
         help="Function to export the database dump."
     )
-    parser.add_argument("--export-image", type=str, help="Export the backend Docker image to a tar file (provide output tar path).")
-    parser.add_argument("--import-image", type=str, help="Import a backend Docker image from a tar file (provide input tar path).")
-    parser.add_argument("--image-name", type=str, default="backend-app", help="Docker image name for import/export (default: backend-app)")
+    parser.add_argument("--export-images", type=str, help="Export backend and db Docker images to a tar file (provide output tar path).")
+    parser.add_argument("--import-images", type=str, help="Import backend and db Docker images from a tar file (provide input tar path).")
+    parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
 
     # Parse arguments
     args = parser.parse_args()
@@ -44,6 +43,7 @@ if __name__ == "__main__":
     env_file_path = os.path.join(backend_folder, ".env")
     db_container_name = "distributeur-backend-db"
     back_app_container_name = "distributeur-backend-app"
+    back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
     front_app_container_name = "distributeur-frontend-app"
 
@@ -79,10 +79,10 @@ if __name__ == "__main__":
             handle_down()
         if args.dump:
             handle_dump(backend_folder, db_container_name, back_app_container_name)
-        if args.export_image:
-            handle_export_image(args.image_name, args.export_image)
-        if args.import_image:
-            handle_import_image(args.import_image)
+        if args.export_images:
+            handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
+        if args.import_images:
+            handle_import_images(args.import_images, back_app_image_name, back_app_container_name, db_container_name)
     else:
         parser.print_help()
         exit(1)
