@@ -118,74 +118,79 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Ajouter un rappel</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nom de l'ordonnance"
-                        value={newReminder.name}
-                        onChangeText={(text) => setNewReminder({ ...newReminder, name: text })}
-                    />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 1, marginRight: 5 }}>
-                            <CustomPicker
-                                label="Jour"
-                                selectedValue={selectedDay}
-                                onValueChange={(value) => setSelectedDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ 
-                                    label: (i + 1).toString().padStart(2, '0'), 
-                                    value: i + 1 
-                                }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginHorizontal: 5 }}>
-                            <CustomPicker
-                                label="Mois"
-                                selectedValue={selectedMonth}
-                                onValueChange={(value) => setSelectedMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ 
-                                    label: (i + 1).toString().padStart(2, '0'), 
-                                    value: i + 1 
-                                }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 5 }}>
-                            <CustomPicker
-                                label="Année"
-                                selectedValue={selectedYear}
-                                onValueChange={(value) => setSelectedYear(Number(value))}
-                                options={Array.from({ length: 10 }, (_, i) => ({ 
-                                    label: (2024 + i).toString(), 
-                                    value: 2024 + i 
-                                }))}
-                                placeholder="2024"
-                            />
-                        </View>
-                    </View>
-                    <CustomPicker
-                        label="Son"
-                        selectedValue={selectedSound}
-                        onValueChange={(value) => {
-                            console.log('Son sélectionné:', value);
-                            setSelectedSound(String(value));
-                        }}
-                        options={sounds.map(sound => ({ label: sound, value: sound }))}
-                        placeholder="Choisir un son"
-                    />
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.button} onPress={handleAddReminder}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Enregistrer</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                    <ScrollView contentContainerStyle={{ padding: 20 }}>
+                        <Text style={styles.modalTitle}>Ajouter un rappel</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nom de l'ordonnance"
+                            value={newReminder.name}
+                            onChangeText={(text) => setNewReminder({ ...newReminder, name: text })}
+                        />
                         
-                        <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Annuler</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={selectedDay}
+                                    onValueChange={(value) => setSelectedDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={selectedMonth}
+                                    onValueChange={(value) => setSelectedMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={selectedYear}
+                                    onValueChange={(value) => setSelectedYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        
+                        <CustomPicker
+                            label="Son"
+                            selectedValue={selectedSound}
+                            onValueChange={(value) => {
+                                console.log('Son sélectionné:', value);
+                                setSelectedSound(String(value));
+                            }}
+                            options={sounds.map(sound => ({ label: sound, value: sound }))}
+                            placeholder="Choisir un son"
+                        />
+                        
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={handleAddReminder}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Enregistrer</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
                 </View>
             </Modal>
         </View>

@@ -134,75 +134,80 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
 
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Ajouter un rappel</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nom du médicament"
-                        value={newAlarm.medicineName}
-                        onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
-                    />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <View style={{ flex: 1, marginRight: 10 }}>
-                            <CustomPicker
-                                label="Heure"
-                                selectedValue={selectedHour}
-                                onValueChange={(value) => setSelectedHour(Number(value))}
-                                options={Array.from({ length: 24 }, (_, i) => ({ 
-                                    label: i.toString().padStart(2, '0'), 
-                                    value: i 
-                                }))}
-                                placeholder="00"
-                            />
+                    <ScrollView contentContainerStyle={{ padding: 20 }}>
+                        <Text style={styles.modalTitle}>Ajouter un rappel</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nom du médicament"
+                            value={newAlarm.medicineName}
+                            onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
+                        />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 50 }}>
+                            <View style={{ width: '45%' }}>
+                                <CustomPicker
+                                    label="Heures"
+                                    selectedValue={selectedHour}
+                                    onValueChange={(value) => setSelectedHour(Number(value))}
+                                    options={Array.from({ length: 24 }, (_, i) => ({ 
+                                        label: i.toString().padStart(2, '0'), 
+                                        value: i 
+                                    }))}
+                                    placeholder="00"
+                                />
+                            </View>
+                            <View style={{ width: '45%' }}>
+                                <CustomPicker
+                                    label="Minutes"
+                                    selectedValue={selectedMinute}
+                                    onValueChange={(value) => setSelectedMinute(Number(value))}
+                                    options={Array.from({ length: 60 }, (_, i) => ({ 
+                                        label: i.toString().padStart(2, '0'), 
+                                        value: i 
+                                    }))}
+                                    placeholder="00"
+                                />
+                            </View>
                         </View>
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                            <CustomPicker
-                                label="Minutes"
-                                selectedValue={selectedMinute}
-                                onValueChange={(value) => setSelectedMinute(Number(value))}
-                                options={Array.from({ length: 60 }, (_, i) => ({ 
-                                    label: i.toString().padStart(2, '0'), 
-                                    value: i 
-                                }))}
-                                placeholder="00"
-                            />
-                        </View>
-                    </View>
-                    <Text style={styles.label}>Jours</Text>
-                    {daysOfWeek.map((day) => (
-                        <TouchableOpacity
-                            key={day}
-                            style={[
-                                styles.input,
-                                selectedDays.includes(day) && styles.selectedDay,
-                            ]}
-                            onPress={() => toggleDaySelection(day)}
-                        >
-                            <Text style={styles.dayText}>{day}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <CustomPicker
-                        label="Son"
-                        selectedValue={selectedSound}
-                        onValueChange={(value) => {
-                            console.log('Son sélectionné:', value);
-                            setSelectedSound(String(value));
-                        }}
-                        options={sounds.map(sound => ({ label: sound, value: sound }))}
-                        placeholder="Choisir un son"
-                    />
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.button} onPress={handleAddAlarm}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Enregistrer</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
                         
-                        <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Annuler</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
+                        <Text style={styles.label}>Jours</Text>
+                        {daysOfWeek.map((day) => (
+                            <TouchableOpacity
+                                key={day}
+                                style={[
+                                    styles.input,
+                                    selectedDays.includes(day) && styles.selectedDay,
+                                ]}
+                                onPress={() => toggleDaySelection(day)}
+                            >
+                                <Text style={styles.dayText}>{day}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        
+                        <CustomPicker
+                            label="Son"
+                            selectedValue={selectedSound}
+                            onValueChange={(value) => {
+                                console.log('Son sélectionné:', value);
+                                setSelectedSound(String(value));
+                            }}
+                            options={sounds.map(sound => ({ label: sound, value: sound }))}
+                            placeholder="Choisir un son"
+                        />
+                        
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={handleAddAlarm}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Enregistrer</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
