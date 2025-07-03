@@ -32,13 +32,13 @@ function DocumentsChecking() {
             else if (currentDocType === 'carte_identite_verso') docCode = 'V';
 
             try {
-                console.log("📤 ENVOI API /extractAll :");
+                console.log("📤 ENVOI API /extractText :");
                 console.log("🔠 base64_image (start)", base64Image?.slice(0, 50));
                 console.log("📄 type:", docCode);
 
 
 
-                const response = await fetch('http://localhost:5000/extractAll', {
+                const response = await fetch('http://localhost:5000/extractText', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -51,8 +51,8 @@ function DocumentsChecking() {
 
                 const data = await response.json();
                 if (response.ok) {
-                    console.log(`Texte extrait pour ${currentDocType} (${docCode}) :`, data.output);
-                    // Tu peux stocker, afficher, ou rediriger avec ce texte ici
+                    console.log(`Texte extrait pour ${currentDocType} (${docCode}) :`, data.raw_text);
+                    console.log(`Infos extraites :`, data.infos);
                 } else {
                     console.error("Erreur d’extraction :", data.error);
                 }

@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y libzbar0
 
 RUN apt-get update && apt-get install -y netcat-openbsd
 
+RUN apt-get update && apt-get install -y libgl1
+
 COPY . /app
 
 EXPOSE 5000
