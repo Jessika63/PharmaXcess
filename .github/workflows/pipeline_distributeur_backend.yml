@@ -5,7 +5,8 @@ on:
     branches:
       - main
       - dev
-      - fix_gha
+    paths:
+      - 'distributeur/**'
 
 jobs:
   vulnerability_check:
