@@ -65,7 +65,6 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
             colored_print("User already exists. Skipping user creation.", "yellow")
         else:
             colored_print(f"Failed to import the database dump!\nDetails: {error_message}", "red")
-            return  # Only exit on real errors
 
-    # Final success message
-    colored_print("Backend setup complete!", "green")
+    # Final check: verify backend is up after all operations
+    verify_backend_is_up(back_app_container_name, nb_of_retry=10)
