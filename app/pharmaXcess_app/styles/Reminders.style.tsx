@@ -4,18 +4,104 @@ import { ColorScheme } from './Colors';
 const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        alignItems: 'center',
         backgroundColor: colors.background,
     },
     alarmCard: {
         width: '100%',
         marginVertical: 8,
-        borderRadius: 10,
-        padding: 16,
+        borderRadius: 12,
+        padding: 20,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.card,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    disabledAlarmCard: {
+        opacity: 0.6,
+        backgroundColor: colors.inputBackground,
+    },
+    alarmMainInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    alarmTimeContainer: {
+        flex: 1,
+    },
+    alarmTime: {
+        fontSize: 32 * fontScale,
+        fontWeight: 'bold',
+        color: colors.infoTitle,
+        lineHeight: 38 * fontScale,
+    },
+    alarmNextTime: {
+        fontSize: 14 * fontScale,
+        color: colors.infoTextSecondary,
+        marginTop: 4,
+    },
+    alarmSwitchContainer: {
+        alignItems: 'flex-end',
+    },
+    alarmDetails: {
+        marginBottom: 12,
+    },
+    alarmMedicine: {
+        fontSize: 18 * fontScale,
+        fontWeight: '600',
+        color: colors.infoTitle,
+        marginBottom: 4,
+    },
+    alarmDays: {
+        fontSize: 14 * fontScale,
+        color: colors.infoText,
+        marginBottom: 4,
+    },
+    alarmSound: {
+        fontSize: 14 * fontScale,
+        color: colors.infoTextSecondary,
+    },
+    alarmActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    editIconButton: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: colors.optionsSecondary,
+    },
+    deleteIconButton: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: '#FFEBEE',
+    },
+    disabledText: {
+        opacity: 0.5,
+    },
+    fixedButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 20,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.inputBorder,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    addAlarmButton: {
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
     },
     alarmName: {
         fontSize: 18 * fontScale,
