@@ -48,26 +48,28 @@ def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
                 colored_print(f"Frontend responded with status code {response.status_code}", "yellow")
         except requests.ConnectionError as ce:
             last_error = ce
-            if 'Connection refused' in str(ce):
-                colored_print(f"Connection refused on port 3000. Frontend may not be listening or crashed.", "red")
+            if 'Connection refused' in str(last_error):
+                colored_print(
+                    "Connection refused on port 3000. Frontend may not be listening or crashed.",
+                    "red",
+                )
             else:
-                colored_print(f"Connection error: {ce}", "red")
+                colored_print(f"Connection error: {last_error}", "yellow")
         except requests.Timeout:
             last_error = 'timeout'
-            colored_print("Connection to frontend timed out. Frontend may be slow to start or not listening.", "red")
+            colored_print("Connection to frontend timed out. Frontend may be slow to start or not listening.", "yellow")
         except Exception as e:
             last_error = e
             colored_print(f"Unexpected error while checking frontend container: {e}", "yellow")
 
-        if attempt != nb_of_retry:
-            colored_print(
-                f"Attempt {attempt}/{nb_of_retry}: Frontend not ready. Retrying in {waiting_time} seconds...",
-                "yellow"
-            )
-            time.sleep(waiting_time)
-        else:
+        if attempt == nb_of_retry:
             break
 
+        colored_print(
+            f"Attempt {attempt}/{nb_of_retry}: Frontend not ready. Retrying in {waiting_time} seconds...",
+            "yellow"
+        )
+        time.sleep(waiting_time)
     # If we reach here, frontend is not up after retries
     colored_print(f"Frontend container '{frontend_container_name}' is not ready after {nb_of_retry} attempts!", "red")
     # Print last error
