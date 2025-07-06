@@ -47,7 +47,17 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     ]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [newAllergy, setNewAllergy] = useState<Allergy>({
+        name: '',
+        beginDate: '',
+        severity: '',
+        symptoms: '',
+        medications: '',
+        comments: '',
+    });
+    const [editedAllergy, setEditedAllergy] = useState<Allergy>({
         name: '',
         beginDate: '',
         severity: '',
@@ -59,6 +69,11 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const [selectedBeginYear, setSelectedBeginYear] = useState<number>(2024);
     const [selectedBeginMonth, setSelectedBeginMonth] = useState<number>(1);
     const [selectedBeginDay, setSelectedBeginDay] = useState<number>(1);
+
+    // Edit modal states
+    const [editSelectedBeginYear, setEditSelectedBeginYear] = useState<number>(2024);
+    const [editSelectedBeginMonth, setEditSelectedBeginMonth] = useState<number>(1);
+    const [editSelectedBeginDay, setEditSelectedBeginDay] = useState<number>(1);
 
     const handleAddPress = (): void => {
         if (
@@ -92,8 +107,65 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         setIsModalVisible(false);
     };
 
-    const handleEditPress = (allergyName: string): void => {
-        Alert.alert('Modifier l\'allergie', `Cette fonctionnalité n\'est pas encore implémentée pour l'allergie "${allergyName}".`);
+    const handleEditPress = (index: number): void => {
+        const allergy = allergies[index];
+        setEditedAllergy({ ...allergy });
+        setEditingIndex(index);
+        
+        // Parse the date from the allergy
+        const dateParts = allergy.beginDate.split('/');
+        if (dateParts.length === 3) {
+            setEditSelectedBeginDay(parseInt(dateParts[0]));
+            setEditSelectedBeginMonth(parseInt(dateParts[1]));
+            setEditSelectedBeginYear(parseInt(dateParts[2]));
+        }
+        
+        setEditModalVisible(true);
+    };
+
+    const handleSaveEdit = (): void => {
+        if (
+            !editedAllergy.name ||
+            !editedAllergy.severity ||
+            !editedAllergy.symptoms ||
+            !editedAllergy.medications ||
+            !editedAllergy.comments
+        ) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        if (editingIndex !== null) {
+            const updatedAllergies = [...allergies];
+            updatedAllergies[editingIndex] = {
+                ...editedAllergy,
+                beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
+            };
+            setAllergies(updatedAllergies);
+        }
+
+        setEditModalVisible(false);
+        setEditingIndex(null);
+        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+    };
+
+    const handleDeleteAllergy = (index: number): void => {
+        const allergy = allergies[index];
+        Alert.alert(
+            'Supprimer l\'allergie',
+            `Êtes-vous sûr de vouloir supprimer "${allergy.name}" ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                { 
+                    text: 'Supprimer', 
+                    style: 'destructive',
+                    onPress: () => {
+                        const updatedAllergies = allergies.filter((_, i) => i !== index);
+                        setAllergies(updatedAllergies);
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -101,11 +173,16 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             <ScrollView contentContainerStyle={styles.list}>
                 {allergies.map((allergy, index) => (
                     <View key={index} style={styles.card}>
-                        <TouchableOpacity onPress={() => handleEditPress(allergy.name)} style={styles.editButton}>
-                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
-                        </TouchableOpacity>
                         <View style={styles.cardHeader}>
                             <Text style={styles.cardTitle}>{allergy.name}</Text>
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDeleteAllergy(index)} style={styles.deleteButton}>
+                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                         <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
@@ -228,6 +305,106 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
+                </ScrollView>
+            </Modal>
+
+            <Modal visible={isEditModalVisible} animationType="slide">
+                <ScrollView
+                    contentContainerStyle={styles.modalContainer}
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="automatic"
+                >
+                    <Text style={styles.modalTitle}>Modifier l'allergie</Text>
+                    <TextInput
+                        placeholder="Nom"
+                        value={editedAllergy.name}
+                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, name: text })}
+                        style={styles.input}
+                        placeholderTextColor={colors.inputBorder}
+                    />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ flex: 1, marginRight: 5 }}>
+                            <CustomPicker
+                                label="Jour"
+                                selectedValue={editSelectedBeginDay}
+                                onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ 
+                                    label: (i + 1).toString().padStart(2, '0'), 
+                                    value: i + 1 
+                                }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginHorizontal: 5 }}>
+                            <CustomPicker
+                                label="Mois"
+                                selectedValue={editSelectedBeginMonth}
+                                onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ 
+                                    label: (i + 1).toString().padStart(2, '0'), 
+                                    value: i + 1 
+                                }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 5 }}>
+                            <CustomPicker
+                                label="Année"
+                                selectedValue={editSelectedBeginYear}
+                                onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                options={Array.from({ length: 50 }, (_, i) => ({ 
+                                    label: (1980 + i).toString(), 
+                                    value: 1980 + i 
+                                }))}
+                                placeholder="2024"
+                            />
+                        </View>
+                    </View>
+                    <CustomPicker
+                        label="Gravité"
+                        selectedValue={editedAllergy.severity}
+                        onValueChange={(value) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
+                        options={[
+                            { label: 'Légère', value: 'Légère' },
+                            { label: 'Modérée', value: 'Modérée' },
+                            { label: 'Sévère', value: 'Sévère' }
+                        ]}
+                        placeholder="Sélectionner"
+                    />
+                    <TextInput
+                        placeholder="Symptômes"
+                        value={editedAllergy.symptoms}
+                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, symptoms: text })}
+                        style={styles.input}
+                        placeholderTextColor={colors.inputBorder}
+                    />
+                    <TextInput
+                        placeholder="Médicaments"
+                        value={editedAllergy.medications}
+                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, medications: text })}
+                        style={styles.input}
+                        placeholderTextColor={colors.inputBorder}
+                    />
+                    <TextInput
+                        placeholder="Commentaires"
+                        value={editedAllergy.comments}
+                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, comments: text })}
+                        style={styles.input}
+                        placeholderTextColor={colors.inputBorder}
+                    />
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity onPress={handleSaveEdit} style={styles.button}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Sauvegarder</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
+                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Annuler</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
                 </ScrollView>
             </Modal>
         </View>

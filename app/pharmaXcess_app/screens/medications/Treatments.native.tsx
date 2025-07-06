@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { TextStyle, ViewStyle, StyleProp } from 'react-native';
@@ -7,7 +7,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
-import { CustomPicker, QuantityPicker } from '../../components';
+import { CustomPicker } from '../../components';
 
 type Treatment = {
     name: string;
@@ -249,14 +249,15 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 {treatments.map((treatment, index) => (
                     <View key={index} style={styles.card}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{treatment.name}</Text>                                <View style={styles.actionButtons}>
-                                    <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                                        <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
-                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                    </TouchableOpacity>
-                                </View>
+                            <Text style={styles.cardTitle}>{treatment.name}</Text>
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
+                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                         <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>

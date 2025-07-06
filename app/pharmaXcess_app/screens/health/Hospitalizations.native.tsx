@@ -62,7 +62,21 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
     ]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [newHospitalization, setNewHospitalization] = useState<Hospitalization>({
+        name: '',
+        beginDate: '',
+        endDate: '',
+        duration: '',
+        department: '',
+        doctor: '',
+        hospital: '',
+        medications: '',
+        examens: '',
+        comments: '',
+    });
+    const [editedHospitalization, setEditedHospitalization] = useState<Hospitalization>({
         name: '',
         beginDate: '',
         endDate: '',
@@ -85,6 +99,16 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
 
     const [selectedDurationValue, setSelectedDurationValue] = useState<number>(1);
     const [selectedDurationUnit, setSelectedDurationUnit] = useState<string>('jour(s)');
+
+    // Edit modal states
+    const [editSelectedBeginYear, setEditSelectedBeginYear] = useState<number>(2024);
+    const [editSelectedBeginMonth, setEditSelectedBeginMonth] = useState<number>(1);
+    const [editSelectedBeginDay, setEditSelectedBeginDay] = useState<number>(1);
+    const [editSelectedEndYear, setEditSelectedEndYear] = useState<number>(2024);
+    const [editSelectedEndMonth, setEditSelectedEndMonth] = useState<number>(1);
+    const [editSelectedEndDay, setEditSelectedEndDay] = useState<number>(1);
+    const [editSelectedDurationValue, setEditSelectedDurationValue] = useState<number>(1);
+    const [editSelectedDurationUnit, setEditSelectedDurationUnit] = useState<string>('jour(s)');
 
     const durationUnits = ['jour(s)', 'semaine(s)', 'mois', 'année(s)'];
 
@@ -140,8 +164,83 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
         setModalVisible(false);
     };
 
-    const handleEditPress = (hospitalizationReason: string): void => {
-        Alert.alert('Modifier l\'hospitalisation', `Cette fonctionnalité n\'est pas encore implémentée pour l'hospitalisation "${hospitalizationReason}".`);
+    const handleEditPress = (index: number): void => {
+        const hospitalization = hospitalizations[index];
+        setEditedHospitalization({ ...hospitalization });
+        setEditingIndex(index);
+        
+        // Parse the dates from the hospitalization
+        const beginDateParts = hospitalization.beginDate.split('/');
+        if (beginDateParts.length === 3) {
+            setEditSelectedBeginDay(parseInt(beginDateParts[0]));
+            setEditSelectedBeginMonth(parseInt(beginDateParts[1]));
+            setEditSelectedBeginYear(parseInt(beginDateParts[2]));
+        }
+        
+        const endDateParts = hospitalization.endDate.split('/');
+        if (endDateParts.length === 3) {
+            setEditSelectedEndDay(parseInt(endDateParts[0]));
+            setEditSelectedEndMonth(parseInt(endDateParts[1]));
+            setEditSelectedEndYear(parseInt(endDateParts[2]));
+        }
+        
+        // Parse duration
+        const durationParts = hospitalization.duration.split(' ');
+        if (durationParts.length >= 2) {
+            setEditSelectedDurationValue(parseInt(durationParts[0]) || 1);
+            setEditSelectedDurationUnit(durationParts.slice(1).join(' ') || 'jour(s)');
+        }
+        
+        setEditModalVisible(true);
+    };
+
+    const handleSaveEdit = (): void => {
+        if (
+            !editedHospitalization.name || 
+            !editedHospitalization.department ||
+            !editedHospitalization.doctor ||
+            !editedHospitalization.hospital ||
+            !editedHospitalization.medications ||
+            !editedHospitalization.examens ||
+            !editedHospitalization.comments
+        ) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        if (editingIndex !== null) {
+            const updatedHospitalizations = [...hospitalizations];
+            updatedHospitalizations[editingIndex] = {
+                ...editedHospitalization,
+                beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
+                endDate: `${editSelectedEndDay.toString().padStart(2, '0')}/${editSelectedEndMonth.toString().padStart(2, '0')}/${editSelectedEndYear}`,
+                duration: `${editSelectedDurationValue} ${editSelectedDurationUnit}`,
+            };
+            setHospitalization(updatedHospitalizations);
+        }
+
+        setEditModalVisible(false);
+        setEditingIndex(null);
+        Alert.alert('Succès', 'Les informations de l\'hospitalisation ont été mises à jour.');
+    };
+
+    const handleDeleteHospitalization = (index: number): void => {
+        const hospitalization = hospitalizations[index];
+        Alert.alert(
+            'Supprimer l\'hospitalisation',
+            `Êtes-vous sûr de vouloir supprimer "${hospitalization.name}" ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                { 
+                    text: 'Supprimer', 
+                    style: 'destructive',
+                    onPress: () => {
+                        const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
+                        setHospitalization(updatedHospitalizations);
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -149,11 +248,16 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
             <ScrollView contentContainerStyle={styles.list}>
                 {hospitalizations.map((hospitalization, index) => (
                     <View key={index} style={styles.card}>
-                        <TouchableOpacity onPress={() => handleEditPress(hospitalization.name)} style={styles.editButton}>
-                            <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
-                        </TouchableOpacity>
                         <View style={styles.cardHeader}>
                             <Text style={styles.cardTitle}>{hospitalization.name}</Text>
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDeleteHospitalization(index)} style={styles.deleteButton}>
+                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                         <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
@@ -369,6 +473,156 @@ export default function Hospitalizations({ navigation }: HospitalizationsProps):
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </View>
+                    </ScrollView>
+                </Modal>
+
+                <Modal visible={isEditModalVisible} animationType="slide">
+                    <ScrollView
+                        contentContainerStyle={styles.modalContainer}
+                        keyboardShouldPersistTaps="handled"
+                        contentInsetAdjustmentBehavior="automatic"
+                    >
+                        <Text style={styles.modalTitle}>Modifier l'hospitalisation</Text>
+
+                        <TextInput
+                            placeholder="Nom de l'hospitalisation"
+                            value={editedHospitalization.name}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, name: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <Text style={styles.fieldTitle}>Date de début</Text>
+                        <View style={styles.dateContainer}>
+                            <CustomPicker
+                                label="Jour"
+                                selectedValue={editSelectedBeginDay}
+                                onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                options={days.map(day => ({ label: day.toString(), value: day }))}
+                                style={styles.datePicker}
+                            />
+                            <CustomPicker
+                                label="Mois"
+                                selectedValue={editSelectedBeginMonth}
+                                onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                options={months.map(month => ({ label: month.toString(), value: month }))}
+                                style={styles.datePicker}
+                            />
+                            <CustomPicker
+                                label="Année"
+                                selectedValue={editSelectedBeginYear}
+                                onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                options={years.map(year => ({ label: year.toString(), value: year }))}
+                                style={styles.datePicker}
+                            />
+                        </View>
+
+                        <Text style={styles.fieldTitle}>Date de fin</Text>
+                        <View style={styles.dateContainer}>
+                            <CustomPicker
+                                label="Jour"
+                                selectedValue={editSelectedEndDay}
+                                onValueChange={(value) => setEditSelectedEndDay(Number(value))}
+                                options={days.map(day => ({ label: day.toString(), value: day }))}
+                                style={styles.datePicker}
+                            />
+                            <CustomPicker
+                                label="Mois"
+                                selectedValue={editSelectedEndMonth}
+                                onValueChange={(value) => setEditSelectedEndMonth(Number(value))}
+                                options={months.map(month => ({ label: month.toString(), value: month }))}
+                                style={styles.datePicker}
+                            />
+                            <CustomPicker
+                                label="Année"
+                                selectedValue={editSelectedEndYear}
+                                onValueChange={(value) => setEditSelectedEndYear(Number(value))}
+                                options={years.map(year => ({ label: year.toString(), value: year }))}
+                                style={styles.datePicker}
+                            />
+                        </View>
+
+                        <Text style={styles.fieldTitle}>Durée</Text>
+                        <View style={styles.dosageContainer}>
+                            <CustomPicker
+                                label="Valeur"
+                                selectedValue={editSelectedDurationValue}
+                                onValueChange={(value) => setEditSelectedDurationValue(Number(value))}
+                                options={durationValues.map(value => ({ label: value.toString(), value: value }))}
+                                style={styles.dosagePicker}
+                            />
+                            <CustomPicker
+                                label="Unité"
+                                selectedValue={editSelectedDurationUnit}
+                                onValueChange={(value) => setEditSelectedDurationUnit(String(value))}
+                                options={durationUnits.map(unit => ({ label: unit, value: unit }))}
+                                style={styles.dosagePicker}
+                            />
+                        </View>
+
+                        <TextInput
+                            placeholder="Service"
+                            value={editedHospitalization.department}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, department: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <TextInput
+                            placeholder="Médecin"
+                            value={editedHospitalization.doctor}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <TextInput
+                            placeholder="Hôpital"
+                            value={editedHospitalization.hospital}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <TextInput
+                            placeholder="Médicaments"
+                            value={editedHospitalization.medications}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <TextInput
+                            placeholder="Examens"
+                            value={editedHospitalization.examens}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, examens: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <TextInput
+                            placeholder="Commentaires"
+                            value={editedHospitalization.comments}
+                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, comments: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity onPress={handleSaveEdit} style={styles.modalButton}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Sauvegarder</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.modalButton}
+                                onPress={() => setEditModalVisible(false)}
+                            >
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                     </ScrollView>
                 </Modal>
         </View> 
