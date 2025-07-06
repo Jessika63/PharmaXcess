@@ -46,12 +46,22 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontWeight: 'bold',
     },
     editButton: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
         backgroundColor: colors.editButtonBackground,
         padding: 8,
         borderRadius: 50,
+        marginLeft: 8,
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    deleteButton: {
+        backgroundColor: '#FFFFFF',
+        padding: 8,
+        borderRadius: 50,
+        marginLeft: 8,
+        borderWidth: 1,
+        borderColor: '#FFEBEE',
     },
     buttonContainer: {
         flexDirection: 'row',

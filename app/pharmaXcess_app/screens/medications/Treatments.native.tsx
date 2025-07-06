@@ -51,7 +51,18 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     ]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [newTreatment, setNewTreatment] = useState<Treatment>({
+        name: '',
+        beginDate: '',
+        endDate: '',
+        dosage: '',
+        duration: '',
+        sideEffects: '',
+        disease: '',
+    });
+    const [editedTreatment, setEditedTreatment] = useState<Treatment>({
         name: '',
         beginDate: '',
         endDate: '',
@@ -73,6 +84,19 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const [dosagePerDay, setDosagePerDay] = useState<number>(1);
     const [durationValue, setDurationValue] = useState<number>(1);
     const [durationUnit, setDurationUnit] = useState<string>('mois');
+
+    // Edit modal states
+    const [editBeginDay, setEditBeginDay] = useState<number>(1);
+    const [editBeginMonth, setEditBeginMonth] = useState<number>(1);
+    const [editBeginYear, setEditBeginYear] = useState<number>(new Date().getFullYear());
+    
+    const [editEndDay, setEditEndDay] = useState<number>(1);
+    const [editEndMonth, setEditEndMonth] = useState<number>(1);
+    const [editEndYear, setEditEndYear] = useState<number>(new Date().getFullYear());
+    
+    const [editDosagePerDay, setEditDosagePerDay] = useState<number>(1);
+    const [editDurationValue, setEditDurationValue] = useState<number>(1);
+    const [editDurationUnit, setEditDurationUnit] = useState<string>('mois');
 
     const durationUnits = ['jour(s)', 'semaine(s)', 'mois', 'an(s)'];
 
@@ -124,8 +148,99 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         setDurationUnit('mois');
     };
 
-    const handleEditPress = (treatmentName: string): void => {
-        Alert.alert('Modifier le traitement', `Cette fonctionnalité n\'est pas encore implémentée pour le traitement "${treatmentName}".`);
+    const parseDate = (dateString: string) => {
+        const parts = dateString.split('/');
+        return {
+            day: parseInt(parts[0]),
+            month: parseInt(parts[1]),
+            year: parseInt(parts[2])
+        };
+    };
+
+    const parseDosage = (dosageString: string) => {
+        const match = dosageString.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 1;
+    };
+
+    const parseDuration = (durationString: string) => {
+        const parts = durationString.split(' ');
+        return {
+            value: parseInt(parts[0]) || 1,
+            unit: parts.slice(1).join(' ') || 'mois'
+        };
+    };
+
+    const handleEditPress = (index: number): void => {
+        const treatment = treatments[index];
+        setEditedTreatment({ ...treatment });
+        setEditingIndex(index);
+        
+        // Parse dates
+        const beginDate = parseDate(treatment.beginDate);
+        setEditBeginDay(beginDate.day);
+        setEditBeginMonth(beginDate.month);
+        setEditBeginYear(beginDate.year);
+        
+        const endDate = parseDate(treatment.endDate);
+        setEditEndDay(endDate.day);
+        setEditEndMonth(endDate.month);
+        setEditEndYear(endDate.year);
+        
+        // Parse dosage
+        setEditDosagePerDay(parseDosage(treatment.dosage));
+        
+        // Parse duration
+        const duration = parseDuration(treatment.duration);
+        setEditDurationValue(duration.value);
+        setEditDurationUnit(duration.unit);
+        
+        setEditModalVisible(true);
+    };
+
+    const handleSaveEdit = (): void => {
+        if ( 
+            !editedTreatment.name || 
+            !editedTreatment.sideEffects ||
+            !editedTreatment.disease
+        ) { 
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        if (editingIndex !== null) {
+            const updatedTreatments = [...treatments];
+            updatedTreatments[editingIndex] = {
+                ...editedTreatment,
+                beginDate: formatDate(editBeginDay, editBeginMonth, editBeginYear),
+                endDate: formatDate(editEndDay, editEndMonth, editEndYear),
+                dosage: `${editDosagePerDay} comprimé(s) par jour`,
+                duration: `${editDurationValue} ${editDurationUnit}`,
+            };
+            setTreatments(updatedTreatments);
+        }
+
+        setEditModalVisible(false);
+        setEditingIndex(null);
+        Alert.alert('Succès', 'Les informations du traitement ont été mises à jour.');
+    };
+
+    const handleDeleteTreatment = (index: number): void => {
+        const treatment = treatments[index];
+        Alert.alert(
+            'Supprimer le traitement',
+            `Êtes-vous sûr de vouloir supprimer "${treatment.name}" ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                { 
+                    text: 'Supprimer', 
+                    style: 'destructive',
+                    onPress: () => {
+                        const updatedTreatments = treatments.filter((_, i) => i !== index);
+                        setTreatments(updatedTreatments);
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -134,10 +249,14 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 {treatments.map((treatment, index) => (
                     <View key={index} style={styles.card}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{treatment.name}</Text>
-                            <TouchableOpacity onPress={() => handleEditPress(treatment.name)} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
-                            </TouchableOpacity>
+                            <Text style={styles.cardTitle}>{treatment.name}</Text>                                <View style={styles.actionButtons}>
+                                    <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                        <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
+                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                    </TouchableOpacity>
+                                </View>
                         </View>
                         <Text style={styles.cardText}>
                             <Text style={styles.bold}>Date de début: </Text>
@@ -337,6 +456,171 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                             </TouchableOpacity>
                             
                             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.button}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                </ScrollView>
+            </Modal>
+
+            <Modal visible={isEditModalVisible} animationType="slide">
+                <ScrollView
+                    contentContainerStyle={styles.modalContainer}
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="automatic"
+                >
+                        <Text style={styles.modalTitle}>Modifier le traitement</Text>
+                        
+                        <TextInput
+                            placeholder="Nom du traitement"
+                            value={editedTreatment.name}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, name: text })}
+                            style={styles.input}
+                        />
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Date de début</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={editBeginDay}
+                                    onValueChange={(value) => setEditBeginDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={editBeginMonth}
+                                    onValueChange={(value) => setEditBeginMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={editBeginYear}
+                                    onValueChange={(value) => setEditBeginYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Date de fin</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={editEndDay}
+                                    onValueChange={(value) => setEditEndDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={editEndMonth}
+                                    onValueChange={(value) => setEditEndMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={editEndYear}
+                                    onValueChange={(value) => setEditEndYear(Number(value))}
+                                    options={Array.from({ length: 10 }, (_, i) => ({ 
+                                        label: (2024 + i).toString(), 
+                                        value: 2024 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Dosage</Text>
+                        <CustomPicker
+                            label="Comprimés par jour"
+                            selectedValue={editDosagePerDay}
+                            onValueChange={(value) => setEditDosagePerDay(Number(value))}
+                            options={Array.from({ length: 10 }, (_, i) => ({ 
+                                label: (i + 1).toString(), 
+                                value: i + 1 
+                            }))}
+                            placeholder="1"
+                        />
+                        
+                        <Text style={[styles.cardTitle, { color: colors.settingsTitle }]}>Durée</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 10 }}>
+                                <CustomPicker
+                                    label="Valeur"
+                                    selectedValue={editDurationValue}
+                                    onValueChange={(value) => setEditDurationValue(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString(), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="1"
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <CustomPicker
+                                    label="Unité"
+                                    selectedValue={editDurationUnit}
+                                    onValueChange={(value) => setEditDurationUnit(String(value))}
+                                    options={durationUnits.map(unit => ({ 
+                                        label: unit, 
+                                        value: unit 
+                                    }))}
+                                    placeholder="Sélectionner"
+                                />
+                            </View>
+                        </View>
+                        
+                        <TextInput
+                            placeholder="Effets secondaires"
+                            value={editedTreatment.sideEffects}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, sideEffects: text })}
+                            style={styles.input}
+                        />
+                        
+                        <TextInput
+                            placeholder="Maladie associée"
+                            value={editedTreatment.disease}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, disease: text })}
+                            style={styles.input}
+                        />
+                        
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity onPress={handleSaveEdit} style={styles.button}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Sauvegarder</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
                                 <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>

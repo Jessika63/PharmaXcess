@@ -178,37 +178,16 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View style={styles.card}>
-                            <View style={{ 
-                                position: 'absolute', 
-                                top: 10, 
-                                right: 10, 
-                                flexDirection: 'row', 
-                                gap: 8, 
-                                zIndex: 1 
-                            }}>
-                                <TouchableOpacity 
-                                    onPress={() => handleEditPress(index)} 
-                                    style={{ 
-                                        backgroundColor: colors.editButtonBackground, 
-                                        padding: 8, 
-                                        borderRadius: 50 
-                                    }}
-                                >
-                                    <Ionicons name="pencil" size={20} color={colors.iconPrimary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    onPress={() => handleDeleteDisease(index)} 
-                                    style={{ 
-                                        backgroundColor: '#FFEBEE', 
-                                        padding: 8, 
-                                        borderRadius: 50 
-                                    }}
-                                >
-                                    <Ionicons name="trash" size={20} color="#FF4444" />
-                                </TouchableOpacity>
-                            </View>
                             <View style={styles.cardHeader}>
                                 <Text style={styles.cardTitle}>{disease.name}</Text>
+                                <View style={styles.actionButtons}>
+                                    <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                        <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleDeleteDisease(index)} style={styles.deleteButton}>
+                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                             <Text style={styles.cardText}>
                                 <Text style={styles.bold}>Description: </Text>
