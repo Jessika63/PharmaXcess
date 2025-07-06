@@ -103,6 +103,91 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         borderRadius: 12,
         overflow: 'hidden',
     },
+    // Agenda-specific styles for prescription reminders
+    agendaCard: {
+        width: '100%',
+        marginVertical: 8,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    completedCard: {
+        opacity: 0.7,
+        backgroundColor: colors.inputBackground,
+        borderColor: '#4CAF50',
+    },
+    agendaHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    agendaDateContainer: {
+        flex: 1,
+    },
+    agendaDate: {
+        fontSize: 16 * fontScale,
+        fontWeight: 'bold',
+        color: colors.infoTitle,
+        marginBottom: 4,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    statusText: {
+        fontSize: 12 * fontScale,
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    agendaActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    priorityIndicator: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    agendaContent: {
+        marginBottom: 12,
+    },
+    agendaTitle: {
+        fontSize: 18 * fontScale,
+        fontWeight: '600',
+        color: colors.infoTitle,
+        marginBottom: 6,
+    },
+    agendaNotes: {
+        fontSize: 14 * fontScale,
+        color: colors.infoText,
+        marginBottom: 4,
+        fontStyle: 'italic',
+    },
+    agendaSound: {
+        fontSize: 13 * fontScale,
+        color: colors.infoTextSecondary,
+    },
+    agendaFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+    },
+    completedText: {
+        textDecorationLine: 'line-through',
+        opacity: 0.6,
+    },
     alarmName: {
         fontSize: 18 * fontScale,
         fontWeight: 'bold',
