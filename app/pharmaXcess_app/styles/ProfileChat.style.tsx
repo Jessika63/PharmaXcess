@@ -131,6 +131,198 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontSize: 16 * fontScale,
         fontWeight: 'bold',
     },
+    // Chat-specific styles
+    chatCard: {
+        width: '100%',
+        backgroundColor: colors.card,
+        borderRadius: 12,
+        padding: 16,
+        marginVertical: 8,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    chatHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    chatInfo: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    chatTitle: {
+        fontSize: 16 * fontScale,
+        fontWeight: 'bold',
+        color: colors.infoTitle,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    statusText: {
+        fontSize: 11 * fontScale,
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    chatMeta: {
+        alignItems: 'flex-end',
+    },
+    chatDate: {
+        fontSize: 12 * fontScale,
+        color: colors.infoTextSecondary,
+        marginBottom: 4,
+    },
+    unreadBadge: {
+        backgroundColor: colors.primary,
+        borderRadius: 10,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        minWidth: 20,
+        alignItems: 'center',
+    },
+    unreadText: {
+        fontSize: 11 * fontScale,
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    chatPreview: {
+        fontSize: 14 * fontScale,
+        color: colors.infoText,
+        marginBottom: 4,
+        lineHeight: 18 * fontScale,
+    },
+    chatName: {
+        fontSize: 12 * fontScale,
+        color: colors.infoTextSecondary,
+        fontStyle: 'italic',
+    },
+    // Conversation styles
+    conversationContainer: {
+        flex: 1,
+    },
+    conversationHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: colors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    backButton: {
+        padding: 8,
+        marginRight: 12,
+        borderRadius: 8,
+    },
+    conversationInfo: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    conversationTitle: {
+        fontSize: 18 * fontScale,
+        fontWeight: 'bold',
+        color: colors.infoTitle,
+    },
+    messagesList: {
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+    },
+    messageContainer: {
+        marginVertical: 4,
+        paddingHorizontal: 8,
+    },
+    userMessage: {
+        alignItems: 'flex-end',
+    },
+    supportMessage: {
+        alignItems: 'flex-start',
+    },
+    messageBubble: {
+        maxWidth: '80%',
+        borderRadius: 18,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    userBubble: {
+        backgroundColor: colors.primary,
+    },
+    supportBubble: {
+        backgroundColor: colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    messageText: {
+        fontSize: 15 * fontScale,
+        lineHeight: 20 * fontScale,
+    },
+    userText: {
+        color: 'white',
+    },
+    supportText: {
+        color: colors.infoText,
+    },
+    messageTime: {
+        fontSize: 11 * fontScale,
+        marginTop: 4,
+    },
+    userTime: {
+        color: 'rgba(255, 255, 255, 0.8)',
+    },
+    supportTime: {
+        color: colors.infoTextSecondary,
+    },
+    messageInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        padding: 16,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
+    messageInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: colors.inputBorder,
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: colors.inputBackground,
+        fontSize: 15 * fontScale,
+        maxHeight: 100,
+        marginRight: 12,
+    },
+    sendButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sendButtonDisabled: {
+        backgroundColor: colors.inputBorder,
+    },
 });
 
 export default createStyles;
