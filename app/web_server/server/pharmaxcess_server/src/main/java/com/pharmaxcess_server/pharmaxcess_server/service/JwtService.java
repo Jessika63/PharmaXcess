@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.Set;
 import java.util.List;
 
+/**
+ * Service for handling JWT token creation, parsing, and validation.
+ * <p>
+ * This service provides methods to generate a JWT token, retrieve authentication details from a token,
+ * invalidate a token, and check whether a token is valid.
+ * </p>
+ */
 @Service
 public class JwtService {
 
@@ -29,6 +36,13 @@ public class JwtService {
     private static final String SECRET = System.getenv("JWT_SECRET");;
     private static final Key SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
+    /**
+     * Generates a JWT token for a user based on their email and role.
+     *
+     * @param email the email of the user
+     * @param role the role of the user (e.g., ROLE_USER, ROLE_ADMIN)
+     * @return the generated JWT token as a string
+     */
     public String generateToken(String email, String role) {
         return Jwts.builder()
             .setSubject(email)
@@ -39,6 +53,12 @@ public class JwtService {
             .compact();
     }
 
+    /**
+     * Extracts authentication details from the provided JWT token.
+     *
+     * @param token the JWT token to extract details from
+     * @return the {@link UsernamePasswordAuthenticationToken} containing the user's details and authorities
+     */
     public UsernamePasswordAuthenticationToken getAuthentication(String token) {
         Claims claims = parseToken(token);
 
@@ -53,6 +73,12 @@ public class JwtService {
         return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
 
+    /**
+     * Parses the JWT token to retrieve the claims.
+     *
+     * @param token the JWT token to parse
+     * @return the parsed claims from the token
+     */
     private Claims parseToken(String token) {
         return Jwts.parserBuilder()
         .setSigningKey(SECRET_KEY)
@@ -61,10 +87,22 @@ public class JwtService {
         .getBody();
     }
 
+    /**
+     * Invalidates the provided JWT token by adding it to a blacklist.
+     *
+     * @param token the JWT token to invalidate
+     */
     public void invalidateToken(String token) {
         invalidatedTokens.add(token);
     }
 
+    /**
+     * Checks if the provided JWT token is valid.
+     * A token is considered valid if it is correctly signed and not in the invalidated tokens set.
+     *
+     * @param token the JWT token to check
+     * @return {@code true} if the token is valid, {@code false} otherwise
+     */
     public boolean isTokenValid(String token) {
         try {
             JwtParser parser = Jwts.parserBuilder()
