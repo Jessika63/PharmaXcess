@@ -48,7 +48,17 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
     ]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
+    const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [newDisease, setNewDisease] = useState<Disease>({
+        name: '',
+        description: '',
+        symptoms: '',
+        beginDate: '',
+        medications: '',
+        examens: '',
+    });
+    const [editedDisease, setEditedDisease] = useState<Disease>({
         name: '',
         description: '',
         symptoms: '',
@@ -65,6 +75,9 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
     const [selectedYear, setSelectedYear] = useState<number>(2024);
     const [selectedMonth, setSelectedMonth] = useState<number>(1);
     const [selectedDay, setSelectedDay] = useState<number>(1);
+    const [editSelectedYear, setEditSelectedYear] = useState<number>(2024);
+    const [editSelectedMonth, setEditSelectedMonth] = useState<number>(1);
+    const [editSelectedDay, setEditSelectedDay] = useState<number>(1);
 
     const handleAddPress = (): void => {
         if (
@@ -98,8 +111,65 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
         setSelectedDay(1); 
     };
 
-    const handleEditPress = (diseaseName: string): void => {
-        Alert.alert('Modifier la maladie', `Cette fonctionnalité n\'est pas encore implémentée pour la maladie "${diseaseName}".`);
+    const handleEditPress = (index: number): void => {
+        const disease = diseases[index];
+        setEditedDisease({ ...disease });
+        setEditingIndex(index);
+        
+        // Parse the date from the disease
+        const dateParts = disease.beginDate.split('/');
+        if (dateParts.length === 3) {
+            setEditSelectedDay(parseInt(dateParts[0]));
+            setEditSelectedMonth(parseInt(dateParts[1]));
+            setEditSelectedYear(parseInt(dateParts[2]));
+        }
+        
+        setEditModalVisible(true);
+    };
+
+    const handleSaveEdit = (): void => {
+        if (
+            !editedDisease.name ||
+            !editedDisease.description ||
+            !editedDisease.symptoms ||
+            !editedDisease.medications ||
+            !editedDisease.examens
+        ) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        if (editingIndex !== null) {
+            const updatedDiseases = [...diseases];
+            updatedDiseases[editingIndex] = {
+                ...editedDisease,
+                beginDate: `${editSelectedDay.toString().padStart(2, '0')}/${editSelectedMonth.toString().padStart(2, '0')}/${editSelectedYear}`,
+            };
+            setDiseases(updatedDiseases);
+        }
+
+        setEditModalVisible(false);
+        setEditingIndex(null);
+        Alert.alert('Succès', 'Les informations de la maladie ont été mises à jour.');
+    };
+
+    const handleDeleteDisease = (index: number): void => {
+        const disease = diseases[index];
+        Alert.alert(
+            'Supprimer la maladie',
+            `Êtes-vous sûr de vouloir supprimer "${disease.name}" ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                { 
+                    text: 'Supprimer', 
+                    style: 'destructive',
+                    onPress: () => {
+                        const updatedDiseases = diseases.filter((_, i) => i !== index);
+                        setDiseases(updatedDiseases);
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -108,9 +178,35 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View style={styles.card}>
-                            <TouchableOpacity onPress={() => handleEditPress(disease.name)} style={styles.editButton}>
-                                <Ionicons name="pencil" size={25} color={colors.iconPrimary} />
-                            </TouchableOpacity>
+                            <View style={{ 
+                                position: 'absolute', 
+                                top: 10, 
+                                right: 10, 
+                                flexDirection: 'row', 
+                                gap: 8, 
+                                zIndex: 1 
+                            }}>
+                                <TouchableOpacity 
+                                    onPress={() => handleEditPress(index)} 
+                                    style={{ 
+                                        backgroundColor: colors.editButtonBackground, 
+                                        padding: 8, 
+                                        borderRadius: 50 
+                                    }}
+                                >
+                                    <Ionicons name="pencil" size={20} color={colors.iconPrimary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    onPress={() => handleDeleteDisease(index)} 
+                                    style={{ 
+                                        backgroundColor: '#FFEBEE', 
+                                        padding: 8, 
+                                        borderRadius: 50 
+                                    }}
+                                >
+                                    <Ionicons name="trash" size={20} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
                             <View style={styles.cardHeader}>
                                 <Text style={styles.cardTitle}>{disease.name}</Text>
                             </View>
@@ -170,18 +266,21 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                             value={newDisease.name}
                             onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
                             style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
                         />
                         <TextInput
                             placeholder="Description"
                             value={newDisease.description}
                             onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
                             style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
                         />
                         <TextInput
                             placeholder="Symptômes"
                             value={newDisease.symptoms}
                             onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
                             style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
                         />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <View style={{ flex: 1, marginRight: 5 }}>
@@ -226,12 +325,14 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                             value={newDisease.medications}
                             onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
                             style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
                         />
                         <TextInput
                             placeholder="Examens"
                             value={newDisease.examens}
                             onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
                             style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
                         />
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity onPress={handleAddPress} style={styles.button}>
@@ -241,6 +342,102 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
                             </TouchableOpacity>
                             
                             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.button}>
+                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                </ScrollView>
+            </Modal>
+
+           <Modal visible={isEditModalVisible} animationType="slide">
+                <ScrollView
+                    contentContainerStyle={styles.modalContainer}
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="automatic"
+                >
+                        <Text style={styles.modalTitle}>Modifier la maladie</Text>
+                        <TextInput
+                            placeholder="Nom"
+                            value={editedDisease.name}
+                            onChangeText={(text) => setEditedDisease({ ...editedDisease, name: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+                        <TextInput
+                            placeholder="Description"
+                            value={editedDisease.description}
+                            onChangeText={(text) => setEditedDisease({ ...editedDisease, description: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+                        <TextInput
+                            placeholder="Symptômes"
+                            value={editedDisease.symptoms}
+                            onChangeText={(text) => setEditedDisease({ ...editedDisease, symptoms: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, marginRight: 5 }}>
+                                <CustomPicker
+                                    label="Jour"
+                                    selectedValue={editSelectedDay}
+                                    onValueChange={(value) => setEditSelectedDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}>
+                                <CustomPicker
+                                    label="Mois"
+                                    selectedValue={editSelectedMonth}
+                                    onValueChange={(value) => setEditSelectedMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ 
+                                        label: (i + 1).toString().padStart(2, '0'), 
+                                        value: i + 1 
+                                    }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}>
+                                <CustomPicker
+                                    label="Année"
+                                    selectedValue={editSelectedYear}
+                                    onValueChange={(value) => setEditSelectedYear(Number(value))}
+                                    options={Array.from({ length: 50 }, (_, i) => ({ 
+                                        label: (1980 + i).toString(), 
+                                        value: 1980 + i 
+                                    }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+                        <TextInput
+                            placeholder="Traitements"
+                            value={editedDisease.medications}
+                            onChangeText={(text) => setEditedDisease({ ...editedDisease, medications: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+                        <TextInput
+                            placeholder="Examens"
+                            value={editedDisease.examens}
+                            onChangeText={(text) => setEditedDisease({ ...editedDisease, examens: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity onPress={handleSaveEdit} style={styles.button}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Enregistrer</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
                                 <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
