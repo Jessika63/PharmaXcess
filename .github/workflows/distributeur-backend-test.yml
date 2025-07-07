@@ -52,7 +52,6 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install --upgrade "numpy==1.26.4" --only-binary=:all:
           pip install -r distributeur/backend/requirements.txt --no-deps
-          pip install -r distributeur/backend/requirements_ignored.txt --no-deps
 
       - name: Create fake database dump for CI
         if: env.CI == 'true'
