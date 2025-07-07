@@ -49,10 +49,13 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=10):
                 colored_print(f"Backend responded with status code {response.status_code}", "yellow")
         except requests.ConnectionError as ce:
             last_error = ce
-            if 'Connection refused' in str(ce):
-                colored_print(f"Connection refused on port 5000. Backend may not be listening or crashed.", "red")
+            if 'Connection refused' in str(last_error):
+                colored_print(
+                    "Connection refused on port 5000. Backend may not be listening or crashed.",
+                    "yellow",
+                )
             else:
-                colored_print(f"Connection error: {ce}", "red")
+                colored_print(f"Connection error: {last_error}", "yellow")
         except requests.Timeout:
             last_error = 'timeout'
             colored_print("Connection to backend timed out. Backend may be slow to start or not listening.", "red")
@@ -60,15 +63,14 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=10):
             last_error = e
             colored_print(f"Unexpected error while checking backend container: {e}", "yellow")
 
-        if attempt != nb_of_retry:
-            colored_print(
-                f"Attempt {attempt}/{nb_of_retry}: Backend not ready. Retrying in {waiting_time} seconds...",
-                "yellow"
-            )
-            time.sleep(waiting_time)
-        else:
+        if attempt == nb_of_retry:
             break
 
+        colored_print(
+            f"Attempt {attempt}/{nb_of_retry}: Backend not ready. Retrying in {waiting_time} seconds...",
+            "yellow"
+        )
+        time.sleep(waiting_time)
     # If we reach here, backend is not up after retries
     colored_print(f"Backend container '{backend_container_name}' is not ready after {nb_of_retry} attempts!", "red")
     # Print last error
