@@ -1,0 +1,85 @@
+
+name: Distributeur Backend Tests
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - '**'
+      - 'distributeur/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - '**'
+      - 'distributeur/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Create .env file
+        run: |
+          cat <<EOF > distributeur/backend/.env
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          OPENROUTESERVICE_API_KEY=${{ secrets.OPENROUTESERVICE_API_KEY }}
+          
+          EOF
+
+      - name: Install build tools and dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install --upgrade "numpy==1.26.4" --only-binary=:all:
+          pip install -r distributeur/backend/requirements.txt --no-deps
+          pip install -r distributeur/backend/requirements_ignored.txt --no-deps
+
+      - name: Create fake database dump for CI
+        if: env.CI == 'true'
+        run: |
+          cat <<EOF > distributeur/backend/temp_fake_database_dump_px.sql
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
+          USE \`${{ secrets.DB_NAME }}\`;
+          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
+          FLUSH PRIVILEGES;
+          EOF
+          cat distributeur/backend/db/database.sql >> distributeur/backend/temp_fake_database_dump_px.sql
+
+      - name: Replace DB_NAME placeholder in SQL
+        if: env.CI == 'true'
+        run: |
+          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
+
+      - name: Run backend tests
+        working-directory: distributeur
+        run: |
+          python3 launch.py --verif
+          python3 launch.py --back
+          python3 launch.py --test
+
+      - name: Show backend container logs on failure
+        if: failure()
+        run: docker logs distributeur-backend-app || true
