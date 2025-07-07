@@ -30,8 +30,8 @@ if __name__ == "__main__":
     parser.add_argument("--dump", action="store_true",
         help="Function to export the database dump."
     )
-    parser.add_argument("--export-images", type=str, help="Export backend and db Docker images to a tar file (provide output tar path).")
-    parser.add_argument("--import-images", type=str, help="Import backend and db Docker images from a tar file (provide input tar path).")
+    parser.add_argument("--export-images", type=str, help="Export backend and database Docker images to a tar file (provide output tar path).")
+    parser.add_argument("--import-images", type=str, help="Import backend and database Docker images from a tar file (provide input tar path).")
     parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
     parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
 

@@ -40,23 +40,22 @@ def extract_text():
 
         os.remove(filename)
 
-        if result.returncode == 0:
-            stdout_clean = result.stdout.strip()
-            try:
-                parsed = json.loads(stdout_clean)
-                return jsonify({
-                    "output": parsed
-                }), 200
-            except Exception:
-                return jsonify({
-                    "output": stdout_clean
-                }), 200
-
-        else:
+        if result.returncode != 0:
             return jsonify({
                 "error": result.stderr.strip() or "Unknown error"
             }), 500
 
+        stdout_clean = result.stdout.strip()
+        try:
+            parsed = json.loads(stdout_clean)
+            return jsonify({
+                "output": parsed
+            }), 200
+        except Exception:
+            return jsonify({
+                "output": stdout_clean
+            }), 200
+
     except Exception as e:
-        print("[ERROR]", str(e))
+        print("[ERROR]", e)
         return jsonify({"error": str(e)}), 500

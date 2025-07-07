@@ -46,4 +46,4 @@ def get_directions():
             return jsonify({'error': data.get('error', 'ORS error'), 'error_message': data.get('message', '')}), resp.status_code
         return jsonify(data), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({'error': str(e)}), 500
