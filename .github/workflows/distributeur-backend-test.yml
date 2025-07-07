@@ -6,16 +6,13 @@ on:
     branches:
       - main
       - dev
-      - LOG_link_front_to_back
     paths:
-      - '**'
       - 'distributeur/**'
   pull_request:
     branches:
       - main
       - dev
     paths:
-      - '**'
       - 'distributeur/**'
 
 jobs:
