@@ -1,4 +1,3 @@
-
 import pytest
 import config
 from unittest.mock import patch
@@ -6,6 +5,9 @@ from unittest.mock import patch
 # Test case to successfully add a list of doctors
 @pytest.mark.order(1)  # LOX n°1
 def test_add_list_doctors_success(client):
+    """
+    Test case to successfully add a list of doctors with valid data.
+    """
     # Sending a POST request to add a list of doctors with valid data
     response = client.post('/add_list_doctors', json={
         'doctors': [
@@ -21,6 +23,9 @@ def test_add_list_doctors_success(client):
 # Test case where the list of doctors is empty
 @pytest.mark.order(1)  # LOX n°1
 def test_add_list_doctors_empty_list(client):
+    """
+    Test case where the list of doctors is empty.
+    """
     # Sending a POST request with an empty list of doctors
     response = client.post('/add_list_doctors', json={'doctors': []})
     # Assert that the response status code is 400 (Bad Request)
@@ -31,6 +36,9 @@ def test_add_list_doctors_empty_list(client):
 # Test case where a required field is missing in one of the doctors
 @pytest.mark.order(1)  # LOX n°1
 def test_add_list_doctors_missing_field(client):
+    """
+    Test case where a required field is missing in one of the doctors.
+    """
     # Sending a POST request with missing fields in the doctors' list
     response = client.post('/add_list_doctors', json={
         'doctors': [
@@ -46,6 +54,9 @@ def test_add_list_doctors_missing_field(client):
 # Test case where the 'doctors' parameter is not a list
 @pytest.mark.order(1)  # LOX n°1
 def test_add_list_doctors_not_a_list(client):
+    """
+    Test case where the 'doctors' parameter is not a list.
+    """
     # Sending a POST request with 'doctors' not being a list (None in this case)
     response = client.post('/add_list_doctors', json={'doctors': None})
     # Assert that the response status code is 400 (Bad Request)
@@ -56,6 +67,9 @@ def test_add_list_doctors_not_a_list(client):
 # Test case where only a single doctor is added, but it is in a list
 @pytest.mark.order(1)  # LOX n°1
 def test_add_list_doctors_single_doctor(client):
+    """
+    Test case where only a single doctor is added, but it is in a list.
+    """
     # Sending a POST request with a single doctor in the list
     response = client.post('/add_list_doctors', json={
         'doctors': [
@@ -71,6 +85,9 @@ def test_add_list_doctors_single_doctor(client):
 @pytest.mark.order(1)  # LOX n°1
 @patch('routes.add.add_list_doctors.get_connection', side_effect=Exception("Database connection failed"))
 def test_add_list_doctors_db_error(mock_get_connection, client):
+    """
+    Test case to simulate a database connection error while adding a list of doctors.
+    """
     # Sending a POST request to add a list of doctors, which will trigger a DB error
     response = client.post('/add_list_doctors', json={
         'doctors': [

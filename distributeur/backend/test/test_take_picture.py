@@ -1,9 +1,11 @@
-
 import pytest
 
 # Test case for successfully taking a picture
 @pytest.mark.order(1) # LOX n°2
 def test_take_picture_success(client, mocker):
+    """
+    Test case for successfully taking a picture.
+    """
     # Simulate a successful picture capture by patching subprocess.run
     mocker.patch('subprocess.run', return_value=mocker.Mock(returncode=0, stdout='Picture taken successfully'))
 
@@ -18,6 +20,9 @@ def test_take_picture_success(client, mocker):
 # Test case for a script error when trying to take a picture
 @pytest.mark.order(1) # LOX n°2
 def test_take_picture_script_error(client, mocker):
+    """
+    Test case for a script error when trying to take a picture.
+    """
     # Simulate a script error by patching subprocess.run to return a non-zero returncode and error message
     mocker.patch('subprocess.run', return_value=mocker.Mock(returncode=1, stderr='Camera error'))
 
@@ -32,6 +37,9 @@ def test_take_picture_script_error(client, mocker):
 # Test case for handling unexpected exceptions when trying to take a picture
 @pytest.mark.order(1) # LOX n°2
 def test_take_picture_unexpected_exception(client, mocker):
+    """
+    Test case for handling unexpected exceptions when trying to take a picture.
+    """
     # Simulate an unexpected exception during the execution of the script
     mocker.patch('subprocess.run', side_effect=Exception('Unexpected error'))
 

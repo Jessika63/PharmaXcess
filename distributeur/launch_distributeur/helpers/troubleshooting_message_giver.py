@@ -19,3 +19,21 @@ troubleshooting_message = (
     "5. Ensure your user has permission to run Docker:\n"
     "   - Add your user to the 'docker' group (Linux only): 'sudo usermod -aG docker $USER'."
 )
+
+troubleshooting_message_docker_zombie = (
+    "Docker may be in an unstable or zombie state.\n\n"
+    "Troubleshooting steps:\n"
+    "1. Restart Docker:\n"
+    "   - Windows/macOS: Click on the Docker icon in the system tray > 'Restart Docker Desktop'.\n"
+    "   - Linux: Run 'sudo systemctl restart docker'.\n"
+    "2. Check Docker daemon status:\n"
+    "   - Windows/macOS: Ensure Docker Desktop is running.\n"
+    "   - Linux: Use 'systemctl status docker' to check if the service is active.\n"
+    "3. Force kill the zombie container (if known):\n"
+    "   - Get the PID: docker inspect --format '{{.State.Pid}}' <container_id>\n"
+    "   - Then kill it: sudo kill -9 <pid>\n"
+    "4. Verify Docker context:\n"
+    "   - Run 'docker context ls' to see the current context.\n"
+    "   - Switch if needed: 'docker context use [context-name]'\n"
+    "5. If nothing works, reboot your system.\n"
+)

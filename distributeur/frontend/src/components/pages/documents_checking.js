@@ -54,7 +54,7 @@ function DocumentsChecking() {
                     console.log(`Texte extrait pour ${currentDocType} (${docCode}) :`, data.raw_text);
                     console.log(`Infos extraites :`, data.infos);
                 } else {
-                    console.error("Erreur d’extraction :", data.error);
+                    console.error("Erreur d'extraction :", data.error);
                 }
             } catch (error) {
                 console.error("Erreur client:", error);
@@ -70,15 +70,18 @@ function DocumentsChecking() {
         setShowCINOptions(false);
     };
 
-    const handleOpenCamera = (documentType) => {
+    const handleOpenCamera = useCallback((documentType) => {
+        console.log('handleOpenCamera called with:', documentType);
         if (documentType === 'carte_identite') {
+            console.log('Opening CIN options modal');
             setShowCINOptions(true);
         } else {
+            console.log('Opening camera modal for:', documentType);
             setCurrentDocType(documentType);
             setShowCamera(true);
             setIsModalOpen(true);
         }
-    };
+    }, []);
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -86,6 +89,7 @@ function DocumentsChecking() {
     };
 
     const handleKeyDown = useCallback((event) => {
+        console.log('Key pressed:', event.key, 'focusedIndex:', focusedIndexRef.current);
         if (event.key === "ArrowRight") {
             setFocusedIndex((prevIndex) => {
                 const newIndex = prevIndex < 3 ? prevIndex + 1 : prevIndex;
@@ -100,9 +104,18 @@ function DocumentsChecking() {
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
-            if (focusedIndexRef.current >= 1) {
-                handleOpenCamera();
-            } else {
+            console.log('Enter pressed, focusedIndex:', focusedIndexRef.current);
+            if (focusedIndexRef.current === 1) {
+                console.log('Calling handleOpenCamera for ordonnance');
+                handleOpenCamera('ordonnance');
+            } else if (focusedIndexRef.current === 2) {
+                console.log('Calling handleOpenCamera for carte_vitale');
+                handleOpenCamera('carte_vitale');
+            } else if (focusedIndexRef.current === 3) {
+                console.log('Calling handleOpenCamera for carte_identite');
+                handleOpenCamera('carte_identite');
+            } else if (focusedIndexRef.current === 0) {
+                console.log('Navigating to home');
                 navigate('/');
             }
         }
@@ -129,13 +142,6 @@ function DocumentsChecking() {
             buttonsRef.current[focusedIndex].focus();
         }
     }, [focusedIndex]);
-
-    useEffect(() => {
-        document.addEventListener("keydown", handleKeyDown);
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, []);
 
     useEffect(() => {
     }, [focusedIndex]);

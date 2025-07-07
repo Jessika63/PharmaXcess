@@ -3,10 +3,11 @@ import os
 import time
 from tqdm import tqdm
 from helpers.colored_print import colored_print
+from helpers.env_functions.load_env_file import load_env_file
 
 def handle_import_images(input_tar_path, backend_app_image_name, backend_container_name, db_container_name):
     """
-    Imports Docker images from a tar file using docker load, with a file size progress bar, then runs backend and db containers.
+    Imports Docker images from a tar file using docker load, with a file size progress bar, then runs backend and database containers.
     Args:
         input_tar_path (str): Path to the input tar file.
         backend_app_image_name (str): Name for the backend app image.
@@ -14,6 +15,7 @@ def handle_import_images(input_tar_path, backend_app_image_name, backend_contain
         db_container_name (str): Name for the db container.
     """
     try:
+        env_data = load_env_file(".env")
         colored_print(f"Importing Docker images from '{input_tar_path}'...", "blue")
         # Start the docker load process
         with open(input_tar_path, 'rb') as f:
@@ -44,22 +46,22 @@ def handle_import_images(input_tar_path, backend_app_image_name, backend_contain
             "--name", backend_container_name,
             "-p", "5000:5000",
             "-e", "FLASK_ENV=development",
-            "-e", f"DB_HOST=distributeur-backend-db",
-            "-e", f"DB_USER=root",
-            "-e", f"DB_PASSWORD=root",
-            "-e", f"DB_NAME=doctors_db",
+            "-e", f"DB_HOST=distributeur-backend-{env_data.get('DB_HOST')}",
+            "-e", f"DB_USER={env_data.get('DB_USER')}",
+            "-e", f"DB_PASSWORD={env_data.get('DB_PASSWORD')}",
+            "-e", f"DB_NAME={env_data.get('DB_NAME')}",
             backend_app_image_name,
             "python", "app.py"
         ], check=True)
         colored_print(f"Backend app container '{backend_container_name}' started!", "green")
 
-        # Run db container
+        # Run database container
         colored_print(f"Running db container '{db_container_name}'...", "blue")
         subprocess.run([
             "docker", "run", "-d",
             "--name", db_container_name,
             "-e", "MYSQL_ROOT_PASSWORD=root",
-            "-e", "MYSQL_DATABASE=doctors_db",
+            "-e", f"MYSQL_DATABASE={env_data.get('DB_NAME')}",
             "-p", "3307:3306",
             "mysql:5.7"
         ], check=True)

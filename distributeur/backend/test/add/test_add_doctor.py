@@ -1,4 +1,3 @@
-
 import pytest
 import config
 from unittest.mock import patch
@@ -6,6 +5,9 @@ from unittest.mock import patch
 # Test case to successfully add a doctor
 @pytest.mark.order(1)  # LOX n°1
 def test_add_doctor_success(client):
+    """
+    Test case to successfully add a doctor with valid data.
+    """
     # Sending a POST request to add a doctor with valid data
     response = client.post('/add_doctor',
         json=config.dict_doctor_to_add["add_success_1"]
@@ -18,6 +20,9 @@ def test_add_doctor_success(client):
 # Test case where a required field (RPPS) is missing while adding a doctor
 @pytest.mark.order(1)  # LOX n°1
 def test_add_doctor_missing_field(client):
+    """
+    Test case where a required field (RPPS) is missing while adding a doctor.
+    """
     # Sending a POST request with missing 'rpps' field
     response = client.post('/add_doctor',
         json=config.dict_doctor_to_add["missing_field_rpps"]
@@ -31,6 +36,9 @@ def test_add_doctor_missing_field(client):
 @pytest.mark.order(1)  # LOX n°1
 @patch('routes.add.add_doctor.get_connection', side_effect=Exception("Database connection failed"))
 def test_add_doctor_db_error(mock_get_connection, client):
+    """
+    Test case to simulate a database connection error while adding a doctor.
+    """
     # Sending a POST request to add a doctor, which will trigger a DB error
     response = client.post('/add_doctor',
         json=config.dict_doctor_to_add["add_success_1"]
