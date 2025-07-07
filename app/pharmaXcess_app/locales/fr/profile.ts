@@ -1,0 +1,16 @@
+export default {
+  profil: 'Profil',
+  compte: 'Compte',
+  informationsPersonnelles: 'Informations personnelles',
+  nom: 'Nom',
+  email: 'Email',
+  telephone: 'Téléphone',
+  adresse: 'Adresse',
+  dateNaissance: 'Date de naissance',
+  genre: 'Genre',
+  gestionCompte: 'Gestion du compte',
+  changerMotDePasse: 'Changer le mot de passe',
+  notifications: 'Notifications',
+  confidentialite: 'Confidentialité',
+  deconnexion: 'Déconnexion',
+};
