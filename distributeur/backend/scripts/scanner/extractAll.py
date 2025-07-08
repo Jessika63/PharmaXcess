@@ -265,8 +265,7 @@ def main(image_path, doc_type):
     corrected_image = correct_orientation(image_path)
     text = extract_text_paddleocr(corrected_image)
 
-    print("\n=== TEXTE OCR ===\n")
-    print(text)
+    print("[DEBUG] OCR TEXT:", text, file=sys.stderr)
 
     data = {}
 
@@ -277,22 +276,25 @@ def main(image_path, doc_type):
     elif doc_type == "V":
         data = getInfosVersoID(text)
     else:
-        print("Unknown. Use P, R, V.")
-        return
+        sys.exit(1)
 
-    print("\n=== INFOS JSON ===\n")
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-    return data
+    result = {
+        "raw_text": text,
+        "infos": data
+    }
+
+    print(json.dumps(result, ensure_ascii=False))
+
+
 
 if __name__ == "__main__":
     """
     Entry point for command-line usage.
 
     Usage:
-        python3 script.py <image_path> <P|R|V>
+        python3 extractAll.py <image_path> <P|R|V>
     """
     if len(sys.argv) != 3:
-        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
         sys.exit(1)
 
     img_path = sys.argv[1]

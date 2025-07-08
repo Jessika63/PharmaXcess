@@ -2,7 +2,7 @@ Flask==3.1.1
 PyMySQL==1.1.1
 python-dotenv==1.0.0
 numpy==1.26.4
-opencv-python==4.6.0.66
+opencv-python==4.8.1.78
 tensorflow==2.18.1
 pytest==8.3.3
 pytesseract>=0.3.10
@@ -13,10 +13,11 @@ tqdm==4.67.1
 pyzbar==0.1.8
 qrcode==7.4.2
 pillow==10.3.0
-paddleocr==2.7.3
-requests==2.31.0
-urllib3==1.26.18
+paddleocr==3.1.0
+requests>=2.32.4
+urllib3>=2.5.0
 charset-normalizer==3.3.2
-idna==3.6
-certifi==2023.11.17
+idna>=3.7
+certifi>=2024.7.4
 flask-cors==6.0.1
+paddlepaddle==2.6.0

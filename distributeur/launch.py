@@ -1,4 +1,3 @@
-
 import os
 import argparse
 
@@ -10,6 +9,8 @@ from launch_distributeur.scripts.handle_test import handle_test
 from launch_distributeur.scripts.handle_update import handle_update
 from launch_distributeur.scripts.handle_down import handle_down
 from launch_distributeur.scripts.handle_dump import handle_dump
+from launch_distributeur.scripts.handle_export import handle_export_images
+from launch_distributeur.scripts.handle_import import handle_import_images
 
 # Main script
 if __name__ == "__main__":
@@ -29,6 +30,10 @@ if __name__ == "__main__":
     parser.add_argument("--dump", action="store_true",
         help="Function to export the database dump."
     )
+    parser.add_argument("--export-images", type=str, help="Export backend and database Docker images to a tar file (provide output tar path).")
+    parser.add_argument("--import-images", type=str, help="Import backend and database Docker images from a tar file (provide input tar path).")
+    parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
+    parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -39,6 +44,7 @@ if __name__ == "__main__":
     env_file_path = os.path.join(backend_folder, ".env")
     db_container_name = "distributeur-backend-db"
     back_app_container_name = "distributeur-backend-app"
+    back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
     front_app_container_name = "distributeur-frontend-app"
 
@@ -47,7 +53,8 @@ if __name__ == "__main__":
 
     # Execute operations based on flags
     if any(vars(args).values()):
-        if args.all:
+        # Combo flag takes priority and avoids duplicate handler calls
+        if args.combo:
             handle_verif(
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
@@ -55,25 +62,39 @@ if __name__ == "__main__":
                 backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
             )
             handle_front(frontend_folder, front_app_container_name)
-        if args.verif:
-            handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
-            )
-        if args.back:
-            handle_back(
-                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
-            )
-        if args.test:
             handle_test(backend_folder, db_container_name, back_app_container_name)
-        if args.front:
-            handle_front(frontend_folder, front_app_container_name)
-        if args.update:
-            update_function = args.update
-            handle_update(update_function, db_container_name, backend_folder)
-        if args.down:
-            handle_down()
-        if args.dump:
-            handle_dump(backend_folder, db_container_name, back_app_container_name)
+        else:
+            if args.verif:
+                handle_verif(
+                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                )
+            if args.all:
+                handle_verif(
+                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                )
+                handle_back(
+                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+                )
+                handle_front(frontend_folder, front_app_container_name)
+            if args.back:
+                handle_back(
+                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+                )
+            if args.front:
+                handle_front(frontend_folder, front_app_container_name)
+            if args.test:
+                handle_test(backend_folder, db_container_name, back_app_container_name)
+            if args.update:
+                update_function = args.update
+                handle_update(update_function, db_container_name, backend_folder)
+            if args.dump:
+                handle_dump(backend_folder, db_container_name, back_app_container_name)
+            if args.export_images:
+                handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
+            if args.import_images:
+                handle_import_images(args.import_images, back_app_image_name, back_app_container_name, db_container_name)
+            if args.down:
+                handle_down()
     else:
         parser.print_help()
         exit(1)

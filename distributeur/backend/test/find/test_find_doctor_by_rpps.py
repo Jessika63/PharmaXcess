@@ -1,4 +1,3 @@
-
 import pytest
 import config
 from unittest.mock import patch
@@ -6,6 +5,9 @@ from unittest.mock import patch
 # Test case to successfully find a doctor by their RPPS code
 @pytest.mark.order(2)  # LOX n°1
 def test_find_doctor_by_rpps_success(client):
+    """
+    Test case to successfully find a doctor by their RPPS code.
+    """
     # Sending a GET request with a valid RPPS code to find a doctor
     response = client.get('/find_doctor_by_rpps', query_string={
         'rpps': config.dict_doctor_to_add["add_success_1"]["rpps"]
@@ -20,6 +22,9 @@ def test_find_doctor_by_rpps_success(client):
 # Test case where the doctor is not found by their RPPS code
 @pytest.mark.order(2)  # LOX n°1
 def test_find_doctor_by_rpps_not_found(client):
+    """
+    Test case where the doctor is not found by their RPPS code.
+    """
     # Sending a GET request with an invalid RPPS code for a doctor that doesn't exist
     response = client.get('/find_doctor_by_rpps', query_string={
         'rpps': config.rpps_not_added
@@ -34,6 +39,9 @@ def test_find_doctor_by_rpps_not_found(client):
 # Test case when the RPPS parameter is missing in the query
 @pytest.mark.order(2)  # LOX n°1
 def test_find_doctor_by_rpps_missing_param(client):
+    """
+    Test case when the RPPS parameter is missing in the query.
+    """
     # Sending a GET request without the required RPPS parameter
     response = client.get('/find_doctor_by_rpps')
     # Assert that the response status code is 400 (Bad Request)
@@ -45,6 +53,9 @@ def test_find_doctor_by_rpps_missing_param(client):
 @pytest.mark.order(2)  # LOX n°1
 @patch('routes.find.find_doctor_by_rpps.get_connection', side_effect=Exception("Database connection failed"))
 def test_find_doctor_by_rpps_db_error(mock_get_connection, client):
+    """
+    Test case to simulate a database connection error while finding a doctor by RPPS code.
+    """
     # Sending a GET request to find a doctor by RPPS, which will trigger a DB error
     response = client.get('/find_doctor_by_rpps', query_string={
         'rpps': config.dict_doctor_to_add["add_success_1"]["rpps"]

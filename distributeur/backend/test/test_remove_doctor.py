@@ -1,4 +1,3 @@
-
 import pytest
 import config
 from unittest.mock import patch
@@ -6,6 +5,9 @@ from unittest.mock import patch
 # Test case for successfully removing a doctor
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_success(client):
+    """
+    Test case for successfully removing a doctor.
+    """
     # Perform a DELETE request to the /remove_doctor route with a doctor's information
     response = client.delete('/remove_doctor',
         query_string=config.dict_doctor_to_add["add_success_1"]
@@ -19,6 +21,9 @@ def test_remove_doctor_success(client):
 # Test case for trying to remove a doctor that doesn't exist
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_not_found(client):
+    """
+    Test case for trying to remove a doctor that doesn't exist.
+    """
     # Perform a DELETE request with information of a doctor not in the list
     response = client.delete('/remove_doctor',
         query_string=config.dict_doctor_not_to_add["not_added_with_first_name"]
@@ -32,6 +37,9 @@ def test_remove_doctor_not_found(client):
 # Test case for missing required parameters when trying to remove a doctor
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_missing_params(client):
+    """
+    Test case for missing required parameters when trying to remove a doctor.
+    """
     # Perform a DELETE request with missing parameters in the doctor's information
     response = client.delete('/remove_doctor',
         query_string=config.dict_doctor_to_add["missing_field_first_name"]
@@ -46,6 +54,9 @@ def test_remove_doctor_missing_params(client):
 @pytest.mark.order(3) # LOX n°1
 @patch('routes.remove_doctor.get_connection', side_effect=Exception("Database connection failed"))
 def test_remove_doctor_db_error(mock_get_connection, client):
+    """
+    Test case for a database connection error when trying to remove a doctor.
+    """
     # Perform a DELETE request and simulate a database connection failure
     response = client.delete('/remove_doctor',
         query_string=config.dict_doctor_to_add["add_success_1"]
