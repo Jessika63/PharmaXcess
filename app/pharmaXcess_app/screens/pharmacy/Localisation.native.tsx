@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, StyleProp, ViewStyle, TextStyle, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -62,6 +62,8 @@ export default function Localisation(): React.JSX.Element {
             Alert.alert('Erreur', 'Veuillez sélectionner une pharmacie et vérifier votre position.');
             return;
         }
+        const url = `https://www.google.com/maps?q=${selectedDistributor.latitude},${selectedDistributor.longitude}`;
+        Linking.openURL(url);
         // Set route coordinates for navigation. 
         setRouteCoordinates([
             // Starting point is the user's current location

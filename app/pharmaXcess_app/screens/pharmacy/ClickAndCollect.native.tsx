@@ -61,7 +61,9 @@ export default function ClickAndCollect(): React.JSX.Element {
     setIsWaiting(true);
 
     setTimeout(() => {
-      const isValid = Math.random() > 0.5;
+      // Commenté temporairement pour générer le QR code dans tous les cas
+      // const isValid = Math.random() > 0.5;
+      const isValid = true; // Force la validation à true pour toujours générer le QR code
       setIsValidatedByPharmacist(isValid);
       setIsWaiting(false);
     }, 3000);
@@ -101,14 +103,15 @@ export default function ClickAndCollect(): React.JSX.Element {
           <ActivityIndicator size="large" color={colors.secondary} />
         </View>
       ) : isValidatedByPharmacist !== null ? (
-        // Display the result of the validation process
+        // Display the result of the validation process - QR code toujours affiché pour le moment
         <View style={styles.centeredContent}>
-          {isValidatedByPharmacist ? (
+          {/* Commenté temporairement pour toujours afficher le QR code */}
+          {/* {isValidatedByPharmacist ? ( */}
             <>
               <Text style={styles.loadingText}>Votre ordonnance a été validée !</Text>
               <QRCode value="https://pharmaxcess.fr" size={150} color={colors.secondary} />
             </>
-          ) : (
+          {/* ) : (
             <>
               <Text style={styles.loadingText}>Erreur : le format de l'ordonnance n'est pas valide.</Text>
               <TouchableOpacity style={styles.button} onPress={resetProcess}>
@@ -117,7 +120,7 @@ export default function ClickAndCollect(): React.JSX.Element {
                 </LinearGradient>
               </TouchableOpacity>
             </>
-          )}
+          )} */}
         </View>
       ) : (
         // The initial state or when no photo has been taken yet
