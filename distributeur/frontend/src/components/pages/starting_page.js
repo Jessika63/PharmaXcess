@@ -10,10 +10,12 @@ function StartingPage() {
   const navigate = useNavigate();
 
   const handleKeyDown = useCallback((event) => {
-    if (event.key === "ArrowRight") {
-      setFocusedIndex((prevIndex) => (prevIndex < 1 ? prevIndex + 1 : prevIndex));
-    } else if (event.key === "ArrowLeft") {
-      setFocusedIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+    if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+      event.preventDefault();
+      setFocusedIndex((prevIndex) => (prevIndex + 1) % 2);
+    } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+      event.preventDefault();
+      setFocusedIndex((prevIndex) => (prevIndex - 1 + 2) % 2);
     } else if (event.key === "Enter") {
       event.preventDefault();
       if (focusedIndex === 0) {
@@ -53,14 +55,14 @@ function StartingPage() {
       <div className={`flex flex-col items-center ${config.spacing.xxl} w-full`}>
 
         {/* Button 'Médicaments sous ordonnance' */}
-        <Link to="/documents-checking" className="w-full flex justify-center">
+        <Link to="/documents-checking" className="w-full flex justify-center pointer-events-none">
           <div
             ref={prescriptionButtonRef}
             tabIndex={0}
             className={`w-2/5 h-40 flex items-center justify-center ${config.borderRadius.xl} ${config.shadows.md} 
               ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
-              ${focusedIndex === 0 ? config.scaleEffects.focus : ''}`}
+              ${focusedIndex === 0 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
             <config.icons.prescription className="mr-6" />
             Médicaments avec ordonnance
@@ -68,14 +70,14 @@ function StartingPage() {
         </Link>
 
         {/* Button 'Médicaments sans ordonnance' */}
-        <Link to="/non-prescription-drugs" className="w-full flex justify-center">
+        <Link to="/non-prescription-drugs" className="w-full flex justify-center pointer-events-none">
           <div
             ref={nonPrescriptionButtonRef}
             tabIndex={0}
             className={`w-2/5 h-40 flex items-center justify-center ${config.borderRadius.xl} ${config.shadows.md} 
               ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
-              ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
+              ${focusedIndex === 1 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
             <config.icons.pills className="mr-6" />
             Médicaments sans ordonnance

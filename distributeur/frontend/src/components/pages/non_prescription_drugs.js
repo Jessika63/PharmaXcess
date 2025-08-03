@@ -79,14 +79,14 @@ function NonPrescriptionDrugs() {
     useEffect(() => {
         if (!isModalOpen) return;
         const handleModalKeyDown = (event) => {
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
-            if (event.key === "ArrowLeft") {
-                setModalFocusIndex((prev) => Math.max(0, prev - 1));
-            } else if (event.key === "ArrowRight") {
-                setModalFocusIndex((prev) => Math.min(1, prev + 1));
+            if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+                setModalFocusIndex((prev) => (prev - 1 + 2) % 2);
+            } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+                setModalFocusIndex((prev) => (prev + 1) % 2);
             } else if (event.key === "Enter") {
                 if (modalFocusIndex === 0) {
                     closeModal();
@@ -192,12 +192,12 @@ function NonPrescriptionDrugs() {
         const handleKeyDown = (event) => {
             if (isSearchMenuOpen) {
                 // Handle filter menu navigation
-                if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                     event.preventDefault();
                 }
-                if (event.key === "ArrowRight") {
+                if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                     setFocusedIndexSearch((prev) => (prev + 1) % searchMenuOptions.length);
-                } else if (event.key === "ArrowLeft") {
+                } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                     setFocusedIndexSearch((prev) => (prev - 1 + searchMenuOptions.length) % searchMenuOptions.length);
                 } else if (event.key === "Enter") {
                     applyFilter(searchMenuOptions[focusedIndexSearch]);
@@ -208,24 +208,46 @@ function NonPrescriptionDrugs() {
             if (isModalOpen) return; // Let modal handle its own keys
             
             if (filteredDrugs.length === 0) return;
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
             }
-            if (event.key === "ArrowLeft") {
+            if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                 if (focusedIndex > 0) {
                     setFocusedIndex(focusedIndex - 1);
                 } else if (focusedIndex === 0) {
                     setFocusedIndex(-1);
                 } else if (focusedIndex === -1) {
                     setFocusedIndex(-2);
+                } else if (focusedIndex === -2) {
+                    // Circular: go from first control (-2) to last drug item
+                    setFocusedIndex(filteredDrugs.length - 1);
                 }
-            } else if (event.key === "ArrowRight") {
+            } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                 if (focusedIndex === -2) {
                     setFocusedIndex(-1);
                 } else if (focusedIndex === -1) {
                     setFocusedIndex(0);
                 } else if (focusedIndex < filteredDrugs.length - 1) {
                     setFocusedIndex(focusedIndex + 1);
+                } else if (focusedIndex === filteredDrugs.length - 1) {
+                    // Circular: go from last drug item to first control (-2)
+                    setFocusedIndex(-2);
+                }
+            } else if (event.key === "ArrowUp") {
+                if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    // Move up by 3 (assuming 3 columns in the grid)
+                    const newIndex = focusedIndex - 3;
+                    if (newIndex >= 0) {
+                        setFocusedIndex(newIndex);
+                    }
+                }
+            } else if (event.key === "ArrowDown") {
+                if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    // Move down by 3 (assuming 3 columns in the grid)
+                    const newIndex = focusedIndex + 3;
+                    if (newIndex < filteredDrugs.length) {
+                        setFocusedIndex(newIndex);
+                    }
                 }
             } else if (event.key === "Enter") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
@@ -386,7 +408,7 @@ function NonPrescriptionDrugs() {
             </div>
 
             <div 
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
+                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
                 ref={drugsListRef}
             >
                 <div className={config.layout.buttonGrid3}>
