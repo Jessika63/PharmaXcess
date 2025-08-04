@@ -51,7 +51,7 @@ def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
             if 'Connection refused' in str(last_error):
                 colored_print(
                     "Connection refused on port 3000. Frontend may not be listening or crashed.",
-                    "red",
+                    "yellow",
                 )
             else:
                 colored_print(f"Connection error: {last_error}", "yellow")

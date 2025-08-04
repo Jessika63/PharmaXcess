@@ -74,7 +74,8 @@ python3 take_picture.py [file_name]
 ---
 
 ## Notes
-- The scripts use libraries such as `requests`, `cv2` and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt && pip install -r requirements_ignored.txt`).
+
+- The scripts use libraries such as `requests`, `cv2` and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt`).
 - The API must be accessible locally (`http://localhost:5000`).
 - For `extractAll.py`, UMI OCR must be installed and configured on your machine.
 
