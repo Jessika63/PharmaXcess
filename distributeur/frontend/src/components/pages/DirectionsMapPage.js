@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import polyline from 'polyline';
+import polyline from '@mapbox/polyline';
 import 'leaflet/dist/leaflet.css';
 import config from '../../config';
 import ErrorPage from '../ErrorPage';
