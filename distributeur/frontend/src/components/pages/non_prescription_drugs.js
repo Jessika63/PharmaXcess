@@ -7,17 +7,22 @@ import './css/global.css'
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { loadStripe } from '@stripe/stripe-js';
 
 const categories = {
     antiInflammatory: 'Anti-inflammatoire',
     painRelief: 'Anti-douleur',
 };
 
+// Initialize Stripe PROMISE (not instance)
+const stripePromise = loadStripe('pk_test_51Rsl1CLfU2UU0K5QVl6iyAUF5YuvHw648nWONQGJZmWPqtZhmxlZmSw6fORMnQNdzqtBe6Wd1LkTP7RCCoE71VyK00Zjm3nzmr');
+
 // Module-level cache for available medicines
 let availableMedicineCache = null;
 let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
+    const stripePromiseRef = useRef(stripePromise);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [focusedElement, setFocusedElement] = useState(null);
     const [selectedDrug, setSelectedDrug] = useState(null);
@@ -275,29 +280,62 @@ function NonPrescriptionDrugs() {
         setSelectedDrug(null);
     };
 
-    const handlePayment = () => {
-        
-        // More robust check for drug availability and stock
-        const state = parseInt(selectedDrug?.state) || 0;
+    async function handlePayment() {
+        // Vérification du stock
         const size = parseInt(selectedDrug?.size) || 0;
-        
-        // Check if drug has stock (size > 0) - this determines if payment can be processed
-        if (selectedDrug && size > 0) {
-            // Sufficient stock - show success message
-            setIsModalOpen(false);
-            setPaymentModalOpen(true);
-            setTimeout(() => {
-                setPaymentModalOpen(false);
-            }, 2000);
-        } else {
-            // Insufficient stock or unavailable - redirect to insufficient stock page
+        if (size <= 0) {
             navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
+            return;
         }
-    };
+    
+        try {
+            console.log(selectedDrug);
+            // 1. Get client secret from backend
+            const response = await fetch(`${config.backendUrl}/create-payment-intent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drug_id: selectedDrug.id,
+                    amount: selectedDrug.price * 100 // Convert to cents
+                })
+            });
+            console.log(response);
+    
+            if (!response.ok) {
+                throw new Error('Payment failed');
+            }
+    
+            const { clientSecret } = await response.json();
+            
+            console.log(clientSecret)
+
+            // 2. Get Stripe instance from promise
+            const stripe = await stripePromise;
+            
+            // 3. Confirm payment
+            const { error } = await stripe.confirmPayment({
+                elements: null, // Not using Elements
+                clientSecret,
+                confirmParams: {
+                    return_url: `${window.location.origin}/payment-success`,
+                },
+            });
+    
+            if (error) {
+                console.error("Payment failed:", error);
+                navigate('/payment-error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            navigate('/payment-error');
+        }
+    }
 
     // Dismiss inactivity modal on user activity
     useEffect(() => {
-        if (!showInactivityModal) return;
+        if (!showInactivityModal) {
+            return;
+        }
         const dismiss = () => setShowInactivityModal(false);
         const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
         events.forEach(event => window.addEventListener(event, dismiss));
@@ -432,7 +470,7 @@ function NonPrescriptionDrugs() {
                         ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
                         onClick={handlePayment}
                     >
-                        <config.icons.money className="mr-2" />
+                    <config.icons.money className="mr-2" />
                         Payer
                     </button>
                 </ModalStandard>

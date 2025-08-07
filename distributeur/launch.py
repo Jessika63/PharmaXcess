@@ -29,6 +29,9 @@ if __name__ == "__main__":
     parser.add_argument("--dump", action="store_true",
         help="Function to export the database dump."
     )
+    parser.add_argument("--restart", action="store_true",
+        help="Function to run down and then all to stop and start again the application."
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -47,7 +50,9 @@ if __name__ == "__main__":
 
     # Execute operations based on flags
     if any(vars(args).values()):
-        if args.all:
+        if args.all or args.restart:
+            if args.restart:
+                handle_down()
             handle_verif(
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )

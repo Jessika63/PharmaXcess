@@ -13,13 +13,23 @@ from routes.read_text import read_text_bp
 from routes.get_pharmacies import get_pharmacies_bp
 from routes.get_available_medicine import get_available_medicine_bp
 from routes.get_directions import get_directions_bp
+from routes.pay_with_stripe import create_payment_intent_bp
+from routes.vpn_check import vpn_check_bp
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app)
+# Configuration CORS unique et centralisée
+CORS(app, resources={
+    r"/*": {
+        "origins": "http://localhost:3000",
+        "allow_headers": ["Content-Type", "Authorization", "X-AdBlock-Detected"],  # Ajoutez "X-AdBlock-Detected" ici
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "supports_credentials": True
+    }
+})
 
 # Save blueprints
 app.register_blueprint(find_doctor_by_name_bp)
@@ -32,6 +42,8 @@ app.register_blueprint(read_text_bp)
 app.register_blueprint(get_pharmacies_bp)
 app.register_blueprint(get_available_medicine_bp)
 app.register_blueprint(get_directions_bp)
+app.register_blueprint(create_payment_intent_bp)
+app.register_blueprint(vpn_check_bp)
 
 @app.route('/')
 def home():
