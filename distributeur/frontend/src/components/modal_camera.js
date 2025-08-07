@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import config from '../config';
+import React, { useState } from 'react';
 
 const ModalCamera = ({ children, onClose }) => {
     const [focusedButtonIndex, setFocusedButtonIndex] = useState(0);

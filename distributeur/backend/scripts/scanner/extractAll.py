@@ -251,40 +251,85 @@ def getInfosVersoID(text):
 
     return infos
 
-def main(image_path, doc_type):
+
+def flip_image(input_path, output_path, flip_code):
+    """
+    Flip the image and save the result.
+
+    :param input_path: Path to the input image
+    :param output_path: Path to save the flipped image
+    :param flip_code: 
+        0 for vertical flip,
+        1 for horizontal flip,
+        -1 for both vertical and horizontal
+    """
+    image = cv2.imread(input_path)
+
+    if image is None:
+        print(f"Could not read the image at {input_path}")
+        return
+
+    flipped = cv2.flip(image, flip_code)
+    cv2.imwrite(output_path, flipped)
+    print(f"Flipped image saved to {output_path}")
+    
+
+def main(image_input, doc_type, is_bytes=False):
     """
     Main function to process an image: correct orientation, extract text, and parse data.
 
     Parameters:
-    - image_path (str): Path to the input image.
-    - doc_type (str): Type of document ('P' = prescription, 'R' = recto ID, 'V' = verso ID).
+    - image_input: Path to the input image (str) OR raw bytes (bytes)
+    - doc_type (str): 'P', 'R' or 'V'
+    - is_bytes (bool): True si image_input est des bytes, False si c'est un chemin
 
     Returns:
     - dict: Parsed information extracted from the image.
     """
-    corrected_image = correct_orientation(image_path)
-    text = extract_text_paddleocr(corrected_image)
+    if is_bytes:
+        nparr = np.frombuffer(image_input, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    else:
+        img = cv2.imread(image_input)
 
-    print("[DEBUG] OCR TEXT:", text, file=sys.stderr)
+    img = add_background(img)
+    img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
 
-    data = {}
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+
+    if lines is not None:
+        angles = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            angle = np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+            angles.append(angle)
+        median_angle = np.median(angles)
+        if median_angle != 0:
+            (h, w) = img.shape[:2]
+            center = (w // 2, h // 2)
+            M = cv2.getRotationMatrix2D(center, median_angle, 1.0)
+            img = cv2.warpAffine(img, M, (w, h))
+
+    ocr = PaddleOCR(use_angle_cls=True, lang='fr')
+    result_ocr = ocr.ocr(img, cls=True)
+    text = "\n".join([word[1][0] for line in result_ocr for word in line])
 
     if doc_type == "P":
-        data = getInfosPrescription(text)
+        infos = getInfosPrescription(text)
     elif doc_type == "R":
-        data = getInfosRectoID(text)
+        infos = getInfosRectoID(text)
     elif doc_type == "V":
-        data = getInfosVersoID(text)
+        infos = getInfosVersoID(text)
     else:
-        sys.exit(1)
+        infos = {}
 
-    result = {
+    return {
         "raw_text": text,
-        "infos": data
+        "infos": infos
     }
-
-    print(json.dumps(result, ensure_ascii=False))
-
 
 
 if __name__ == "__main__":
@@ -299,4 +344,5 @@ if __name__ == "__main__":
 
     img_path = sys.argv[1]
     doc_type = sys.argv[2].upper()
-    main(img_path, doc_type)
+    result = main(img_path, doc_type)
+    print(json.dumps(result, ensure_ascii=False))

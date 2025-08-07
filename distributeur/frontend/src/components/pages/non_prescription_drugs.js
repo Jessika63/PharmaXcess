@@ -19,7 +19,7 @@ let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [focusedElement, setFocusedElement] = useState(null);
+    // const [focusedElement, setFocusedElement] = useState(null);
     const [selectedDrug, setSelectedDrug] = useState(null);
     const [drugsItems, setDrugsItems] = useState([]);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -29,7 +29,7 @@ function NonPrescriptionDrugs() {
 
     const goBackMainButtonRef = useRef(null)
 
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    // const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [filteredDrugs, setFilteredDrugs] = useState(drugsItems);
 
@@ -50,7 +50,7 @@ function NonPrescriptionDrugs() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const cacheRef = useRef(null);
+    // const cacheRef = useRef(null);
 
     // Modal popup focus system
     const [modalFocusIndex, setModalFocusIndex] = useState(0);

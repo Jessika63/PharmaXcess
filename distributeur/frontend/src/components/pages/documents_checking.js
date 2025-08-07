@@ -32,9 +32,9 @@ function DocumentsChecking() {
             else if (currentDocType === 'carte_identite_verso') docCode = 'V';
 
             try {
-                console.log("📤 ENVOI API /extractText :");
-                console.log("🔠 base64_image (start)", base64Image?.slice(0, 50));
-                console.log("📄 type:", docCode);
+                console.log("ENVOI API /extractText :");
+                console.log("base64_image (start)", base64Image?.slice(0, 50));
+                console.log("type:", docCode);
 
 
 

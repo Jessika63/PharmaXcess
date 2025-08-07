@@ -1,16 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../App.css'
 import config from '../../config';
 import ModalStandard from '../modal_standard';
-import ErrorPage from '../ErrorPage';
+// import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 
 function InsufficientStock() {
 
   const navigate = useNavigate()
-  const location = useLocation()
 
   const retryButtonRef = useRef(null);
   const cancelButtonRef = useRef(null);
@@ -26,18 +25,19 @@ function InsufficientStock() {
   const [transportModalOpen, setTransportModalOpen] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
-  const transportModes = [
+  const transportModes = useMemo(() => [
     { mode: 'foot', label: 'À pied', icon: <config.icons.walking /> },
     { mode: 'bicycle', label: 'Vélo', icon: <config.icons.bicycle /> },
     { mode: 'transit', label: 'Transports', icon: <config.icons.bus /> },
     { mode: 'car', label: 'Voiture', icon: <config.icons.car /> },
-  ];
+  ], []);
+
   
   const modalContentRef = useRef(null);
   const cardRefs = useRef([]);
 
   // Add a ref to prevent double fetch in StrictMode
-  const fetchedOnce = useRef(false);
+  // const fetchedOnce = useRef(false);
 
   // Add a ref to the close button
   const closeButtonRef = useRef(null);
@@ -57,7 +57,7 @@ function InsufficientStock() {
     return () => events.forEach(event => window.removeEventListener(event, dismiss));
   }, [showInactivityModal]);
 
-  const buttonRefs = [goBackButtonRef, retryButtonRef, cancelButtonRef];
+  const buttonRefs = useMemo(() => [goBackButtonRef, retryButtonRef, cancelButtonRef], []);
   const buttonCount = buttonRefs.length;
 
   useEffect(() => {
@@ -132,6 +132,12 @@ function InsufficientStock() {
     return () => document.removeEventListener("keydown", handlePharmacyKeyDown);
   }, [pharmaciesModalOpen, selectedPharmacyIndex, pharmaciesList]);
 
+  const handleTransportSelect = (mode) => {
+    setTransportModalOpen(false);
+    setPharmaciesModalOpen(false);
+    navigate(`/directions-map?lat=${selectedPharmacy.latitude}&lon=${selectedPharmacy.longitude}&name=${encodeURIComponent(selectedPharmacy.name)}&transport=${mode}`);
+  };
+
   // Keyboard navigation for transport modal
   useEffect(() => {
     if (!transportModalOpen) return;
@@ -153,7 +159,7 @@ function InsufficientStock() {
     };
     document.addEventListener("keydown", handleTransportKeyDown);
     return () => document.removeEventListener("keydown", handleTransportKeyDown);
-  }, [transportModalOpen, focusedTransportIndex, transportModes]);
+  }, [transportModalOpen, focusedTransportIndex, transportModes, handleTransportSelect]);
 
   const openPharmaciesModal = async () => {
     setPharmaciesModalOpen(true);
@@ -203,12 +209,6 @@ function InsufficientStock() {
       }
     }
     setLoadingPharmacies(false);
-  };
-
-  const handleTransportSelect = (mode) => {
-    setTransportModalOpen(false);
-    setPharmaciesModalOpen(false);
-    navigate(`/directions-map?lat=${selectedPharmacy.latitude}&lon=${selectedPharmacy.longitude}&name=${encodeURIComponent(selectedPharmacy.name)}&transport=${mode}`);
   };
 
   return (
