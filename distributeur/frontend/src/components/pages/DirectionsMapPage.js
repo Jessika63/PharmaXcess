@@ -47,7 +47,9 @@ function DirectionsMapPage() {
   useInactivityRedirect(() => setShowInactivityModal(true));
   // Dismiss inactivity modal on user activity
   useEffect(() => {
-    if (!showInactivityModal) return;
+    if (!showInactivityModal) {
+      return;
+    }
     const dismiss = () => setShowInactivityModal(false);
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     events.forEach(event => window.addEventListener(event, dismiss));
@@ -55,7 +57,9 @@ function DirectionsMapPage() {
   }, [showInactivityModal]);
 
   useEffect(() => {
-    if (apiCalledRef.current) return;
+    if (apiCalledRef.current) {
+      return;
+    }
     if (!pharmacy.latitude || !pharmacy.longitude || !pharmacy.name || !transport) {
       setError('Informations de pharmacie ou mode de transport manquantes.');
       setLoading(false);
@@ -79,7 +83,7 @@ function DirectionsMapPage() {
               setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
             } else if (data.routes && data.routes.length > 0) {
               // ORS geometry is encoded polyline5 by default
-              const geometry = data.routes[0].geometry;
+              const {geometry} = data.routes[0];
               let coords = [];
               if (typeof geometry === 'string') {
                 coords = polyline.decode(geometry);
@@ -120,7 +124,9 @@ function DirectionsMapPage() {
     const handleKeyDown = (e) => {
       // Handle left/right arrows, Tab, and Enter
       if (['ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-        if (focusedIndex < 3) e.preventDefault();
+        if (focusedIndex < 3) {
+          e.preventDefault();
+        }
         if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
           setFocusedIndex((prev) => (prev + 1) % 4);
         } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
@@ -143,7 +149,9 @@ function DirectionsMapPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex, navigate]);
 
-  if (error) return <ErrorPage message={error} />;
+  if (error) {
+    return <ErrorPage message={error} />;
+  }
   if (loading) {
     return (
       <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
@@ -192,49 +200,47 @@ function DirectionsMapPage() {
             <config.icons.home className="mr-2" /> Accueil
           </button>
         </div>
-                                                                                                                                               <div className="w-full h-full flex flex-col items-center">
-              <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
-              
-              {/* Zoom Instructions - Only show when map is focused */}
-              <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
-                {focusedIndex === 3 && (
-                  <span>Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer</span>
-                )}
-              </div>
-              
-              <div
-                ref={mapRef}
-                tabIndex={focusedIndex === 3 ? 0 : -1}
-                style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
-              >
-              <MapContainer 
-                center={center} 
-                zoom={13} 
-                style={{ width: '100%', height: '100%' }} 
-                keyboard={false}
-                ref={mapInstanceRef}
-              >
-               <TileLayer
-                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-               />
-               {userCoords && (
-                 <Marker position={userCoords}>
-                   <Popup>Votre position</Popup>
-                 </Marker>
-               )}
-               <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
-                 <Popup>{pharmacy.name}</Popup>
-               </Marker>
-               {routeCoords.length > 0 && (
-                 <Polyline positions={routeCoords} color="blue" />
-               )}
-             </MapContainer>
-           </div>
-         </div>
+        <div className="w-full h-full flex flex-col items-center">
+          <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
+          {/* Zoom Instructions - Only show when map is focused */}
+          <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
+            {focusedIndex === 3 && (
+              <span>Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer</span>
+            )}
+          </div>
+          <div
+            ref={mapRef}
+            tabIndex={focusedIndex === 3 ? 0 : -1}
+            style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
+          >
+            <MapContainer
+              center={center}
+              zoom={13}
+              style={{ width: '100%', height: '100%' }}
+              keyboard={false}
+              ref={mapInstanceRef}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {userCoords && (
+                <Marker position={userCoords}>
+                  <Popup>Votre position</Popup>
+                </Marker>
+              )}
+              <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
+                <Popup>{pharmacy.name}</Popup>
+              </Marker>
+              {routeCoords.length > 0 && (
+                <Polyline positions={routeCoords} color="blue" />
+              )}
+            </MapContainer>
+          </div>
+        </div>
       </div>
     </>
   );
 }
 
-export default DirectionsMapPage; 
+export default DirectionsMapPage;

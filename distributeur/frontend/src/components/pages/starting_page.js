@@ -42,13 +42,13 @@ function StartingPage() {
       testElement.className = 'ad-unit ad-box ad-container adsbox';
       testElement.style.cssText = 'position:absolute;top:-1000px;left:-1000px;width:1px;height:1px;';
       document.body.appendChild(testElement);
-      
+
       setTimeout(() => {
         // Vérifier si l'élément a été modifié par un bloqueur
-        const isHidden = testElement.offsetHeight === 0 || 
-                        testElement.offsetWidth === 0 || 
+        const isHidden = testElement.offsetHeight === 0 ||
+                        testElement.offsetWidth === 0 ||
                         testElement.style.display === 'none';
-        
+
         if (isHidden) {
           detected = true;
         }
@@ -91,7 +91,7 @@ function StartingPage() {
 
     try {
       setVpnStatus(prev => ({...prev, loading: true}));
-  
+
       // Détection frontale du bloqueur
       let adBlockDetected = false;
       try {
@@ -99,14 +99,14 @@ function StartingPage() {
       } catch (adBlockError) {
         console.error('Erreur de détection AdBlock:', adBlockError);
       }
-  
+
       // Ajouter un timestamp pour éviter le cache navigateur
       const timestamp = new Date().getTime();
-      
+
       // Envoyer l'info au backend avec paramètre de forceRefresh
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
-      
+
       const response = await fetch(`${config.backendUrl}/check-vpn?t=${timestamp}`, {
         method: 'POST',
         credentials: 'include',
@@ -119,18 +119,18 @@ function StartingPage() {
         }),
         signal: controller.signal
       });
-  
+
       clearTimeout(timeout);
-  
+
       // Si le serveur ne répond pas
       if (!response) {
         throw new Error("Le serveur ne répond pas. Veuillez réessayer plus tard.");
       }
-  
+
       // Gestion des erreurs HTTP
       if (!response.ok) {
         let errorMessage = `Erreur HTTP: ${response.status}`;
-        
+
         try {
           const errorData = await response.json();
           if (errorData.error) {
@@ -145,21 +145,21 @@ function StartingPage() {
             errorMessage = "Erreur inconnue du serveur";
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-  
+
       const data = await response.json();
-  
+
       // Vérification de la réponse
       if (!data) {
         throw new Error("Réponse serveur vide");
       }
-      
+
       if (typeof data.isVPN === 'undefined') {
         throw new Error("Réponse serveur invalide: champ 'isVPN' manquant");
       }
-  
+
       setVpnStatus({
         loading: false,
         isVPN: data.isVPN,
@@ -173,15 +173,15 @@ function StartingPage() {
           countryBlocked: data.countryBlocked || false
         }
       });
-  
+
     } catch (error) {
       console.error('VPN check error:', error);
-      
+
       let errorMessage = error.message || 'Erreur de vérification VPN';
       if (error.name === 'AbortError') {
         errorMessage = "La requête a expiré. Vérifiez votre connexion internet.";
       }
-  
+
       setVpnStatus({
         loading: false,
         isVPN: false,
@@ -245,7 +245,7 @@ function StartingPage() {
   if (vpnStatus.isVPN) {
     let message = "Accès refusé : Problème de sécurité détecté";
     let details = "Pour des raisons de sécurité, votre accès a été refusé.";
-    
+
     if (vpnStatus.details?.adblockDetected) {
         message = "Accès refusé : Bloqueur de publicités détecté";
         details = `Nous avons détecté que vous utilisez un bloqueur de publicités (comme uBlock Origin ou addBlock).
@@ -263,11 +263,11 @@ function StartingPage() {
         details = `Votre pays (${vpnStatus.details?.country || 'inconnu'}) n'est pas autorisé à accéder à nos services.
                 \n\nPour des raisons de conformité, nous ne pouvons pas vous permettre d'accéder à notre plateforme.`;
     }
-    
+
     return (
         <ErrorPage message={`${message}\n\n${details}`}>
             {vpnStatus.details?.adblockDetected && (
-                <button 
+                <button
                     onClick={() => checkVPN(true)}
                     className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                 >
@@ -282,7 +282,7 @@ function StartingPage() {
   if (vpnStatus.error) {
     return (
       <ErrorPage
-        message={`Erreur lors de la vérification de sécurité\n\n${vpnStatus.error}\n\nVeuillez réessayer ou contacter le support.`} 
+        message={`Erreur lors de la vérification de sécurité\n\n${vpnStatus.error}\n\nVeuillez réessayer ou contacter le support.`}
       />
     );
   }
@@ -306,13 +306,15 @@ function StartingPage() {
           <div
             ref={prescriptionButtonRef}
             tabIndex={0}
-            className={`w-2/5 h-40 flex items-center justify-center ${config.borderRadius.xl} ${config.shadows.md} 
+            className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
               ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 0 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
-            <config.icons.prescription className="mr-6" />
-            Médicaments avec ordonnance
+            <div className="flex items-center ml-[15%]"> {/* Modification ici */}
+              <config.icons.prescription className="mr-6" />
+              Médicaments avec ordonnance
+            </div>
           </div>
         </Link>
 
@@ -321,16 +323,17 @@ function StartingPage() {
           <div
             ref={nonPrescriptionButtonRef}
             tabIndex={0}
-            className={`w-2/5 h-40 flex items-center justify-center ${config.borderRadius.xl} ${config.shadows.md} 
+            className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
               ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 1 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
-            <config.icons.pills className="mr-6" />
-            Médicaments sans ordonnance
+            <div className="flex items-center ml-[15%]"> {/* Modification ici */}
+              <config.icons.pills className="mr-6" />
+              Médicaments sans ordonnance
+            </div>
           </div>
         </Link>
-
       </div>
     </div>
   );

@@ -41,7 +41,7 @@ function NonPrescriptionDrugs() {
     const backButtonRef = useRef(null);
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
-    
+
     // Focus index: -2 = go back, -1 = search/filter, 0...N-1 = drug cards
     const [focusedIndex, setFocusedIndex] = useState(0);
 
@@ -72,7 +72,9 @@ function NonPrescriptionDrugs() {
 
     // Focus management for modal
     useEffect(() => {
-        if (!isModalOpen) return;
+        if (!isModalOpen) {
+            return;
+        }
         if (modalFocusIndex === 0 && backButtonRef.current) {
             backButtonRef.current.focus();
         } else if (modalFocusIndex === 1 && payButtonRef.current) {
@@ -82,7 +84,9 @@ function NonPrescriptionDrugs() {
 
     // Keyboard navigation for modal
     useEffect(() => {
-        if (!isModalOpen) return;
+        if (!isModalOpen) {
+            return;
+        }
         const handleModalKeyDown = (event) => {
             if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
@@ -157,7 +161,9 @@ function NonPrescriptionDrugs() {
 
     // Focus management effect
     useEffect(() => {
-        if (loading) return;
+        if (loading) {
+            return;
+        }
         if (isSearchMenuOpen) {
             // Focus on the currently selected filter option
             if (searchMenuRefs.current[focusedIndexSearch]) {
@@ -165,7 +171,7 @@ function NonPrescriptionDrugs() {
             }
             return;
         }
-        
+
         if (focusedIndex === -2 && goBackMainButtonRef.current) {
             goBackMainButtonRef.current.focus();
         } else if (focusedIndex === -1 && searchButtonRef.current) {
@@ -193,7 +199,9 @@ function NonPrescriptionDrugs() {
 
     // Keyboard navigation
     useEffect(() => {
-        if (loading) return;
+        if (loading) {
+            return;
+        }
         const handleKeyDown = (event) => {
             if (isSearchMenuOpen) {
                 // Handle filter menu navigation
@@ -209,13 +217,19 @@ function NonPrescriptionDrugs() {
                 }
                 return; // Don't handle other keys when filter menu is open
             }
-            
-            if (isModalOpen) return; // Let modal handle its own keys
-            
-            if (filteredDrugs.length === 0) return;
+
+            if (isModalOpen) {
+                return;
+            } // Let modal handle its own keys
+
+            if (filteredDrugs.length === 0) {
+                return;
+            }
+
             if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
             }
+
             if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                 if (focusedIndex > 0) {
                     setFocusedIndex(focusedIndex - 1);
@@ -272,7 +286,7 @@ function NonPrescriptionDrugs() {
     const applyFilter = (filter) => {
         setSelectedFilter(filter);
         let filteredItems;
-    
+
         if (filter === 'A-G') {
             filteredItems = drugsItems.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G');
         } else if (filter === 'H-P') {
@@ -290,7 +304,7 @@ function NonPrescriptionDrugs() {
         setIsSearchMenuOpen(false);
         setFilteredDrugs(filteredItems);
         setFocusedIndex(0);
-    };    
+    };
 
     const openModal = (drug) => {
         setSelectedDrug(drug);
@@ -309,7 +323,7 @@ function NonPrescriptionDrugs() {
             navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
             return;
         }
-    
+
         try {
             console.log(selectedDrug);
             // 1. Get client secret from backend
@@ -322,18 +336,18 @@ function NonPrescriptionDrugs() {
                 })
             });
             console.log(response);
-    
+
             if (!response.ok) {
                 throw new Error('Payment failed');
             }
-    
+
             const { clientSecret } = await response.json();
-            
+
             console.log(clientSecret)
 
             // 2. Get Stripe instance from promise
             const stripe = await stripePromise;
-            
+
             // 3. Confirm payment
             const { error } = await stripe.confirmPayment({
                 elements: null, // Not using Elements
@@ -342,7 +356,7 @@ function NonPrescriptionDrugs() {
                     return_url: `${window.location.origin}/payment-success`,
                 },
             });
-    
+
             if (error) {
                 console.error("Payment failed:", error);
                 navigate('/payment-error');
@@ -380,10 +394,10 @@ function NonPrescriptionDrugs() {
         <div className={`w-full h-screen flex flex-col items-center ${config.padding.container} bg-background_color`}>
             <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-2">
                 <Link
-                to="/" 
+                to="/"
                 ref={goBackMainButtonRef}
-                className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button} 
-                    ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} 
+                className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button}
+                    ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
                     ${config.focusStates.outline} flex items-center ${focusedIndex === -2 ? config.scaleEffects.focus : ''}`}>
                     <config.icons.arrowLeft className="mr-3" />
                         Retour
@@ -400,53 +414,53 @@ function NonPrescriptionDrugs() {
                     <button onClick={() => applyFilter('A-G')}
                     key={"A-G"}
                     ref={el => searchMenuRefs.current[0] = el}
-                    tabIndex={focusedIndexSearch === 0 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 0 ? 0 : -1}
                     className={`block w-full text-left py-2 ${focusedIndexSearch === 0 ? config.scaleEffects.focus : ""}`}>A - G</button>
                     <button onClick={() => applyFilter('H-P')}
                     key={"H-P"}
                     ref={el => searchMenuRefs.current[1] = el}
-                    tabIndex={focusedIndexSearch === 1 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 1 ? 0 : -1}
                     className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? config.scaleEffects.focus : ""}`}>H - P</button>
                     <button onClick={() => applyFilter('Q-Z')}
                     key={"Q-Z"}
                     ref={el => searchMenuRefs.current[2] = el}
-                    tabIndex={focusedIndexSearch === 2 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 2 ? 0 : -1}
                     className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? config.scaleEffects.focus : ""}`}>Q - Z</button>
-                    <button onClick={() => applyFilter('antiInflammatory')} 
+                    <button onClick={() => applyFilter('antiInflammatory')}
                     key={"antiInflammatory"}
                     ref={el => searchMenuRefs.current[3] = el}
-                    tabIndex={focusedIndexSearch === 3 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 3 ? 0 : -1}
                     className={`block w-full text-left py-2 ${focusedIndexSearch === 3 ? config.scaleEffects.focus : ""}`}>Anti-inflammatoire</button>
                     <button onClick={() => applyFilter('painRelief')}
                     key={"painRelief"}
                     ref={el => searchMenuRefs.current[4] = el}
-                    tabIndex={focusedIndexSearch === 4 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 4 ? 0 : -1}
                     className={`block w-full text-left py-2 ${focusedIndexSearch === 4 ? config.scaleEffects.focus : ""}`}>Anti-douleur</button>
-                    <button onClick={() => applyFilter(null)} 
+                    <button onClick={() => applyFilter(null)}
                     key={"reset"}
                     ref={el => searchMenuRefs.current[5] = el}
-                    tabIndex={focusedIndexSearch === 5 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 5 ? 0 : -1}
                     className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 5 ? config.scaleEffects.focus : ""}`}><config.icons.sync className="mr-2" />Réinitialiser</button>
-                    <button onClick={() => applyFilter(null)} 
+                    <button onClick={() => applyFilter(null)}
                     key={"close"}
                     ref={el => searchMenuRefs.current[6] = el}
-                    tabIndex={focusedIndexSearch === 6 ? 0 : -1} 
+                    tabIndex={focusedIndexSearch === 6 ? 0 : -1}
                     className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 6 ? config.scaleEffects.focus : ""}`}><config.icons.times className="mr-2" />Fermer</button>
                 </div>
             )}
 
             <div className={`flex items-center ${config.buttonColors.buttonBackground} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md}`}>
                 <span className={`${config.fontSizes.md} ${config.textColors.black}`}>Voici la liste des médicaments disponibles à la vente :</span>
-                <button 
-                    ref={searchButtonRef} 
+                <button
+                    ref={searchButtonRef}
                     onClick={toggleFilterMenu}
                     className={`ml-4 flex items-center gap-2 ${config.textColors.primary} ${config.fontSizes.sm} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.sm} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex == -1 ? config.scaleEffects.focus : ""}`}>
                     <config.icons.search className={config.fontSizes.md} /> Rechercher
                 </button>
             </div>
 
-            <div 
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
+            <div
+                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
                 ref={drugsListRef}
             >
                 <div className={config.layout.buttonGrid3}>
@@ -457,13 +471,13 @@ function NonPrescriptionDrugs() {
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
                             type="button"
-                            className={`h-24 flex items-center justify-center ${config.fontSizes.xl} ${config.textColors.primary} 
-                                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} cursor-pointer 
+                            className={`h-24 flex items-center justify-center ${config.fontSizes.xl} ${config.textColors.primary}
+                                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} cursor-pointer
                                 ${config.transitions.default} ${index === focusedIndex ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
                             onClick={() => openModal(item)}
                         >
                             {item.label}
-                        </button>                    
+                        </button>
                     ))}
                 </div>
 
@@ -473,7 +487,7 @@ function NonPrescriptionDrugs() {
                 <ModalStandard onClose={closeModal}>
                     <button
                         ref={backButtonRef}
-                        className={`w-40 h-20 absolute top-4 left-4 ${config.fontSizes.lg} ${config.textColors.white} 
+                        className={`w-40 h-20 absolute top-4 left-4 ${config.fontSizes.lg} ${config.textColors.white}
                             ${config.buttonColors.red} ${config.borderRadius.md} ${config.padding.button}
                             ${config.buttonColors.redHover} ${config.focusStates.outline} ${config.transitions.default}
                             ${modalFocusIndex === 0 ? config.scaleEffects.focus : ''}`}
@@ -487,13 +501,24 @@ function NonPrescriptionDrugs() {
                     </div>
                     <button
                         ref={payButtonRef}
-                        className={`w-1/3 h-32 mx-auto mt-16 py-3 font-semibold ${config.buttonColors.green} 
-                        ${config.textColors.white} ${config.borderRadius.sm} ${config.shadows.md} ${config.transitions.default} ${config.fontSizes.xl}
-                        ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
-                        onClick={handlePayment}
+                        className={`w-1/3 h-32 mx-auto mt-16 py-3 font-semibold
+                            ${selectedDrug.size > 0 ? config.buttonColors.green : config.buttonColors.red}
+                            ${config.textColors.white} ${config.borderRadius.sm} ${config.shadows.md}
+                            ${config.transitions.default} ${config.fontSizes.xl}
+                            ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
+                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } })}
                     >
-                    <config.icons.money className="mr-2" />
-                        Payer
+                        {selectedDrug.size > 0 ? (
+                            <>
+                                <config.icons.money className="mr-2" />
+                                Payer
+                            </>
+                        ) : (
+                            <>
+                                <config.icons.timesCircle className="mr-2" />
+                                Stock indisponible - Options de retrait
+                            </>
+                        )}
                     </button>
                 </ModalStandard>
             )}
