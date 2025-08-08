@@ -78,16 +78,16 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
 
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
 
             const totalButtons = getTotalButtons();
 
-            if (event.key === "ArrowRight") {
+            if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                 setFocusedButtonIndex((prev) => (prev + 1) % totalButtons);
-            } else if (event.key === "ArrowLeft") {
+            } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                 setFocusedButtonIndex((prev) => (prev - 1 + totalButtons) % totalButtons);
             } else if (event.key === "Enter") {
                 if (!isPhotoTaken) {

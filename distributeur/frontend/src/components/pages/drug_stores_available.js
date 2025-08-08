@@ -5,6 +5,7 @@ import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
 
 function DrugStoresAvailable() {
   const location = useLocation();
@@ -12,6 +13,7 @@ function DrugStoresAvailable() {
 
   const [drugShops, setDrugShops] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [enterPressed, setEnterPressed] = useState(false);
@@ -23,12 +25,16 @@ function DrugStoresAvailable() {
   const handleKeyDown = (event) => {
     event.stopPropagation();
 
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Tab"].includes(event.key)) {
+      event.preventDefault();
+    }
+
     const maxIndex = buttonsRef.current.length - 1;
 
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      setFocusedIndex((prevIndex) => Math.min(prevIndex + 1, maxIndex));
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      setFocusedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+    if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
+      setFocusedIndex((prevIndex) => (prevIndex + 1) % (maxIndex + 1));
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
+      setFocusedIndex((prevIndex) => (prevIndex - 1 + (maxIndex + 1)) % (maxIndex + 1));
     } else if (event.key === "Enter") {
       event.preventDefault();
       setEnterPressed(true);
@@ -61,9 +67,34 @@ function DrugStoresAvailable() {
 
   useEffect(() => {
     const fetchPharmacies = async (lat, lon) => {
+      const MIN_LOADING_TIME = 5000; // 5 seconds minimum
+      const start = Date.now();
+      
       try {
         const radius = 10000;
-        const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`);
+        
+        // Use cached data if available
+        const cachedData = getPharmaciesCache();
+        if (cachedData) {
+          const formatted = cachedData.map((pharmacy, idx) => ({
+            id: idx + 1,
+            label: pharmacy.name || `Pharmacy ${idx + 1}`
+          }));
+          setDrugShops(formatted);
+          
+          // Ensure minimum loading time
+          const elapsed = Date.now() - start;
+          const remaining = MIN_LOADING_TIME - elapsed;
+          if (remaining > 0) {
+            setTimeout(() => setLoading(false), remaining);
+          } else {
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Fetch from backend with 10-second timeout
+        const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`, undefined, 10000);
         const data = await response.json();
   
         if (response.ok) {
@@ -72,15 +103,34 @@ function DrugStoresAvailable() {
             label: pharmacy.name || `Pharmacy ${idx + 1}`
           }));
           setDrugShops(formatted);
+          
+          // Cache the data for future use
+          setPharmaciesCache(data.pharmacies);
         } else {
           setError(data.error || 'Server Error');
         }
       } catch (err) {
         if (err.message === 'Timeout') {
-          setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+          // Navigate to error page with "erreur réseau" message
+          navigate('/error', { 
+            state: { 
+              message: 'Erreur réseau',
+              from: location.pathname 
+            } 
+          });
+          return;
         } else {
           setError('Network Error');
         }
+      }
+      
+      // Ensure minimum loading time
+      const elapsed = Date.now() - start;
+      const remaining = MIN_LOADING_TIME - elapsed;
+      if (remaining > 0) {
+        setTimeout(() => setLoading(false), remaining);
+      } else {
+        setLoading(false);
       }
     };
   
@@ -93,12 +143,14 @@ function DrugStoresAvailable() {
         (error) => {
           console.error("Position error :", error);
           alert("Cannot access to position. Make sure it is activated");
+          setLoading(false);
         }
       );
     } else {
       alert("Postion not supported by browser.");
+      setLoading(false);
     }
-  }, []);
+  }, [navigate, location.pathname]);
   
   useEffect(() => {
     const btn = buttonsRef.current[focusedIndex];
@@ -117,6 +169,15 @@ function DrugStoresAvailable() {
 
   if (error) {
     return <ErrorPage message={error} />;
+  }
+
+  if (loading) {
+    return (
+      <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
+        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement des pharmacies...</div>
+      </div>
+    );
   }
 
   return (
