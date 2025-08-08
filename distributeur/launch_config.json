@@ -7,7 +7,12 @@
             "DB_PASSWORD",
             "DB_NAME",
             "MYSQL_ROOT_PASSWORD",
-            "OPENROUTESERVICE_API_KEY"
+            "OPENROUTESERVICE_API_KEY",
+            "STRIPE_SECRET_KEY",
+            "IPHUB_API_KEY",
+            "IPHUNTER_API_KEY",
+            "ABUSEIPDB_API_KEY",
+            "GETIPINTEL_CONTACT"
         ],
         "db_dump_date": "03_07_2025"
     },
