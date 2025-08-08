@@ -1,9 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../config';
 
 const ErrorPage = ({ message, children }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Get message from props or from route state
+    const errorMessage = message || location.state?.message || 'Un problème est survenu avec le serveur.';
 
     React.useEffect(() => {
         const handleKeyDown = (event) => {

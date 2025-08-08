@@ -41,6 +41,7 @@ function DirectionsMapPage() {
   const medListRef = useRef(null);
   const homeRef = useRef(null);
   const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   useInactivityRedirect(() => setShowInactivityModal(true));
@@ -117,18 +118,25 @@ function DirectionsMapPage() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Only handle left/right arrows and Enter
-      if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      // Handle left/right arrows, Tab, and Enter
+      if (['ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
         if (focusedIndex < 3) e.preventDefault();
-        if (e.key === 'ArrowRight') {
+        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
           setFocusedIndex((prev) => (prev + 1) % 4);
-        } else if (e.key === 'ArrowLeft') {
+        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
           setFocusedIndex((prev) => (prev - 1 + 4) % 4);
         }
       }
-      // Prevent map panning with arrows when map is focused
-      if (focusedIndex === 3 && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      // Handle zoom with up/down arrows when map is focused
+      if (focusedIndex === 3 && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
         e.preventDefault();
+        if (mapInstanceRef.current) {
+          if (e.key === 'ArrowUp') {
+            mapInstanceRef.current.zoomIn();
+          } else if (e.key === 'ArrowDown') {
+            mapInstanceRef.current.zoomOut();
+          }
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -184,32 +192,46 @@ function DirectionsMapPage() {
             <config.icons.home className="mr-2" /> Accueil
           </button>
         </div>
-        <div className="w-full h-full flex flex-col items-center">
-          <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
-          <div
-            ref={mapRef}
-            tabIndex={focusedIndex === 3 ? 0 : -1}
-            style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%' }}
-          >
-            <MapContainer center={center} zoom={13} style={{ width: '100%', height: '70vh' }} keyboard={false}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {userCoords && (
-                <Marker position={userCoords}>
-                  <Popup>Votre position</Popup>
-                </Marker>
-              )}
-              <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
-                <Popup>{pharmacy.name}</Popup>
-              </Marker>
-              {routeCoords.length > 0 && (
-                <Polyline positions={routeCoords} color="blue" />
-              )}
-            </MapContainer>
-          </div>
-        </div>
+                                                                                                                                               <div className="w-full h-full flex flex-col items-center">
+              <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
+              
+              {/* Zoom Instructions - Only show when map is focused */}
+              <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
+                {focusedIndex === 3 && (
+                  <span>Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer</span>
+                )}
+              </div>
+              
+              <div
+                ref={mapRef}
+                tabIndex={focusedIndex === 3 ? 0 : -1}
+                style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
+              >
+              <MapContainer 
+                center={center} 
+                zoom={13} 
+                style={{ width: '100%', height: '100%' }} 
+                keyboard={false}
+                ref={mapInstanceRef}
+              >
+               <TileLayer
+                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+               />
+               {userCoords && (
+                 <Marker position={userCoords}>
+                   <Popup>Votre position</Popup>
+                 </Marker>
+               )}
+               <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
+                 <Popup>{pharmacy.name}</Popup>
+               </Marker>
+               {routeCoords.length > 0 && (
+                 <Polyline positions={routeCoords} color="blue" />
+               )}
+             </MapContainer>
+           </div>
+         </div>
       </div>
     </>
   );

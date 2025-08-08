@@ -109,6 +109,24 @@ Utility functions and hooks:
 - **React Leaflet 4.2.1** - React wrapper for Leaflet
 - **Tailwind CSS 3.3.0** - Utility-first CSS framework
 
+#### If you need to modify dependencies
+
+If you need to add, remove, or update packages (e.g., changing versions in package.json), follow these steps:
+
+```bash
+python launch.py --down
+cd frontend/
+rm -rf node_modules package-lock.json
+```
+
+Then make your modification in package.json
+
+```bash
+npm install
+cd ..
+python launch.py --all
+```
+
 ## Configuration
 
 ### Main Configuration File
