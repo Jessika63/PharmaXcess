@@ -8,6 +8,9 @@ import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { loadStripe } from '@stripe/stripe-js';
+import PaymentForm from '../PaymentForm';
+import { Elements } from '@stripe/react-stripe-js';
+import ElementsWrapper from '../ElementsWrapper';
 
 const categories = {
     antiInflammatory: 'Anti-inflammatoire',
@@ -62,6 +65,8 @@ function NonPrescriptionDrugs() {
 
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     useInactivityRedirect(() => setShowInactivityModal(true));
+
+    const [clientSecret, setClientSecret] = useState(null);
 
     // Reset modal focus when modal opens
     useEffect(() => {
@@ -326,43 +331,28 @@ function NonPrescriptionDrugs() {
 
         try {
             console.log(selectedDrug);
+
             // 1. Get client secret from backend
             const response = await fetch(`${config.backendUrl}/create-payment-intent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     drug_id: selectedDrug.id,
-                    amount: selectedDrug.price * 100 // Convert to cents
+                    amount: selectedDrug.price * 100
                 })
             });
-            console.log(response);
 
             if (!response.ok) {
-                throw new Error('Payment failed');
+                const errorText = await response.text();
+                throw new Error(`Payment failed: ${response.status} ${errorText}`);
             }
 
-            const { clientSecret } = await response.json();
+            const result = await response.json();
+            setClientSecret(result.clientSecret);
+            setPaymentModalOpen(true);
 
-            console.log(clientSecret)
-
-            // 2. Get Stripe instance from promise
-            const stripe = await stripePromise;
-
-            // 3. Confirm payment
-            const { error } = await stripe.confirmPayment({
-                elements: null, // Not using Elements
-                clientSecret,
-                confirmParams: {
-                    return_url: `${window.location.origin}/payment-success`,
-                },
-            });
-
-            if (error) {
-                console.error("Payment failed:", error);
-                navigate('/payment-error');
-            }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Payment Error:', error);
             navigate('/payment-error');
         }
     }
@@ -523,10 +513,26 @@ function NonPrescriptionDrugs() {
                 </ModalStandard>
             )}
 
-            {paymentModalOpen && (
+            {paymentModalOpen && clientSecret && (
                 <ModalStandard onClose={() => setPaymentModalOpen(false)}>
-                    <div className={`${config.padding.modal} text-center ${config.fontSizes.md} ${config.textColors.primary}`}>
-                        <h2>Paiement réussi !</h2>
+                    <div className="p-8">
+                        <h2 className={`${config.fontSizes.xxl} font-bold mb-8`}>
+                            Paiement pour {selectedDrug.label} - €{selectedDrug.price.toFixed(2)}
+                        </h2>
+                        <ElementsWrapper clientSecret={clientSecret}>
+                            <PaymentForm
+                                clientSecret={clientSecret} // Ajoutez cette ligne
+                                amount={selectedDrug.price * 100}
+                                onSuccess={() => {
+                                    navigate('/payment-success');
+                                    setPaymentModalOpen(false);
+                                }}
+                                onError={(error) => {
+                                    console.error('Échec du paiement:', error);
+                                    navigate('/payment-error');
+                                }}
+                            />
+                        </ElementsWrapper>
                     </div>
                 </ModalStandard>
             )}

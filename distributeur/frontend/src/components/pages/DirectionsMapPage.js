@@ -238,6 +238,13 @@ function DirectionsMapPage() {
             </MapContainer>
           </div>
         </div>
+        <div className="mt-auto mb-8">
+          <img 
+            src={config.icons.logo} 
+            alt="Logo PharmaXcess" 
+            className="w-40 h-auto opacity-60"
+          />
+        </div>
       </div>
     </>
   );
