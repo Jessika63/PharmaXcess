@@ -272,9 +272,9 @@ def flip_image(input_path, output_path, flip_code):
     flipped = cv2.flip(image, flip_code)
     cv2.imwrite(output_path, flipped)
     print(f"Flipped image saved to {output_path}")
-    
 
-def main(image_input, doc_type, is_bytes=False):
+
+def main(image_input, doc_type, is_bytes=False, flip_horizontal=False):
     """
     Main function to process an image: correct orientation, extract text, and parse data.
 
@@ -292,6 +292,9 @@ def main(image_input, doc_type, is_bytes=False):
     else:
         img = cv2.imread(image_input)
 
+    if flip_horizontal:
+        img = cv2.flip(img, 1)
+        
     img = add_background(img)
     img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
 
