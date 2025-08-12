@@ -1,5 +1,11 @@
 from flask import Blueprint, jsonify, request
 import base64
+import sys, os
+
+
+# Add the extractAll path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from scripts.scanner import extractAll
 
 extract_text_bp = Blueprint("extract_text", __name__)
