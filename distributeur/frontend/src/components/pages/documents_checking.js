@@ -90,15 +90,17 @@ function DocumentsChecking() {
 
     const handleKeyDown = useCallback((event) => {
         console.log('Key pressed:', event.key, 'focusedIndex:', focusedIndexRef.current);
-        if (event.key === "ArrowRight") {
+        if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+            event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = prevIndex < 3 ? prevIndex + 1 : prevIndex;
+                const newIndex = (prevIndex + 1) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
-        } else if (event.key === "ArrowLeft") {
+        } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+            event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = prevIndex > 0 ? prevIndex - 1 : prevIndex;
+                const newIndex = (prevIndex - 1 + 4) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });

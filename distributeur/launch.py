@@ -34,6 +34,9 @@ if __name__ == "__main__":
     parser.add_argument("--import-images", type=str, help="Import backend and database Docker images from a tar file (provide input tar path).")
     parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
     parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
+    parser.add_argument("--restart", action="store_true",
+        help="Function to run down and then all to stop and start again the application and the tests."
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -53,8 +56,12 @@ if __name__ == "__main__":
 
     # Execute operations based on flags
     if any(vars(args).values()):
-        # Combo flag takes priority and avoids duplicate handler calls
-        if args.combo:
+        # Combo ou All ou Restart
+        if args.combo or args.all or args.restart:
+            if args.restart:
+                handle_down()
+
+            # Vérification + Backend
             handle_verif(
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
@@ -62,7 +69,9 @@ if __name__ == "__main__":
                 backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
             )
             handle_front(frontend_folder, front_app_container_name)
-            handle_test(backend_folder, db_container_name, back_app_container_name)
+
+            if args.combo or args.restart:
+                handle_test(backend_folder, db_container_name, back_app_container_name)
         else:
             if args.verif:
                 handle_verif(

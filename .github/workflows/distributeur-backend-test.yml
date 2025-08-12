@@ -44,6 +44,7 @@ jobs:
           DB_NAME=${{ secrets.DB_NAME }}
           MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
           OPENROUTESERVICE_API_KEY=${{ secrets.OPENROUTESERVICE_API_KEY }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
           
           EOF
 

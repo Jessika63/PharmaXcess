@@ -7,17 +7,22 @@ import './css/global.css'
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { loadStripe } from '@stripe/stripe-js';
 
 const categories = {
     antiInflammatory: 'Anti-inflammatoire',
     painRelief: 'Anti-douleur',
 };
 
+// Initialize Stripe PROMISE (not instance)
+const stripePromise = loadStripe('pk_test_51Rsl1CLfU2UU0K5QVl6iyAUF5YuvHw648nWONQGJZmWPqtZhmxlZmSw6fORMnQNdzqtBe6Wd1LkTP7RCCoE71VyK00Zjm3nzmr');
+
 // Module-level cache for available medicines
 let availableMedicineCache = null;
 let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
+    const stripePromiseRef = useRef(stripePromise);
     const [isModalOpen, setIsModalOpen] = useState(false);
     // const [focusedElement, setFocusedElement] = useState(null);
     const [selectedDrug, setSelectedDrug] = useState(null);
@@ -79,14 +84,14 @@ function NonPrescriptionDrugs() {
     useEffect(() => {
         if (!isModalOpen) return;
         const handleModalKeyDown = (event) => {
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
-            if (event.key === "ArrowLeft") {
-                setModalFocusIndex((prev) => Math.max(0, prev - 1));
-            } else if (event.key === "ArrowRight") {
-                setModalFocusIndex((prev) => Math.min(1, prev + 1));
+            if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+                setModalFocusIndex((prev) => (prev - 1 + 2) % 2);
+            } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+                setModalFocusIndex((prev) => (prev + 1) % 2);
             } else if (event.key === "Enter") {
                 if (modalFocusIndex === 0) {
                     closeModal();
@@ -192,12 +197,12 @@ function NonPrescriptionDrugs() {
         const handleKeyDown = (event) => {
             if (isSearchMenuOpen) {
                 // Handle filter menu navigation
-                if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+                if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                     event.preventDefault();
                 }
-                if (event.key === "ArrowRight") {
+                if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                     setFocusedIndexSearch((prev) => (prev + 1) % searchMenuOptions.length);
-                } else if (event.key === "ArrowLeft") {
+                } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                     setFocusedIndexSearch((prev) => (prev - 1 + searchMenuOptions.length) % searchMenuOptions.length);
                 } else if (event.key === "Enter") {
                     applyFilter(searchMenuOptions[focusedIndexSearch]);
@@ -208,24 +213,46 @@ function NonPrescriptionDrugs() {
             if (isModalOpen) return; // Let modal handle its own keys
             
             if (filteredDrugs.length === 0) return;
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
             }
-            if (event.key === "ArrowLeft") {
+            if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                 if (focusedIndex > 0) {
                     setFocusedIndex(focusedIndex - 1);
                 } else if (focusedIndex === 0) {
                     setFocusedIndex(-1);
                 } else if (focusedIndex === -1) {
                     setFocusedIndex(-2);
+                } else if (focusedIndex === -2) {
+                    // Circular: go from first control (-2) to last drug item
+                    setFocusedIndex(filteredDrugs.length - 1);
                 }
-            } else if (event.key === "ArrowRight") {
+            } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                 if (focusedIndex === -2) {
                     setFocusedIndex(-1);
                 } else if (focusedIndex === -1) {
                     setFocusedIndex(0);
                 } else if (focusedIndex < filteredDrugs.length - 1) {
                     setFocusedIndex(focusedIndex + 1);
+                } else if (focusedIndex === filteredDrugs.length - 1) {
+                    // Circular: go from last drug item to first control (-2)
+                    setFocusedIndex(-2);
+                }
+            } else if (event.key === "ArrowUp") {
+                if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    // Move up by 3 (assuming 3 columns in the grid)
+                    const newIndex = focusedIndex - 3;
+                    if (newIndex >= 0) {
+                        setFocusedIndex(newIndex);
+                    }
+                }
+            } else if (event.key === "ArrowDown") {
+                if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    // Move down by 3 (assuming 3 columns in the grid)
+                    const newIndex = focusedIndex + 3;
+                    if (newIndex < filteredDrugs.length) {
+                        setFocusedIndex(newIndex);
+                    }
                 }
             } else if (event.key === "Enter") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
@@ -275,29 +302,62 @@ function NonPrescriptionDrugs() {
         setSelectedDrug(null);
     };
 
-    const handlePayment = () => {
-        
-        // More robust check for drug availability and stock
-        const state = parseInt(selectedDrug?.state) || 0;
+    async function handlePayment() {
+        // Vérification du stock
         const size = parseInt(selectedDrug?.size) || 0;
-        
-        // Check if drug has stock (size > 0) - this determines if payment can be processed
-        if (selectedDrug && size > 0) {
-            // Sufficient stock - show success message
-            setIsModalOpen(false);
-            setPaymentModalOpen(true);
-            setTimeout(() => {
-                setPaymentModalOpen(false);
-            }, 2000);
-        } else {
-            // Insufficient stock or unavailable - redirect to insufficient stock page
+        if (size <= 0) {
             navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
+            return;
         }
-    };
+    
+        try {
+            console.log(selectedDrug);
+            // 1. Get client secret from backend
+            const response = await fetch(`${config.backendUrl}/create-payment-intent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drug_id: selectedDrug.id,
+                    amount: selectedDrug.price * 100 // Convert to cents
+                })
+            });
+            console.log(response);
+    
+            if (!response.ok) {
+                throw new Error('Payment failed');
+            }
+    
+            const { clientSecret } = await response.json();
+            
+            console.log(clientSecret)
+
+            // 2. Get Stripe instance from promise
+            const stripe = await stripePromise;
+            
+            // 3. Confirm payment
+            const { error } = await stripe.confirmPayment({
+                elements: null, // Not using Elements
+                clientSecret,
+                confirmParams: {
+                    return_url: `${window.location.origin}/payment-success`,
+                },
+            });
+    
+            if (error) {
+                console.error("Payment failed:", error);
+                navigate('/payment-error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            navigate('/payment-error');
+        }
+    }
 
     // Dismiss inactivity modal on user activity
     useEffect(() => {
-        if (!showInactivityModal) return;
+        if (!showInactivityModal) {
+            return;
+        }
         const dismiss = () => setShowInactivityModal(false);
         const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
         events.forEach(event => window.addEventListener(event, dismiss));
@@ -386,7 +446,7 @@ function NonPrescriptionDrugs() {
             </div>
 
             <div 
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto overflow-y-hidden p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
+                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" 
                 ref={drugsListRef}
             >
                 <div className={config.layout.buttonGrid3}>
@@ -432,7 +492,7 @@ function NonPrescriptionDrugs() {
                         ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
                         onClick={handlePayment}
                     >
-                        <config.icons.money className="mr-2" />
+                    <config.icons.money className="mr-2" />
                         Payer
                     </button>
                 </ModalStandard>
