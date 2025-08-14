@@ -25,7 +25,9 @@ def test_get_available_medicine_file_not_found(client):
     It ensures the file exists before the test, removes it,
     checks for a 404 error response, then restores the file.
     """
-    json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
+
+    json_path = '/data/medicine_available.json'
+
     temp_json_path = os.path.join(os.path.dirname(__file__), "../medicine_available_temp.json")
 
     # Ensure the file exists before proceeding
@@ -71,7 +73,9 @@ def test_get_available_medicine_json_decode_error(client):
     It temporarily writes an invalid JSON string to the file,
     verifies that a 500 error response is returned, then restores the original file.
     """
-    json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
+
+    json_path = '/data/medicine_available.json'
+
     temp_json_path = os.path.join(os.path.dirname(__file__), "../medicine_available_temp.json")
 
     # Ensure the file exists before proceeding

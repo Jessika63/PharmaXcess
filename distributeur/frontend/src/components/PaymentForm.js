@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Correction : Ajoutez clientSecret dans les props
-const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
+const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -10,7 +9,7 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!stripe || !elements) {
       return;
     }
@@ -21,8 +20,9 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
     try {
       const cardElement = elements.getElement(CardElement);
 
+      // 1. Confirmer le paiement
       const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret, // Maintenant disponible via les props
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -34,13 +34,14 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
       );
 
       if (error) {
-        setErrorMessage(error.message || "Erreur de paiement");
-        onError(error);
-      } else if (paymentIntent.status === 'succeeded') {
-        onSuccess();
+        throw new Error(error.message || "Erreur de paiement");
       }
+
+      // 2. Appeler onSuccess avec paymentIntent
+      onSuccess(paymentIntent);
+
     } catch (err) {
-      setErrorMessage("Une erreur inattendue s'est produite");
+      setErrorMessage(err.message);
       onError(err);
     } finally {
       setProcessing(false);
@@ -51,7 +52,7 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
       <div className="mb-6">
         <div className="p-4 border rounded-lg bg-white shadow-sm">
-          <CardElement 
+          <CardElement
             options={{
               style: {
                 base: {
@@ -67,7 +68,7 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
           />
         </div>
       </div>
-      
+
       {errorMessage && (
         <div className="text-red-500 mb-4 text-center">
           {errorMessage}
@@ -78,8 +79,8 @@ const PaymentForm = ({ clientSecret, amount, onSuccess, onError }) => {
         type="submit"
         disabled={!stripe || processing}
         className={`w-full py-4 px-6 rounded-lg font-bold text-white
-          ${!stripe || processing 
-            ? 'bg-gray-400 cursor-not-allowed' 
+          ${!stripe || processing
+            ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-green-500 hover:bg-green-600'}
           transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400`}
       >

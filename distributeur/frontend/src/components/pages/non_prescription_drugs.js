@@ -68,6 +68,8 @@ function NonPrescriptionDrugs() {
 
     const [clientSecret, setClientSecret] = useState(null);
 
+    const [stockUpdateError, setStockUpdateError] = useState(null);
+
     // Reset modal focus when modal opens
     useEffect(() => {
         if (isModalOpen) {
@@ -113,51 +115,59 @@ function NonPrescriptionDrugs() {
         return () => document.removeEventListener("keydown", handleModalKeyDown);
     }, [isModalOpen, modalFocusIndex]);
 
-    useEffect(() => {
-        const fetchDrugs = async () => {
-            setLoading(true);
-            setError(null);
-            const MIN_LOADING_TIME = 500; // ms
-            const start = Date.now();
-            let dataToUse = null;
-            if (availableMedicineCache) {
-                dataToUse = availableMedicineCache;
-            } else if (!availableMedicineFetched) {
-                availableMedicineFetched = true;
-                try {
-                    const response = await fetchWithTimeout(`${config.backendUrl}/get_available_medicine`);
-                    const data = await response.json();
-                    if (response.ok) {
-                        dataToUse = data.medicine;
-                        availableMedicineCache = data.medicine;
-                    } else {
-                        setError(data.error || 'Server Error');
-                        availableMedicineCache = null;
-                        availableMedicineFetched = false;
-                    }
-                } catch (error) {
-                    if (error.message === 'Timeout') {
-                        setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
-                    } else {
-                        setError('Network Error');
-                    }
+    const fetchDrugs = async (forceReload = false) => {
+        if (forceReload) {
+            availableMedicineCache = null;
+            availableMedicineFetched = false;
+        }
+        setLoading(true);
+        setError(null);
+        const MIN_LOADING_TIME = 500; // ms
+        const start = Date.now();
+        let dataToUse = null;
+        if (availableMedicineCache) {
+            dataToUse = availableMedicineCache;
+        } else if (!availableMedicineFetched) {
+            availableMedicineFetched = true;
+            try {
+                const response = await fetchWithTimeout(`${config.backendUrl}/get_available_medicine`);
+                const data = await response.json();
+                if (response.ok) {
+                    dataToUse = data.medicine;
+                    availableMedicineCache = data.medicine;
+                } else {
+                    setError(data.error || 'Server Error');
                     availableMedicineCache = null;
                     availableMedicineFetched = false;
                 }
+            } catch (error) {
+                if (error.message === 'Timeout') {
+                    setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+                } else {
+                    setError('Network Error');
+                }
+                availableMedicineCache = null;
+                availableMedicineFetched = false;
             }
-            if (dataToUse) {
-                setDrugsItems(dataToUse);
-                setFilteredDrugs(dataToUse);
-            }
-            const elapsed = Date.now() - start;
-            const remaining = MIN_LOADING_TIME - elapsed;
-            if (remaining > 0) {
-                setTimeout(() => setLoading(false), remaining);
-            } else {
-                setLoading(false);
-            }
+        }
+        if (dataToUse) {
+            setDrugsItems(dataToUse);
+            setFilteredDrugs(dataToUse);
+        }
+        const elapsed = Date.now() - start;
+        const remaining = MIN_LOADING_TIME - elapsed;
+        if (remaining > 0) {
+            setTimeout(() => setLoading(false), remaining);
+        } else {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            await fetchDrugs(true);
         };
-        fetchDrugs();
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -332,23 +342,21 @@ function NonPrescriptionDrugs() {
         try {
             console.log(selectedDrug);
 
-            // 1. Get client secret from backend
-            const response = await fetch(`${config.backendUrl}/create-payment-intent`, {
+            const paymentResponse = await fetch(`${config.backendUrl}/create-payment-intent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     drug_id: selectedDrug.id,
-                    amount: selectedDrug.price * 100
                 })
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Payment failed: ${response.status} ${errorText}`);
+            if (!paymentResponse.ok) {
+                const errorText = await paymentResponse.text();
+                throw new Error(`Payment failed: ${paymentResponse.status} ${errorText}`);
             }
 
-            const result = await response.json();
-            setClientSecret(result.clientSecret);
+            const paymentResult = await paymentResponse.json();
+            setClientSecret(paymentResult.clientSecret);
             setPaymentModalOpen(true);
 
         } catch (error) {
@@ -356,6 +364,53 @@ function NonPrescriptionDrugs() {
             navigate('/payment-error');
         }
     }
+
+    const handleStockUpdate = async (drugId) => {
+        try {
+            const stockResponse = await fetch(`${config.backendUrl}/update-stock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ drug_id: drugId })
+            });
+
+            if (!stockResponse.ok) {
+                const errorData = await stockResponse.json();
+                throw new Error(errorData.error || "Échec de la mise à jour du stock");
+            }
+
+            // 1. Invalider le cache
+            availableMedicineCache = null;
+            availableMedicineFetched = false;
+
+            // 2. Recharger les données
+            await fetchDrugs(true); // true pour forcer le rechargement
+
+            return true;
+        } catch (error) {
+            console.error('Stock Update Error:', error);
+            setStockUpdateError(error.message);
+            return false;
+        }
+    };
+
+    // Fonction de succès de paiement
+    const handlePaymentSuccess = async (paymentIntent) => {
+        // Mettre à jour le stock
+        const stockUpdated = await handleStockUpdate(selectedDrug.id);
+
+        if (stockUpdated) {
+            navigate('/payment-success', {
+                state: {
+                    drug: selectedDrug,
+                    paymentId: paymentIntent.id
+                }
+            });
+        } else {
+            // Gérer l'erreur de mise à jour du stock
+            setPaymentModalOpen(false);
+            setIsModalOpen(true); // Rouvrir la modale du médicament
+        }
+    };
 
     // Dismiss inactivity modal on user activity
     useEffect(() => {
@@ -521,20 +576,33 @@ function NonPrescriptionDrugs() {
                         </h2>
                         <ElementsWrapper clientSecret={clientSecret}>
                             <PaymentForm
-                                clientSecret={clientSecret} // Ajoutez cette ligne
+                                clientSecret={clientSecret}
                                 amount={selectedDrug.price * 100}
-                                onSuccess={() => {
-                                    navigate('/payment-success');
-                                    setPaymentModalOpen(false);
-                                }}
+                                drugId={selectedDrug.id} // Passer l'ID du médicament
+                                onSuccess={handlePaymentSuccess} // Utiliser la nouvelle fonction de succès
                                 onError={(error) => {
-                                    console.error('Échec du paiement:', error);
-                                    navigate('/payment-error');
+                                console.error('Échec du paiement:', error);
+                                navigate('/payment-error');
                                 }}
                             />
                         </ElementsWrapper>
                     </div>
                 </ModalStandard>
+            )}
+
+            {stockUpdateError && (
+                <div className={`fixed top-4 right-4 ${config.fontSizes.md} ${config.textColors.white} ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md} z-50`}>
+                    <div className="flex items-center">
+                        <config.icons.timesCircle className="mr-2" />
+                        {stockUpdateError}
+                        <button
+                            className="ml-4"
+                            onClick={() => setStockUpdateError(null)}
+                        >
+                        <config.icons.times />
+                        </button>
+                    </div>
+                </div>
             )}
 
             {showInactivityModal && (

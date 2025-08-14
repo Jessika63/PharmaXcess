@@ -274,7 +274,7 @@ def check_stripe_access():
         if adblock_detected:
             issues.append("Bloqueur de publicités/détection de trackers actif")
         if firewall_detected:
-            issues.append("Pare-feu ou réseau d’entreprise détecté")
+            issues.append("Pare-feu ou réseau d'entreprise détecté")
         if public_network:
             issues.append("Réseau public non sécurisé détecté")
         if privacy_settings_detected:

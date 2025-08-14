@@ -14,36 +14,35 @@ def create_payment_intent():
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
         if not stripe.api_key:
             return jsonify({"error": "Stripe API key not configured"}), 500
-        
+
         # 2. Validez les données d'entrée
         data = request.get_json()
-        if not data or 'drug_id' not in data or 'amount' not in data:
+        if not data or 'drug_id' not in data not in data:
             return jsonify({"error": "Missing drug_id or amount"}), 400
-        
+
         drug_id = data['drug_id']
-        amount = data['amount']
-        
-        # 3. Assurez-vous que le montant est numérique
-        try:
-            amount = float(amount)
-            amount_cents = int(amount)  # Convertir en centimes
-        except (TypeError, ValueError):
-            return jsonify({"error": "Invalid amount format"}), 400
-        
-        # 4. Chargez les médicaments
-        json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
-        
+
+        # 3. Chargez les médicaments
+        json_path = '/data/medicine_available.json'
+
         if not os.path.exists(json_path):
             return jsonify({"error": "Medicine data file not found"}), 404
-        
+
         with open(json_path, "r", encoding="utf-8") as file:
             medicines = json.load(file).get("medicine", [])
-        
+
         drug = next((d for d in medicines if d["id"] == drug_id), None)
-        
+
         if not drug:
             return jsonify({"error": "Medicament non trouvé"}), 404
-        
+
+        # 4. Vérifier le montant
+        try:
+            amount = float(drug['price'])
+            amount_cents = int(amount * 100)  # Convertir en centimes
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid amount format"}), 400
+
         # 5. Créez le Payment Intent
         payment_intent = stripe.PaymentIntent.create(
             amount=amount_cents,
@@ -57,7 +56,7 @@ def create_payment_intent():
                 'enabled': True,
             },
         )
-        
+
         return jsonify({
             "message": "Payment Intent créé",
             "clientSecret": payment_intent.client_secret

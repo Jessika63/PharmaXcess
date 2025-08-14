@@ -16,7 +16,7 @@ def get_available_medicine():
         - 500 Internal Server Error if the file cannot be read or parsed.
     """
     try:
-        json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
+        json_path = '/data/medicine_available.json'
 
         if not os.path.exists(json_path):
             return jsonify({"error": "Medicine data file not found"}), 404
