@@ -7,6 +7,7 @@ import createStyles from '../../styles/CardGrid.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -23,6 +24,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { user, logout } = useAuth();
+    const { currentProfile, profiles } = useProfile();
     const styles = createStyles(colors, fontScale);
 
     // Function to handle logout
@@ -44,6 +46,22 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                 },
             ]
         );
+    };
+    // Function to get the relationship text based on the current profile's relationship
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant'; 
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        } 
+    }; 
+
+    // Function to get the avatar URL for the current profile
+    const getAvatarUrl = () => {
+        return currentProfile?.avatar || 'https://www.w3schools.com/w3images/avatar2.png';
     };
     // Use React's useLayoutEffect to set the header options for the navigation
     React.useLayoutEffect(() => {
@@ -73,9 +91,46 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            {/* Section to select the profile */} 
+            <TouchableOpacity 
+                style={[styles.card, { marginBottom: 20 }]} 
+                onPress={() => navigation.navigate('ProfileSelection')}
+            > 
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}> 
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}> 
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}> 
+                            <Image 
+                                source={{ uri: getAvatarUrl() }} 
+                                style={[styles.profileImage, { width: 40, height: 40, marginRight: 15 }]} 
+                            />
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.cardText, { color: '#fff', fontSize: 16, fontWeight: 'bold' }]}>
+                                    {currentProfile?.name || 'Aucun profil sélectionné'}
+                                </Text>
+                                <Text style={[styles.cardText, { color: '#fff', fontSize: 12, opacity: 0.9 }]}>
+                                    {getRelationshipText(currentProfile?.relationship)}
+                                </Text>
+                                {profiles.length > 1 && (
+                                    <Text style={[styles.cardText, { color: '#fff', fontSize: 11, opacity: 0.8 }]}>
+                                        {profiles.length - 1} autre(s) profil(s) disponible(s)
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                        <View style={{ alignItems: 'center'}}> 
+                            <Ionicons name="people" size={24} color="#fff" /> 
+                            <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginTop: 2 }} />
+                        </View>
+                    </View>
+                </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Current profile information */}
             <View style={styles.profileContainer}>
-                <Image source={{ uri: 'https://www.w3schools.com/w3images/avatar2.png' }} style={styles.profileImage} />
-                <Text style={styles.profileName}>{user?.name || 'Utilisateur'}</Text>
+                <Image source={{ uri: getAvatarUrl() }} style={styles.profileImage} />
+                <Text style={styles.profileName}>
+                    {currentProfile?.name || user?.name || 'Utilisateur'}
+                </Text>
             </View>
             {/* Map through the items array to create a card for each profile item */}
             {items.map((item, index) => (

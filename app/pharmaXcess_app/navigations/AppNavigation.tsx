@@ -13,6 +13,7 @@ import Chat from '../screens/communication/Chat.native';
 // Health screens 
 // Importing various health-related screens for managing user health records
 import Diseases from '../screens/health/Diseases.native';
+import DiseasesProfile from '../screens/health/DiseasesProfile.native';
 import Allergies from '../screens/health/Allergies.native';
 import FamilyHistory from '../screens/health/FamilyHistory.native';
 import Hospitalizations from '../screens/health/Hospitalizations.native';
@@ -70,6 +71,8 @@ import PersonalDataOptions from '../screens/account/PersonalDataOptions.native';
 import AccountProfile from '../screens/account/AccountProfile.native';
 import AccountPrivacyFAQ from '../screens/account/AccountPrivacyFAQ.native';
 import AccountManagement from '../screens/account/AccountManagement.native';
+import ProfileSelection from '../screens/account/ProfileSelection.native';
+import ProfileManagement from '../screens/account/ProfileManagement.native';
 
 // Others screens
 import AuthenticationOptions from '../screens/authentication/AuthenticationOptions.native';
@@ -142,9 +145,11 @@ const ProfileStackScreen = (): React.JSX.Element => {
   const { colors } = useTheme();
   return createStack([
     { name: 'Profile', component: Profile, title: 'Profil' },
+    { name: 'ProfileSelection', component: ProfileSelection, title: 'Choisir un profil' },
+    { name: 'ProfileManagement', component: ProfileManagement, title: 'Gestion des profils' },
     { name: 'Settings', component: Settings, title: 'Paramètres' },
     { name: 'PersonalInfo', component: PersonalInfo, title: 'Mes informations' },
-    { name: 'Diseases', component: Diseases, title: 'Maladies' },
+    { name: 'Diseases', component: DiseasesProfile, title: 'Maladies' },
     { name: 'Treatments', component: Treatments, title: 'Traitements' },
     { name: 'Hospitalizations', component: Hospitalizations, title: 'Hospitalisations' },
     { name: 'Allergies', component: Allergies, title: 'Allergies' },
