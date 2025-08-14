@@ -335,7 +335,7 @@ function NonPrescriptionDrugs() {
         // Vérification du stock
         const size = parseInt(selectedDrug?.size) || 0;
         if (size <= 0) {
-            navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } });
+            navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
             return;
         }
 
@@ -361,7 +361,12 @@ function NonPrescriptionDrugs() {
 
         } catch (error) {
             console.error('Payment Error:', error);
-            navigate('/payment-error');
+            navigate('/payment-error', {
+                state: {
+                    errorMessage: error.message,
+                    from: '/non-prescription-drugs'
+                }
+            });
         }
     }
 
@@ -551,7 +556,7 @@ function NonPrescriptionDrugs() {
                             ${config.textColors.white} ${config.borderRadius.sm} ${config.shadows.md}
                             ${config.transitions.default} ${config.fontSizes.xl}
                             ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
-                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: 'non-prescription-drugs' } })}
+                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } })}
                     >
                         {selectedDrug.size > 0 ? (
                             <>
@@ -581,8 +586,12 @@ function NonPrescriptionDrugs() {
                                 drugId={selectedDrug.id} // Passer l'ID du médicament
                                 onSuccess={handlePaymentSuccess} // Utiliser la nouvelle fonction de succès
                                 onError={(error) => {
-                                console.error('Échec du paiement:', error);
-                                navigate('/payment-error');
+                                    navigate('/payment-error', {
+                                        state: {
+                                            errorMessage: error.message,
+                                            from: '/non-prescription-drugs'
+                                        }
+                                    });
                                 }}
                             />
                         </ElementsWrapper>
