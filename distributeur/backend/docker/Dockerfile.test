@@ -19,4 +19,14 @@ COPY . /app
 
 COPY pytest.ini /app/
 
+# Créer le répertoire pour les données
+RUN mkdir -p /data
+
+# Copier le script d'initialisation
+COPY scripts/init_medicine.sh /init_medicine.sh
+
+RUN chmod +x /init_medicine.sh
+
+ENTRYPOINT ["/init_medicine.sh"]
+
 CMD ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]

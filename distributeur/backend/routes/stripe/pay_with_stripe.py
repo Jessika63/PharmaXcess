@@ -18,7 +18,7 @@ def create_payment_intent():
         # 2. Validez les données d'entrée
         data = request.get_json()
         if not data or 'drug_id' not in data not in data:
-            return jsonify({"error": "Missing drug_id or amount"}), 400
+            return jsonify({"error": "Missing drug_id"}), 400
 
         drug_id = data['drug_id']
 
