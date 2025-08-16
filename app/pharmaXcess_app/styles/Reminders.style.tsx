@@ -202,8 +202,9 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
+        width: '95%', 
         marginTop: 30,
+        alignSelf: 'center', 
     },
     button: {
         flex: 1,
@@ -222,11 +223,10 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontWeight: 'bold',
     },
     modalContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
+        flex: 1, 
         backgroundColor: colors.background,
-        padding: 20,
-        flexGrow: 1,
+        paddingHorizontal: 15, 
+        paddingVertical: 20, 
     },
     modalTitle: {
         fontSize: 24 * fontScale,
@@ -235,7 +235,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.settingsTitle,
     },
     input: {
-        width: '100%',
+        width: '95%', 
         padding: 10,
         borderWidth: 1,
         borderColor: colors.inputBorder,
@@ -243,6 +243,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginBottom: 10,
         backgroundColor: colors.inputBackground,
         fontSize: 16 * fontScale,
+        alignSelf: 'center', 
     },
     label: {
         fontSize: 16 * fontScale,

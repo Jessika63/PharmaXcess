@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, ViewStyle, TextInput, StyleProp, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -6,6 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Disease = {
@@ -25,6 +27,8 @@ type DiseasesProps = {
 export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
+    const { diseases: profileDiseases, addDisease, removeDisease } = useProfileData();
     const styles = createStyles(colors, fontScale);
     const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -79,6 +83,48 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
     const [editSelectedMonth, setEditSelectedMonth] = useState<number>(1);
     const [editSelectedDay, setEditSelectedDay] = useState<number>(1);
 
+    // Function to add a new disease 
+    const [newDiseaseSimple, setNewDiseaseSimple] = useState<string>('');
+
+    const handleAddSimpleDisease = async (): Promise<void> => {
+        if (!newDiseaseSimple.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer le nom de la maladie.');
+            return;
+        }
+
+        const success = await addDisease(newDiseaseSimple.trim()); 
+        if (success) { 
+            setNewDiseaseSimple (''); 
+            Alert.alert('Succès', 'Maladie ajoutée avec succès.');
+        } else { 
+            Alert.alert('Erreur', 'Cette maladie est déjà enregistrée ou une erreur est survenue.');
+        }
+    }; 
+
+    const handleRemoveDisease = async (disease: string): Promise<void> => {
+        Alert.alert(
+            'Confirmer la suppression',
+            `Êtes-vous sûr de vouloir supprimer "${disease}" ?`,
+            [
+                {
+                    text: 'Annuler',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await removeDisease(disease);
+                        if (success) {
+                            Alert.alert('Succès', 'Maladie supprimée avec succès.');
+                        } else {
+                            Alert.alert('Erreur', 'Impossible de supprimer la maladie.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
     const handleAddPress = (): void => {
         if (
             !newDisease.name ||
@@ -175,6 +221,60 @@ export default function Diseases({ navigation }: DiseasesProps) : React.JSX.Elem
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.list}>
+                {/* Header for the active profile */} 
+                {currentProfile && ( 
+                    <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10'}]}> 
+                        <View style={styles.cardHeader}> 
+                            <View> 
+                                <Text style={[styles.cardTitle, { color: colors.primary }]}> 
+                                    Profile actuel: {currentProfile.name}
+                                </Text>
+                                <Text style={[styles.cardText, { fontSize: 12, opacity: 0.7 }]}>
+                                    {currentProfile.relationship === 'self' ? 'Mon profil' : 
+                                     currentProfile.relationship === 'child' ? 'Profil enfant' :
+                                     currentProfile.relationship === 'parent' ? 'Profil parent' :
+                                     currentProfile.relationship === 'spouse' ? 'Profil conjoint(e)' : 'Autre profil'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('ProfileSelection')}>
+                                <Ionicons name="swap-horizontal" size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
+                {/* Simple list of diseases for the current profile */} 
+                {profileDiseases.length > 0 ? ( 
+                    <View style={[styles.card, { marginBottom: 20 }]}> 
+                        <Text style={[styles.cardTitle, { marginBottom: 10 }]}>Maladies enregistrées</Text>
+                        {profileDiseases.map((disease, index) => ( 
+                            <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}> 
+                                <Text style ={styles.cardText}>{disease}</Text> 
+                                <TouchableOpacity onPress={() => handleRemoveDisease(disease)}>
+                                    <Ionicons name="close-circle" size={20} color="#FF4444" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </View>
+                ) : ( 
+                    <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 30 }]}> 
+                        <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style= {{ marginBottom: 10 }} />
+                        <Text style={[styles.cardTitle, { textAlign: 'center', marginBottom: 5 }]}>Aucune maladie enregistrée</Text>
+                        <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
+                            Ajoutez vos maladies pour un meilleur suivi médical
+                        </Text>
+                    </View>
+                )}
+
+                {/* Button to add a new disease */} 
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={[styles.card, { backgroundColor: colors.primary, alignItems: 'center', padding: 20 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
+                        <Text style={[styles.cardTitle, { color: '#fff' }]}>Ajouter une maladie</Text>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Old example data (for compatibility) */} 
                 {diseases.map((disease, index) => (
                     <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                         <View style={styles.card}>

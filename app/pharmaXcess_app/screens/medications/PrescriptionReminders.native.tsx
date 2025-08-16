@@ -309,7 +309,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={styles.modalContainer}>
-                    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+                    <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 20, paddingBottom: 100 }}>
                         <Text style={styles.modalTitle}>
                             {editingReminder ? 'Modifier le rappel' : 'Nouveau rappel'}
                         </Text>
