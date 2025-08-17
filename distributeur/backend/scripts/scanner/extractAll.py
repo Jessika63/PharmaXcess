@@ -17,6 +17,9 @@ def add_background(img, scale_factor=1.5):
     Returns:
     - numpy.ndarray: New image with a white background.
     """
+    if img is None:
+        raise ValueError("Input image is None")
+
     height, width, _ = img.shape
     new_height = int(height * scale_factor)
     new_width = int(width * scale_factor)
@@ -114,15 +117,18 @@ def getInfosPrescription(text):
     if rpps_match:
         infos["rpps"] = rpps_match.group(1)
 
-    patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
+    # n'autorise pas \n entre les groupes, et accepte accents/tirets/apostrophes
+    patient_pattern = r"(?:M\.|Mme\.)[^\S\r\n]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
     patient = re.search(patient_pattern, text)
-    if patient:
-        last_name, first_name = patient.groups()
-        infos["patient"] = {
-            "prenom": first_name,
-            "nom": last_name
-        }
 
+    if patient:
+        last_name = patient.group(1)
+        first_name = patient.group(2)
+        if last_name and first_name:
+            infos["patient"] = {
+                "prenom": first_name,
+                "nom": last_name
+            }
     # date_pattern = r"\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}"
     # dates = re.findall(date_pattern, text)
     # if dates:

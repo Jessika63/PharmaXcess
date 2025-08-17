@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request
 import base64
 import sys, os
 
-
 # Add the extractAll path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
