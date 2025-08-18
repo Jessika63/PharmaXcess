@@ -6,8 +6,8 @@ import runpy
 import pytest
 import cv2
 import numpy as np
-import subprocess
 import json
+import types
 
 # Import direct du module extractAll pour couvrir ses fonctions utilitaires
 from scripts.scanner.extractAll import (
@@ -318,20 +318,130 @@ def test_recto_multiple_prenoms():
     assert infos["prenoms"][0].lower() == "jeanpierrelouis"
 
 @pytest.mark.order(4)
-def test_main_entry_point(tmp_path):
-    # Créer une image factice
+def test_main_entry_point(tmp_path, capsys):
+    # -- Image factice
     img_path = tmp_path / "cli_image.png"
     img = np.zeros((100, 100, 3), dtype=np.uint8)
     cv2.imwrite(str(img_path), img)
 
-    fake_result = {"raw_text": "fake text", "infos": {"key": "value"}}
+    # ---------- 1) Test direct de la fonction main() avec PaddleOCR mocké ----------
+    from scripts.scanner import extractAll
 
-    with patch("scripts.scanner.extractAll.main", return_value=fake_result):
-        result = subprocess.run(
-            [sys.executable, "-m", "scripts.scanner.extractAll", str(img_path), "X"],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0
-        output = json.loads(result.stdout.strip())
-        assert output == fake_result
+    # Retour qui imite la structure réelle de PaddleOCR:
+    # result = [ [ (bbox, (text, score)), ... ],  ... ]
+    ocr_fake = [
+        [
+            ([(0,0),(1,1),(1,0),(0,1)], ("fake text", 0.99)),
+            ([(0,0),(1,1),(1,0),(0,1)], ("more", 0.95)),
+        ],
+        [
+            ([(0,0),(1,1),(1,0),(0,1)], ("end", 0.90)),
+        ],
+    ]
+
+    with patch("scripts.scanner.extractAll.PaddleOCR") as mock_ocr:
+        mock_ocr.return_value.ocr.return_value = ocr_fake
+        result = extractAll.main(str(img_path), "X")  # doc_type inconnu => infos = {}
+        assert isinstance(result, dict)
+        assert "raw_text" in result
+        assert "fake text" in result["raw_text"]
+
+    # ---------- 2) Test du CLI (__main__) avec runpy ----------
+    # On veut:
+    #   - sys.argv == ["extractAll.py", <image_path>, "P"]
+    #   - empêcher l'import/usage du vrai paddleocr -> on injecte un faux module dans sys.modules
+    fake_result_text = "cli fake text"
+
+    class DummyOCR:
+        def __init__(self, *args, **kwargs):
+            pass
+        def ocr(self, *args, **kwargs):
+            # Même structure que PaddleOCR
+            return [[(None, (fake_result_text, 0.99))]]
+
+    fake_paddle = types.ModuleType("paddleocr")
+    fake_paddle.PaddleOCR = DummyOCR
+
+    with patch.object(sys, "argv", ["extractAll.py", str(img_path), "P"]):
+        # Remplace le module 'paddleocr' pour cette exécution __main__
+        with patch.dict(sys.modules, {"paddleocr": fake_paddle}):
+            sys.modules.pop("scripts.scanner.extractAll", None)  # 👈 enlève le module si déjà importé to avoid warning
+            runpy.run_module("scripts.scanner.extractAll", run_name="__main__")
+
+    # Le script imprime un JSON sur stdout
+    out = capsys.readouterr().out.strip()
+    printed = json.loads(out)
+    assert "raw_text" in printed and "infos" in printed
+    assert fake_result_text in printed["raw_text"]
+
+@pytest.mark.order(4)
+def test_prescription_with_empty_line():
+    """Teste que les lignes vides sont correctement ignorées"""
+    text = (
+        "Dr Jean DUPONT\n\n"  # Ligne vide
+        "M. DURAND Pierre\n \n"  # Ligne avec espace
+        "Née le 01/02/1990\n"
+        "PARACETAMOL 1g cp\n"
+        "\n"  # Ligne vide dans les médicaments
+        "1 cp x3/jour\n"
+    )
+    infos = getInfosPrescription(text)
+    assert "medicaments" in infos
+    assert len(infos["medicaments"]) == 1
+    assert infos["medicaments"][0]["nom"] == "PARACETAMOL 1g cp"
+    assert infos["medicaments"][0]["posologie"] == "1 cp x3/jour"
+
+@pytest.mark.order(4)
+@patch("scripts.scanner.extractAll.PaddleOCR")
+def test_main_with_verso_doc_type(mock_paddleocr, tmp_path):
+    """Teste que le type 'V' appelle bien getInfosVersoID"""
+    mock_instance = mock_paddleocr.return_value
+    mock_instance.ocr.return_value = [[
+        (None, ("Adresse: 10RUEDEPARIS75001", 0.99))
+    ]]
+    
+    img_path = tmp_path / "verso_test.png"
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    cv2.imwrite(str(img_path), img)
+    
+    res = extract_main(str(img_path), "V")
+    assert "infos" in res
+    assert "adresse" in res["infos"]
+    assert "75001" in res["infos"]["adresse"]
+
+@pytest.mark.order(4)
+def test_cli_with_wrong_args(capsys):
+    """Teste le comportement avec un nombre incorrect d'arguments CLI"""
+    # Sauvegarde des arguments originaux
+    original_argv = sys.argv
+    
+    # Modules à nettoyer
+    modules_to_clean = [
+        'scripts.scanner.extractAll',
+        'scripts.scanner'
+    ]
+    
+    # Cas 1: Pas assez d'arguments
+    sys.argv = ["extractAll.py", "image.png"]
+    
+    # Nettoyer les modules avant l'exécution
+    for module in modules_to_clean:
+        sys.modules.pop(module, None)
+    
+    with pytest.raises(SystemExit) as excinfo:
+        runpy.run_module("scripts.scanner.extractAll", run_name="__main__")
+    assert excinfo.value.code == 1
+    
+    # Cas 2: Trop d'arguments
+    sys.argv = ["extractAll.py", "img1.png", "R", "extra_arg"]
+    
+    # Nettoyer à nouveau les modules
+    for module in modules_to_clean:
+        sys.modules.pop(module, None)
+    
+    with pytest.raises(SystemExit) as excinfo:
+        runpy.run_module("scripts.scanner.extractAll", run_name="__main__")
+    assert excinfo.value.code == 1
+    
+    # Restaure les arguments originaux
+    sys.argv = original_argv
