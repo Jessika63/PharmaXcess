@@ -21,6 +21,8 @@ RUN mkdir -p /data
 # Copier le script d'initialisation
 COPY scripts/init_medicine.sh /init_medicine.sh
 
+RUN sed -i 's/\r$//' /init_medicine.sh  # Convert Windows line endings to Unix
+
 RUN chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]

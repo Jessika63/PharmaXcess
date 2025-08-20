@@ -8,7 +8,7 @@ from helpers.verify.verify_database_is_up import verify_database_is_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
-def handle_back(backend_folder, db_dump_date, db_container_name, back_app_container_name):
+def handle_back(backend_folder, db_dump_date, db_container_name, back_app_container_name, no_cache=False):
     """
     Handles the backend operations, including verification and container management:
     1. Verifies the environment file and database dump file.
@@ -17,10 +17,11 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     4. Imports the database dump file into the database container.
 
     Parameters:
-    - env_file_path (str): Path to the environment file (.env).
-    - required_env_keys (list): List of required keys that should be present in the environment file.
     - backend_folder (str): Path to the backend folder where the database dump file is located.
     - db_dump_date (str): Date string used to construct the database dump file name.
+    - db_container_name (str): Name of the database container.
+    - back_app_container_name (str): Name of the backend application container.
+    - no_cache (bool): If True, build without using cache (default: False)
     """
     colored_print("Starting backend operations...", "blue")
 
@@ -28,7 +29,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     change_directory(backend_folder)
 
     # Step 1: Start containers with docker-compose in detached mode
-    start_containers()
+    start_containers(no_cache=no_cache)
     verify_backend_is_up(back_app_container_name, nb_of_retry=10)
 
     # Step 2: Wait for the database container to be ready

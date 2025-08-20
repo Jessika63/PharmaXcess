@@ -6,7 +6,7 @@ from helpers.change_directory import change_directory
 from helpers.start_containers import start_containers
 from helpers.verify.verify_frontend_is_up import verify_frontend_is_up
 
-def handle_front(frontend_folder, front_app_container_name):
+def handle_front(frontend_folder, front_app_container_name, no_cache=False):
     """
     Handles frontend-related operations by:
     1. Installing dependencies using npm.
@@ -28,5 +28,5 @@ def handle_front(frontend_folder, front_app_container_name):
         colored_print("Failed to install dependencies with npm!", "red")
 
     # Step 2: Build and start containers with docker-compose
-    start_containers()
+    start_containers(no_cache=no_cache)
     verify_frontend_is_up(front_app_container_name, nb_of_retry=10)

@@ -32,6 +32,17 @@ def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
         except Exception as e:
             colored_print(f"Unexpected error while checking frontend container: {e}", "yellow")
 
+            # Get container logs for debugging
+            try:
+                logs = subprocess.check_output(
+                    ["docker", "logs", frontend_container_name],
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+                colored_print(f"Container logs:\n{logs}", "yellow")
+            except subprocess.CalledProcessError as log_error:
+                colored_print(f"Failed to get container logs: {log_error}", "yellow")
+
         if attempt != nb_of_retry:
             colored_print(
                 f"Attempt {attempt}/{nb_of_retry}: frontend not ready. Retrying in {waiting_time} minutes...",

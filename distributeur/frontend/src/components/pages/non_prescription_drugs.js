@@ -13,8 +13,16 @@ import { Elements } from '@stripe/react-stripe-js';
 import ElementsWrapper from '../ElementsWrapper';
 
 const categories = {
-    antiInflammatory: 'Anti-inflammatoire',
-    painRelief: 'Anti-douleur',
+    painKiller: "Anti-douleur",
+    antiAcid: "Anti-acide",
+    antiInflammatory: "Anti-inflammatoire",
+    hygiene: "Hygiène",
+    antiHistamine: "Antihistaminique",
+    homeopathy: "Homéopathie",
+    foodSupplement: "Complément alimentaire",
+    antiSeptic: "Antiseptique",
+    antiDiarrheal: "Antidiarrhéique",
+    test: "Test"
 };
 
 // Initialize Stripe PROMISE (not instance)
@@ -52,8 +60,14 @@ function NonPrescriptionDrugs() {
 
     const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
     const [focusedIndexSearch, setFocusedIndexSearch] = useState(0);
-    const searchMenuOptions = ["A-G", "H-P", "Q-Z", "antiInflammatory"
-        , "painRelief", "reset", "close"];
+    const searchMenuOptions = [
+        "A-G",
+        "H-P",
+        "Q-Z",
+        ...Object.values(categories),
+        "Reset",
+        "Close"
+    ];
     const searchMenuRefs = useRef([]);
 
     const [loading, setLoading] = useState(true);
@@ -228,11 +242,23 @@ function NonPrescriptionDrugs() {
                 } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                     setFocusedIndexSearch((prev) => (prev - 1 + searchMenuOptions.length) % searchMenuOptions.length);
                 } else if (event.key === "Enter") {
-                    applyFilter(searchMenuOptions[focusedIndexSearch]);
+                    const option = searchMenuOptions[focusedIndexSearch];
+
+                    if (option === 'Reset') {
+                        applyFilter(null);
+                    } else if (option === 'Close') {
+                        setIsSearchMenuOpen(false);
+                        setFocusedIndex(0);
+                    } else if (['A-G', 'H-P', 'Q-Z'].includes(option)) {
+                        applyFilter(option);
+                    } else if (Object.values(categories).includes(option)) {
+                        // Convertir la valeur en clé pour les catégories
+                        const categoryKey = getCategoryKey(option);
+                        applyFilter(categoryKey);
+                    }
                 }
                 return; // Don't handle other keys when filter menu is open
             }
-
             if (isModalOpen) {
                 return;
             } // Let modal handle its own keys
@@ -295,31 +321,59 @@ function NonPrescriptionDrugs() {
         };
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [focusedIndex, loading, filteredDrugs, isSearchMenuOpen, isModalOpen, focusedIndexSearch, searchMenuOptions]);
+    }, [focusedIndex, loading, filteredDrugs, isSearchMenuOpen, focusedIndexSearch, searchMenuOptions]);
 
-    const toggleFilterMenu = () => setIsSearchMenuOpen(!isSearchMenuOpen);
-    const applyFilter = (filter) => {
-        setSelectedFilter(filter);
-        let filteredItems;
-
-        if (filter === 'A-G') {
-            filteredItems = drugsItems.filter(drug => drug.label[0] >= 'A' && drug.label[0] <= 'G');
-        } else if (filter === 'H-P') {
-            filteredItems = drugsItems.filter(drug => drug.label[0] > 'H' && drug.label[0] <= 'P');
-        } else if (filter === 'Q-Z') {
-            filteredItems = drugsItems.filter(drug => drug.label[0] > 'Q');
-        } else if (categories[filter]) {
-            filteredItems = drugsItems.filter(drug => drug.category === filter);
-        } else if (filter === "close") {
-            filteredItems = filteredDrugs;
-        } else {
-            filteredItems = drugsItems;
+    const toggleFilterMenu = () => {
+        setIsSearchMenuOpen(prev => !prev);
+        // Reset focus index when opening menu
+        if (!isSearchMenuOpen) {
+            setFocusedIndexSearch(0);
         }
-
-        setIsSearchMenuOpen(false);
-        setFilteredDrugs(filteredItems);
-        setFocusedIndex(0);
     };
+
+const getCategoryKey = (value) => {
+    return Object.keys(categories).find(key => categories[key] === value);
+};
+
+const applyFilter = (filter) => {
+    console.log("Filter selected:", filter);
+    setSelectedFilter(filter);
+    let filteredItems;
+
+    if (filter === null) {
+        // Reset filter
+        filteredItems = drugsItems;
+    } else if (['A-G', 'H-P', 'Q-Z'].includes(filter)) {
+        // Alphabetical filters
+        filteredItems = drugsItems.filter(drug => {
+            const upperChar = drug.label[0].toUpperCase();
+            switch (filter) {
+                case 'A-G': return upperChar >= 'A' && upperChar <= 'G';
+                case 'H-P': return upperChar >= 'H' && upperChar <= 'P';
+                case 'Q-Z': return upperChar >= 'Q' && upperChar <= 'Z';
+                default: return true;
+            }
+        });
+    } else if (Object.keys(categories).includes(filter)) {
+        // Category filters (using key)
+        filteredItems = drugsItems.filter(drug => drug.category === filter);
+    } else if (Object.values(categories).includes(filter)) {
+        // Category filters (using value) - convert to key
+        const categoryKey = getCategoryKey(filter);
+        filteredItems = drugsItems.filter(drug => drug.category === categoryKey);
+    } else {
+        // Fallback to reset if filter not recognized
+        filteredItems = drugsItems;
+    }
+
+    console.log("Filtered items count:", filteredItems.length);
+    console.log("Filtered items:", filteredItems);
+
+    setIsSearchMenuOpen(false);
+    setFilteredDrugs(filteredItems);
+    setFocusedIndex(0);
+};
+
 
     const openModal = (drug) => {
         setSelectedDrug(drug);
@@ -460,42 +514,61 @@ function NonPrescriptionDrugs() {
 
             {isSearchMenuOpen && (
                 <div className={`absolute top-8 left-[80%] ${config.buttonColors.mainGradient} ${config.shadows.md} ${config.borderRadius.sm} ${config.padding.modal} w-64`}>
-                    <p className="font-bold flex items-center"><config.icons.filter className="mr-2" />Filtrer par :</p>
-                    <button onClick={() => applyFilter('A-G')}
-                    key={"A-G"}
-                    ref={el => searchMenuRefs.current[0] = el}
-                    tabIndex={focusedIndexSearch === 0 ? 0 : -1}
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 0 ? config.scaleEffects.focus : ""}`}>A - G</button>
-                    <button onClick={() => applyFilter('H-P')}
-                    key={"H-P"}
-                    ref={el => searchMenuRefs.current[1] = el}
-                    tabIndex={focusedIndexSearch === 1 ? 0 : -1}
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 1 ? config.scaleEffects.focus : ""}`}>H - P</button>
-                    <button onClick={() => applyFilter('Q-Z')}
-                    key={"Q-Z"}
-                    ref={el => searchMenuRefs.current[2] = el}
-                    tabIndex={focusedIndexSearch === 2 ? 0 : -1}
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 2 ? config.scaleEffects.focus : ""}`}>Q - Z</button>
-                    <button onClick={() => applyFilter('antiInflammatory')}
-                    key={"antiInflammatory"}
-                    ref={el => searchMenuRefs.current[3] = el}
-                    tabIndex={focusedIndexSearch === 3 ? 0 : -1}
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 3 ? config.scaleEffects.focus : ""}`}>Anti-inflammatoire</button>
-                    <button onClick={() => applyFilter('painRelief')}
-                    key={"painRelief"}
-                    ref={el => searchMenuRefs.current[4] = el}
-                    tabIndex={focusedIndexSearch === 4 ? 0 : -1}
-                    className={`block w-full text-left py-2 ${focusedIndexSearch === 4 ? config.scaleEffects.focus : ""}`}>Anti-douleur</button>
-                    <button onClick={() => applyFilter(null)}
-                    key={"reset"}
-                    ref={el => searchMenuRefs.current[5] = el}
-                    tabIndex={focusedIndexSearch === 5 ? 0 : -1}
-                    className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 5 ? config.scaleEffects.focus : ""}`}><config.icons.sync className="mr-2" />Réinitialiser</button>
-                    <button onClick={() => applyFilter(null)}
-                    key={"close"}
-                    ref={el => searchMenuRefs.current[6] = el}
-                    tabIndex={focusedIndexSearch === 6 ? 0 : -1}
-                    className={`block w-full text-left py-2 flex items-center ${focusedIndexSearch === 6 ? config.scaleEffects.focus : ""}`}><config.icons.times className="mr-2" />Fermer</button>
+                    <p className="font-bold flex items-center">
+                        <config.icons.filter className="mr-2" />
+                        Filtrer par :
+                    </p>
+
+                    {searchMenuOptions.map((option, index) => {
+                        // Déterminer le type d'option
+                        let onClickHandler;
+                        let displayText;
+                        let icon = null;
+
+                        if (["A-G", "H-P", "Q-Z"].includes(option)) {
+                            // Filtres alphabétiques
+                            onClickHandler = () => applyFilter(option);
+                            displayText = option.replace('-', ' - ');
+                        }
+                        else if (option === "Reset") {
+                            // Réinitialisation
+                            onClickHandler = () => applyFilter(null);
+                            displayText = "Réinitialiser";
+                            icon = <config.icons.sync className="mr-2" />;
+                        }
+                        else if (option === "Close") {
+                            // Fermeture - seulement fermer le menu, pas de filtre
+                            onClickHandler = () => {
+                                setIsSearchMenuOpen(false);
+                                setFocusedIndex(0);
+                            };
+                            displayText = "Fermer";
+                            icon = <config.icons.times className="mr-2" />;
+                        }
+                        else {
+                            // Catégories (valeur issue de categories)
+                            const categoryKey = Object.keys(categories).find(
+                                key => categories[key] === option
+                            );
+                            onClickHandler = () => applyFilter(categoryKey);
+                            displayText = option;
+                        }
+
+                        return (
+                            <button
+                                onClick={onClickHandler}
+                                key={option}
+                                ref={el => (searchMenuRefs.current[index] = el)}
+                                tabIndex={focusedIndexSearch === index ? 0 : -1}
+                                className={`block w-full text-left py-2 ${
+                                    focusedIndexSearch === index ? config.scaleEffects.focus : ""
+                                } ${icon ? "flex items-center" : ""}`}
+                            >
+                                {icon}
+                                {displayText}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 
