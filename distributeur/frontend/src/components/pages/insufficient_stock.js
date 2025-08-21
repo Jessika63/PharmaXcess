@@ -18,16 +18,15 @@ function InsufficientStock() {
   const [transportModalOpen, setTransportModalOpen] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
-  
+
   const transportModes = [
     { mode: 'foot', label: 'À pied', icon: <config.icons.walking /> },
     { mode: 'bicycle', label: 'Vélo', icon: <config.icons.bicycle /> },
     { mode: 'transit', label: 'Transports', icon: <config.icons.bus /> },
     { mode: 'car', label: 'Voiture', icon: <config.icons.car /> },
   ];
-  
-  const transportElements = transportModes.length + 1; // +1 pour le bouton Fermer
 
+  const transportElements = transportModes.length + 1; // +1 for the close button
   const modalContentRef = useRef(null);
   const cardRefs = useRef([]);
   const closeButtonRef = useRef(null);
@@ -66,7 +65,7 @@ function InsufficientStock() {
       if (lat && lon) {
         setUserCoords({ lat, lon });
         const cacheKey = `${lat},${lon}`;
-        
+
         if (pharmaciesCache.current[cacheKey]) {
           setPharmaciesList(pharmaciesCache.current[cacheKey]);
           return;
@@ -140,10 +139,10 @@ function InsufficientStock() {
   // Scroll to selected pharmacy
   useEffect(() => {
     if (pharmaciesModalOpen && cardRefs.current[selectedPharmacyIndex]) {
-      cardRefs.current[selectedPharmacyIndex].scrollIntoView({ 
-        behavior: 'smooth', 
-        inline: 'center', 
-        block: 'nearest' 
+      cardRefs.current[selectedPharmacyIndex].scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
       });
     }
   }, [selectedPharmacyIndex, pharmaciesModalOpen]);
@@ -151,10 +150,14 @@ function InsufficientStock() {
   // Focus management for pharmacies modal
   useEffect(() => {
     if (!pharmaciesModalOpen || transportModalOpen) return;
-    
+
     if (selectedPharmacyIndex === pharmaciesList.length && closeButtonRef.current) {
       closeButtonRef.current.focus();
-    } else if (selectedPharmacyIndex >= 0 && selectedPharmacyIndex < pharmaciesList.length && cardRefs.current[selectedPharmacyIndex]) {
+    } else if (
+      selectedPharmacyIndex >= 0 &&
+      selectedPharmacyIndex < pharmaciesList.length &&
+      cardRefs.current[selectedPharmacyIndex])
+    {
       cardRefs.current[selectedPharmacyIndex].focus();
     }
   }, [selectedPharmacyIndex, pharmaciesModalOpen, transportModalOpen, pharmaciesList.length]);
@@ -162,17 +165,17 @@ function InsufficientStock() {
     // Keyboard navigation for transport modal
   useEffect(() => {
     if (!transportModalOpen) return;
-    
+
     let justOpened = true;
     const timeout = setTimeout(() => {
       justOpened = false;
-    }, 100); // Ignore les Enter pendant 100ms après l'ouverture
+    }, 100); // Ignore input for 100ms after the opening
 
     const handleTransportKeyDown = (event) => {
       if (["ArrowLeft", "ArrowRight", "Enter", "Escape"].includes(event.key)) {
         event.preventDefault();
         event.stopPropagation();
-        
+
         if (event.key === "ArrowRight") {
           setFocusedTransportIndex((prev) => (prev + 1) % transportElements);
         } else if (event.key === "ArrowLeft") {
@@ -190,7 +193,7 @@ function InsufficientStock() {
         }
       }
     };
-    
+
     document.addEventListener("keydown", handleTransportKeyDown);
     return () => {
       clearTimeout(timeout);
@@ -200,11 +203,11 @@ function InsufficientStock() {
 
   useEffect(() => {
     if (transportModalOpen && transportCloseButtonRef.current) {
-      // Focus sur le premier élément (ou le bouton Fermer si c'est le dernier)
-      const elementToFocus = focusedTransportIndex === transportModes.length 
-        ? transportCloseButtonRef.current 
+      // Focus on the first element (or the Close Button if it is the last one)
+      const elementToFocus = focusedTransportIndex === transportModes.length
+        ? transportCloseButtonRef.current
         : document.querySelector(`button[tabindex="0"]`);
-      
+
       if (elementToFocus) {
         elementToFocus.focus();
       }
@@ -215,13 +218,13 @@ function InsufficientStock() {
   const handlePharmacySelect = (pharmacy) => {
     setSelectedPharmacy(pharmacy);
     setPharmaciesModalOpen(false);
-    
-    // Reset le focusedTransportIndex et ajouter un léger délai
+
+    // Reset focusedTransportIndex and add a small delay
     setFocusedTransportIndex(0);
-    
+
     setTimeout(() => {
       setTransportModalOpen(true);
-    }, 50); // Petit délai pour laisser le temps à l'événement Enter de se terminer
+    }, 50); // Small delay give time for the event to end
   };
 
   // Close modal handler
@@ -243,7 +246,7 @@ function InsufficientStock() {
     setPharmaciesModalOpen(true);
     setSelectedPharmacyIndex(0);
     setLoadingPharmacies(true);
-    
+
     let lat, lon;
     try {
       if (navigator.geolocation) {
@@ -265,7 +268,7 @@ function InsufficientStock() {
     if (lat && lon) {
       setUserCoords({ lat, lon });
       const cacheKey = `${lat},${lon}`;
-      
+
       if (pharmaciesCache.current[cacheKey]) {
         setPharmaciesList(pharmaciesCache.current[cacheKey]);
         setLoadingPharmacies(false);
@@ -280,8 +283,8 @@ function InsufficientStock() {
           pharmaciesCache.current[cacheKey] = data.pharmacies;
         }
       } catch (err) {
-        setError(err.message === 'Timeout' 
-          ? 'Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.' 
+        setError(err.message === 'Timeout'
+          ? 'Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.'
           : 'Network Error');
       }
     }
@@ -291,17 +294,17 @@ function InsufficientStock() {
   // Calculate distance between user and pharmacy
   const calculateDistance = (userCoords, pharmacy) => {
     if (!userCoords.lat || !userCoords.lon) return null;
-    
+
     const R = 6371; // Earth radius in km
     const toRad = (x) => x * Math.PI / 180;
     const dLat = toRad(pharmacy.latitude - Number(userCoords.lat));
     const dLon = toRad(pharmacy.longitude - Number(userCoords.lon));
-    
-    const a = Math.sin(dLat/2) ** 2 + 
-              Math.cos(toRad(Number(userCoords.lat))) * 
-              Math.cos(toRad(pharmacy.latitude)) * 
+
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(toRad(Number(userCoords.lat))) *
+              Math.cos(toRad(pharmacy.latitude)) *
               Math.sin(dLon/2) ** 2;
-              
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
   };
@@ -313,10 +316,15 @@ function InsufficientStock() {
         <button
           ref={goBackButtonRef}
           tabIndex={0}
-          className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${config.focusStates.outline} flex items-center ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+          className={
+            `${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.lg}
+            ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${config.focusStates.outline}
+            flex items-center ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
+          }
           onClick={() => navigate('/non-prescription-drugs')}
         >
-          <config.icons.arrowLeft className="mr-3" /> Retour
+          <config.icons.arrowLeft className="mr-3" />
+          Retour
         </button>
       </div>
 
@@ -330,7 +338,8 @@ function InsufficientStock() {
       {/* Information Message */}
       <div className={`w-3/4 bg-background_color ${config.padding.modal} ${config.borderRadius.md} text-center mb-4`}>
         <p className={`${config.fontSizes.md} ${config.textColors.primary}`}>
-          Le stock est insuffisant pour ce médicament.<br />
+          Le stock est insuffisant pour ce médicament.
+          <br />
           Que souhaitez-vous faire ?
         </p>
       </div>
@@ -342,7 +351,7 @@ function InsufficientStock() {
           ref={retryButtonRef}
           tabIndex={0}
           onClick={() => navigate('/preorder')}
-          className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+          className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
             ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} cursor-pointer
             ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
             ${config.scaleEffects.hover} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
@@ -356,7 +365,7 @@ function InsufficientStock() {
           ref={cancelButtonRef}
           tabIndex={0}
           onClick={openPharmaciesModal}
-          className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+          className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
             ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md}
             ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.outline}
             ${config.scaleEffects.hover} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
@@ -375,14 +384,14 @@ function InsufficientStock() {
             className="w-full max-w-6xl flex flex-col items-center justify-center p-8"
             onKeyDown={(e) => {
               if (transportModalOpen) return;
-              
+
               if (["ArrowRight", "ArrowLeft", "Tab"].includes(e.key)) {
                 e.stopPropagation();
                 e.preventDefault();
-                
+
                 const lastCardIndex = pharmaciesList.length - 1;
                 const closeButtonIndex = pharmaciesList.length;
-                
+
                 if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
                   if (selectedPharmacyIndex === lastCardIndex) {
                     setSelectedPharmacyIndex(closeButtonIndex);
@@ -412,7 +421,11 @@ function InsufficientStock() {
             {/* Close Button */}
             <button
               ref={closeButtonRef}
-              className={`absolute top-6 right-8 flex items-center gap-2 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md} ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default} ${config.focusStates.ring} ${selectedPharmacyIndex === pharmaciesList.length ? `${config.focusStates.ring} ${config.scaleEffects.focus} z-10` : ''}`}
+              className={
+                `absolute top-6 right-8 flex items-center gap-2 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md}
+                ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default} ${config.focusStates.ring}
+                ${selectedPharmacyIndex === pharmaciesList.length ? `${config.focusStates.ring} ${config.scaleEffects.focus} z-10` : ''}`
+              }
               tabIndex={selectedPharmacyIndex === pharmaciesList.length ? 0 : -1}
               style={{ zIndex: 10 }}
               onClick={(e) => {
@@ -428,21 +441,26 @@ function InsufficientStock() {
                 }
               }}
             >
-              <config.icons.times className="mr-2" /> Fermer
+              <config.icons.times className="mr-2" />
+              Fermer
             </button>
 
-            <div className={`${config.fontSizes.md} ${config.textColors.primary} font-bold mb-6`}>Pharmacies à proximité</div>
-            
+            <div className={`${config.fontSizes.md} ${config.textColors.primary} font-bold mb-6`}>
+              Pharmacies à proximité
+            </div>
+
             {loadingPharmacies ? (
               <div className="flex flex-col items-center justify-center w-full h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-pink-500 border-solid mb-4"></div>
-                <div className={`${config.fontSizes.sm} ${config.textColors.secondary}`}>Chargement...</div>
+                <div className={`${config.fontSizes.sm} ${config.textColors.secondary}`}>
+                  Chargement...
+                </div>
               </div>
             ) : (
               <div className="flex flex-row items-center gap-4 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200" style={{ minHeight: '220px' }}>
                 {/* Blank cards */}
                 <div className="w-32 flex-shrink-0" style={{ minHeight: '140px' }}></div>
-                
+
                 {pharmaciesList.map((ph, i) => {
                   const dist = calculateDistance(userCoords, ph);
                   return (
@@ -454,9 +472,12 @@ function InsufficientStock() {
                           setTimeout(() => el.focus(), 0);
                         }
                       }}
-                      className={`bg-gradient-to-r from-pink-100 to-rose-100 ${config.borderRadius.lg} ${config.shadows.md} p-3 w-64 flex flex-col items-start border-2 ${config.transitions.default} cursor-pointer 
-                        ${selectedPharmacyIndex === i ? 'border-pink-500 scale-105 ring-4 ring-pink-300 z-10' : 'border-pink-200'} 
-                        ${config.scaleEffects.hover} ${config.focusStates.ring} ${config.shadows.lg} ${config.focusStates.outline}`}
+                      className={
+                        `bg-gradient-to-r from-pink-100 to-rose-100 ${config.borderRadius.lg} ${config.shadows.md}
+                        p-3 w-64 flex flex-col items-start border-2 ${config.transitions.default} cursor-pointer
+                        ${selectedPharmacyIndex === i ? 'border-pink-500 scale-105 ring-4 ring-pink-300 z-10' : 'border-pink-200'}
+                        ${config.scaleEffects.hover} ${config.focusStates.ring} ${config.shadows.lg} ${config.focusStates.outline}`
+                      }
                       tabIndex={selectedPharmacyIndex === i ? 0 : -1}
                       style={{ minHeight: '140px', flex: '0 0 auto' }}
                       onClick={() => handlePharmacySelect(ph)}
@@ -477,7 +498,7 @@ function InsufficientStock() {
                     </div>
                   );
                 })}
-                
+
                 <div className="w-32 flex-shrink-0" style={{ minHeight: '140px' }}></div>
               </div>
             )}
@@ -489,11 +510,13 @@ function InsufficientStock() {
       {transportModalOpen && selectedPharmacy && (
         <ModalStandard onClose={() => setTransportModalOpen(false)}>
           <div className="flex flex-col items-center">
-            {/* Bouton Fermer - fait maintenant partie de la navigation */}
             <button
               ref={transportCloseButtonRef}
-              className={`absolute top-4 right-4 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md} ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default} ${config.focusStates.ring} 
-                ${focusedTransportIndex === transportModes.length ? 'ring-4 ring-pink-300 scale-110' : ''}`}
+              className={
+                `absolute top-4 right-4 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md}
+                ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default}
+                ${config.focusStates.ring} ${focusedTransportIndex === transportModes.length ? 'ring-4 ring-pink-300 scale-110' : ''}`
+              }
               tabIndex={focusedTransportIndex === transportModes.length ? 0 : -1}
               onClick={() => handleTransportSelect('close')}
               onKeyDown={(e) => {
@@ -503,16 +526,22 @@ function InsufficientStock() {
                 }
               }}
             >
-              <config.icons.times className="mr-2" /> Fermer
+              <config.icons.times className="mr-2" />
+              Fermer
             </button>
-            
-            <div className={`${config.fontSizes.md} font-bold mb-4`}>Choisissez le mode de transport</div>
+
+            <div className={`${config.fontSizes.md} font-bold mb-4`}>
+              Choisissez le mode de transport
+            </div>
             <div className="flex flex-row gap-6">
               {transportModes.map((t, idx) => (
                 <button
                   key={t.mode}
-                  className={`flex flex-col items-center ${config.padding.button} ${config.borderRadius.md} ${config.fontSizes.sm} font-semibold border-2 ${config.transitions.default} ${config.focusStates.outline} 
-                    ${focusedTransportIndex === idx ? 'border-pink-500 ring-4 ring-pink-300 scale-110 bg-white' : 'border-gray-300 bg-gray-100'}`}
+                  className={
+                    `flex flex-col items-center ${config.padding.button} ${config.borderRadius.md} ${config.fontSizes.sm}
+                    font-semibold border-2 ${config.transitions.default} ${config.focusStates.outline}
+                    ${focusedTransportIndex === idx ? 'border-pink-500 ring-4 ring-pink-300 scale-110 bg-white' : 'border-gray-300 bg-gray-100'}`
+                  }
                   tabIndex={focusedTransportIndex === idx ? 0 : -1}
                   onClick={() => handleTransportSelect(t.mode)}
                   onKeyDown={(e) => {
@@ -522,7 +551,9 @@ function InsufficientStock() {
                     }
                   }}
                 >
-                  <span className={`${config.fontSizes.xl} mb-2`}>{t.icon}</span>
+                  <span className={`${config.fontSizes.xl} mb-2`}>
+                    {t.icon}
+                  </span>
                   {t.label}
                 </button>
               ))}
@@ -534,10 +565,17 @@ function InsufficientStock() {
       {/* Inactivity Modal */}
       {showInactivityModal && (
         <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
-          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-          <button 
-            className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} 
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+            Inactivité détectée
+          </div>
+          <div className={`${config.fontSizes.sm} mb-4`}>
+            Vous allez être redirigé vers l'accueil dans 1 minute...
+          </div>
+          <button
+            className={
+              `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
+              ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
+            }
             onClick={() => setShowInactivityModal(false)}
           >
             Rester sur la page

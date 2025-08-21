@@ -148,7 +148,9 @@ function DirectionsMapPage() {
     return (
       <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
-        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement de l'itinéraire...</div>
+        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
+          Chargement de l'itinéraire...
+        </div>
       </div>
     );
   }
@@ -160,9 +162,18 @@ function DirectionsMapPage() {
     <>
       {showInactivityModal && (
         <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
-          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-          <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+            Inactivité détectée
+          </div>
+          <div className={`${config.fontSizes.sm} mb-4`}>
+            Vous allez être redirigé vers l'accueil dans 1 minute...
+          </div>
+          <button className={
+            `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
+            ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
+          } onClick={() => setShowInactivityModal(false)}>
+            Rester sur la page
+          </button>
         </ModalStandard>
       )}
       <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
@@ -170,71 +181,92 @@ function DirectionsMapPage() {
           <button
             ref={goBackRef}
             tabIndex={focusedIndex === 0 ? 0 : -1}
-            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            className={
+              `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+              ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+              ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
+            }
             onClick={() => { navigate('/insufficient-stock'); }}
           >
-            <config.icons.arrowLeft className="mr-2" /> Retour
+            <config.icons.arrowLeft className="mr-2" />
+            Retour
           </button>
           <button
             ref={medListRef}
             tabIndex={focusedIndex === 1 ? 0 : -1}
-            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            className={
+              `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+              ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+              ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
+            }
             onClick={() => { navigate('/non-prescription-drugs'); }}
           >
-            <config.icons.pills className="mr-2" /> Liste des médicaments
+            <config.icons.pills className="mr-2" />
+            Liste des médicaments
           </button>
           <button
             ref={homeRef}
             tabIndex={focusedIndex === 2 ? 0 : -1}
-            className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 2 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`}
+            className={
+              `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+              ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+              ${config.transitions.default} ${focusedIndex === 2 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
+            }
             onClick={e => { e.preventDefault(); navigate('/'); }}
           >
-            <config.icons.home className="mr-2" /> Accueil
+            <config.icons.home className="mr-2" />
+            Accueil
           </button>
         </div>
-                                                                                                                                               <div className="w-full h-full flex flex-col items-center">
-              <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>Itinéraire vers {pharmacy.name}</h2>
-              
-              {/* Zoom Instructions - Only show when map is focused */}
-              <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
-                {focusedIndex === 3 && (
-                  <span>Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer</span>
-                )}
-              </div>
-              
-              <div
-                ref={mapRef}
-                tabIndex={focusedIndex === 3 ? 0 : -1}
-                style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
-              >
-              <MapContainer 
-                center={center} 
-                zoom={13} 
-                style={{ width: '100%', height: '100%' }} 
-                keyboard={false}
-                ref={mapInstanceRef}
-              >
-               <TileLayer
-                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-               />
-               {userCoords && (
-                 <Marker position={userCoords}>
-                   <Popup>Votre position</Popup>
-                 </Marker>
-               )}
-               <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
-                 <Popup>{pharmacy.name}</Popup>
-               </Marker>
-               {routeCoords.length > 0 && (
-                 <Polyline positions={routeCoords} color="blue" />
-               )}
-             </MapContainer>
-           </div>
-         </div>
+        <div className="w-full h-full flex flex-col items-center">
+          <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>
+            Itinéraire vers {pharmacy.name}
+          </h2>
+          {/* Zoom Instructions - Only show when map is focused */}
+          <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
+            {focusedIndex === 3 && (
+              <span>
+                Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer
+              </span>
+            )}
+          </div>
+          <div
+            ref={mapRef}
+            tabIndex={focusedIndex === 3 ? 0 : -1}
+            style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
+          >
+            <MapContainer
+              center={center}
+              zoom={13}
+              style={{ width: '100%', height: '100%' }}
+              keyboard={false}
+              ref={mapInstanceRef}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {userCoords && (
+                <Marker position={userCoords}>
+                  <Popup>
+                    Votre position
+                  </Popup>
+                </Marker>
+              )}
+              <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
+                <Popup>
+                  {pharmacy.name}
+                </Popup>
+              </Marker>
+            {routeCoords.length > 0 && (
+              <Polyline positions={routeCoords} color="blue" />
+            )}
+            </MapContainer>
+          </div>
+        </div>
       </div>
     </>
   );
 }
 
-export default DirectionsMapPage; 
+export default DirectionsMapPage;
