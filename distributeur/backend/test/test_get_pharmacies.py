@@ -54,7 +54,7 @@ def test_get_pharmacies_success(client):
 @pytest.mark.order(1)  # LOX n°4
 def test_get_pharmacies_not_found(client):
     """
-    Test case: No pharmacies found. 
+    Test case: No pharmacies found.
 
     - Mocks an empty response from the Overpass API.
     - Sends a GET request to /get_pharmacies.

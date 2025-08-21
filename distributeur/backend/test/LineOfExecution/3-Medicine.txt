@@ -1,2 +1,2 @@
 
-available medicine
+available_medicine
