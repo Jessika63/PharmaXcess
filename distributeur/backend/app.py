@@ -8,7 +8,6 @@ from routes.find.find_doctor_by_rpps import find_doctor_by_rpps_bp
 from routes.add.add_doctor import add_doctor_bp
 from routes.add.add_list_doctors import add_list_doctors_bp
 from routes.remove_doctor import remove_doctor_bp
-from routes.take_picture import take_picture_bp
 from routes.read_text import extract_text_bp
 from routes.get_pharmacies import get_pharmacies_bp
 from routes.get_available_medicine import get_available_medicine_bp
@@ -36,7 +35,6 @@ app.register_blueprint(find_doctor_by_rpps_bp)
 app.register_blueprint(add_doctor_bp)
 app.register_blueprint(add_list_doctors_bp)
 app.register_blueprint(remove_doctor_bp)
-app.register_blueprint(take_picture_bp)
 app.register_blueprint(extract_text_bp)
 app.register_blueprint(get_pharmacies_bp)
 app.register_blueprint(get_available_medicine_bp)

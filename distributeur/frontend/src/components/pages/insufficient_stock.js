@@ -31,9 +31,7 @@ function InsufficientStock() {
     { mode: 'car', label: 'Voiture', icon: <config.icons.car /> },
   ], []);
 
-
-  const transportElements = transportModes.length + 1; // +1 pour le bouton Fermer
-
+  const transportElements = transportModes.length + 1; // +1 for the close button
   const modalContentRef = useRef(null);
   const cardRefs = useRef([]);
 
@@ -162,7 +160,11 @@ function InsufficientStock() {
 
     if (selectedPharmacyIndex === pharmaciesList.length && closeButtonRef.current) {
       closeButtonRef.current.focus();
-    } else if (selectedPharmacyIndex >= 0 && selectedPharmacyIndex < pharmaciesList.length && cardRefs.current[selectedPharmacyIndex]) {
+    } else if (
+      selectedPharmacyIndex >= 0 &&
+      selectedPharmacyIndex < pharmaciesList.length &&
+      cardRefs.current[selectedPharmacyIndex])
+    {
       cardRefs.current[selectedPharmacyIndex].focus();
     }
   }, [selectedPharmacyIndex, pharmaciesModalOpen, transportModalOpen, pharmaciesList.length]);
@@ -174,7 +176,7 @@ function InsufficientStock() {
     let justOpened = true;
     const timeout = setTimeout(() => {
       justOpened = false;
-    }, 100); // Ignore les Enter pendant 100ms après l'ouverture
+    }, 100); // Ignore input for 100ms after the opening
 
       const handleTransportKeyDown = (event) => {
         if (["ArrowLeft", "ArrowRight", "Enter", "Escape"].includes(event.key)) {

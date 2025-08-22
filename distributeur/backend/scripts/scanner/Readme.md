@@ -51,28 +51,6 @@ python3 extractAll.py <image_path> <P|R|V>
 
 ---
 
-## 3. Script: `take_picture.py`
-
-### 3.1 Description
-
-This script captures an image from the webcam and saves it locally. It can also use an image recognition model (`MobileNetV2`) to classify objects present in the image.
-
-### 3.2. Usage
-
-```sh
-python3 take_picture.py [file_name]
-```
-
-- `file_name` (optional): Name of the image file without extension. By default, `captured_image.png` will be used.
-
-### 3.3. Functionality
-
-1. Activates the webcam and captures an image.
-2. Saves the image in the `screenFolder` directory.
-3. (Disabled option) Can use an image classification model to identify objects in the photo.
-
----
-
 ## Notes
 
 - The scripts use libraries such as `requests`, `cv2` and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt`).
