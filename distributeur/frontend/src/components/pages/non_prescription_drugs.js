@@ -336,7 +336,6 @@ const getCategoryKey = (value) => {
 };
 
 const applyFilter = (filter) => {
-    console.log("Filter selected:", filter);
     setSelectedFilter(filter);
     let filteredItems;
 
@@ -366,9 +365,6 @@ const applyFilter = (filter) => {
         filteredItems = drugsItems;
     }
 
-    console.log("Filtered items count:", filteredItems.length);
-    console.log("Filtered items:", filteredItems);
-
     setIsSearchMenuOpen(false);
     setFilteredDrugs(filteredItems);
     setFocusedIndex(0);
@@ -386,7 +382,7 @@ const applyFilter = (filter) => {
     };
 
     async function handlePayment() {
-        // Vérification du stock
+        // Stock check
         const size = parseInt(selectedDrug?.size) || 0;
         if (size <= 0) {
             navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
@@ -394,8 +390,6 @@ const applyFilter = (filter) => {
         }
 
         try {
-            console.log(selectedDrug);
-
             const paymentResponse = await fetch(`${config.backendUrl}/create-payment-intent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -437,12 +431,12 @@ const applyFilter = (filter) => {
                 throw new Error(errorData.error || "Échec de la mise à jour du stock");
             }
 
-            // 1. Invalider le cache
+            // 1. Invalidate the cache
             availableMedicineCache = null;
             availableMedicineFetched = false;
 
-            // 2. Recharger les données
-            await fetchDrugs(true); // true pour forcer le rechargement
+            // 2. Reload the data
+            await fetchDrugs(true); // true to force reload
 
             return true;
         } catch (error) {
@@ -452,9 +446,9 @@ const applyFilter = (filter) => {
         }
     };
 
-    // Fonction de succès de paiement
+    // Payment success function
     const handlePaymentSuccess = async (paymentIntent) => {
-        // Mettre à jour le stock
+        // Update stock
         const stockUpdated = await handleStockUpdate(selectedDrug.id);
 
         if (stockUpdated) {
@@ -465,9 +459,9 @@ const applyFilter = (filter) => {
                 }
             });
         } else {
-            // Gérer l'erreur de mise à jour du stock
+            // Handle stock update error
             setPaymentModalOpen(false);
-            setIsModalOpen(true); // Rouvrir la modale du médicament
+            setIsModalOpen(true); // Reopen the medication modal
         }
     };
 
@@ -489,7 +483,9 @@ const applyFilter = (filter) => {
         return (
             <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
-                <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement des médicaments...</div>
+                <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
+                    Chargement des médicaments...
+                </div>
             </div>
         );
     }
@@ -520,24 +516,24 @@ const applyFilter = (filter) => {
                     </p>
 
                     {searchMenuOptions.map((option, index) => {
-                        // Déterminer le type d'option
+                        // Determine the option type
                         let onClickHandler;
                         let displayText;
                         let icon = null;
 
                         if (["A-G", "H-P", "Q-Z"].includes(option)) {
-                            // Filtres alphabétiques
+                            // Alphabetical filters
                             onClickHandler = () => applyFilter(option);
                             displayText = option.replace('-', ' - ');
                         }
                         else if (option === "Reset") {
-                            // Réinitialisation
+                            // Reset
                             onClickHandler = () => applyFilter(null);
                             displayText = "Réinitialiser";
                             icon = <config.icons.sync className="mr-2" />;
                         }
                         else if (option === "Close") {
-                            // Fermeture - seulement fermer le menu, pas de filtre
+                            // Close - only close the menu, no filter
                             onClickHandler = () => {
                                 setIsSearchMenuOpen(false);
                                 setFocusedIndex(0);
@@ -546,7 +542,7 @@ const applyFilter = (filter) => {
                             icon = <config.icons.times className="mr-2" />;
                         }
                         else {
-                            // Catégories (valeur issue de categories)
+                            // Categories (value from categories)
                             const categoryKey = Object.keys(categories).find(
                                 key => categories[key] === option
                             );
@@ -573,12 +569,20 @@ const applyFilter = (filter) => {
             )}
 
             <div className={`flex items-center ${config.buttonColors.buttonBackground} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md}`}>
-                <span className={`${config.fontSizes.md} ${config.textColors.black}`}>Voici la liste des médicaments disponibles à la vente :</span>
+                <span className={`${config.fontSizes.md} ${config.textColors.black}`}>
+                    Voici la liste des médicaments disponibles à la vente :
+                </span>
                 <button
                     ref={searchButtonRef}
                     onClick={toggleFilterMenu}
-                    className={`ml-4 flex items-center gap-2 ${config.textColors.primary} ${config.fontSizes.sm} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.sm} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex == -1 ? config.scaleEffects.focus : ""}`}>
-                    <config.icons.search className={config.fontSizes.md} /> Rechercher
+                    className={
+                        `ml-4 flex items-center gap-2 ${config.textColors.primary} ${config.fontSizes.sm}
+                        ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.sm}
+                        ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
+                        ${focusedIndex == -1 ? config.scaleEffects.focus : ""}`
+                    }>
+                    <config.icons.search className={config.fontSizes.md} />
+                    Rechercher
                 </button>
             </div>
 
@@ -656,8 +660,8 @@ const applyFilter = (filter) => {
                             <PaymentForm
                                 clientSecret={clientSecret}
                                 amount={selectedDrug.price * 100}
-                                drugId={selectedDrug.id} // Passer l'ID du médicament
-                                onSuccess={handlePaymentSuccess} // Utiliser la nouvelle fonction de succès
+                                drugId={selectedDrug.id} // Pass the drug ID
+                                onSuccess={handlePaymentSuccess}
                                 onError={(error) => {
                                     navigate('/payment-error', {
                                         state: {
@@ -673,7 +677,11 @@ const applyFilter = (filter) => {
             )}
 
             {stockUpdateError && (
-                <div className={`fixed top-4 right-4 ${config.fontSizes.md} ${config.textColors.white} ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md} z-50`}>
+                <div className={
+                    `fixed top-4 right-4 ${config.fontSizes.md} ${config.textColors.white}
+                    ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md}
+                    ${config.shadows.md} z-50`}
+                >
                     <div className="flex items-center">
                         <config.icons.timesCircle className="mr-2" />
                         {stockUpdateError}
@@ -689,9 +697,19 @@ const applyFilter = (filter) => {
 
             {showInactivityModal && (
                 <ModalStandard onClose={() => setShowInactivityModal(false)}>
-                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
-                    <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-                    <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+                        Inactivité détectée
+                    </div>
+                    <div className={`${config.fontSizes.sm} mb-4`}>
+                        Vous allez être redirigé vers l'accueil dans 1 minute...
+                    </div>
+                    <button className={
+                        `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                        ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                        ${config.transitions.default}`
+                    } onClick={() => setShowInactivityModal(false)}>
+                        Rester sur la page
+                    </button>
                 </ModalStandard>
             )}
         </div>

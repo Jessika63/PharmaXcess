@@ -13,7 +13,16 @@ MOCK_MEDICINE_DATA = {
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_intent_success(client, monkeypatch):
-    """Test successful creation of a payment intent with valid drug ID and Stripe configuration"""
+    """
+    Objectif: Test the /create-payment-intent endpoint for successful creation of a payment intent with valid drug ID and Stripe configuration.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("stripe.PaymentIntent.create", lambda **kwargs:
         type('obj', (object,), {'client_secret': 'secret_123', 'id': 'pi_123'}))
@@ -29,12 +38,30 @@ def test_create_payment_intent_success(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_stripe_error(client, monkeypatch):
-    """Test handling of Stripe card errors during payment intent creation"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when a Stripe card error occurs during payment intent creation.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("os.path.exists", lambda x: True)
     monkeypatch.setattr("builtins.open", mock_open(read_data=json.dumps(MOCK_MEDICINE_DATA)))
 
     def mock_stripe_error(**kwargs):
+        """
+        Objectif: Mock function that raises a Stripe CardError to simulate a card decline during testing.
+
+        Parameters:
+            - **kwargs: Arbitrary keyword arguments that are ignored in this mock function. (Any)
+
+        Return Value:
+            - None: This function does not return and always raises a stripe.error.CardError. (NoneType)
+        """
         raise stripe.error.CardError("Card declined", param=None, code="card_declined")
 
     monkeypatch.setattr("stripe.PaymentIntent.create", mock_stripe_error)
@@ -46,6 +73,16 @@ def test_create_payment_stripe_error(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_json_error(client, monkeypatch):
+    """
+    Objectif: Test the /create-payment-intent endpoint when the medicine data file contains invalid JSON syntax.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     """Test handling of invalid JSON data in medicine file"""
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("os.path.exists", lambda x: True)
@@ -58,7 +95,16 @@ def test_create_payment_json_error(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_invalid_drug_id(client, monkeypatch):
-    """Test handling of invalid drug ID parameter"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when an invalid drug ID is provided in the request.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("os.path.exists", lambda x: True)
     monkeypatch.setattr("builtins.open", mock_open(read_data=json.dumps(MOCK_MEDICINE_DATA)))
@@ -71,7 +117,16 @@ def test_create_payment_invalid_drug_id(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_missing_price(client, monkeypatch):
-    """Test handling of missing price field in medicine data"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the medicine data is missing the required price field.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     invalid_medicine = {
         "medicine": [{"id": 1, "label": "Aspirin", "size": 100, "category": "painkiller"}]
@@ -86,7 +141,16 @@ def test_create_payment_missing_price(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_negative_price(client, monkeypatch):
-    """Test handling of negative price values in medicine data"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the medicine data contains a negative price value.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     invalid_medicine = {
         "medicine": [{"id": 1, "label": "Aspirin", "price": -5.99, "size": 100, "category": "painkiller"}]
@@ -101,7 +165,16 @@ def test_create_payment_negative_price(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_missing_stripe_key(client, monkeypatch):
-    """Test handling of missing Stripe API key configuration"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the Stripe API key is missing or not configured.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     # Save current key to restore after test
     original_key = os.getenv("STRIPE_SECRET_KEY")
 
@@ -124,7 +197,16 @@ def test_create_payment_missing_stripe_key(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_missing_drug_id(client, monkeypatch):
-    """Test handling of missing drug_id parameter in request"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the drug_id parameter is missing from the request body.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("os.path.exists", lambda x: True)
     monkeypatch.setattr("builtins.open", mock_open(read_data=json.dumps(MOCK_MEDICINE_DATA)))
@@ -138,7 +220,16 @@ def test_create_payment_missing_drug_id(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_medicine_file_not_found(client, monkeypatch):
-    """Test handling of missing medicine data file"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the medicine data file is not found.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setattr("os.path.exists", lambda x: False)
     response = client.post('/create-payment-intent', json={'drug_id': 1})
     assert response.status_code == 404
@@ -147,7 +238,16 @@ def test_create_payment_medicine_file_not_found(client, monkeypatch):
 
 @pytest.mark.order(2)  # LOX n°5
 def test_create_payment_invalid_amount_format(client, monkeypatch):
-    """Test handling of invalid price format in medicine data"""
+    """
+    Objectif: Test the /create-payment-intent endpoint when the medicine data contains an invalid price format.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock environment variables and functions during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
 
     # Create data with invalid price

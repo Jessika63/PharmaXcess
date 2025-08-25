@@ -4,10 +4,13 @@ import pytest
 @pytest.mark.order(1)  # LOX n°4
 def test_missing_params(client):
     """
-    Test case: Missing origin or destination parameters.
+    Objectif: Test the /get_direction endpoint when required parameters (origin and destination) are missing.
 
-    - Sends a GET request to /get_direction without required parameters.
-    - Expects a 400 Bad Request response with an appropriate error message.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     resp = client.get('/get_direction')
     assert resp.status_code == 400
@@ -16,11 +19,14 @@ def test_missing_params(client):
 @pytest.mark.order(1)  # LOX n°4
 def test_successful_directions(client, mocker):
     """
-    Test case: Successful retrieval of directions.
+    Objectif: Test the /get_direction endpoint for successful retrieval of directions from the OpenRouteService API.
 
-    - Mocks the OpenRouteService API response with valid route data.
-    - Sends a GET request to /get_direction with valid parameters.
-    - Expects a 200 OK response with route information.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mocker: Pytest fixture used to mock functions and attributes during testing. (MockerFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Mock the requests.post function to return a successful response
     mock_response = mocker.Mock()
@@ -40,11 +46,14 @@ def test_successful_directions(client, mocker):
 @pytest.mark.order(1)  # LOX n°4
 def test_missing_api_key(client, mocker):
     """
-    Test case: Missing OpenRouteService API key.
+    Objectif: Test the /get_direction endpoint when the OpenRouteService API key is missing or not configured.
 
-    - Mocks the API key as None.
-    - Sends a GET request to /get_direction.
-    - Expects a 500 Internal Server Error response.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mocker: Pytest fixture used to mock functions and attributes during testing. (MockerFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mocker.patch('routes.get_directions.ORS_API_KEY', None)
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
@@ -54,10 +63,14 @@ def test_missing_api_key(client, mocker):
 @pytest.mark.order(1)  # LOX n°4
 def test_invalid_coordinates(client, mocker):
     """
-    Test case: Invalid coordinate format.
+    Objectif: Test the /get_direction endpoint when invalid coordinate format is provided in the request.
 
-    - Sends a GET request with invalid coordinate format.
-    - Expects a 400 Bad Request response with an error message.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mocker: Pytest fixture used to mock functions and attributes during testing. (MockerFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
     resp = client.get('/get_direction?origin=bad,coords&destination=3,4&mode=driving')
@@ -67,11 +80,14 @@ def test_invalid_coordinates(client, mocker):
 @pytest.mark.order(1)  # LOX n°4
 def test_ors_non_200_status(client, mocker):
     """
-    Test case: OpenRouteService API returns non-200 status.
+    Objectif: Test the /get_direction endpoint when the OpenRouteService API returns a non-200 status code.
 
-    - Mocks the OpenRouteService API to return a 403 Forbidden response.
-    - Sends a GET request to /get_direction.
-    - Expects the same status code and error message from the API.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mocker: Pytest fixture used to mock functions and attributes during testing. (MockerFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Mock the requests.post function to return an error response
     mock_response = mocker.Mock()
@@ -91,11 +107,14 @@ def test_ors_non_200_status(client, mocker):
 @pytest.mark.order(1)  # LOX n°4
 def test_directions_api_error(client, mocker):
     """
-    Test case: Exception during API call.
+    Objectif: Test the /get_direction endpoint when an exception occurs during the OpenRouteService API call.
 
-    - Mocks an exception during the requests.post call.
-    - Sends a GET request to /get_direction.
-    - Expects a 500 Internal Server Error response.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mocker: Pytest fixture used to mock functions and attributes during testing. (MockerFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mocker.patch('requests.post', side_effect=Exception('API error'))
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})

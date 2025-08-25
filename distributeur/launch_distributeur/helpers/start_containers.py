@@ -6,10 +6,13 @@ from troubleshooting_message_giver import troubleshooting_message
 
 def start_containers(no_cache=False):
     """
-    Starts Docker containers using docker-compose with the build option and error handling.
+    Objectif: Starts Docker containers using docker-compose with optional cache control during the build process.
 
-    :param no_cache: If True, build without using cache (default: False)
-    :param troubleshooting_message: The message to display if an error occurs.
+    Parameters:
+        - no_cache: If True, builds Docker images without using cache and starts containers. Defaults to False. (Boolean)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program on error. (NoneType)
     """
     try:
         if no_cache:

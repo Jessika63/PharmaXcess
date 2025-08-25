@@ -5,16 +5,26 @@ from colored_print import colored_print
 
 def change_directory(target_folder):
     """
-    Changes the current working directory to the specified folder or its parent folder if it exists.
+    Objectif: Changes the current working directory to the specified target folder or its parent directory, handling various error conditions gracefully.
 
-    Args:
-        target_folder (str): Path to the directory to change to.
+    Parameters:
+        - target_folder: Path of the directory to change to. (String)
 
-    Raises:
-        SystemExit: Exits the program with an appropriate error message if the operation fails.
+    Return Value:
+        - None: This function does not return a value but may terminate the program with an error message in case of failure.
     """
     def try_change(dir_path):
-        """Helper function to attempt directory change."""
+        """
+        Objectif: Attempts to change the current working directory to the specified path, handling various error conditions.
+
+        Parameters:
+            - dir_path: The target directory path to change to. (String)
+
+        Return Value:
+            - (success, error_info): A tuple where:
+                - success: Boolean indicating if the directory change was successful. (Boolean)
+                - error_info: None if successful, otherwise a tuple containing (error_message, color_code) for FileNotFoundError. (Tuple or NoneType)
+        """
         try:
             if (
                 (os.path.abspath(os.getcwd()) == os.path.abspath(dir_path))

@@ -8,11 +8,17 @@ take_picture_bp = Blueprint('take_picture', __name__)
 @take_picture_bp.route('/take_picture', methods=['POST'])
 def take_picture():
     """
-    Takes a picture using an external Python script.
+    Objectif: Captures an image by executing an external Python script.
+
+    Parameters:
+        - None
+
+    Query parameters:
+        - None
 
     Return Value:
-        - 200 OK with a success message and image path.
-        - 500 Internal Server Error if an error occurs during the script execution.
+        - 200: JSON response confirming successful image capture, including the path to the saved image. (Object)
+        - 500: JSON error response if the external script fails or encounters an error during execution. (Object)
     """
     try:
         # Call the Python script to take a picture

@@ -3,18 +3,17 @@ import json
 from unittest.mock import patch
 import requests
 
-# This test suite verifies the behavior of the /get_pharmacies route.
-
 @pytest.mark.order(1)  # LOX n°4
 def test_get_pharmacies_success(client):
     """
-    Test case: Successful retrieval of nearby pharmacies.
+    Objectif: Test the /get_pharmacies endpoint for successful retrieval of nearby pharmacies from the Overpass API.
 
-    - Mocks the Overpass API response with a list of pharmacies.
-    - Sends a GET request to /get_pharmacies with valid parameters.
-    - Asserts that the response contains the expected pharmacy data.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
-
     # Mocked response from the Overpass API
     mock_data = {
         "elements": [
@@ -54,13 +53,14 @@ def test_get_pharmacies_success(client):
 @pytest.mark.order(1)  # LOX n°4
 def test_get_pharmacies_not_found(client):
     """
-    Test case: No pharmacies found.
+    Objectif: Test the /get_pharmacies endpoint when no pharmacies are found in the specified area.
 
-    - Mocks an empty response from the Overpass API.
-    - Sends a GET request to /get_pharmacies.
-    - Expects a 404 status code with a relevant error message.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
-
     mock_data = {"elements": []}  # Simulate no results from Overpass API
 
     with patch("requests.get") as mock_get:
@@ -76,12 +76,14 @@ def test_get_pharmacies_not_found(client):
 @pytest.mark.order(1)  # LOX n°4
 def test_get_pharmacies_missing_params(client):
     """
-    Test case: Missing required parameters.
+    Objectif: Test the /get_pharmacies endpoint when required parameters (latitude and longitude) are missing.
 
-    - Sends a GET request without the longitude parameter.
-    - Expects a 400 Bad Request response with an appropriate error message.
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
-
     response = client.get("/get_pharmacies", query_string={"lat": 52.37})  # Missing 'lon' parameter
 
     assert response.status_code == 400  # Expect 400 Bad Request
@@ -92,11 +94,14 @@ def test_get_pharmacies_missing_params(client):
 @patch("requests.get", side_effect=requests.exceptions.RequestException("Overpass API Error"))
 def test_get_pharmacies_api_error(mock_get, client):
     """
-    Test case: Overpass API failure.
+    Objectif: Test the /get_pharmacies endpoint when the Overpass API fails with a RequestException.
 
-    - Mocks a RequestException when calling the Overpass API.
-    - Sends a GET request to /get_pharmacies.
-    - Expects a 500 Internal Server Error response.
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and raises an exception. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
 
     response = client.get("/get_pharmacies", query_string={"lat": 52.37, "lon": 4.89, "radius": 1000})
@@ -109,11 +114,14 @@ def test_get_pharmacies_api_error(mock_get, client):
 @patch("requests.get", side_effect=Exception("Unexpected error"))
 def test_get_pharmacies_unexpected_error(mock_get, client):
     """
-    Test case: Unexpected internal error.
+    Objectif: Test the /get_pharmacies endpoint when an unexpected internal error occurs during processing.
 
-    - Mocks an unexpected exception occurring during the request.
-    - Sends a GET request to /get_pharmacies.
-    - Expects a 500 Internal Server Error response with an error message.
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and raises an exception. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
 
     response = client.get("/get_pharmacies", query_string={"lat": 52.37, "lon": 4.89, "radius": 1000})
@@ -125,11 +133,14 @@ def test_get_pharmacies_unexpected_error(mock_get, client):
 @patch("requests.get", side_effect=requests.exceptions.Timeout)
 def test_get_pharmacies_timeout(mock_get, client):
     """
-    Test case: Overpass API timeout.
+    Objectif: Test the /get_pharmacies endpoint when the Overpass API request times out.
 
-    - Mocks a timeout exception when calling the Overpass API.
-    - Sends a GET request to /get_pharmacies.
-    - Expects a 500 Internal Server Error response with a timeout error message.
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and raises a Timeout exception. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
 
     response = client.get("/get_pharmacies", query_string={"lat": 52.37, "lon": 4.89, "radius": 1000})
@@ -141,8 +152,14 @@ def test_get_pharmacies_timeout(mock_get, client):
 @patch("requests.get")
 def test_get_pharmacies_max_radius_few_named_pharmacies(mock_get, client):
     """
-    Test case: Radius exceeds max and there are fewer than 10 named pharmacies.
-    Should return as many as found (not 404).
+    Objectif: Test the /get_pharmacies endpoint behavior when the search radius exceeds the maximum limit and fewer than 10 named pharmacies are found.
+
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and returns pharmacy data. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Simulate Overpass API returning only 2 named pharmacies, even after radius increases
     mock_data = {
@@ -168,8 +185,14 @@ def test_get_pharmacies_max_radius_few_named_pharmacies(mock_get, client):
 @patch("requests.get")
 def test_get_pharmacies_max_radius_no_named_pharmacies(mock_get, client):
     """
-    Test case: Radius exceeds max and there are no named pharmacies (all are 'Unknown').
-    Should return 404.
+    Objectif: Test the /get_pharmacies endpoint behavior when the search radius exceeds the maximum limit and no named pharmacies (all with 'Unknown' name) are found.
+
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and returns pharmacy data with no named pharmacies. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Simulate Overpass API returning only pharmacies with no name
     mock_data = {
@@ -191,8 +214,14 @@ def test_get_pharmacies_max_radius_no_named_pharmacies(mock_get, client):
 @patch("requests.get")
 def test_get_pharmacies_no_pharmacies_at_all(mock_get, client):
     """
-    Test case: Overpass API returns no pharmacies at all (empty elements list).
-    Should return 404.
+    Objectif: Test the /get_pharmacies endpoint behavior when the Overpass API returns no pharmacies at all (empty elements list).
+
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and returns empty pharmacy data. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mock_data = {"elements": []}
     mock_get.return_value.status_code = 200
@@ -208,7 +237,14 @@ def test_get_pharmacies_no_pharmacies_at_all(mock_get, client):
 @patch("requests.get")
 def test_get_pharmacies_more_than_10_named_pharmacies(mock_get, client):
     """
-    Test case: Overpass API returns more than 10 named pharmacies, should return only the 10 nearest.
+    Objectif: Test the /get_pharmacies endpoint behavior when the Overpass API returns more than 10 named pharmacies, verifying that only the 10 nearest pharmacies are returned.
+
+    Parameters:
+        - mock_get: Mock object that simulates the requests.get function and returns pharmacy data with more than 10 named pharmacies. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mock_data = {
         "elements": [

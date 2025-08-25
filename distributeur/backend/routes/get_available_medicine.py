@@ -8,12 +8,18 @@ get_available_medicine_bp = Blueprint('get_available_medicine', __name__)
 @get_available_medicine_bp.route('/get_available_medicine', methods=['GET'])
 def get_available_medicine():
     """
-    Retrieves the list of available medicines.
+    Objectif: Retrieve and return the list of available medicines from a JSON data file.
+
+    Parameters:
+        - None
+
+    Query parameters:
+        - None
 
     Return Value:
-        - 200 OK with the list of medicines.
-        - 404 Not Found if the file does not exist.
-        - 500 Internal Server Error if the file cannot be read or parsed.
+        - 200: JSON response containing the list of medicines and a success message (Object)
+        - 404: JSON error response if the medicine data file is not found (Object)
+        - 500: JSON error response if the file cannot be read, parsed, or an unknown error occurs (Object)
     """
     try:
         json_path = '/data/medicine_available.json'

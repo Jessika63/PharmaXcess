@@ -20,7 +20,7 @@ services:
     container_name: "distributeur-backend-app"  # Name of the container
 
   db:
-    image: mysql/mysql-server:5.7   # Use MySQL version 5.7 for the database service
+    image: mysql/mysql-server:5.7  # Use MySQL version 5.7 for the database service
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Set the MySQL root password (use the environment variable from .env)
       MYSQL_DATABASE: ${DB_NAME}  # Set the MySQL database name (use the environment variable from .env)

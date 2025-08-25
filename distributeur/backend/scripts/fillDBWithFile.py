@@ -6,7 +6,13 @@ API_URL = "http://localhost:5000/add_list_doctors"
 
 def send_json_to_api(json_file_path):
     """
-    Reads a JSON file and sends its content to the API.
+    Objectif: Reads a JSON file containing doctor data and sends its content to the API endpoint.
+
+    Parameters:
+        - json_file_path: The path to the JSON file to be processed. (String)
+
+    Return Value:
+        - None: This function does not return a value but prints success or error messages to the console.
     """
     try:
         # Read the JSON file

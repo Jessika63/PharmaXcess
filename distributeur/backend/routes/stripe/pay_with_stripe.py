@@ -5,24 +5,40 @@ import json
 
 create_payment_intent_bp = Blueprint('create_payment_intent', __name__)
 
-# pay_with_stripe.py - Correction
-
 @create_payment_intent_bp.route('/create-payment-intent', methods=['POST'])
 def create_payment_intent():
+    """
+    Objectif: Creates a Stripe Payment Intent for purchasing a specific medication.
+
+    Parameters:
+        - None
+
+    Query parameters:
+        - None
+
+    Request Body:
+        - drug_id: The unique identifier of the medication to be purchased. (String, Required)
+
+    Return Value:
+        - 200: JSON response containing the Payment Intent client secret for completing the payment. (Object)
+        - 400: JSON error response if the drug_id is missing or invalid. (Object)
+        - 404: JSON error response if the medication is not found. (Object)
+        - 500: JSON error response for Stripe API errors, missing API key, or other internal errors. (Object)
+    """
     try:
-        # 1. Vérifiez que la clé API est bien chargée
+        # 1. Check that the API key is loaded correctly
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
         if not stripe.api_key:
             return jsonify({"error": "Stripe API key not configured"}), 500
 
-        # 2. Validez les données d'entrée
+        # 2. Validate the input data
         data = request.get_json()
         if not data or 'drug_id' not in data not in data:
             return jsonify({"error": "Missing drug_id"}), 400
 
         drug_id = data['drug_id']
 
-        # 3. Chargez les médicaments
+        # 3. Load the medications
         json_path = '/data/medicine_available.json'
 
         if not os.path.exists(json_path):
@@ -36,14 +52,16 @@ def create_payment_intent():
         if not drug:
             return jsonify({"error": "Medicament non trouvé"}), 404
 
-        # 4. Vérifier le montant
+        # 4. Check the amount
         try:
             amount = float(drug['price'])
-            amount_cents = int(amount * 100)  # Convertir en centimes
+
+            # Convert to cents
+            amount_cents = int(amount * 100)
         except (TypeError, ValueError):
             return jsonify({"error": "Invalid amount format"}), 400
 
-        # 5. Créez le Payment Intent
+        # 5. Create the Payment Intent
         payment_intent = stripe.PaymentIntent.create(
             amount=amount_cents,
             currency='eur',

@@ -20,7 +20,7 @@ const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
     try {
       const cardElement = elements.getElement(CardElement);
 
-      // 1. Confirmer le paiement
+      // 1. Confirm payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
@@ -37,7 +37,7 @@ const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
         throw new Error(error.message || "Erreur de paiement");
       }
 
-      // 2. Appeler onSuccess avec paymentIntent
+      // 2. Call onSuccess with paymentIntent
       onSuccess(paymentIntent);
 
     } catch (err) {

@@ -15,13 +15,14 @@ COPY . /app
 
 EXPOSE 5000
 
-# Créer le répertoire pour les données
+# Create the directory for the data
 RUN mkdir -p /data
 
-# Copier le script d'initialisation
+# Copy the init script
 COPY scripts/init_medicine.sh /init_medicine.sh
 
-RUN sed -i 's/\r$//' /init_medicine.sh  # Convert Windows line endings to Unix
+# Convert Windows line endings to Unix
+RUN sed -i 's/\r$//' /init_medicine.sh
 
 RUN chmod +x /init_medicine.sh
 

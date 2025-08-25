@@ -6,10 +6,14 @@ from colored_print import colored_print
 
 def verify_backend_is_up(backend_container_name, nb_of_retry=10):
     """
-    Verifies that the backend app is ready.
+    Objectif: Verifies that the backend application within a Docker container is ready and responding by checking its health endpoint with retries.
 
-    :param backend_container_name: The name of the backend container to check.
-    :param nb_of_retry: The number of retries before failing (default is 10).
+    Parameters:
+        - backend_container_name: The name of the Docker container running the backend application. (String)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 10. (Integer)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program if the backend fails to start. (NoneType)
     """
     waiting_time = 60  # Time in seconds between retries
 

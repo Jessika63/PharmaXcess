@@ -74,18 +74,30 @@ const PaymentSuccess = () => {
             <button
               ref={medListRef}
               tabIndex={focusedIndex === 0 ? 0 : -1}
-              className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''} flex items-center justify-center`}
+              className={
+                `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+                ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring}
+                ${config.scaleEffects.focus}` : ''} flex items-center justify-center`
+              }
               onClick={() => navigate('/non-prescription-drugs')}
             >
-              <config.icons.pills className="mr-2" /> Liste des médicaments
+              <config.icons.pills className="mr-2" />
+              Liste des médicaments
             </button>
             <button
               ref={homeRef}
               tabIndex={focusedIndex === 1 ? 0 : -1}
-              className={`${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''} flex items-center justify-center`}
+              className={
+                `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+                ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring}
+                ${config.scaleEffects.focus}` : ''} flex items-center justify-center`
+              }
               onClick={() => navigate('/')}
             >
-              <config.icons.home className="mr-2" /> Accueil
+              <config.icons.home className="mr-2" />
+              Accueil
             </button>
           </div>
         </div>

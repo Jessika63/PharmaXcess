@@ -49,6 +49,19 @@ app.register_blueprint(update_stock_bp)
 
 @app.route('/')
 def home():
+    """
+    Objectif: Provide a health check status confirming the backend service is operational.
+
+    Parameters:
+        - None
+
+    Query parameters:
+        - None
+
+    Return Value:
+        - message: Confirmation that the backend is running. (String)
+        - HTTP Status: 200 OK (Integer)
+    """
     return jsonify({"message": "Backend is up and running!"}), 200
 
 if __name__ == '__main__':

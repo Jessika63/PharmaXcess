@@ -7,10 +7,14 @@ from colored_print import colored_print
 
 def verify_database_is_up(db_container_name, nb_of_retry=1):
     """
-    Verifies that the database container is up and ready.
+    Objectif: Verifies that the MySQL database container is up and responsive by executing a ping command within the container.
 
-    :param db_container_name: The name of the database container to check.
-    :param nb_of_retry: The number of retries before failing (default is 1).
+    Parameters:
+        - db_container_name: The name of the Docker container running the MySQL database. (String)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program if the database fails to start. (NoneType)
     """
     waiting_time = 10  # Time in seconds between retries
 

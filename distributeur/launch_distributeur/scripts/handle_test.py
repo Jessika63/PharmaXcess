@@ -7,9 +7,15 @@ from helpers.verify.verify_backend_is_up import verify_backend_is_up
 
 def handle_test(backend_folder, db_container_name, back_container_name):
     """
-    Handles testing operations by:
-    1. Ensuring the database container is up and ready.
-    2. Running the test suite using docker-compose.
+    Objectif: Handles testing operations by ensuring the database and backend are running, then executes the test suite using Docker Compose.
+
+    Parameters:
+        - backend_folder: Path to the backend directory containing the test configuration. (String)
+        - db_container_name: Name of the database Docker container. (String)
+        - back_container_name: Name of the backend application Docker container. (String)
+
+    Return Value:
+        - None: This function does not return a value but prints test execution status messages. (NoneType)
     """
     colored_print("Preparing to run tests...", "green")
 

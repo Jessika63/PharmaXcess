@@ -6,10 +6,14 @@ from colored_print import colored_print
 # Function to verify the .env file
 def verify_env_file(env_path, required_keys):
     """
-    Verify the presence of required keys in a .env file.
+    Objectif: Verifies the presence and correctness of required keys in a .env file, checking for missing or extra keys.
 
-    :param env_path: Path to the .env file
-    :param required_keys: List of required keys that should be present in the .env file
+    Parameters:
+        - env_path: Path to the .env file to verify. (String)
+        - required_keys: List of required environment variable keys that must be present in the .env file. (List of Strings)
+
+    Return Value:
+        - None: This function does not return a value but prints verification results and may terminate the program on critical errors. (NoneType)
     """
     colored_print("STEP 1: Verifying .env file", "blue")
 

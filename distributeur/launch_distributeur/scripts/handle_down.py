@@ -5,7 +5,13 @@ from helpers.colored_print import colored_print
 
 def handle_down():
     """
-    Stops and removes all Docker containers, images, and volumes.
+    Objectif: Stops and removes all Docker containers, images, and volumes to clean up the Docker environment.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This function does not return a value but prints status messages for each cleanup operation. (NoneType)
     """
 
     colored_print("Stopping all running Docker containers...", "blue")

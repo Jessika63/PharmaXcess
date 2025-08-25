@@ -26,25 +26,24 @@ function StartingPage() {
       const completeTest = () => {
         testsCompleted++;
         if (testsCompleted === totalTests) {
-          console.log('AdBlock detection result:', detected);
           resolve(detected);
         }
       };
 
-      // Test 1: Vérifier les API communes
+      // Test 1: Check common APIs
       if (window.adsbygoogle === undefined || window.adblock === true) {
         detected = true;
       }
       completeTest();
 
-      // Test 2: Vérifier les classes CSS
+      // Test 2: Check CSS classes
       const testElement = document.createElement('div');
       testElement.className = 'ad-unit ad-box ad-container adsbox';
       testElement.style.cssText = 'position:absolute;top:-1000px;left:-1000px;width:1px;height:1px;';
       document.body.appendChild(testElement);
 
       setTimeout(() => {
-        // Vérifier si l'élément a été modifié par un bloqueur
+        // Check if the element has been modified by a blocker
         const isHidden = testElement.offsetHeight === 0 ||
                         testElement.offsetWidth === 0 ||
                         testElement.style.display === 'none';
@@ -56,14 +55,14 @@ function StartingPage() {
         completeTest();
       }, 100);
 
-      // Test 3: Vérifier une requête vers un fichier publicitaire (URL corrigée)
+      // Test 3: Check a request to an advertising file
       fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
         method: 'HEAD',
         mode: 'no-cors',
         cache: 'no-store'
       })
       .then(response => {
-        // Même si la réponse est OK, vérifier si le contenu a été modifié
+        // Even if the response is OK, check if the content has been modified
         if (!response.ok) {
           detected = true;
         }
@@ -73,7 +72,7 @@ function StartingPage() {
       })
       .finally(completeTest);
 
-      // Timeout de sécurité
+      // Security timeout
       setTimeout(() => {
         if (testsCompleted < totalTests) {
           testsCompleted = totalTests;
@@ -92,7 +91,7 @@ function StartingPage() {
     try {
       setVpnStatus(prev => ({...prev, loading: true}));
 
-      // Détection frontale du bloqueur
+      // Frontal blocker detection
       let adBlockDetected = false;
       try {
         adBlockDetected = await detectAdBlock();
@@ -100,10 +99,10 @@ function StartingPage() {
         console.error('Erreur de détection AdBlock:', adBlockError);
       }
 
-      // Ajouter un timestamp pour éviter le cache navigateur
+      // Add a timestamp to avoid browser caching
       const timestamp = new Date().getTime();
 
-      // Envoyer l'info au backend avec paramètre de forceRefresh
+      // Send the info to the backend with forceRefresh parameter
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -122,12 +121,12 @@ function StartingPage() {
 
       clearTimeout(timeout);
 
-      // Si le serveur ne répond pas
+      // If the server does not respond
       if (!response) {
         throw new Error("Le serveur ne répond pas. Veuillez réessayer plus tard.");
       }
 
-      // Gestion des erreurs HTTP
+      // HTTP error handling
       if (!response.ok) {
         let errorMessage = `Erreur HTTP: ${response.status}`;
 
@@ -151,7 +150,7 @@ function StartingPage() {
 
       const data = await response.json();
 
-      // Vérification de la réponse
+      // Verifying the response
       if (!data) {
         throw new Error("Réponse serveur vide");
       }
@@ -235,8 +234,12 @@ function StartingPage() {
   if (vpnStatus.loading) {
     return (
       <div className="bg-background_color w-full min-h-screen flex flex-col justify-center items-center">
-        <div className="text-2xl">Vérification de sécurité en cours...</div>
-        <div className="mt-4 animate-pulse">Veuillez patienter</div>
+        <div className="text-2xl">
+          Vérification de sécurité en cours...
+        </div>
+        <div className="mt-4 animate-pulse">
+          Veuillez patienter
+        </div>
       </div>
     );
   }
@@ -301,7 +304,7 @@ function StartingPage() {
       {/* Container for centering both buttons */}
       <div className={`flex flex-col items-center ${config.spacing.xxl} w-full`}>
 
-        {/* Button 'Médicaments sous ordonnance' */}
+        {/* Button 'With Prescription Drugs' */}
         <Link to="/documents-checking" className="w-full flex justify-center pointer-events-none">
           <div
             ref={prescriptionButtonRef}
@@ -311,14 +314,14 @@ function StartingPage() {
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 0 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
-            <div className="flex items-center ml-[15%]"> {/* Modification ici */}
+            <div className="flex items-center ml-[15%]">
               <config.icons.prescription className="mr-6" />
               Médicaments avec ordonnance
             </div>
           </div>
         </Link>
 
-        {/* Button 'Médicaments sans ordonnance' */}
+        {/* Button 'Without Prescription Drugs' */}
         <Link to="/non-prescription-drugs" className="w-full flex justify-center pointer-events-none">
           <div
             ref={nonPrescriptionButtonRef}
@@ -328,7 +331,7 @@ function StartingPage() {
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 1 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
-            <div className="flex items-center ml-[15%]"> {/* Modification ici */}
+            <div className="flex items-center ml-[15%]">
               <config.icons.pills className="mr-6" />
               Médicaments sans ordonnance
             </div>

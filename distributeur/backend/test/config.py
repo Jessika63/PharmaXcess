@@ -72,6 +72,16 @@ rpps_not_added = "0000000000"
 
 # Function to perform global verification on doctor data
 def global_verification():
+    """
+    Objectif: Performs a series of verification checks on doctor data and compiles any errors found.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - errors: List of error messages if any verifications fail. (List of Strings)
+        - True: If all verifications pass successfully. (Boolean)
+    """
     # Running multiple verification functions
     results = [
         verification_not_add_in_add(),
@@ -92,6 +102,16 @@ def global_verification():
 
 # Function to verify that doctors from dict_doctor_not_to_add are not present in dict_doctor_to_add
 def verification_not_add_in_add():
+    """
+    Objectif: Verifies that doctors marked as not to be added are not present in the dictionary of doctors to be added.
+
+    Parameters:
+        - None (uses global dictionaries dict_doctor_not_to_add and dict_doctor_to_add)
+
+    Return Value:
+        - errors: List of error messages if any prohibited doctors are found in the add list. (List of Strings)
+        - True: If no conflicts are found between the two dictionaries. (Boolean)
+    """
     errors = []
     errors.extend(
         f"The doctor: {not_added_key} from dict_doctor_not_to_add is present in dict_doctor_to_add"
@@ -103,6 +123,16 @@ def verification_not_add_in_add():
 
 # Function to verify that each dictionary has unique doctor entries
 def verification_if_all_unique():
+    """
+    Objectif: Verifies that the global dictionaries dict_doctor_to_add and dict_doctor_not_to_add contain unique doctor entries by calling a verification function for each dictionary.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - errors: List of error messages if duplicates are found. (List of Strings)
+        - True: If all entries are unique. (Boolean)
+    """
     results = [
         verification_one_unique(dict_doctor_to_add, "dict_doctor_to_add"),
         verification_one_unique(dict_doctor_not_to_add, "dict_doctor_not_to_add"),
@@ -119,6 +149,17 @@ def verification_if_all_unique():
 
 # Function to verify that each doctor in a dictionary has unique entries based on their details
 def verification_one_unique(doctor_dict, doctor_dict_name):
+    """
+    Objectif: Verifies that each doctor in a dictionary has unique entries by comparing their details (name, first name, etc.) to detect duplicates.
+
+    Parameters:
+        - doctor_dict: Dictionary of doctors to check, where the key is an identifier and the value is a dictionary of details. (Dictionary)
+        - doctor_dict_name: Name of the dictionary for error messages. (String)
+
+    Return Value:
+        - errors: List of error messages if duplicates are detected. (List of Strings)
+        - True: If all entries are unique. (Boolean)
+    """
     seen_doctors_add = {}
     errors = []
     for key, doctor in doctor_dict.items():
@@ -131,6 +172,16 @@ def verification_one_unique(doctor_dict, doctor_dict_name):
 
 # Function to verify that all fields are present in the doctor dictionaries
 def verification_all_fields_not_in_doctors():
+    """
+    Objectif: Verifies that all required fields are present in the global doctor dictionaries by checking specific fields in each dictionary.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - errors: List of error messages if any required fields are missing in the dictionaries. (List of Strings)
+        - True: If all required fields are present in all dictionaries. (Boolean)
+    """
     results = [
         verification_one_field_not_in_doctor("rpps", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_rpps"),
         verification_one_field_not_in_doctor("region", dict_doctor_to_add, "dict_doctor_to_add", "missing_field_region"),
@@ -145,6 +196,19 @@ def verification_all_fields_not_in_doctors():
 
 # Function to check if a specific field is missing in a doctor's entry
 def verification_one_field_not_in_doctor(field, doctor_dict, doctor_dict_name, doctor_to_check):
+    """
+    Objectif: Checks if a specific field is missing in a given doctor's entry within a dictionary.
+
+    Parameters:
+        - field: The name of the field to check for presence. (String)
+        - doctor_dict: The dictionary containing doctor entries, where keys are doctor identifiers and values are dictionaries of doctor details. (Dictionary)
+        - doctor_dict_name: The name or identifier of the dictionary for error messaging purposes. (String)
+        - doctor_to_check: The key of the specific doctor entry to inspect within the dictionary. (String)
+
+    Return Value:
+        - String: A message indicating that the field is present, if found. (String)
+        - True: If the field is not present in the doctor's entry. (Boolean)
+    """
     if field in doctor_dict[doctor_to_check]:
         return f"The doctor '{doctor_to_check}' in {doctor_dict_name} contains the {field} key"
     return True
@@ -152,6 +216,16 @@ def verification_one_field_not_in_doctor(field, doctor_dict, doctor_dict_name, d
 
 # Function to verify that a specific RPPS value is not present in any doctor dictionary
 def verification_that_a_specific_rpps_not_in_doctors():
+    """
+    Objectif: Verifies that a specific RPPS value (rpps_not_added) is not present in any doctor entry within the dict_doctor_to_add dictionary.
+
+    Parameters:
+        - None (uses global variable rpps_not_added and dict_doctor_to_add)
+
+    Return Value:
+        - List: Contains an error message if the RPPS value is found in any doctor entry. (List of Strings)
+        - True: If the RPPS value is not found in any doctor entry. (Boolean)
+    """
     return next(
         (
             [

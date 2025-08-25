@@ -54,7 +54,9 @@ function DocumentsChecking() {
 
     useInactivityRedirect(() => setShowInactivityModal(true));
     useEffect(() => {
-        if (!showInactivityModal) return;
+        if (!showInactivityModal) {
+            return;
+        }
         const dismiss = () => setShowInactivityModal(false);
         const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
         events.forEach(event => window.addEventListener(event, dismiss));
@@ -83,19 +85,28 @@ function DocumentsChecking() {
 
     useEffect(() => {
     }, [focusedIndex]);
-    
 
     return (
         <>
             {showInactivityModal && (
                 <ModalStandard onClose={() => setShowInactivityModal(false)}>
-                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
-                    <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-                    <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+                        Inactivité détectée
+                    </div>
+                    <div className={`${config.fontSizes.sm} mb-4`}>
+                        Vous allez être redirigé vers l'accueil dans 1 minute...
+                    </div>
+                    <button className={`
+                        ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                        ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                        ${config.transitions.default}
+                    `} onClick={() => setShowInactivityModal(false)}>
+                        Rester sur la page
+                    </button>
                 </ModalStandard>
             )}
             <div className={`bg-background_color w-full h-screen flex flex-col items-center`}>
-    
+
                 {/* Header */}
                 <div className="w-4/5 h-40 flex justify-between items-center mb-6 mt-12">
                     {/* Go Back */}
@@ -103,23 +114,23 @@ function DocumentsChecking() {
                         to="/"
                         ref={(el) => (buttonsRef.current[-1] = el)}
                         tabIndex={0}
-                        className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} 
-                            ${config.padding.button} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} 
+                        className={`${config.fontSizes.md} ${config.buttonColors.mainGradient}
+                            ${config.padding.button} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
                             ${config.focusStates.outline} flex items-center ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
                     >
                         <config.icons.arrowLeft className="mr-3" />
                         Retour
                     </Link>
-    
+
                     {/* Logo */}
                     <div className="flex-grow flex justify-center pr-64">
                         <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-96 h-24" />
                     </div>
                 </div>
-    
+
                 {/* Main Content */}
                 <div className="w-2/3 h-2/3 flex flex-col items-center mt-2 space-y-16">
-                    <div className={`w-2/3 h-56 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                    <div className={`w-2/3 h-56 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                         ${config.buttonColors.textBackground} ${config.textColors.primary} ${config.transitions.slow}
                         ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}`}>
                         <p className={`${config.fontSizes.lg} text-center`}>
@@ -127,52 +138,58 @@ function DocumentsChecking() {
                             Ordonnance, Carte Vitale, Carte d'Identité
                         </p>
                     </div>
-    
+
                     <div className="w-full flex space-x-8">
                         {/* Button 'Ordonnance' */}
                         <div
                             ref={(el) => (buttonsRef.current[0] = el)}
                             tabIndex={0}
-                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
                                 ${config.focusStates.outline} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
                             onClick={handleOpenCamera}
                         >
                             <config.icons.filePrescription className="mr-4 text-4xl" />
-                            <p className={`${config.fontSizes.lg} text-center`}>Ordonnance</p>
+                            <p className={`${config.fontSizes.lg} text-center`}>
+                                Ordonnance
+                            </p>
                         </div>
-    
+
                         {/* Button 'Carte Vitale' */}
                         <div
                             ref={(el) => (buttonsRef.current[1] = el)}
                             tabIndex={0}
-                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
                                 ${config.focusStates.outline} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
                             onClick={handleOpenCamera}
                         >
                             <config.icons.addressCard className="mr-4 text-4xl" />
-                            <p className={`${config.fontSizes.lg} text-center`}>Carte Vitale</p>
+                            <p className={`${config.fontSizes.lg} text-center`}>
+                                Carte Vitale
+                            </p>
                         </div>
-    
+
                         {/* Button 'Carte d'Identité' */}
                         <div
                             ref={(el) => (buttonsRef.current[2] = el)}
                             tabIndex={0}
-                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md} 
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
                                 ${config.focusStates.outline} ${focusedIndex === 3 ? config.scaleEffects.focus : ''}`}
                             onClick={handleOpenCamera}
                         >
                             <config.icons.idCard className="mr-4 text-4xl" />
-                            <p className={`${config.fontSizes.lg} text-center`}>Carte d'Identité</p>
+                            <p className={`${config.fontSizes.lg} text-center`}>
+                                Carte d'Identité
+                            </p>
                         </div>
                     </div>
                 </div>
-    
+
                 {isModalOpen && showCamera && (
                     <ModalCamera onClose={closeModal}>
                         <CameraComponent onPhotoCapture={closeModal} onClose={closeModal} />
@@ -181,7 +198,7 @@ function DocumentsChecking() {
             </div>
         </>
     );
-    
+
 }
 
 export default DocumentsChecking;

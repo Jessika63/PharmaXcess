@@ -7,10 +7,14 @@ from colored_print import colored_print
 
 def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
     """
-    Verifies that the frontend app is ready.
+    Objectif: Verifies that the frontend application within a Docker container is ready and responding by checking its HTTP endpoint with retries.
 
-    :param frontend_container_name: The name of the frontend container to check.
-    :param nb_of_retry: The number of retries before failing (default is 1).
+    Parameters:
+        - frontend_container_name: The name of the Docker container running the frontend application. (String)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program if the frontend fails to start. (NoneType)
     """
     waiting_time = 1  # Time in minutes between retries
 

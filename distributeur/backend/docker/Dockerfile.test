@@ -19,10 +19,10 @@ COPY . /app
 
 COPY pytest.ini /app/
 
-# Créer le répertoire pour les données
+# Create the directory for the data
 RUN mkdir -p /data
 
-# Copier le script d'initialisation
+# Copy the init script
 COPY scripts/init_medicine.sh /init_medicine.sh
 
 RUN chmod +x /init_medicine.sh

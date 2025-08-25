@@ -25,10 +25,13 @@ function PaymentError() {
           Veuillez réessayer ou contacter le support.
         </p>
 
-        {/* Utilisation correcte du chemin */}
+        {/* Correct path usage */}
         <Link
           to={fromPath}
-          className={`${config.fontSizes.md} ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md} ${config.transitions.default} hover:opacity-90`}
+          className={
+            `${config.fontSizes.md} ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md}
+            ${config.shadows.md} ${config.transitions.default} hover:opacity-90`
+          }
         >
           Retour aux médicaments
         </Link>

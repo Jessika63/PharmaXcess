@@ -69,10 +69,10 @@ function DrugStoresAvailable() {
     const fetchPharmacies = async (lat, lon) => {
       const MIN_LOADING_TIME = 5000; // 5 seconds minimum
       const start = Date.now();
-      
+
       try {
         const radius = 10000;
-        
+
         // Use cached data if available
         const cachedData = getPharmaciesCache();
         if (cachedData) {
@@ -81,7 +81,7 @@ function DrugStoresAvailable() {
             label: pharmacy.name || `Pharmacy ${idx + 1}`
           }));
           setDrugShops(formatted);
-          
+
           // Ensure minimum loading time
           const elapsed = Date.now() - start;
           const remaining = MIN_LOADING_TIME - elapsed;
@@ -96,14 +96,14 @@ function DrugStoresAvailable() {
         // Fetch from backend with 10-second timeout
         const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}&radius=${radius}`, undefined, 10000);
         const data = await response.json();
-  
+
         if (response.ok) {
           const formatted = data.pharmacies.map((pharmacy, idx) => ({
             id: idx + 1,
             label: pharmacy.name || `Pharmacy ${idx + 1}`
           }));
           setDrugShops(formatted);
-          
+
           // Cache the data for future use
           setPharmaciesCache(data.pharmacies);
         } else {
@@ -112,18 +112,18 @@ function DrugStoresAvailable() {
       } catch (err) {
         if (err.message === 'Timeout') {
           // Navigate to error page with "erreur réseau" message
-          navigate('/error', { 
-            state: { 
+          navigate('/error', {
+            state: {
               message: 'Erreur réseau',
-              from: location.pathname 
-            } 
+              from: location.pathname
+            }
           });
           return;
         } else {
           setError('Network Error');
         }
       }
-      
+
       // Ensure minimum loading time
       const elapsed = Date.now() - start;
       const remaining = MIN_LOADING_TIME - elapsed;
@@ -133,7 +133,7 @@ function DrugStoresAvailable() {
         setLoading(false);
       }
     };
-  
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -151,16 +151,18 @@ function DrugStoresAvailable() {
       setLoading(false);
     }
   }, [navigate, location.pathname]);
-  
+
   useEffect(() => {
     const btn = buttonsRef.current[focusedIndex];
     if (btn) {
       btn.focus();
     }
-  }, [focusedIndex]);  
-  
+  }, [focusedIndex]);
+
   useEffect(() => {
-    if (!showInactivityModal) return;
+    if (!showInactivityModal) {
+      return;
+    }
     const dismiss = () => setShowInactivityModal(false);
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     events.forEach(event => window.addEventListener(event, dismiss));
@@ -175,7 +177,9 @@ function DrugStoresAvailable() {
     return (
       <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
-        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement des pharmacies...</div>
+        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
+          Chargement des pharmacies...
+        </div>
       </div>
     );
   }
@@ -184,9 +188,18 @@ function DrugStoresAvailable() {
     <>
       {showInactivityModal && (
         <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className={`${config.fontSizes.lg} font-bold mb-4`}>Inactivité détectée</div>
-          <div className={`${config.fontSizes.sm} mb-4`}>Vous allez être redirigé vers l'accueil dans 1 minute...</div>
-          <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`} onClick={() => setShowInactivityModal(false)}>Rester sur la page</button>
+          <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+            Inactivité détectée
+          </div>
+          <div className={`${config.fontSizes.sm} mb-4`}>
+            Vous allez être redirigé vers l'accueil dans 1 minute...
+          </div>
+          <button className={`
+            ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
+          `} onClick={() => setShowInactivityModal(false)}>
+            Rester sur la page
+          </button>
         </ModalStandard>
       )}
       <div
@@ -199,7 +212,11 @@ function DrugStoresAvailable() {
             <button
               ref={(el) => (buttonsRef.current[0] = el)}
               tabIndex={0}
-              className={`flex items-center ${config.padding.button} ${config.fontSizes.md} ${config.textColors.primary} ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} cursor-pointer ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+              className={`
+                flex items-center ${config.padding.button} ${config.fontSizes.md} ${config.textColors.primary}
+                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover}
+                ${config.transitions.default} cursor-pointer ${focusedIndex === 0 ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`
+              }
               onClick={() => navigate('/' + (location.state?.from || ''))}
             >
               <config.icons.arrowLeft className="mr-3" />
@@ -214,7 +231,7 @@ function DrugStoresAvailable() {
 
         {/* Main message */}
         <div
-          className={`w-2/3 h-32 flex items-center justify-center text-center ${config.textColors.primary} ${config.fontSizes.lg} 
+          className={`w-2/3 h-32 flex items-center justify-center text-center ${config.textColors.primary} ${config.fontSizes.lg}
           ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} mb-12`}
         >
           Voici la liste des pharmacies disposant du médicament souhaité :
@@ -239,7 +256,7 @@ function DrugStoresAvailable() {
                 onClick={(event) => {
                   event.preventDefault();
                   alert(`Vous avez sélectionné : ${item.label}`);
-                }} 
+                }}
               >
                 <config.icons.mapMarker className="mr-4" />
                 {item.label}

@@ -9,15 +9,21 @@ read_text_bp = Blueprint('read_text', __name__)
 @read_text_bp.route('/read_text', methods=['POST'])
 def read_text():
     """
-    Reads text from an image using an external Python script.
+    Objectif: Reads text from an image using an external Python script.
 
-    Request JSON Body:
-        - image_path (str, optional): Path to the image. If not provided, uses a default path.
+    Parameters:
+        - None
 
-    Returns:
-        - 200 OK with the extracted text.
-        - 400 Bad Request if the image path is invalid.
-        - 500 Internal Server Error if an error occurs during execution.
+    Query parameters:
+        - None
+
+    Request Body:
+        - image_path: Path to the image file. If not provided, a default path is used. (String, Optional)
+
+    Return Value:
+        - 200: JSON response containing the extracted text and a success message. (Object)
+        - 400: JSON error response if the image path is invalid. (Object)
+        - 500: JSON error response if an error occurs during execution or the external script fails. (Object)
     """
 
     try:
