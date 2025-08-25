@@ -23,7 +23,7 @@ def handle_test(backend_folder, db_container_name, back_container_name):
     # Step 2: Run tests using docker-compose
     try:
         colored_print("Running tests using docker-compose...", "blue")
-        subprocess.run(["docker-compose", "run", "--rm", "test"], check=True)
+        subprocess.run(["docker-compose", "--profile", "test", "run", "--rm", "test"], check=True)
         colored_print("Tests completed successfully!", "green")
     except FileNotFoundError:
         colored_print(

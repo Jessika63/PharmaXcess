@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import polyline from '@mapbox/polyline';
@@ -23,11 +23,13 @@ L.Marker.prototype.options.icon = DefaultIcon;
 function DirectionsMapPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const pharmacy = {
+
+  const pharmacy = useMemo(() => ({
     latitude: parseFloat(searchParams.get('lat')),
     longitude: parseFloat(searchParams.get('lon')),
     name: searchParams.get('name')
-  };
+  }), [searchParams]);
+
   const transport = searchParams.get('transport');
   const [routeCoords, setRouteCoords] = useState([]);
   const [userCoords, setUserCoords] = useState(null);

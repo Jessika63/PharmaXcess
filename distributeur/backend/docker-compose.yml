@@ -1,6 +1,6 @@
-
 services:
   app:
+    image: phx-backend-app
     build:
       context: .  # Use the current directory for building the Docker image
       dockerfile: docker/Dockerfile.app  # Specify the Dockerfile to use for the app

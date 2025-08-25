@@ -1,2 +1,0 @@
-# this file is here for package that have vulnerabilities and don't have fix available
-paddlepaddle==2.6.0
