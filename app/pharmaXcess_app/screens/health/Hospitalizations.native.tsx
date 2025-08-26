@@ -317,7 +317,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                     {currentProfile.name}
                                 </Text>
                             </View>
-                            <Ionicons name="medical-outline" size={32} color={colors.primary} />
+                            <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                         </View>
                     </View>
                 )}
