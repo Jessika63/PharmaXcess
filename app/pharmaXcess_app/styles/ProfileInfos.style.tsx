@@ -37,6 +37,16 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.infoTitle,
         marginBottom: 10,
     },
+    title: {
+        fontSize: 18 * fontScale,
+        fontWeight: 'bold',
+        color: colors.infoTitle,
+    },
+    content: {
+        fontSize: 16 * fontScale,
+        color: colors.infoText,
+        marginTop: 4,
+    },
     gradient: {
         paddingVertical: 15,
         borderRadius: 10,

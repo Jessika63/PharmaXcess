@@ -50,6 +50,17 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         },
     ]);
 
+        const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
+
     const [expanded, setExpanded] = useState<number | null>(null);
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -180,15 +191,28 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
     // Simple disease management by profile 
     const handleAddSimpleDisease = async (): Promise<void> => {
-        if (!newDiseaseSimple.trim()) {
+        // For other profiles, we only require the name field
+        if (!newDisease.name.trim()) {
             Alert.alert('Erreur', 'Veuillez entrer le nom de la maladie.');
             return;
         }
 
-        const success = await addDisease(newDiseaseSimple.trim());
+        const success = await addDisease(newDisease.name.trim());
         if (success) {
+            // Reset all fields
             setNewDiseaseSimple('');
+            setNewDisease({
+                name: '',
+                description: '',
+                symptoms: '',
+                beginDate: '',
+                medications: '',
+                examens: '',
+            });
             setModalVisible(false);
+            setSelectedYear(2024);
+            setSelectedMonth(1);
+            setSelectedDay(1);
             Alert.alert('Succès', 'Maladie ajoutée avec succès.');
         } else {
             Alert.alert('Erreur', 'Cette maladie est déjà enregistrée ou une erreur est survenue.');
@@ -244,24 +268,21 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         <View style={[styles.container, { flex: 1 }]}> 
             <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
                 {/* Header for current profile */}
-                {currentProfile && (
-                    <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <View>
-                                <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold', color: colors.primary }]}>
-                                    {currentProfile.name}
-                                </Text>
-                                <Text style={[styles.cardText, { fontSize: 14, opacity: 0.7 }]}>
-                                    {getRelatioinhipText(currentProfile.relationship)}
-                                </Text>
-                            </View>
-                            <TouchableOpacity onPress={() => navigation.navigate('ProfileSelection')}>
-                                <Ionicons name="swap-horizontal" size={24} color={colors.primary} />
-                            </TouchableOpacity>
+            {currentProfile && (
+                <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                            <Text style={[styles.title, { color: colors.primary, fontWeight: 'bold' }]}>
+                                {getRelationshipText(currentProfile.relationship)}
+                            </Text>
+                            <Text style={[styles.content, { color: colors.primary, opacity: 0.8 }]}>
+                                {currentProfile.name}
+                            </Text>
                         </View>
+                        <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                     </View>
-                )}
-
+                </View>
+            )}
                 {/* Conditional display based on profile */} 
                 {isMainProfile ? ( 
                     // For the main profile: predefined complex cards
@@ -363,241 +384,190 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 </View>
             </ScrollView>
 
-            {/* Conditional modal for adding a new disease */} 
+            {/* Modal for adding a new disease - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-                {isMainProfile ? (
-                    // Complex modal for the main profile
-                    <ScrollView
-                        contentContainerStyle={{
-                            flexGrow: 1,
-                            backgroundColor: colors.background,
-                            padding: 20
-                        }}
-                        keyboardShouldPersistTaps="handled"
-                    > 
-                        <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                            Ajouter une maladie 
-                        </Text>
-
-                        <TextInput 
-                            placeholder="Nom" 
-                            value={newDisease.name}
-                            onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
-                            placeholderTextColor={colors.text + '80'} 
-                        />
-
-                        <TextInput 
-                            placeholder="Description" 
-                            value={newDisease.description}
-                            onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'} 
-                        />
-                        
-                        <TextInput 
-                            placeholder="Symptômes"
-                            value={newDisease.symptoms}
-                            onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'} 
-                        />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                            <View style={{ flex: 1, marginRight: 5 }}> 
-                                <CustomPicker 
-                                    label="Jour" 
-                                    selectedValue={selectedDay} 
-                                    onValueChange={(value) => setSelectedDay(Number(value))}
-                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                    placeholder="01"
-                                />
-                            </View>
-                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                                <CustomPicker 
-                                    label="Mois" 
-                                    selectedValue={selectedMonth} 
-                                    onValueChange={(value) => setSelectedMonth(Number(value))}
-                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                    placeholder="01"
-                                />
-                            </View>
-                            <View style={{ flex: 1, marginLeft: 5 }}> 
-                                <CustomPicker 
-                                    label="Année" 
-                                    selectedValue={selectedYear} 
-                                    onValueChange={(value) => setSelectedYear(Number(value))}
-                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
-                                    placeholder="2024"
-                                />
-                            </View>
-                        </View>
-
-                        <TextInput 
-                            placeholder="Traitements"
-                            value={newDisease.medications}
-                            onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'} 
-                        />
-
-                        <TextInput 
-                            placeholder="Examens" 
-                            value={newDisease.examens}
-                            onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 30,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'} 
-                        />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-                            <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.secondary + '30',
-                                    marginRight: 10,
-                                    alignItems: 'center'
-                                }}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.primary,
-                                    marginLeft: 10, 
-                                    alignItems: 'center'
-                                }}
-                                onPress={handleAddPress}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
-                ) : ( 
-                    // Simple modal for other profiles 
-                    <View style={{ 
-                        flex: 1, 
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
+                <ScrollView
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        backgroundColor: colors.background,
                         padding: 20
-                    }}> 
-                        <View style={{ 
-                            backgroundColor: colors.background,
-                            borderRadius: 15,
-                            padding: 20,
-                            width: '100%',
-                            maxWidth: 400
-                        }}> 
-                            <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                                Ajouter une maladie 
-                            </Text>
+                    }}
+                    keyboardShouldPersistTaps="handled"
+                > 
+                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
+                        Ajouter une maladie 
+                    </Text>
 
-                            <Text style={[styles.cardText, { marginBottom: 10 }]}> Nom de la maladie</Text>
-                            <TextInput 
-                                style={{ 
-                                    borderWidth: 1,
-                                    borderColor: colors.primary,
-                                    borderRadius: 10,
-                                    padding: 15,
-                                    marginBottom: 20,
-                                    fontSize: 16,
-                                    color: colors.text
-                                }}
-                                value={newDiseaseSimple}
-                                onChangeText={setNewDiseaseSimple}
-                                placeholder="Ex: Diabète, Hypertension, Asthme..."
-                                placeholderTextColor={colors.text + '80'}
+                    <TextInput 
+                        placeholder="Nom" 
+                        value={isMainProfile ? newDisease.name : newDiseaseSimple}
+                        onChangeText={(text) => {
+                            if (isMainProfile) {
+                                setNewDisease({ ...newDisease, name: text })
+                            } else {
+                                setNewDiseaseSimple(text);
+                                // For other profiles, also update newDisease.name for consistency
+                                setNewDisease({ ...newDisease, name: text });
+                            }
+                        }}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text
+                        }}
+                        placeholderTextColor={colors.text + '80'} 
+                    />
+
+                    <TextInput 
+                        placeholder="Description" 
+                        value={newDisease.description}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text,
+                            minHeight: 80
+                        }}
+                        multiline
+                        placeholderTextColor={colors.text + '80'} 
+                    />
+                    
+                    <TextInput 
+                        placeholder="Symptômes"
+                        value={newDisease.symptoms}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text,
+                            minHeight: 80
+                        }}
+                        multiline
+                        placeholderTextColor={colors.text + '80'} 
+                    />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                        <View style={{ flex: 1, marginRight: 5 }}> 
+                            <CustomPicker 
+                                label="Jour" 
+                                selectedValue={selectedDay} 
+                                onValueChange={(value) => setSelectedDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
                             />
-
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-                                <TouchableOpacity 
-                                    style={{ 
-                                        flex: 1, 
-                                        padding: 15, 
-                                        borderRadius: 10, 
-                                        backgroundColor: colors.secondary + '30',
-                                        marginRight: 10,
-                                        alignItems: 'center'
-                                    }}
-                                    onPress={() => { 
-                                        setModalVisible(false); 
-                                        setNewDiseaseSimple('');
-                                    }}
-                                > 
-                                    <Text style={{ color: colors.text, fontWeight: 'bold' }}> Annuler</Text> 
-                                </TouchableOpacity>
-
-                                <TouchableOpacity 
-                                    style={{ 
-                                        flex: 1, 
-                                        padding: 15, 
-                                        borderRadius: 10, 
-                                        backgroundColor: colors.primary,
-                                        marginLeft: 10,
-                                        alignItems: 'center'
-                                    }}
-                                    onPress={handleAddSimpleDisease}
-                                >
-                                    <Text style={{ color: '#fff', fontWeight: 'bold' }}> Ajouter</Text> 
-                                </TouchableOpacity>
-                            </View>
+                        </View>
+                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                            <CustomPicker 
+                                label="Mois" 
+                                selectedValue={selectedMonth} 
+                                onValueChange={(value) => setSelectedMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 5 }}> 
+                            <CustomPicker 
+                                label="Année" 
+                                selectedValue={selectedYear} 
+                                onValueChange={(value) => setSelectedYear(Number(value))}
+                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                placeholder="2024"
+                            />
                         </View>
                     </View>
-                )}
+
+                    <TextInput 
+                        placeholder="Traitements"
+                        value={newDisease.medications}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text,
+                            minHeight: 80
+                        }}
+                        multiline
+                        placeholderTextColor={colors.text + '80'} 
+                    />
+
+                    <TextInput 
+                        placeholder="Examens" 
+                        value={newDisease.examens}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 30,
+                            fontSize: 16,
+                            color: colors.text,
+                            minHeight: 80
+                        }}
+                        multiline
+                        placeholderTextColor={colors.text + '80'} 
+                    />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
+                        <TouchableOpacity 
+                            style={{ 
+                                flex: 1, 
+                                padding: 15, 
+                                borderRadius: 10, 
+                                backgroundColor: colors.secondary + '30',
+                                marginRight: 10,
+                                alignItems: 'center'
+                            }}
+                            onPress={() => {
+                                setModalVisible(false);
+                                // Reset all fields for both main and other profiles
+                                setNewDiseaseSimple('');
+                                setNewDisease({
+                                    name: '',
+                                    description: '',
+                                    symptoms: '',
+                                    beginDate: '',
+                                    medications: '',
+                                    examens: '',
+                                });
+                                setSelectedYear(2024);
+                                setSelectedMonth(1);
+                                setSelectedDay(1);
+                            }}
+                        >
+                            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={{ 
+                                flex: 1, 
+                                padding: 15, 
+                                borderRadius: 10, 
+                                backgroundColor: colors.primary,
+                                marginLeft: 10, 
+                                alignItems: 'center'
+                            }}
+                            onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             </Modal>
 
             {/* Editing modal for the main profile */} 
