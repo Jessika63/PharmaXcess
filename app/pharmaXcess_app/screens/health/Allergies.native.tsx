@@ -6,6 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Allergy = {
@@ -25,6 +27,8 @@ type AllergiesProps = {
 export default function Allergies({ navigation }: AllergiesProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
+    const { allergies: profileAllergies, addAllergy, removeAllergy } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
     const [allergies, setAllergies] = useState<Allergy[]>([
@@ -74,6 +78,49 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const [editSelectedBeginYear, setEditSelectedBeginYear] = useState<number>(2024);
     const [editSelectedBeginMonth, setEditSelectedBeginMonth] = useState<number>(1);
     const [editSelectedBeginDay, setEditSelectedBeginDay] = useState<number>(1);
+
+    // For simple allergy addition by profile 
+    const [newAllergySimple, setNewAllergySimple] = useState<string>('');
+
+    // Simple allergy management by profile 
+    const handleAddSimpleAllergy = async (): Promise<void> => {
+        // For other profiles, we only require the name field but save all available data
+        if (!newAllergy.name.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer le nom de l\'allergie.'); 
+            return; 
+        }
+
+        // Create complete allergy data even for other profiles 
+        const allergyData = { 
+            name: newAllergy.name.trim(), 
+            beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
+            severity: newAllergy.severity || '',
+            symptoms: newAllergy.symptoms || '',
+            medications: newAllergy.medications || '',
+            comments: newAllergy.comments || ''
+        };
+
+        const success = await addAllergy(JSON.stringify(allergyData)); 
+        if (success) { 
+            // Reset all fields 
+            setNewAllergySimple(''); 
+            setNewAllergy({ 
+                name: '', 
+                beginDate: '', 
+                severity: '', 
+                symptoms: '', 
+                medications: '', 
+                comments: '', 
+            }); 
+            setIsModalVisible(false); 
+            setSelectedBeginYear(2024); 
+            setSelectedBeginMonth(1); 
+            setSelectedBeginDay(1); 
+            Alert.alert('Succès', 'Allergie ajoutée avec succès.');
+        } else { 
+            Alert.alert('Erreur', 'Cette allergie est déjà enregistrée ou une erreur est survenue.'); 
+        }
+    }; 
 
     const handleAddPress = (): void => {
         if (
@@ -168,44 +215,191 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         );
     };
 
+    const handleRemoveAllergy = async (allergy: string): Promise<void> => {
+        Alert.alert(
+            'Confirmer la suppression',
+            `Êtes-vous sûr de vouloir supprimer "${allergy}" ?`,
+            [
+                {
+                    text: 'Annuler',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await removeAllergy(allergy);
+                        if (success) {
+                            Alert.alert('Succès', 'Allergie supprimée avec succès.');
+                        } else {
+                            Alert.alert('Erreur', 'Impossible de supprimer l\'allergie.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
+
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            title: 'Allergies',
+        });
+    }, [navigation]);
+
+    // Determine if it's the main profile 
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
     return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.list}>
-                {allergies.map((allergy, index) => (
-                    <View key={index} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{allergy.name}</Text>
-                            <View style={styles.actionButtons}>
-                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDeleteAllergy(index)} style={styles.deleteButton}>
-                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                </TouchableOpacity>
+        <View style={[styles.container, { flex: 1 }]}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                {/* Header for current profile */}
+                {currentProfile && (
+                    <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View>
+                                <Text style={[styles.cardTitle, { color: colors.primary, fontWeight: 'bold' }]}>
+                                    {getRelationshipText(currentProfile.relationship)}
+                                </Text>
+                                <Text style={[styles.cardText, { color: colors.primary, opacity: 0.8 }]}>
+                                    {currentProfile.name}
+                                </Text>
                             </View>
+                            <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                         </View>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Date de début: </Text>
-                            {allergy.beginDate}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Gravité: </Text>
-                            {allergy.severity}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Symptômes: </Text>
-                            {allergy.symptoms}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Médicaments: </Text>
-                            {allergy.medications}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Commentaires: </Text>
-                            {allergy.comments}
-                        </Text>
                     </View>
-                ))}
+                )}
+
+                {/* Conditional display based on profile */}
+                {isMainProfile ? (
+                    // For the main profile: predefined complex cards
+                    <>
+                        {allergies.map((allergy, index) => (
+                            <View key={index} style={styles.card}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.cardTitle}>{allergy.name}</Text>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                            <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDeleteAllergy(index)} style={styles.deleteButton}>
+                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Date de début: </Text>
+                                    {allergy.beginDate}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Gravité: </Text>
+                                    {allergy.severity}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Symptômes: </Text>
+                                    {allergy.symptoms}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Médicaments: </Text>
+                                    {allergy.medications}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Commentaires: </Text>
+                                    {allergy.comments}
+                                </Text>
+                            </View>
+                        ))}
+                    </>
+                ) : (
+                    // For other profiles: full allergy display
+                    <>
+                        {profileAllergies && profileAllergies.length > 0 ? (
+                            <>
+                                {profileAllergies.map((allergyString, index) => {
+                                    // Parse allergy data (could be JSON string or simple name)
+                                    let allergy: Allergy;
+                                    try {
+                                        allergy = JSON.parse(allergyString);
+                                    } catch {
+                                        // Fallback for simple string names
+                                        allergy = {
+                                            name: allergyString,
+                                            beginDate: '',
+                                            severity: '',
+                                            symptoms: '',
+                                            medications: '',
+                                            comments: ''
+                                        };
+                                    }
+                                    
+                                    return (
+                                        <View key={index} style={styles.card}>
+                                            <View style={styles.cardHeader}>
+                                                <Text style={styles.cardTitle}>{allergy.name}</Text>
+                                                <View style={styles.actionButtons}>
+                                                    <TouchableOpacity onPress={() => handleRemoveAllergy(allergyString)} style={styles.deleteButton}>
+                                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+
+                                            {allergy.beginDate && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Date de début: </Text>
+                                                    {allergy.beginDate}
+                                                </Text>
+                                            )}
+                                            {allergy.severity && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Gravité: </Text>
+                                                    {allergy.severity}
+                                                </Text>
+                                            )}
+                                            {allergy.symptoms && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Symptômes: </Text>
+                                                    {allergy.symptoms}
+                                                </Text>
+                                            )}
+                                            {allergy.medications && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Médicaments: </Text>
+                                                    {allergy.medications}
+                                                </Text>
+                                            )}
+                                            {allergy.comments && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Commentaires: </Text>
+                                                    {allergy.comments}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </>
+                        ) : (
+                            <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
+                                <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                                <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
+                                    Aucune allergie enregistrée pour ce profil.
+                                </Text>
+                                <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
+                                    Ajoutez vos allergies pour un meilleur suivi médical
+                                </Text>
+                            </View>
+                        )}
+                    </>
+                )}
             </ScrollView>
 
             <View style={styles.buttonContainer}>
@@ -226,8 +420,16 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         <Text style={styles.modalTitle}>Ajouter une allergie</Text>
                         <TextInput
                             placeholder="Nom de l'allergie"
-                            value={newAllergy.name}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, name: text })}
+                            value={isMainProfile ? newAllergy.name : newAllergySimple}
+                            onChangeText={(text) => {
+                                if (isMainProfile) {
+                                    setNewAllergy({ ...newAllergy, name: text })
+                                } else {
+                                    setNewAllergySimple(text);
+                                    // For other profiles, also update newAllergy.name for consistency
+                                    setNewAllergy({ ...newAllergy, name: text });
+                                }
+                            }}
                             style={styles.input}
                         />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -293,13 +495,31 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             style={styles.input}
                         />
                         <View style={styles.buttonContainer}>
-                            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                            <TouchableOpacity onPress={isMainProfile ? handleAddPress : handleAddSimpleAllergy} style={styles.button}>
                                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Ajouter</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                             
-                            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.button}>
+                            <TouchableOpacity 
+                                onPress={() => {
+                                    setIsModalVisible(false);
+                                    // Reset all fields for both main and other profiles
+                                    setNewAllergySimple('');
+                                    setNewAllergy({
+                                        name: '',
+                                        beginDate: '',
+                                        severity: '',
+                                        symptoms: '',
+                                        medications: '',
+                                        comments: '',
+                                    });
+                                    setSelectedBeginYear(2024);
+                                    setSelectedBeginMonth(1);
+                                    setSelectedBeginDay(1);
+                                }} 
+                                style={styles.button}
+                            >
                                 <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
