@@ -310,10 +310,10 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View>
-                                <Text style={[styles.cardTitle, { color: colors.primary, fontWeight: 'bold' }]}>
+                                <Text style={[styles.title, { color: colors.primary, fontWeight: 'bold' }]}>
                                     {getRelationshipText(currentProfile.relationship)}
                                 </Text>
-                                <Text style={[styles.cardText, { color: colors.primary, opacity: 0.8 }]}>
+                                <Text style={[styles.content, { color: colors.primary, opacity: 0.8 }]}>
                                     {currentProfile.name}
                                 </Text>
                             </View>

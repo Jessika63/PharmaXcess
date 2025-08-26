@@ -7,6 +7,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type FamilyHistoryItem = {
@@ -24,6 +26,8 @@ type FamilyHistoryProps = {
 export default function FamilyHistory({ navigation }: FamilyHistoryProps) : React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
+    const { familyHistory: profileFamilyHistory, addFamilyHistory, removeFamilyHistory } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
     const familyMembers = ['Père', 'Mère', 'Frère', 'Sœur', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Oncle', 'Tante', 'Cousin(e)', 'Autre'];
@@ -60,26 +64,40 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
         treatment: '',
     });
 
-    const handleAddPress = (): void => {
-        if (!newFamilyHistory.name || !newFamilyHistory.treatment) {
-            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+    // For simple family history addition by profile 
+    const [newFamilyHistorySimple, setNewFamilyHistorySimple] = useState<string>('');
+
+    // Simple family history management by profile 
+    const handleAddSimpleFamilyHistory = async (): Promise<void> => {
+        // For other profiles, we only require the name field but save all available data
+        if (!newFamilyHistory.name.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer le nom de l\'antécédent familial.');
             return;
         }
 
-        const finalFamilyHistory = {
-            ...newFamilyHistory,
+        // Create complete family history data even for other profiles
+        const familyHistoryData = {
+            name: newFamilyHistory.name.trim(),
             familyMember: newFamilyHistory.familyMember || familyMembers[0],
-            severity: newFamilyHistory.severity || severityLevels[0]
+            severity: newFamilyHistory.severity || severityLevels[0],
+            treatment: newFamilyHistory.treatment || ''
         };
 
-        setFamilyHistory([...familyHistory, finalFamilyHistory]);
-        setNewFamilyHistory({
-            name: '',
-            familyMember: '',
-            severity: '',
-            treatment: '',
-        });
-        setIsModalVisible(false);
+        const success = await addFamilyHistory(JSON.stringify(familyHistoryData));
+        if (success) {
+            // Reset all fields
+            setNewFamilyHistorySimple('');
+            setNewFamilyHistory({
+                name: '',
+                familyMember: '',
+                severity: '',
+                treatment: '',
+            });
+            setIsModalVisible(false);
+            Alert.alert('Succès', 'Antécédent familial ajouté avec succès.');
+        } else {
+            Alert.alert('Erreur', 'Cet antécédent familial est déjà enregistré ou une erreur est survenue.');
+        }
     };
 
     const handleEditPress = (index: number): void => {
@@ -125,36 +143,188 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
         );
     };
 
+    const handleRemoveFamilyHistory = async (familyHistoryItem: string): Promise<void> => {
+        Alert.alert(
+            'Confirmer la suppression',
+            `Êtes-vous sûr de vouloir supprimer "${familyHistoryItem}" ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await removeFamilyHistory(familyHistoryItem);
+                        if (success) {
+                            Alert.alert('Succès', 'Antécédent familial supprimé avec succès.');
+                        } else {
+                            Alert.alert('Erreur', 'Impossible de supprimer l\'antécédent familial.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
+
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            title: 'Antécédents familiaux',
+        });
+    }, [navigation]);
+
+    // Determine if it's the main profile 
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
+    const handleAddPress = (): void => {
+        if (!newFamilyHistory.name || !newFamilyHistory.treatment) {
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+            return;
+        }
+
+        const finalFamilyHistory = {
+            ...newFamilyHistory,
+            familyMember: newFamilyHistory.familyMember || familyMembers[0],
+            severity: newFamilyHistory.severity || severityLevels[0]
+        };
+
+        setFamilyHistory([...familyHistory, finalFamilyHistory]);
+        setNewFamilyHistory({
+            name: '',
+            familyMember: '',
+            severity: '',
+            treatment: '',
+        });
+        setIsModalVisible(false);
+    };
+
     return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.list}>
-                {familyHistory.map((item, index) => (
-                    <View key={index} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{item.name}</Text>
-                            <View style={styles.actionButtons}>
-                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDeleteFamilyHistory(index)} style={styles.deleteButton}>
-                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                </TouchableOpacity>
+        <View style={[styles.container, { flex: 1 }]}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                {/* Header for current profile */}
+                {currentProfile && (
+                    <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View>
+                                <Text style={[styles.title, { color: colors.primary, fontWeight: 'bold' }]}>
+                                    {getRelationshipText(currentProfile.relationship)}
+                                </Text>
+                                <Text style={[styles.content, { color: colors.primary, opacity: 0.8 }]}>
+                                    {currentProfile.name}
+                                </Text>
                             </View>
+                            <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                         </View>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Membre de la famille: </Text>
-                            {item.familyMember}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Sévérité: </Text>
-                            {item.severity}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Traitement: </Text>
-                            {item.treatment}
-                        </Text>
                     </View>
-                ))}
+                )}
+
+                {/* Conditional display based on profile */}
+                {isMainProfile ? (
+                    // For the main profile: predefined complex cards
+                    <>
+                        {familyHistory.map((item, index) => (
+                            <View key={index} style={styles.card}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.cardTitle}>{item.name}</Text>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                            <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDeleteFamilyHistory(index)} style={styles.deleteButton}>
+                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Membre de la famille: </Text>
+                                    {item.familyMember}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Sévérité: </Text>
+                                    {item.severity}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Traitement: </Text>
+                                    {item.treatment}
+                                </Text>
+                            </View>
+                        ))}
+                    </>
+                ) : (
+                    // For other profiles: full family history display
+                    <>
+                        {profileFamilyHistory && profileFamilyHistory.length > 0 ? (
+                            <>
+                                {profileFamilyHistory.map((familyHistoryString, index) => {
+                                    // Parse family history data (could be JSON string or simple name)
+                                    let item: FamilyHistoryItem;
+                                    try {
+                                        item = JSON.parse(familyHistoryString);
+                                    } catch {
+                                        // Fallback for simple string names
+                                        item = {
+                                            name: familyHistoryString,
+                                            familyMember: '',
+                                            severity: '',
+                                            treatment: ''
+                                        };
+                                    }
+                                    
+                                    return (
+                                        <View key={index} style={styles.card}>
+                                            <View style={styles.cardHeader}>
+                                                <Text style={styles.cardTitle}>{item.name}</Text>
+                                                <View style={styles.actionButtons}>
+                                                    <TouchableOpacity onPress={() => handleRemoveFamilyHistory(familyHistoryString)} style={styles.deleteButton}>
+                                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+
+                                            {item.familyMember && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Membre de la famille: </Text>
+                                                    {item.familyMember}
+                                                </Text>
+                                            )}
+                                            {item.severity && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Sévérité: </Text>
+                                                    {item.severity}
+                                                </Text>
+                                            )}
+                                            {item.treatment && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Traitement: </Text>
+                                                    {item.treatment}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </>
+                        ) : (
+                            <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
+                                <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                                <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
+                                    Aucun antécédent familial enregistré pour ce profil.
+                                </Text>
+                                <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
+                                    Ajoutez vos antécédents familiaux pour un meilleur suivi médical
+                                </Text>
+                            </View>
+                        )}
+                    </>
+                )}
             </ScrollView>
 
             <View style={styles.buttonContainer}>
@@ -180,8 +350,16 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     
                     <TextInput
                         placeholder="Nom de la maladie"
-                        value={newFamilyHistory.name}
-                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, name: text })}
+                        value={isMainProfile ? newFamilyHistory.name : newFamilyHistorySimple}
+                        onChangeText={(text) => {
+                            if (isMainProfile) {
+                                setNewFamilyHistory({ ...newFamilyHistory, name: text })
+                            } else {
+                                setNewFamilyHistorySimple(text);
+                                // For other profiles, also update newFamilyHistory.name for consistency
+                                setNewFamilyHistory({ ...newFamilyHistory, name: text });
+                            }
+                        }}
                         style={styles.input}
                     />
                     
@@ -215,13 +393,15 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     />
                     
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                        <TouchableOpacity onPress={isMainProfile ? handleAddPress : handleAddSimpleFamilyHistory} style={styles.button}>
                             <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Ajouter</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => {
                             setIsModalVisible(false);
+                            // Reset all fields for both main and other profiles
+                            setNewFamilyHistorySimple('');
                             setNewFamilyHistory({
                                 name: '',
                                 familyMember: '',
