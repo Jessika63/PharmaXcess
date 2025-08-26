@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import polyline from '@mapbox/polyline';
@@ -23,11 +23,13 @@ L.Marker.prototype.options.icon = DefaultIcon;
 function DirectionsMapPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const pharmacy = {
+
+  const pharmacy = useMemo(() => ({
     latitude: parseFloat(searchParams.get('lat')),
     longitude: parseFloat(searchParams.get('lon')),
     name: searchParams.get('name')
-  };
+  }), [searchParams]);
+
   const transport = searchParams.get('transport');
   const [routeCoords, setRouteCoords] = useState([]);
   const [userCoords, setUserCoords] = useState(null);
@@ -156,7 +158,9 @@ function DirectionsMapPage() {
     return (
       <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
-        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>Chargement de l'itinéraire...</div>
+        <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
+          Chargement de l'itinéraire...
+        </div>
       </div>
     );
   }
@@ -174,10 +178,9 @@ function DirectionsMapPage() {
           <div className={`${config.fontSizes.sm} mb-4`}>
             Vous allez être redirigé vers l'accueil dans 1 minute...
           </div>
-          <button className={`
-            ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
-            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
-            ${config.transitions.default}`
+          <button className={
+            `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
+            ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
           } onClick={() => setShowInactivityModal(false)}>
             Rester sur la page
           </button>

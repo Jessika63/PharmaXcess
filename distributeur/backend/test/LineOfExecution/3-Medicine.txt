@@ -1,2 +1,2 @@
 
-available_medicine
+get_available_medicine

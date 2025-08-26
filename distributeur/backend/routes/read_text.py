@@ -1,15 +1,19 @@
-
 from flask import Blueprint, jsonify, request
-import subprocess
-import os
+import base64
+import sys, os
+
+# Add the extractAll path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from scripts.scanner import extractAll
 
 # Blueprint for reading text from an image
-read_text_bp = Blueprint('read_text', __name__)
+extract_text_bp = Blueprint("extract_text", __name__)
 
-@read_text_bp.route('/read_text', methods=['POST'])
-def read_text():
+@extract_text_bp.route("/extractText", methods=["POST"])
+def extract_text():
     """
-    Objectif: Reads text from an image using an external Python script.
+    Objectif: Extracts text from a base64 encoded image based on the specified document type.
 
     Parameters:
         - None
@@ -18,28 +22,32 @@ def read_text():
         - None
 
     Request Body:
-        - image_path: Path to the image file. If not provided, a default path is used. (String, Optional)
+        - base64_image: Base64 encoded image data, optionally with data URI prefix. (String, Required)
+        - type: Document type to process. Must be one of: 'P' (prescription), 'R' (ID card front), 'V' (ID card back). (String, Required)
 
     Return Value:
-        - 200: JSON response containing the extracted text and a success message. (Object)
-        - 400: JSON error response if the image path is invalid. (Object)
-        - 500: JSON error response if an error occurs during execution or the external script fails. (Object)
+        - 200: JSON response containing the extracted text data. (Object)
+        - 400: JSON error response for missing parameters or invalid document type. (Object)
+        - 500: JSON error response for processing failures or unexpected errors. (Object)
     """
-
     try:
-        image_path = "path/to/image.jpg"
+        data = request.get_json()
+        base64_image = data.get("base64_image")
+        doc_type = data.get("type")
 
-        # Run the external script
-        result = subprocess.run(
-            ['python3', 'scripts/read_text.py', image_path],
-            capture_output=True, text=True
-        )
+        if not base64_image or not doc_type:
+            return jsonify({"error": "base64_image and type are required"}), 400
 
-        if result.returncode == 0:
-            return jsonify({"message": "Text read successfully", "output": result.stdout.strip()}), 200
-        else:
-            return jsonify({"error": result.stderr.strip()}), 500
+        if doc_type not in ["P", "R", "V"]:
+            return jsonify({"error": "Invalid document type"}), 400
+
+        header, encoded = base64_image.split(",", 1) if "," in base64_image else ("", base64_image)
+        image_data = base64.b64decode(encoded)
+
+        result = extractAll.main(image_data, doc_type, is_bytes=True, flip_horizontal=True)
+
+        return jsonify(result), 200
 
     except Exception as e:
-        print(f"Error: {e}")
+        print("[ERROR extract_text route]", e)
         return jsonify({"error": str(e)}), 500

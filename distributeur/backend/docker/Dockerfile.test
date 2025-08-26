@@ -1,17 +1,30 @@
-
 FROM python:3.9-slim
 
 WORKDIR /app
 
 COPY requirements.txt /app/
-COPY requirements_ignored.txt /app/
 
 RUN pip install --upgrade pip
 
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements_ignored.txt
 
-RUN apt-get update && apt-get install -y netcat-openbsd
+RUN apt-get update
+
+RUN apt-get install -y libzbar0
+RUN apt-get install -y netcat-openbsd
+RUN apt-get install -y libgl1
+RUN apt-get install -y libglib2.0-0
+RUN apt-get install -y tesseract-ocr
+RUN apt-get install -y libglx-mesa0
+RUN apt-get install -y libglx0
+RUN apt-get install -y libopengl0
+RUN apt-get install -y libegl1
+RUN apt-get install -y libgles2
+RUN apt-get install -y libsm6
+RUN apt-get install -y libxext6
+RUN apt-get install -y libxrender1
+
+RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade Flask Werkzeug
 
@@ -28,5 +41,8 @@ COPY scripts/init_medicine.sh /init_medicine.sh
 RUN chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
+
+# Test command to verify libGL.so.1 is present
+RUN ldconfig -p | grep libGL || echo "libGL not found, listing graphics files:" && find / -name "*libGL*" 2>/dev/null | head -10
 
 CMD ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]

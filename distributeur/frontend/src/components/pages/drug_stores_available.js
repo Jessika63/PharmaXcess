@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import config from '../../config';
 import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
@@ -50,7 +50,7 @@ function DrugStoresAvailable() {
       }
       setEnterPressed(false);
     }
-  }, [enterPressed, focusedIndex, location.state, navigate]);
+  }, [enterPressed, focusedIndex, location.state, navigate, drugShops]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);

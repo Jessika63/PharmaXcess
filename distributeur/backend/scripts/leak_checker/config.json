@@ -18,6 +18,8 @@
         "distributeur/backend/__pycache__/",
         "distributeur/backend/.pytest_cache/",
         "distributeur/frontend/node_modules",
-        "distributeur/frontend/src/assets/"
+        "distributeur/frontend/src/assets/",
+        "distributeur/launch_distributeur/scripts/__pycache__/",
+        "distributeur/technical_docs/"
     ]
 }

@@ -1,10 +1,9 @@
-
 services:
   app:
+    image: phx-backend-app
     build:
       context: .  # Use the current directory for building the Docker image
       dockerfile: docker/Dockerfile.app  # Specify the Dockerfile to use for the app
-    image: distributeur-backend-app:latest  # explicit image name
     ports:
       - "5000:5000"  # Expose port 5000 from the container to port 5000 on the host (adjust if app listens on a different port)
     volumes:

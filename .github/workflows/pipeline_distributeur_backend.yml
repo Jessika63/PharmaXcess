@@ -5,7 +5,16 @@ on:
     branches:
       - main
       - dev
+      - LOG_link_front_to_back
     paths:
+      - '**'
+      - 'distributeur/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - '**'
       - 'distributeur/**'
 
 jobs:
@@ -13,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+      PYTHONIOENCODING: utf-8
 
     steps:
     - name: Checkout code

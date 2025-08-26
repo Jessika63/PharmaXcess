@@ -977,3 +977,43 @@ def test_is_known_hosting_missing_data(client):
     assert is_known_hosting("", "AS16276") is False
     assert is_known_hosting("Google Cloud", "") is False
     assert is_known_hosting("", "") is False
+
+@pytest.mark.order(1)  # LOX n°5
+def test_check_iphunter_response_parsing(monkeypatch):
+    """
+    Objectif: Test the check_iphunter function's response parsing for various API responses, including the specific line being tested.
+
+    Parameters:
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the function's behavior. (NoneType)
+    """
+    from routes.stripe.vpn_check import check_iphunter
+
+    # Mock the environment variable
+    monkeypatch.setenv("IPHUNTER_API_KEY", "test_key")
+
+    # Test case 1: Blocked IP (block = "1")
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": {"block": "1"}}
+    monkeypatch.setattr("requests.get", MagicMock(return_value=mock_response))
+
+    result = check_iphunter("8.8.8.8")
+    assert result is True
+
+    # Test case 2: Not blocked IP (block = "0")
+    mock_response.json.return_value = {"data": {"block": "0"}}
+    result = check_iphunter("8.8.8.8")
+    assert result is False
+
+    # Test case 3: Missing data field
+    mock_response.json.return_value = {}
+    result = check_iphunter("8.8.8.8")
+    assert result is False
+
+    # Test case 4: Missing API key
+    monkeypatch.delenv("IPHUNTER_API_KEY")
+    result = check_iphunter("8.8.8.8")
+    assert result is None

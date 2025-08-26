@@ -34,8 +34,10 @@ def test_successful_directions(client, mocker):
     mock_response.json.return_value = {'status': 'OK', 'routes': []}
     mocker.patch('requests.post', return_value=mock_response)
 
+
     # Mock the environment variable
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
+
 
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
     assert resp.status_code == 200
@@ -95,8 +97,10 @@ def test_ors_non_200_status(client, mocker):
     mock_response.json.return_value = {'error': 'ORS error', 'message': 'Forbidden'}
     mocker.patch('requests.post', return_value=mock_response)
 
+
     # Mock the environment variable
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
+
 
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
     assert resp.status_code == 403
@@ -119,6 +123,9 @@ def test_directions_api_error(client, mocker):
     mocker.patch('requests.post', side_effect=Exception('API error'))
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
 
+
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
     assert resp.status_code == 500
+    assert b'API error' in resp.data
+
     assert b'API error' in resp.data

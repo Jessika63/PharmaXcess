@@ -17,6 +17,9 @@ def add_background(img, scale_factor=1.5):
     Return Value:
         - new_image: New image with white background and original content centered. (numpy.ndarray)
     """
+    if img is None:
+        raise ValueError("Input image is None")
+
     height, width, _ = img.shape
     new_height = int(height * scale_factor)
     new_width = int(width * scale_factor)
@@ -114,15 +117,18 @@ def getInfosPrescription(text):
     if rpps_match:
         infos["rpps"] = rpps_match.group(1)
 
-    patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
+    # n'autorise pas \n entre les groupes, et accepte accents/tirets/apostrophes
+    patient_pattern = r"(?:M\.|Mme\.)[^\S\r\n]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
     patient = re.search(patient_pattern, text)
-    if patient:
-        last_name, first_name = patient.groups()
-        infos["patient"] = {
-            "prenom": first_name,
-            "nom": last_name
-        }
 
+    if patient:
+        last_name = patient.group(1)
+        first_name = patient.group(2)
+        if last_name and first_name:
+            infos["patient"] = {
+                "prenom": first_name,
+                "nom": last_name
+            }
     # date_pattern = r"\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}"
     # dates = re.findall(date_pattern, text)
     # if dates:
@@ -250,50 +256,112 @@ def getInfosVersoID(text):
 
     return infos
 
-def main(image_path, doc_type):
+
+def flip_image(input_path, output_path, flip_code):
     """
-    Objectif: Processes an image by correcting its orientation, extracting text using OCR, and parsing the text based on the document type to return structured information.
+    Objectif: Flips an image vertically, horizontally, or both and saves the result to a specified path.
 
     Parameters:
-        - image_path: Path to the input image file. (String)
-        - doc_type: Type of document to process ('P' for prescription, 'R' for ID card front, 'V' for ID card back). (String)
+        - input_path: Path to the input image file. (String)
+        - output_path: Path where the flipped image will be saved. (String)
+        - flip_code: Integer code specifying the flip direction:
+            - 0: Vertical flip
+            - 1: Horizontal flip
+            - -1: Both vertical and horizontal flip
 
     Return Value:
-        - data: Dictionary containing structured information extracted from the document. Returns None for unknown document types. (Dictionary or None)
+        - None: This function does not return a value but saves the flipped image to disk and prints status messages.
     """
-    corrected_image = correct_orientation(image_path)
-    text = extract_text_paddleocr(corrected_image)
+    image = cv2.imread(input_path)
 
-    print("\n=== TEXTE OCR ===\n")
-    print(text)
-
-    data = {}
-
-    if doc_type == "P":
-        data = getInfosPrescription(text)
-    elif doc_type == "R":
-        data = getInfosRectoID(text)
-    elif doc_type == "V":
-        data = getInfosVersoID(text)
-    else:
-        print("Unknown. Use P, R, V.")
+    if image is None:
+        print(f"Could not read the image at {input_path}")
         return
 
-    print("\n=== INFOS JSON ===\n")
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-    return data
+    flipped = cv2.flip(image, flip_code)
+    cv2.imwrite(output_path, flipped)
+    print(f"Flipped image saved to {output_path}")
+
+
+def main(image_input, doc_type, is_bytes=False, flip_horizontal=False):
+    """
+    Objectif: Processes an image to correct its orientation, extract text using OCR, and parse the extracted text based on the document type.
+
+    Parameters:
+        - image_input: Path to the input image file or raw image bytes. (String or Bytes)
+        - doc_type: Type of document to process ('P' for prescription, 'R' for ID card front, 'V' for ID card back). (String)
+        - is_bytes: Indicates whether image_input is raw bytes (True) or a file path (False). Defaults to False. (Boolean)
+        - flip_horizontal: If True, flips the image horizontally before processing. Defaults to False. (Boolean)
+
+    Return Value:
+        - result: Dictionary containing:
+            - raw_text: The full OCR-extracted text from the image. (String)
+            - infos: Structured information parsed from the text based on the document type. (Dictionary)
+    """
+    if is_bytes:
+        nparr = np.frombuffer(image_input, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    else:
+        img = cv2.imread(image_input)
+
+    if flip_horizontal:
+        img = cv2.flip(img, 1)
+        
+    img = add_background(img)
+    img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+
+    if lines is not None:
+        angles = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            angle = np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+            angles.append(angle)
+        median_angle = np.median(angles)
+        if median_angle != 0:
+            (h, w) = img.shape[:2]
+            center = (w // 2, h // 2)
+            M = cv2.getRotationMatrix2D(center, median_angle, 1.0)
+            img = cv2.warpAffine(img, M, (w, h))
+
+    ocr = PaddleOCR(use_angle_cls=True, lang='fr')
+    result_ocr = ocr.ocr(img, cls=True)
+    text = "\n".join([word[1][0] for line in result_ocr for word in line])
+
+    if doc_type == "P":
+        infos = getInfosPrescription(text)
+    elif doc_type == "R":
+        infos = getInfosRectoID(text)
+    elif doc_type == "V":
+        infos = getInfosVersoID(text)
+    else:
+        infos = {}
+
+    return {
+        "raw_text": text,
+        "infos": infos
+    }
+
 
 if __name__ == "__main__":
     """
-    Entry point for command-line usage.
+    Objectif: Command-line entry point for extracting text and structured information from an image of a document.
 
-    Usage:
-        python3 script.py <image_path> <P|R|V>
+    Command-line parameters:
+        - argv[1]: Path to the input image file. (String)
+        - argv[2]: Document type, must be one of: 'P' (prescription), 'R' (ID card front), 'V' (ID card back). (String)
+
+    Return Value:
+        - None: This script does not return a value but prints the extracted information as a JSON string to stdout.
     """
     if len(sys.argv) != 3:
-        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
         sys.exit(1)
 
     img_path = sys.argv[1]
     doc_type = sys.argv[2].upper()
-    main(img_path, doc_type)
+    result = main(img_path, doc_type)
+    print(json.dumps(result, ensure_ascii=False))
