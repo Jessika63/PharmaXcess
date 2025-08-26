@@ -191,13 +191,23 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
     // Simple disease management by profile 
     const handleAddSimpleDisease = async (): Promise<void> => {
-        // For other profiles, we only require the name field
+        // For other profiles, we only require the name field but save all available data
         if (!newDisease.name.trim()) {
             Alert.alert('Erreur', 'Veuillez entrer le nom de la maladie.');
             return;
         }
 
-        const success = await addDisease(newDisease.name.trim());
+        // Create complete disease data even for other profiles
+        const diseaseData = {
+            name: newDisease.name.trim(),
+            description: newDisease.description || '',
+            symptoms: newDisease.symptoms || '',
+            beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
+            medications: newDisease.medications || '',
+            examens: newDisease.examens || ''
+        };
+
+        const success = await addDisease(JSON.stringify(diseaseData));
         if (success) {
             // Reset all fields
             setNewDiseaseSimple('');
@@ -335,26 +345,85 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                         ))}
                     </>
                 ) : ( 
-                    // For other profiles: simple list
+                    // For other profiles: full disease display with same functionality
                     <>
                         {profileDiseases && profileDiseases.length > 0 ? (
-                            <View style={[styles.card, { marginBottom: 20}]}> 
-                                <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold', marginBottom: 15 }]}> 
-                                    Maladies enregistrées ({profileDiseases.length})
-                                </Text>
-                                {profileDiseases.map((disease, index) => ( 
-                                    <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
-                                        <View key={index} style={styles.card}>
-                                            <View style={styles.cardHeader}>
-                                                <Text style={styles.cardTitle}>{disease}</Text>
+                            <>
+                                {profileDiseases.map((diseaseString, index) => {
+                                    // Parse disease data (could be JSON string or simple name)
+                                    let disease: Disease;
+                                    try {
+                                        disease = JSON.parse(diseaseString);
+                                    } catch {
+                                        // Fallback for simple string names
+                                        disease = {
+                                            name: diseaseString,
+                                            description: '',
+                                            symptoms: '',
+                                            beginDate: '',
+                                            medications: '',
+                                            examens: ''
+                                        };
+                                    }
+                                    
+                                    return (
+                                        <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
+                                            <View style={styles.card}>
+                                                <View style={styles.cardHeader}>
+                                                    <Text style={styles.cardTitle}>{disease.name}</Text>
+                                                    <View style={styles.actionButtons}>
+                                                        <TouchableOpacity onPress={() => handleRemoveDisease(diseaseString)} style={styles.deleteButton}>
+                                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+
+                                                {disease.description && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Description: </Text>
+                                                        {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
+                                                    </Text>
+                                                )}
+                                                {disease.symptoms && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Symptômes: </Text>
+                                                        {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
+                                                    </Text>
+                                                )}
+                                                {disease.beginDate && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Date de début: </Text>
+                                                        {disease.beginDate}
+                                                    </Text>
+                                                )}
+                                                {disease.medications && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Traitements: </Text>
+                                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                                                    </Text>
+                                                )}
+                                                {disease.examens && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Examens: </Text>
+                                                        {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
+                                                    </Text>
+                                                )}
+
+                                                {/* Show expand/collapse arrow only if there's expandable content */}
+                                                {(disease.description || disease.symptoms || disease.medications || disease.examens) && (
+                                                    <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
+                                                        <Ionicons
+                                                            name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
+                                                            size={24}
+                                                            color={colors.iconPrimary}
+                                                        />
+                                                    </TouchableOpacity>
+                                                )}
                                             </View>
-                                            <TouchableOpacity onPress={() => handleRemoveDisease(disease)}>
-                                                <Ionicons name="trash-outline" size={22} color="#ff6b6b" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </>
                         ) : (
                             <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
                                 <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
