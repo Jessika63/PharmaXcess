@@ -157,17 +157,34 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
 
     // Toggle alarm active state
     const toggleAlarm = (id: string) => {
-        setAlarms(prevAlarms => 
-            prevAlarms.map(alarm => 
-                alarm.id === id 
-                    ? { 
-                        ...alarm, 
-                        isActive: !alarm.isActive,
-                        nextAlarm: calculateNextAlarm({ ...alarm, isActive: !alarm.isActive })
-                      }
-                    : alarm
-            )
-        );
+        if (isMainProfile) {
+            setAlarms(prevAlarms => 
+                prevAlarms.map(alarm => 
+                    alarm.id === id 
+                        ? { 
+                            ...alarm, 
+                            isActive: !alarm.isActive,
+                            nextAlarm: calculateNextAlarm({ ...alarm, isActive: !alarm.isActive })
+                          }
+                        : alarm
+                )
+            );
+        } else {
+            // For other profiles: update profile data
+            const currentAlarms = getCurrentAlarms();
+            const alarmIndex = currentAlarms.findIndex(alarm => alarm.id === id);
+            if (alarmIndex !== -1) {
+                const currentAlarm = currentAlarms[alarmIndex];
+                const updatedAlarm = {
+                    ...currentAlarm,
+                    isActive: !currentAlarm.isActive,
+                    nextAlarm: calculateNextAlarm({ ...currentAlarm, isActive: !currentAlarm.isActive })
+                };
+                const updatedProfileAlarms = [...profileAlarmsData];
+                updatedProfileAlarms[alarmIndex] = JSON.stringify(updatedAlarm);
+                setProfileAlarmsData(updatedProfileAlarms);
+            }
+        }
     };
 
     // Get the alarms to display based on profile
@@ -425,14 +442,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                             <View style={styles.alarmSwitchContainer}>
                                 <Switch
                                     value={item.isActive}
-                                    onValueChange={() => {
-                                        if (isMainProfile) {
-                                            toggleAlarm(item.id);
-                                        }
-                                    }}
+                                    onValueChange={() => toggleAlarm(item.id)}
                                     thumbColor={item.isActive ? colors.primary : colors.inputBorder}
                                     trackColor={{ false: colors.inputBorder, true: colors.secondary }}
-                                    disabled={!isMainProfile}
                                 />
                             </View>
                         </View>
