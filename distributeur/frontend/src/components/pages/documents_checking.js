@@ -27,18 +27,20 @@ function DocumentsChecking() {
         if (currentDocType !== 'carte_vitale') {
             let docCode = null;
 
-            if (currentDocType === 'ordonnance') docCode = 'P';
-            else if (currentDocType === 'carte_identite_recto') docCode = 'R';
-            else if (currentDocType === 'carte_identite_verso') docCode = 'V';
+            if (currentDocType === 'ordonnance') {
+                docCode = 'P';
+            } else if (currentDocType === 'carte_identite_recto') {
+                docCode = 'R';
+            } else if (currentDocType === 'carte_identite_verso') {
+                docCode = 'V';
+            }
 
             try {
                 console.log("ENVOI API /extractText :");
                 console.log("base64_image (start)", base64Image?.slice(0, 50));
                 console.log("type:", docCode);
 
-
-
-                const response = await fetch('http://localhost:5000/extractText', {
+                const response = await fetch(`${config.backendUrl}/extractText`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

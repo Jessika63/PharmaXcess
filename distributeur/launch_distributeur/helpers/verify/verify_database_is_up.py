@@ -66,14 +66,14 @@ def verify_database_is_up(db_container_name, nb_of_retry=1):
             last_error = e
             colored_print(f"Unexpected error while checking database container: {e}", "red")
 
-        if attempt != nb_of_retry:
-            colored_print(
-                f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
-                "yellow"
-            )
-            time.sleep(waiting_time)
-        else:
+        if attempt == nb_of_retry:
             break
+
+        colored_print(
+            f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
+            "yellow"
+        )
+        time.sleep(waiting_time)
 
     colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
     if last_error:
