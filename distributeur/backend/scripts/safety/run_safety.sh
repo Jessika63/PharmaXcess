@@ -49,8 +49,8 @@ if [ -f "$ENV_FILE" ]; then
         echo "Exported: $key"
     done < "$ENV_FILE"
 else
-    echo "Error: .env file not found at $ENV_FILE"
-    exit 1
+    echo "Warning: .env file not found at $ENV_FILE"
+    echo "Using environment variables directly"
 fi
 
 # Check if API key is available
