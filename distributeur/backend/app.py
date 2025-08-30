@@ -18,6 +18,15 @@ CORS(app, resources={
 })
 
 def register_blueprints():
+    """
+    Objective: Register all blueprints (API endpoints) of the Flask application.
+
+    Parameters:
+    - None
+
+    Return Value:
+    - None (blueprints are registered directly in the Flask instance)
+    """
     from routes.find.find_doctor_by_name import find_doctor_by_name_bp
     from routes.find.find_doctor_by_rpps import find_doctor_by_rpps_bp
     from routes.add.add_doctor import add_doctor_bp
@@ -44,6 +53,8 @@ def register_blueprints():
     app.register_blueprint(create_payment_intent_bp)
     app.register_blueprint(vpn_check_bp)
     app.register_blueprint(update_stock_bp)
+
+register_blueprints()
 
 @app.route('/')
 def home():
