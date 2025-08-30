@@ -64,6 +64,10 @@ function InsufficientStock() {
               }
             );
           });
+        } else {
+          // GPS coordinates of Epitech Kremlin-Bicêtre
+          lat = 48.815273;
+          lon = 2.363006;
         }
       } catch (geoError) {
         console.log('Geolocation error:', geoError);
@@ -221,22 +225,24 @@ function InsufficientStock() {
       setSelectedPharmacy(pharmacy);
       setPharmaciesModalOpen(false);
 
-      // Reset le focusedTransportIndex et ajouter un léger délai
+      // Reset the focusedTransportIndex and add a slight delay
       setFocusedTransportIndex(0);
 
       setTimeout(() => {
         setTransportModalOpen(true);
-      }, 50); // Petit délai pour laisser le temps à l'événement Enter de se terminer
+      }, 50); // Small delay to allow time for the Enter event to complete
     };
 
     // Close modal handler
     const handleCloseModal = () => {
       setPharmaciesModalOpen(false);
       setTimeout(() => {
-        if (cancelButtonRef.current) cancelButtonRef.current.focus();
+        if (cancelButtonRef.current) {
+          cancelButtonRef.current.focus();
+        }
       }, 100);
     };
-    
+
     const handleTransportSelect = (mode) => {
       setTransportModalOpen(false);
       setPharmaciesModalOpen(false);
@@ -276,6 +282,10 @@ function InsufficientStock() {
               () => resolve()
             );
           });
+        } else {
+          // GPS coordinates of Epitech Kremlin-Bicêtre
+          lat = 48.815273;
+          lon = 2.363006;
         }
       } catch (geoError) {
         console.log('Geolocation error:', geoError);

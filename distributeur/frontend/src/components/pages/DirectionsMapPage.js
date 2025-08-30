@@ -68,50 +68,63 @@ function DirectionsMapPage() {
       return;
     }
     apiCalledRef.current = true;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserCoords([latitude, longitude]);
-        const url =
-          `${config.backendUrl}/get_direction?origin=${latitude},${longitude}` +
-          `&destination=${pharmacy.latitude},${pharmacy.longitude}` +
-          `&mode=${transport}`;
-        fetchWithTimeout(url, undefined, 5000)
-          .then((res) => {
-            return res.json();
-          })
-          .then((data) => {
-            if (data.error) {
-              setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
-            } else if (data.routes && data.routes.length > 0) {
-              // ORS geometry is encoded polyline5 by default
-              const {geometry} = data.routes[0];
-              let coords = [];
-              if (typeof geometry === 'string') {
-                coords = polyline.decode(geometry);
-              } else if (geometry && geometry.coordinates) {
-                coords = geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-              }
-              setRouteCoords(coords);
-            } else {
-              setError('Aucun itinéraire trouvé.' + (data.error_message ? ' - ' + data.error_message : ''));
+
+    const fetchDirections = (lat, lng) => {
+      const url =
+        `${config.backendUrl}/get_direction?origin=${lat},${lng}` +
+        `&destination=${pharmacy.latitude},${pharmacy.longitude}` +
+        `&mode=${transport}`;
+      fetchWithTimeout(url, undefined, 5000)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
+          } else if (data.routes && data.routes.length > 0) {
+            const {geometry} = data.routes[0];
+            let coords = [];
+            if (typeof geometry === 'string') {
+              coords = polyline.decode(geometry);
+            } else if (geometry && geometry.coordinates) {
+              coords = geometry.coordinates.map(([lon, lat]) => [lat, lon]);
             }
-            setLoading(false);
-          })
-          .catch((err) => {
-            if (err.message === 'Timeout') {
-              setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
-            } else {
-              setError('Erreur réseau ou serveur. Détail: ' + err.message);
-            }
-            setLoading(false);
-          });
-      },
-      () => {
-        setError('Impossible d\'obtenir votre position.');
-        setLoading(false);
-      }
-    );
+            setRouteCoords(coords);
+          } else {
+            setError('Aucun itinéraire trouvé.' + (data.error_message ? ' - ' + data.error_message : ''));
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === 'Timeout') {
+            setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+          } else {
+            setError('Erreur réseau ou serveur. Détail: ' + err.message);
+          }
+          setLoading(false);
+        });
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setUserCoords([latitude, longitude]);
+          fetchDirections(latitude, longitude);
+        },
+        () => {
+          alert("Impossible d'accéder à la position. Assurez-vous qu'elle est activée. Utilisation de la position par défaut (Epitech Paris Kremlin-Bicêtre).");
+          const defaultLat = 48.815273;
+          const defaultLon = 2.363006;
+          setUserCoords([defaultLat, defaultLon]);
+          fetchDirections(defaultLat, defaultLon);
+        }
+      );
+    } else {
+      alert("La géolocalisation n'est pas supportée par ce navigateur. Utilisation de la position par défaut (Epitech Paris Kremlin-Bicêtre).");
+      const defaultLat = 48.815273;
+      const defaultLon = 2.363006;
+      setUserCoords([defaultLat, defaultLon]);
+      fetchDirections(defaultLat, defaultLon);
+    }
   }, [pharmacy, transport]);
 
   // Focus management

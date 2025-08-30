@@ -70,7 +70,7 @@ if __name__ == "__main__":
             if args.restart:
                 handle_down()
 
-            # Vérification + Backend
+            # Verification + Backend
             handle_verif(
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
