@@ -35,7 +35,16 @@ if __name__ == "__main__":
     parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
     parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
     parser.add_argument("--restart", action="store_true",
-        help="Function to run down and then all to stop and start again the application and the tests."
+        help="Function to run down and then all to stop and start again the application."
+    )
+    parser.add_argument("--no-cache-back", action="store_true",
+        help="Build Backend Docker images without using cache."
+    )
+    parser.add_argument("--no-cache-front", action="store_true",
+        help="Build Frontend Docker images without using cache."
+    )
+    parser.add_argument("--build-test", action="store_true",
+        help="Build Test Docker images before running."
     )
 
     # Parse arguments
@@ -66,12 +75,13 @@ if __name__ == "__main__":
                 env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
             )
             handle_back(
-                backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+                backend_folder, config["db_dump_date"], db_container_name,
+                back_app_container_name, no_cache=args.no_cache_back
             )
-            handle_front(frontend_folder, front_app_container_name)
+            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
 
             if args.combo or args.restart:
-                handle_test(backend_folder, db_container_name, back_app_container_name)
+                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
         else:
             if args.verif:
                 handle_verif(
@@ -82,17 +92,17 @@ if __name__ == "__main__":
                     env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
                 )
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
                 )
-                handle_front(frontend_folder, front_app_container_name)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
             if args.back:
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name
+                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
-                handle_front(frontend_folder, front_app_container_name)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
             if args.test:
-                handle_test(backend_folder, db_container_name, back_app_container_name)
+                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
             if args.update:
                 update_function = args.update
                 handle_update(update_function, db_container_name, backend_folder)

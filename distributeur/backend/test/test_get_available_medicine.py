@@ -1,93 +1,108 @@
 import pytest
-import os
 import json
-import shutil
+from unittest.mock import mock_open, patch
 
-@pytest.mark.order(1) # LOX n°3
-def test_get_available_medicine_success(client):
+# Mock data for testing
+MOCK_MEDICINE_DATA = {
+    "medicine": [
+        {"id": 1, "label": "Aspirin", "price": 5.99, "size": 100},
+        {"id": 2, "label": "Ibuprofen", "price": 7.50, "size": 50}
+    ]
+}
+
+@pytest.mark.order(1)  # LOX n°3
+def test_get_available_medicine_success(client, monkeypatch):
     """
-    Test when the JSON file exists and is read correctly.
-    It checks if the response returns a 200 status code,
-    contains a message, and has a list of available medicines.
+    Objectif: Test the successful retrieval of medicine data from the /get_available_medicine endpoint.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
+    # Mock file operations
+    monkeypatch.setattr("os.path.exists", lambda x: True)
+    monkeypatch.setattr("builtins.open", mock_open(read_data=json.dumps(MOCK_MEDICINE_DATA)))
+
     response = client.get('/get_available_medicine')
     assert response.status_code == 200
     data = json.loads(response.data)
     assert "message" in data
     assert "medicine" in data
-    assert isinstance(data["medicine"], list)
+    assert len(data["medicine"]) == 2
+    assert data["medicine"][0]["label"] == "Aspirin"
 
-@pytest.mark.order(1) # LOX n°3
-def test_get_available_medicine_file_not_found(client):
+@pytest.mark.order(1)  # LOX n°3
+def test_get_available_medicine_file_not_found(client, monkeypatch):
     """
-    Test when the JSON file is missing by temporarily removing it.
-    It ensures the file exists before the test, removes it,
-    checks for a 404 error response, then restores the file.
+    Objectif: Test the /get_available_medicine endpoint when the medicine data file is not found.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
-    json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
-    temp_json_path = os.path.join(os.path.dirname(__file__), "../medicine_available_temp.json")
+    monkeypatch.setattr("os.path.exists", lambda x: False)
 
-    # Ensure the file exists before proceeding
-    assert os.path.exists(json_path), "medicine_available.json should exist before the test"
+    response = client.get('/get_available_medicine')
+    assert response.status_code == 404
+    data = json.loads(response.data)
+    assert data["error"] == "Medicine data file not found"
 
-    # Create a backup and remove the original JSON file
-    shutil.copy(json_path, temp_json_path)
-    os.remove(json_path)
-
-    try:
-        response = client.get('/get_available_medicine')
-        assert response.status_code == 404
-        data = json.loads(response.data)
-        assert "error" in data
-        assert data["error"] == "Medicine data file not found"
-    finally:
-        # Restore the original file to maintain test integrity
-        shutil.move(temp_json_path, json_path)
-
-@pytest.mark.order(1) # LOX n°3
+@pytest.mark.order(1)  # LOX n°3
 def test_get_available_medicine_unexpected_error(client, monkeypatch):
     """
-    Test when an unexpected error occurs while trying to read the JSON file.
-    This is simulated by monkey-patching the built-in open function to raise an exception.
-    It ensures the response returns a 500 status code and an appropriate error message.
-    """
-    def mock_open(*args, **kwargs):
-        raise Exception("Unexpected error")
+    Objectif: Test the /get_available_medicine endpoint when an unexpected error occurs during file reading.
 
-    # Mock the open function to raise an exception
-    monkeypatch.setattr("builtins.open", mock_open)
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
+    """
+    def mock_error(*args, **kwargs):
+        """
+        Objectif: Mock function that raises an exception to simulate a disk read error during testing.
+
+        Parameters:
+            - *args: Variable length argument list. (Any)
+            - **kwargs: Arbitrary keyword arguments. (Any)
+
+        Return Value:
+            - None: This function does not return and always raises an Exception. (NoneType)
+        """
+        raise Exception("Disk read error")
+
+    monkeypatch.setattr("os.path.exists", lambda x: True)
+    monkeypatch.setattr("builtins.open", mock_error)
 
     response = client.get('/get_available_medicine')
     assert response.status_code == 500
     data = json.loads(response.data)
     assert "error" in data
-    assert data["error"] == "Unexpected error"
 
-@pytest.mark.order(1) # LOX n°3
-def test_get_available_medicine_json_decode_error(client):
+@pytest.mark.order(1)  # LOX n°3
+def test_get_available_medicine_json_decode_error(client, monkeypatch):
     """
-    Test when the JSON file contains invalid JSON syntax.
-    It temporarily writes an invalid JSON string to the file,
-    verifies that a 500 error response is returned, then restores the original file.
+    Objectif: Test the /get_available_medicine endpoint when the medicine data file contains invalid JSON syntax.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - monkeypatch: Pytest fixture used to mock functions and attributes during testing. (MonkeyPatch)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
-    json_path = os.path.join(os.path.dirname(__file__), "../medicine_available.json")
-    temp_json_path = os.path.join(os.path.dirname(__file__), "../medicine_available_temp.json")
+    """Test invalid JSON syntax handling"""
+    monkeypatch.setattr("os.path.exists", lambda x: True)
+    monkeypatch.setattr("builtins.open", mock_open(read_data="{ invalid json }"))
 
-    # Ensure the file exists before proceeding
-    assert os.path.exists(json_path), "medicine_available.json should exist before the test"
-    shutil.copy(json_path, temp_json_path)
-
-    try:
-        # Write invalid JSON content to the file
-        with open(json_path, "w", encoding="utf-8") as f:
-            f.write("{ invalid json }")
-
-        response = client.get('/get_available_medicine')
-        assert response.status_code == 500
-        data = json.loads(response.data)
-        assert "error" in data
-        assert data["error"] == "Failed to parse medicine data file"
-
-    finally:
-        # Restore the original JSON file after the test
-        shutil.move(temp_json_path, json_path)
+    response = client.get('/get_available_medicine')
+    assert response.status_code == 500
+    data = json.loads(response.data)
+    assert data["error"] == "Failed to parse medicine data file"

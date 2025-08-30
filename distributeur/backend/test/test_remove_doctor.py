@@ -6,7 +6,13 @@ from unittest.mock import patch
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_success(client):
     """
-    Test case for successfully removing a doctor.
+    Objectif: Test the /remove_doctor endpoint for successful removal of a doctor from the database.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Perform a DELETE request to the /remove_doctor route with a doctor's information
     response = client.delete('/remove_doctor',
@@ -22,7 +28,13 @@ def test_remove_doctor_success(client):
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_not_found(client):
     """
-    Test case for trying to remove a doctor that doesn't exist.
+    Objectif: Test the /remove_doctor endpoint when attempting to remove a doctor that does not exist in the database.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Perform a DELETE request with information of a doctor not in the list
     response = client.delete('/remove_doctor',
@@ -38,7 +50,13 @@ def test_remove_doctor_not_found(client):
 @pytest.mark.order(3) # LOX n°1
 def test_remove_doctor_missing_params(client):
     """
-    Test case for missing required parameters when trying to remove a doctor.
+    Objectif: Test the /remove_doctor endpoint when required parameters are missing in the request.
+
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Perform a DELETE request with missing parameters in the doctor's information
     response = client.delete('/remove_doctor',
@@ -55,7 +73,14 @@ def test_remove_doctor_missing_params(client):
 @patch('routes.remove_doctor.get_connection', side_effect=Exception("Database connection failed"))
 def test_remove_doctor_db_error(mock_get_connection, client):
     """
-    Test case for a database connection error when trying to remove a doctor.
+    Objectif: Test the /remove_doctor endpoint when a database connection error occurs during the removal process.
+
+    Parameters:
+        - mock_get_connection: Mock object that simulates the database connection function and raises an exception. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Perform a DELETE request and simulate a database connection failure
     response = client.delete('/remove_doctor',

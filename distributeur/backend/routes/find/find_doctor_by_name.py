@@ -8,19 +8,22 @@ find_doctor_by_name_bp = Blueprint('find_doctor_by_name', __name__)
 @find_doctor_by_name_bp.route('/find_doctor_by_name', methods=['GET'])
 def find_doctor_by_name():
     """
-    Searches the database for doctors by last name. Other parameters are optional.
+    Objectif: Searches the database for doctors by last name with optional additional filters.
+
+    Parameters:
+        - None
 
     Query parameters:
-        - last_name (str): Required. The last name of the doctor.
-        - first_name (str): Optional. Filters by first name.
-        - sector (str): Optional. Filters by sector.
-        - region (str): Optional. Filters by region.
+        - last_name: The last name of the doctor to search for. (String, Required)
+        - first_name: The first name of the doctor to filter by. (String, Optional)
+        - sector: The sector of activity to filter by. (String, Optional)
+        - region: The region of practice to filter by. (String, Optional)
 
-    Returns:
-        - 200 OK: A list of matching doctors.
-        - 400 Bad Request: If 'last_name' is missing.
-        - 404 Not Found: If no doctors match the criteria.
-        - 500 Internal Server Error: In case of a database error.
+    Return Value:
+        - 200: JSON array of doctor objects matching the search criteria. (Array)
+        - 400: JSON error response if the required 'last_name' parameter is missing. (Object)
+        - 404: JSON error response if no doctors are found matching the criteria. (Object)
+        - 500: JSON error response for database connection issues or other internal errors. (Object)
     """
 
     # Retrieve query parameters

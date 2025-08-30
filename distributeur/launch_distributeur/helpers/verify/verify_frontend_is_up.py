@@ -5,9 +5,14 @@ from colored_print import colored_print
 
 def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
     """
-    Verifies that the frontend app is ready, with detailed error detection.
-    :param frontend_container_name: The name of the frontend container to check.
-    :param nb_of_retry: The number of retries before failing (default is 1).
+    Objectif: Verifies that the frontend application within a Docker container is ready and responding by checking its HTTP endpoint with retries.
+
+    Parameters:
+        - frontend_container_name: The name of the Docker container running the frontend application. (String)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program if the frontend fails to start. (NoneType)
     """
     waiting_time = 60  # Time in seconds between retries
 
@@ -62,11 +67,21 @@ def verify_frontend_is_up(frontend_container_name, nb_of_retry=1):
             last_error = e
             colored_print(f"Unexpected error while checking frontend container: {e}", "yellow")
 
+            # Get container logs for debugging
+            try:
+                logs = subprocess.check_output(
+                    ["docker", "logs", frontend_container_name],
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+                colored_print(f"Container logs:\n{logs}", "yellow")
+            except subprocess.CalledProcessError as log_error:
+                colored_print(f"Failed to get container logs: {log_error}", "yellow")
+
         if attempt == nb_of_retry:
             break
-
         colored_print(
-            f"Attempt {attempt}/{nb_of_retry}: Frontend not ready. Retrying in {waiting_time} seconds...",
+            f"Attempt {attempt}/{nb_of_retry}: frontend not ready. Retrying in {waiting_time} seconds...",
             "yellow"
         )
         time.sleep(waiting_time)

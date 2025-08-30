@@ -49,7 +49,9 @@ function DirectionsMapPage() {
   useInactivityRedirect(() => setShowInactivityModal(true));
   // Dismiss inactivity modal on user activity
   useEffect(() => {
-    if (!showInactivityModal) return;
+    if (!showInactivityModal) {
+      return;
+    }
     const dismiss = () => setShowInactivityModal(false);
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     events.forEach(event => window.addEventListener(event, dismiss));
@@ -57,7 +59,9 @@ function DirectionsMapPage() {
   }, [showInactivityModal]);
 
   useEffect(() => {
-    if (apiCalledRef.current) return;
+    if (apiCalledRef.current) {
+      return;
+    }
     if (!pharmacy.latitude || !pharmacy.longitude || !pharmacy.name || !transport) {
       setError('Informations de pharmacie ou mode de transport manquantes.');
       setLoading(false);
@@ -81,7 +85,7 @@ function DirectionsMapPage() {
               setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
             } else if (data.routes && data.routes.length > 0) {
               // ORS geometry is encoded polyline5 by default
-              const geometry = data.routes[0].geometry;
+              const {geometry} = data.routes[0];
               let coords = [];
               if (typeof geometry === 'string') {
                 coords = polyline.decode(geometry);
@@ -122,7 +126,9 @@ function DirectionsMapPage() {
     const handleKeyDown = (e) => {
       // Handle left/right arrows, Tab, and Enter
       if (['ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-        if (focusedIndex < 3) e.preventDefault();
+        if (focusedIndex < 3) {
+          e.preventDefault();
+        }
         if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
           setFocusedIndex((prev) => (prev + 1) % 4);
         } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
@@ -145,7 +151,9 @@ function DirectionsMapPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex, navigate]);
 
-  if (error) return <ErrorPage message={error} />;
+  if (error) {
+    return <ErrorPage message={error} />;
+  }
   if (loading) {
     return (
       <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
@@ -250,21 +258,24 @@ function DirectionsMapPage() {
               />
               {userCoords && (
                 <Marker position={userCoords}>
-                  <Popup>
-                    Votre position
-                  </Popup>
+                  <Popup>Votre position</Popup>
                 </Marker>
               )}
               <Marker position={[pharmacy.latitude, pharmacy.longitude]}>
-                <Popup>
-                  {pharmacy.name}
-                </Popup>
+                <Popup>{pharmacy.name}</Popup>
               </Marker>
-            {routeCoords.length > 0 && (
-              <Polyline positions={routeCoords} color="blue" />
-            )}
+              {routeCoords.length > 0 && (
+                <Polyline positions={routeCoords} color="blue" />
+              )}
             </MapContainer>
           </div>
+        </div>
+        <div className="mt-auto mb-8">
+          <img
+            src={config.icons.logo}
+            alt="Logo PharmaXcess"
+            className="w-40 h-auto opacity-60"
+          />
         </div>
       </div>
     </>

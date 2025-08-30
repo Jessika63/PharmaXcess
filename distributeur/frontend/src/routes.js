@@ -9,6 +9,8 @@ import DirectionsMapPage from './components/pages/DirectionsMapPage';
 import Preorder from './components/pages/preorder';
 import ErrorPage from './components/ErrorPage';
 import PaymentSuccess from './components/pages/PaymentSuccess';
+import PaymentError from './components/pages/PaymentError';
+
 
 function AppRoutes() {
     return (
@@ -23,6 +25,7 @@ function AppRoutes() {
                 <Route path="/preorder" element={<Preorder />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/payment-error" element={<PaymentError />} />
             </Routes>
         </Router>
     );

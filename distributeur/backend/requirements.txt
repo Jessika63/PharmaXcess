@@ -21,4 +21,4 @@ charset-normalizer==3.3.2
 idna>=3.7
 certifi>=2024.7.4
 flask-cors==6.0.1
-stripe>=5.5.0
+stripe==5.5.0

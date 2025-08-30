@@ -18,6 +18,22 @@ ORS_PROFILES = {
 
 @get_directions_bp.route('/get_direction', methods=['GET'])
 def get_directions():
+    """
+    Objectif: Retrieve routing directions between two geographic points using the OpenRouteService API.
+
+    Parameters:
+        - None
+
+    Query parameters:
+        - origin: The starting coordinates in 'latitude,longitude' format. (String, Required)
+        - destination: The ending coordinates in 'latitude,longitude' format. (String, Required)
+        - mode: The transportation mode ('car', 'bike', 'foot', etc.). Defaults to 'car'. (String, Optional)
+
+    Return Value:
+        - 200: JSON response containing the routing directions from OpenRouteService. (Object)
+        - 400: JSON error response for missing origin/destination or invalid coordinates. (Object)
+        - 500: JSON error response for missing API key or OpenRouteService API failures. (Object)
+    """
     origin = request.args.get('origin')
     destination = request.args.get('destination')
     mode = request.args.get('mode', 'car')

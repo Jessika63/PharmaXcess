@@ -8,19 +8,19 @@ from helpers.verify.verify_database_is_up import verify_database_is_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
-def handle_back(backend_folder, db_dump_date, db_container_name, back_app_container_name):
+def handle_back(backend_folder, db_dump_date, db_container_name, back_app_container_name, no_cache=False):
     """
-    Handles the backend operations, including verification and container management:
-    1. Verifies the environment file and database dump file.
-    2. Builds and starts the Docker containers for the backend.
-    3. Waits for the database container to be up and ready.
-    4. Imports the database dump file into the database container.
+    Objectif: Orchestrates backend operations including environment verification, Docker container management, and database import.
 
     Parameters:
-    - env_file_path (str): Path to the environment file (.env).
-    - required_env_keys (list): List of required keys that should be present in the environment file.
-    - backend_folder (str): Path to the backend folder where the database dump file is located.
-    - db_dump_date (str): Date string used to construct the database dump file name.
+        - backend_folder: Path to the backend directory containing the database dump file. (String)
+        - db_dump_date: Date string used to construct the database dump filename. (String)
+        - db_container_name: Name of the database Docker container. (String)
+        - back_app_container_name: Name of the backend application Docker container. (String)
+        - no_cache: If True, builds Docker images without cache. Defaults to False. (Boolean)
+
+    Return Value:
+        - None: This function does not return a value but performs operations and prints status messages. (NoneType)
     """
     colored_print("Starting backend operations...", "blue")
 
@@ -28,7 +28,7 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     change_directory(backend_folder)
 
     # Step 1: Start containers with docker-compose in detached mode
-    start_containers()
+    start_containers(no_cache=no_cache)
     verify_backend_is_up(back_app_container_name, nb_of_retry=10)
 
     # Step 2: Wait for the database container to be ready
@@ -47,11 +47,9 @@ def handle_back(backend_folder, db_dump_date, db_container_name, back_app_contai
     if not os.path.exists(dump_file_name):
         if os.environ.get("CI", "false").lower() == "true":
             colored_print(f"Dump file '{dump_file_name}' not found, but running in CI, so continuing without it.", "yellow")
-            return  # Skip the dump import in CI
         else:
             colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
-            return
-
+        return  # Skip the dump import in CI
     try:
         colored_print(f"Importing database dump '{dump_file_name}' into the container...", "blue")
         with open(dump_file_name, "r", encoding="utf-8") as dump_file:

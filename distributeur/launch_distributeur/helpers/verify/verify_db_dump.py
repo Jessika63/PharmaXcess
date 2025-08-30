@@ -5,11 +5,16 @@ from colored_print import colored_print
 # Function to verify the database dump file
 def verify_db_dump(dump_folder, expected_date):
     """
-    Verify the presence of the expected database dump file in a folder, with detailed error detection.
-    :param dump_folder: Path to the folder containing database dump files
-    :param expected_date: Date of the expected dump file in 'DD_MM_YYYY' format
+    Objectif: Verifies the presence of the expected database dump file in the specified folder and checks for other dump files with similar naming patterns.
+
+    Parameters:
+        - dump_folder: Path to the directory containing database dump files. (String)
+        - expected_date: Expected date of the database dump file in 'DD_MM_YYYY' format. (String)
+
+    Return Value:
+        - None: This function does not return a value but prints verification results and warnings. (NoneType)
     """
-    colored_print("STEP 2: Verifying database dump file", "blue")
+    colored_print("Verifying database dump file", "blue")
 
     # Construct the expected filename
     expected_file_pattern = f"database_dump_px_{expected_date}.sql"

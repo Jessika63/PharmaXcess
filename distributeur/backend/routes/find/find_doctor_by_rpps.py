@@ -8,15 +8,18 @@ find_doctor_by_rpps_bp = Blueprint('find_doctor_by_rpps', __name__)
 @find_doctor_by_rpps_bp.route('/find_doctor_by_rpps', methods=['GET'])
 def find_doctor_by_rpps():
     """
-    Checks if a doctor with the given RPPS code exists in the database.
+    Objectif: Checks if a doctor with the specified RPPS code exists in the database.
+
+    Parameters:
+        - None
 
     Query parameters:
-        - rpps (str): Required. The RPPS code of the doctor.
+        - rpps: The RPPS code of the doctor to check. (String, Required)
 
-    Returns:
-        - 200 OK: JSON response with 'exists': True or False.
-        - 400 Bad Request: If the 'rpps' parameter is missing.
-        - 500 Internal Server Error: In case of a database error.
+    Return Value:
+        - 200: JSON response with a boolean 'exists' field indicating presence. (Object)
+        - 400: JSON error response if the 'rpps' parameter is missing. (Object)
+        - 500: JSON error response for database or internal errors. (Object)
     """
 
     # Retrieve and validate the RPPS parameter
