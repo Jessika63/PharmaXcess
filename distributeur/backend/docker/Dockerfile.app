@@ -4,17 +4,18 @@ WORKDIR /app
 
 COPY requirements.txt /app/
 
+# Install system dependencies and clean up in one layer
+RUN apt-get update && \
+    apt-get install -y \
+        libzbar0 \
+        netcat-openbsd \
+        libgl1 \
+        libglib2.0-0 \
+        tesseract-ocr && \
+    rm -rf /var/lib/apt/lists/*
+
+# Installing Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-RUN apt-get update
-
-RUN apt-get install -y libzbar0
-RUN apt-get install -y netcat-openbsd
-RUN apt-get install -y libgl1
-RUN apt-get install -y libglib2.0-0
-RUN apt-get install -y tesseract-ocr
-
-RUN rm -rf /var/lib/apt/lists/*
 
 COPY . /app
 
@@ -26,10 +27,9 @@ RUN mkdir -p /data
 # Copy the init script
 COPY scripts/init_medicine.sh /init_medicine.sh
 
-# Convert Windows line endings to Unix
-RUN sed -i 's/\r$//' /init_medicine.sh
-
-RUN chmod +x /init_medicine.sh
+# Convert Windows line endings to Unix et rendre executable
+RUN sed -i 's/\r$//' /init_medicine.sh && \
+    chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
 
