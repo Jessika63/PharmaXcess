@@ -1,14 +1,25 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { getDefaultPermissions, generateProfileId, validateProfileCreation } from '../utils/profileValidation';
 
 export interface Profile {
     id: string; 
     name: string; 
     avatar?: string; 
     dateOfBirth?: string; 
+    age?: number;
     relationship?: 'self' | 'child' | 'parent' | 'spouse' | 'other';
     isMain?: boolean;
+    // Permissions for different actions 
+    permissions: { 
+        canOrderMedication: boolean; 
+        canViewPrescriptions: boolean; 
+        canManageProfiles: boolean; 
+        canAccessChat: boolean; 
+        canViewFullMedicalHistory: boolean; 
+    }; 
+
     // Medical data specific to the profile
     diseases?: string[];
     treatments?: string[];
@@ -69,23 +80,38 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
 
             if (storedProfiles) {
                 const profilesList: Profile[] = JSON.parse(storedProfiles);
-                setProfiles(profilesList);
+                
+                // Ensure all profiles have permissions
+                const profilesWithPermissions = profilesList.map(profile => {
+                    if (!profile.permissions) {
+                        return {
+                            ...profile,
+                            permissions: getDefaultPermissions(profile.relationship, profile.age)
+                        };
+                    }
+                    return profile;
+                });
+                
+                setProfiles(profilesWithPermissions);
 
                 // Set current profile
                 if (storedCurrentProfileId) {
-                    const currentProf = profilesList.find(p => p.id === storedCurrentProfileId);
+                    const currentProf = profilesWithPermissions.find(p => p.id === storedCurrentProfileId);
                     if (currentProf) {
                         setCurrentProfile(currentProf);
                     } else {
                         // If stored profile doesn't exist anymore, take the main profile
-                        const mainProfile = profilesList.find(p => p.isMain);
-                        setCurrentProfile(mainProfile || profilesList[0] || null);
+                        const mainProfile = profilesWithPermissions.find(p => p.isMain);
+                        setCurrentProfile(mainProfile || profilesWithPermissions[0] || null);
                     }
                 } else {
                     // No stored current profile, take the main profile
-                    const mainProfile = profilesList.find(p => p.isMain);
-                    setCurrentProfile(mainProfile || profilesList[0] || null);
+                    const mainProfile = profilesWithPermissions.find(p => p.isMain);
+                    setCurrentProfile(mainProfile || profilesWithPermissions[0] || null);
                 }
+                
+                // Save the updated profiles with permissions
+                await saveProfiles(profilesWithPermissions);
             } else {
                 // No existing profiles, create the user's main profile
                 await createMainProfile();
@@ -101,10 +127,11 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
         if (!user) return;
 
         const mainProfile: Profile = {
-            id: `main_${user.id}`,
+            id: generateProfileId(),
             name: user.name || 'Mon profil',
             relationship: 'self',
             isMain: true,
+            permissions: getDefaultPermissions('self'),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(), 
         }; 
@@ -113,8 +140,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
         setProfiles(newProfiles);
         setCurrentProfile(mainProfile);
 
-        await AsyncStorage.setItem(getStorageKey('list'), JSON.stringify(newProfiles)); 
-        await AsyncStorage.setItem(getStorageKey('current'), mainProfile.id); 
+        await saveProfiles(newProfiles, mainProfile); 
     }; 
 
     const saveProfiles = async (newProfiles: Profile[], newCurrentProfile?: Profile | null) => {
@@ -127,23 +153,42 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
     const createProfile = async (profileData: Partial<Profile>): Promise<boolean> => { 
         try { 
             if (!user) return false;
+            // Validate profile data 
+            const validationErrors = validateProfileCreation(profileData);
+            if (validationErrors.length > 0) {
+                console.error('Profile validation errors:', validationErrors);
+                return false;
+            }
+
+            // Calculate age from dateOfBirth if provided
+            let age = profileData.age;
+            if (profileData.dateOfBirth && !age) {
+                const birthDate = new Date(profileData.dateOfBirth);
+                const today = new Date();
+                age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+            }
 
             const newProfile: Profile = {
-                id: `profile_${Date.now()}`,
+                id: generateProfileId(),
                 name: profileData.name || 'Nouveau profil',
                 avatar: profileData.avatar,
                 dateOfBirth: profileData.dateOfBirth,
+                age: age,
                 relationship: profileData.relationship || 'other',
                 isMain: false,
-                diseases: [],
-                treatments: [],
-                allergies: [],
-                familyHistory: [],
-                doctors: [],
-                hospitalizations: [],
+                permissions: getDefaultPermissions(profileData.relationship, age),
+                diseases: profileData.diseases || [],
+                treatments: profileData.treatments || [],
+                allergies: profileData.allergies || [],
+                familyHistory: profileData.familyHistory || [],
+                doctors: profileData.doctors || [],
+                hospitalizations: profileData.hospitalizations || [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                ...profileData,
             };
 
             const newProfiles = [...profiles, newProfile];
@@ -187,8 +232,26 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
         try { 
             // Don't allow deletion of the main profile
             const profileToDelete = profiles.find(p => p.id === profileId);
-            if (profileToDelete?.isMain) {
-                throw new Error('Cannot delete main profile');
+            if (!profileToDelete) {
+                console.error('Profile not found');
+                return false;
+            }
+            
+            if (profileToDelete.isMain) {
+                console.error('Cannot delete main profile');
+                return false;
+            }
+
+            // Only allow deletion if current user has permission
+            if (currentProfile && !currentProfile.permissions.canManageProfiles) {
+                console.error('Current profile does not have permission to delete profiles');
+                return false;
+            }
+
+            // Don't allow deleting the last profile
+            if (profiles.length <= 1) {
+                console.error('Cannot delete the last profile');
+                return false;
             }
 
             const updatedProfiles = profiles.filter(profile => profile.id !== profileId);

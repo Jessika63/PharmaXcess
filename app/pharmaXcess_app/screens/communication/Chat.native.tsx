@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
+import { canUserPerformAction, getDefaultPermissions } from '../../utils/profileValidation';
 
 type Message = {
     id: string;
@@ -101,11 +103,25 @@ export default function Chat(): React.JSX.Element {
     // Global state to store chats for all profiles
     const [profileChatsData, setProfileChatsData] = useState<ProfileChatsData>({});
     
+    // Ensure current profile has permissions 
+    const ensureProfilePermissions = (profile: typeof currentProfile) => {
+        if (!profile) return null;
+        if (!profile.permissions) {
+            return {
+                ...profile,
+                permissions: getDefaultPermissions(profile.relationship, profile.age)
+            };
+        }
+        return profile;
+    };
+
+    const safeCurrentProfile = ensureProfilePermissions(currentProfile);
+    
     // Retrieve chats for the current profile or default to main profile chats 
     const currentChats = currentProfile 
         ? (profileChatsData[currentProfile.id] || (currentProfile.isMain ? defaultChats : []))
-        : [];
-
+        : []; 
+        
     // Chat interface states
     const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -122,36 +138,73 @@ export default function Chat(): React.JSX.Element {
         status: 'open',
         lastActivity: '',
     });
+
+    // Load chats from AsyncStorage
+    const loadChats = async () => {
+        try {
+            if (!currentProfile?.id) return;
+            
+            const storageKey = `chats_${currentProfile.id}`;
+            const storedChats = await AsyncStorage.getItem(storageKey);
+            
+            if (storedChats) {
+                const chats = JSON.parse(storedChats);
+                setProfileChatsData(prev => ({
+                    ...prev,
+                    [currentProfile.id]: chats
+                }));
+            } else if (currentProfile.isMain) {
+                // Initialize with default chats for main profile
+                setProfileChatsData(prev => ({
+                    ...prev,
+                    [currentProfile.id]: defaultChats
+                }));
+                await saveChats(defaultChats, currentProfile.id);
+            }
+        } catch (error) {
+            console.error('Error loading chats:', error);
+        }
+    };
+
+    // Save chats to AsyncStorage
+    const saveChats = async (chats: ChatItem[], profileId: string) => {
+        try {
+            const storageKey = `chats_${profileId}`;
+            await AsyncStorage.setItem(storageKey, JSON.stringify(chats));
+        } catch (error) {
+            console.error('Error saving chats:', error);
+        }
+    };
     // Effect to initialize chats for the current profile 
     useEffect(() => { 
-        if (currentProfile?.id && !profileChatsData[currentProfile.id]) { 
-            // Initialize chats for the main profile with default data 
-            if (currentProfile.isMain) { 
-                setProfileChatsData(prev => ({ 
-                    ...prev,
-                    [currentProfile.id]: defaultChats 
-                })); 
-            }
+        if (currentProfile?.id) {
+            loadChats();
         }
         // Reset selected chat when switching profiles 
         setSelectedChat(null); 
     }, [currentProfile?.id]); 
 
     // Utility function to update chats for the current profile 
-    const updateCurrentProfileChats = (updater: (chats: ChatItem[]) => ChatItem[]) => { 
+    const updateCurrentProfileChats = async (updater: (chats: ChatItem[]) => ChatItem[]) => { 
         if (!currentProfile?.id) return; 
 
+        const currentProfileChats = profileChatsData[currentProfile.id] || [];
+        const updatedChats = updater(currentProfileChats);
+        
         setProfileChatsData(prev => ({ 
             ...prev,
-            [currentProfile.id]: updater(prev[currentProfile.id] || [])
-        })); 
+            [currentProfile.id]: updatedChats
+        }));
+        
+        // Save to AsyncStorage
+        await saveChats(updatedChats, currentProfile.id);
     }; 
-    
+
     // Function to handle opening a chat conversation
-    const handleChatPress = (chat: ChatItem): void => {
+    const handleChatPress = async (chat: ChatItem): Promise<void> => {
         setSelectedChat(chat);
         // Mark messages as read when opening the chat
-        updateCurrentProfileChats(chats => 
+        await updateCurrentProfileChats(chats => 
             chats.map(c => 
                 c.id === chat.id 
                     ? {
@@ -164,7 +217,7 @@ export default function Chat(): React.JSX.Element {
     };
 
     // Function to send a new message
-    const handleSendMessage = (): void => {
+    const handleSendMessage = async (): Promise<void> => {
         if (!newMessage.trim() || !selectedChat) return;
 
         const message: Message = {
@@ -175,7 +228,7 @@ export default function Chat(): React.JSX.Element {
             isRead: true
         };
 
-        updateCurrentProfileChats(chats => 
+        await updateCurrentProfileChats(chats => 
             chats.map(chat => 
                 chat.id === selectedChat.id 
                     ? {
@@ -190,7 +243,7 @@ export default function Chat(): React.JSX.Element {
         setNewMessage('');
         
         // Simulate support response after 2 seconds
-        setTimeout(() => {
+        setTimeout(async () => {
             const supportMessage: Message = {
                 id: Math.random().toString(),
                 text: 'Merci pour votre message. Notre équipe va traiter votre demande et vous répondra dans les plus brefs délais.',
@@ -199,7 +252,7 @@ export default function Chat(): React.JSX.Element {
                 isRead: false
             };
 
-            updateCurrentProfileChats(chats => 
+            await updateCurrentProfileChats(chats => 
                 chats.map(chat => 
                     chat.id === selectedChat.id 
                         ? {
@@ -238,7 +291,13 @@ export default function Chat(): React.JSX.Element {
         return messages.filter(msg => !msg.isRead && msg.sender === 'support').length;
     };
 
-    const handleAddTicket = (): void => {
+    const handleAddTicket = async (): Promise<void> => {
+        // Check if current profile can access chat
+        if (safeCurrentProfile && !canUserPerformAction(safeCurrentProfile, 'access_chat')) {
+            Alert.alert('Accès refusé', 'Ce profil n\'a pas l\'autorisation d\'accéder au chat.');
+            return;
+        }
+
         // Validate that all fields are filled before adding a new ticket
         if (!newTicket.title || !newTicket.name || !newTicket.question) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
@@ -265,7 +324,7 @@ export default function Chat(): React.JSX.Element {
         };
 
         // Add the new ticket to the chat list and reset the form
-        updateCurrentProfileChats(chats => [newTicketData, ...chats]);
+        await updateCurrentProfileChats(chats => [newTicketData, ...chats]);
         setNewTicket({ 
             id: '', 
             title: '', 
@@ -323,12 +382,23 @@ export default function Chat(): React.JSX.Element {
             />
 
             <View style={styles.fixedButtonContainer}>
-                <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                        <Ionicons name="add" size={24} color={colors.iconPrimary} />
-                        <Text style={styles.buttonText}>Ouvrir un ticket</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                {safeCurrentProfile && canUserPerformAction(safeCurrentProfile, 'access_chat') ? (
+                    <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                            <Ionicons name="add" size={24} color={colors.iconPrimary} />
+                            <Text style={styles.buttonText}>Ouvrir un ticket</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={[styles.addButton, { opacity: 0.5 }]}>
+                        <View style={[styles.gradient, { backgroundColor: colors.infoTextSecondary }]}>
+                            <Ionicons name="lock-closed" size={24} color={colors.textMuted} />
+                            <Text style={[styles.buttonText, { color: colors.textMuted }]}>
+                                Chat non autorisé
+                            </Text>
+                        </View>
+                    </View>
+                )}
             </View>
         </>
     );
