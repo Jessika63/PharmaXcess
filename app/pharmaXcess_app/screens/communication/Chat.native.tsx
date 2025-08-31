@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
 
 type Message = {
     id: string;
@@ -24,14 +25,20 @@ type ChatItem = {
     status: 'open' | 'closed' | 'pending';
     lastActivity: string;
 };
+// Interface to store chats by profile
+interface ProfileChatsData { 
+    [profileId: string]: ChatItem[]; 
+}
 
 // The Chat component provides a complete messaging system for support tickets with real-time conversations, message history, and ticket management.
 export default function Chat(): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
     
-    const [chats, setChats] = useState<ChatItem[]>([
+    // Default chats for the main profile
+    const defaultChats: ChatItem[] = [
         { 
             id: '1', 
             title: 'Problème de prescription', 
@@ -89,7 +96,15 @@ export default function Chat(): React.JSX.Element {
                 }
             ]
         },
-    ]);
+    ];
+    
+    // Global state to store chats for all profiles
+    const [profileChatsData, setProfileChatsData] = useState<ProfileChatsData>({});
+    
+    // Retrieve chats for the current profile or default to main profile chats 
+    const currentChats = currentProfile 
+        ? (profileChatsData[currentProfile.id] || (currentProfile.isMain ? defaultChats : []))
+        : [];
 
     // Chat interface states
     const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
@@ -107,13 +122,37 @@ export default function Chat(): React.JSX.Element {
         status: 'open',
         lastActivity: '',
     });
+    // Effect to initialize chats for the current profile 
+    useEffect(() => { 
+        if (currentProfile?.id && !profileChatsData[currentProfile.id]) { 
+            // Initialize chats for the main profile with default data 
+            if (currentProfile.isMain) { 
+                setProfileChatsData(prev => ({ 
+                    ...prev,
+                    [currentProfile.id]: defaultChats 
+                })); 
+            }
+        }
+        // Reset selected chat when switching profiles 
+        setSelectedChat(null); 
+    }, [currentProfile?.id]); 
 
+    // Utility function to update chats for the current profile 
+    const updateCurrentProfileChats = (updater: (chats: ChatItem[]) => ChatItem[]) => { 
+        if (!currentProfile?.id) return; 
+
+        setProfileChatsData(prev => ({ 
+            ...prev,
+            [currentProfile.id]: updater(prev[currentProfile.id] || [])
+        })); 
+    }; 
+    
     // Function to handle opening a chat conversation
     const handleChatPress = (chat: ChatItem): void => {
         setSelectedChat(chat);
         // Mark messages as read when opening the chat
-        setChats(prevChats => 
-            prevChats.map(c => 
+        updateCurrentProfileChats(chats => 
+            chats.map(c => 
                 c.id === chat.id 
                     ? {
                         ...c,
@@ -136,8 +175,8 @@ export default function Chat(): React.JSX.Element {
             isRead: true
         };
 
-        setChats(prevChats => 
-            prevChats.map(chat => 
+        updateCurrentProfileChats(chats => 
+            chats.map(chat => 
                 chat.id === selectedChat.id 
                     ? {
                         ...chat,
@@ -160,8 +199,8 @@ export default function Chat(): React.JSX.Element {
                 isRead: false
             };
 
-            setChats(prevChats => 
-                prevChats.map(chat => 
+            updateCurrentProfileChats(chats => 
+                chats.map(chat => 
                     chat.id === selectedChat.id 
                         ? {
                             ...chat,
@@ -226,7 +265,7 @@ export default function Chat(): React.JSX.Element {
         };
 
         // Add the new ticket to the chat list and reset the form
-        setChats([newTicketData, ...chats]);
+        updateCurrentProfileChats(chats => [newTicketData, ...chats]);
         setNewTicket({ 
             id: '', 
             title: '', 
@@ -244,7 +283,7 @@ export default function Chat(): React.JSX.Element {
     const renderChatList = () => (
         <>
             <FlatList
-                data={chats}
+                data={currentChats}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => {
                     const unreadCount = getUnreadCount(item.messages);
