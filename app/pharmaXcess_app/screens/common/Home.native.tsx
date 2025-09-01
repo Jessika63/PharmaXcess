@@ -8,6 +8,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
 import createStyles from '../../styles/Home.style';
 
 type HomeProps = {
@@ -25,7 +26,40 @@ export default function Home({ navigation }: HomeProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { t } = useTranslation('common');
+    const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
+
+    const getWelcomeMessage = () => { 
+        if (!currentProfile) { 
+            return "Bienvenue sur PharmaXcess"; 
+        }
+
+        const profileName = currentProfile.name; 
+        const relationship = currentProfile.relationship; 
+
+        return `Bonjour ${profileName}, bienvenue sur votre espace santé.`;
+    }; 
+
+    const getProfileIcon = () => { 
+        if (!currentProfile) { 
+            return "person-circle-outline"; 
+        }
+
+        switch (currentProfile.relationship) { 
+            case 'self': 
+                return "person-circle-outline"; 
+            case 'child': 
+                return "happy-outline"; 
+            case 'parent': 
+                return "person-outline"; 
+            case 'spouse': 
+                return "heart-outline"; 
+            case 'other': 
+                return "people-outline"; 
+            default: 
+                return "person-circle-outline"; 
+        }
+    }; 
 
     const items: Item[] = [
         {
@@ -47,6 +81,19 @@ export default function Home({ navigation }: HomeProps): React.JSX.Element {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            {/* Welcome message with current profile - at the very top */}
+            <View style={{ paddingHorizontal: 20, paddingTop: 0, paddingBottom: 100 }}>
+                <Text style={{ 
+                    fontSize: 24 * fontScale,
+                    fontWeight: 'bold',
+                    color: colors.text,
+                    textAlign: 'center',
+                    marginBottom: 5
+                }}>
+                    {getWelcomeMessage()}
+                </Text>
+            </View>
+
             {/* Map through the items array to create a card for each feature */}
             {items.map((item, index) => (
                 <TouchableOpacity

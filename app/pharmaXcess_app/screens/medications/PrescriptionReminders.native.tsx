@@ -6,6 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Reminder = {
@@ -27,6 +29,7 @@ type Props = {
 export default function PrescriptionReminders({ navigation }: Props): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
 
     const [reminders, setReminders] = useState<Reminder[]>([
@@ -78,6 +81,66 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         { label: 'Élevée', value: 'high' }
     ];
 
+    // For profile-based reminder management (simulated) 
+    const [profileRemindersData, setProfileRemindersData] = useState<string[]>([]);
+
+    // Simple reminder management by profile (simulated functions)
+    const handleAddReminderToProfile = async (reminderData: string): Promise<boolean> => {
+        // Simulate adding reminder to profile
+        if (!profileRemindersData.includes(reminderData)) {
+            setProfileRemindersData([...profileRemindersData, reminderData]);
+            return true;
+        }
+        return false;
+    };
+
+    const handleRemoveReminderFromProfile = async (reminder: string): Promise<boolean> => {
+        // Simulate removing reminder from profile
+        setProfileRemindersData(profileRemindersData.filter(r => r !== reminder));
+        return true;
+    };
+
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
+
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            title: 'Rappels d\'ordonnances',
+        });
+    }, [navigation]);
+
+    // Determine if it's the main profile 
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
+    // Get the reminders to display based on profile
+    const getCurrentReminders = () => {
+        if (isMainProfile) {
+            return reminders;
+        } else {
+            // Parse profile-specific reminders from JSON strings
+            return profileRemindersData.map(reminderStr => {
+                try {
+                    const parsedReminder = JSON.parse(reminderStr);
+                    // Convert dueDate string back to Date object
+                    return {
+                        ...parsedReminder,
+                        dueDate: new Date(parsedReminder.dueDate)
+                    };
+                } catch {
+                    return null;
+                }
+            }).filter(Boolean);
+        }
+    };
+    
     // Calculate days until due date and status
     const getDaysUntilDue = (dueDate: Date): number => {
         const today = new Date();
@@ -125,13 +188,28 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
     // Toggle completion status
     const toggleCompletion = (id: string) => {
-        setReminders(prevReminders => 
-            prevReminders.map(reminder => 
-                reminder.id === id 
-                    ? { ...reminder, isCompleted: !reminder.isCompleted }
-                    : reminder
-            )
-        );
+        if (isMainProfile) {
+            setReminders(prevReminders => 
+                prevReminders.map(reminder => 
+                    reminder.id === id 
+                        ? { ...reminder, isCompleted: !reminder.isCompleted }
+                        : reminder
+                )
+            );
+        } else {
+            // For other profiles: update profile data
+            const currentReminders = getCurrentReminders();
+            const reminderIndex = currentReminders.findIndex(reminder => reminder.id === id);
+            if (reminderIndex !== -1) {
+                const updatedReminder = {
+                    ...currentReminders[reminderIndex],
+                    isCompleted: !currentReminders[reminderIndex].isCompleted
+                };
+                const updatedProfileReminders = [...profileRemindersData];
+                updatedProfileReminders[reminderIndex] = JSON.stringify(updatedReminder);
+                setProfileRemindersData(updatedProfileReminders);
+            }
+        }
     };
 
     // Delete reminder with confirmation
@@ -152,7 +230,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         );
     };
 
-    const handleAddReminder = () => {
+    const handleAddReminder = async () => {
         if (!newReminder.name) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
             return;
@@ -166,20 +244,46 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
             dueDate: dueDate,
             sound: selectedSound,
             priority: selectedPriority,
-            isCompleted: false,
+            isCompleted: editingReminder ? editingReminder.isCompleted : false,
             notes: newReminder.notes || '',
         };
 
-        if (editingReminder) {
-            // Edit existing reminder
-            setReminders(prevReminders => 
-                prevReminders.map(reminder => 
-                    reminder.id === editingReminder.id ? reminderData : reminder
-                )
-            );
+        if (isMainProfile) {
+            // For main profile: use existing logic
+            if (editingReminder) {
+                // Edit existing reminder
+                setReminders(prevReminders => 
+                    prevReminders.map(reminder => 
+                        reminder.id === editingReminder.id ? reminderData : reminder
+                    )
+                );
+            } else {
+                // Add new reminder
+                setReminders(prevReminders => [...prevReminders, reminderData]);
+            }
         } else {
-            // Add new reminder
-            setReminders(prevReminders => [...prevReminders, reminderData]);
+            // For other profiles: add to profile data
+            if (editingReminder) {
+                // Edit existing reminder in profile data
+                const currentReminders = getCurrentReminders();
+                const reminderIndex = currentReminders.findIndex(reminder => reminder.id === editingReminder.id);
+                if (reminderIndex !== -1) {
+                    const updatedProfileReminders = [...profileRemindersData];
+                    updatedProfileReminders[reminderIndex] = JSON.stringify(reminderData);
+                    setProfileRemindersData(updatedProfileReminders);
+                    Alert.alert('Succès', 'Rappel modifié avec succès.');
+                } else {
+                    Alert.alert('Erreur', 'Rappel introuvable.');
+                }
+            } else {
+                // Add new reminder to profile
+                const success = await handleAddReminderToProfile(JSON.stringify(reminderData));
+                if (success) {
+                    Alert.alert('Succès', 'Rappel ajouté avec succès.');
+                } else {
+                    Alert.alert('Erreur', 'Ce rappel est déjà enregistré ou une erreur est survenue.');
+                }
+            }
         }
 
         resetForm();
@@ -219,8 +323,37 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         setIsModalVisible(true);
     };
 
+    const handleRemoveReminder = async (id: string, name: string) => {
+        if (isMainProfile) {
+            // For main profile: use existing delete function
+            deleteReminder(id, name);
+        } else {
+            // For other profiles: remove from profile data
+            Alert.alert(
+                'Supprimer le rappel',
+                `Êtes-vous sûr de vouloir supprimer le rappel "${name}" ?`,
+                [
+                    { text: 'Annuler', style: 'cancel' },
+                    { 
+                        text: 'Supprimer', 
+                        style: 'destructive',
+                        onPress: async () => {
+                            const currentReminders = getCurrentReminders();
+                            const reminderIndex = currentReminders.findIndex(reminder => reminder.id === id);
+                            if (reminderIndex !== -1) {
+                                const reminderToRemove = profileRemindersData[reminderIndex];
+                                await handleRemoveReminderFromProfile(reminderToRemove);
+                            }
+                        }
+                    }
+                ]
+            );
+        }
+    };
+
     // Sort reminders by completion status and due date
-    const sortedReminders = [...reminders].sort((a, b) => {
+    const currentReminders = getCurrentReminders();
+    const sortedReminders = [...currentReminders].sort((a, b) => {
         if (a.isCompleted !== b.isCompleted) {
             return a.isCompleted ? 1 : -1; // Completed items go to bottom
         }
@@ -232,6 +365,45 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
             <FlatList
                 data={sortedReminders}
                 keyExtractor={(item) => item.id}
+                ListHeaderComponent={() => (
+                    <>
+                        {/* Header for current profile */}
+                        {currentProfile && (
+                            <View style={[styles.alarmCard, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <View>
+                                        <Text style={[styles.alarmMedicine, { color: colors.primary, fontWeight: 'bold' }]}>
+                                            {getRelationshipText(currentProfile.relationship)}
+                                        </Text>
+                                        <Text style={[styles.alarmDays, { color: colors.primary, opacity: 0.8 }]}>
+                                            {currentProfile.name}
+                                        </Text>
+                                    </View>
+                                    <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+                                </View>
+                            </View>
+                        )}
+                        
+                        {/* Empty state message for secondary profiles */}
+                        {!isMainProfile && sortedReminders.length === 0 && (
+                            <View style={styles.alarmCard}>
+                                <Text style={[styles.alarmDays, { textAlign: 'center', fontStyle: 'italic', opacity: 0.6 }]}>
+                                    Aucun rappel ajouté pour ce profil
+                                </Text>
+                            </View>
+                        )}
+                    </>
+                )}
+                ListFooterComponent={() => (
+                    <View style={{ paddingTop: 20, paddingBottom: 20 }}>
+                        <TouchableOpacity style={styles.addAlarmButton} onPress={() => setIsModalVisible(true)}>
+                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                <Ionicons name="calendar" size={24} color={colors.iconPrimary} />
+                                <Text style={styles.buttonText}>Nouveau rappel</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                )}
                 renderItem={({ item }) => {
                     const statusInfo = getStatusInfo(item);
                     return (
@@ -285,7 +457,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                                     <Ionicons name="create-outline" size={20} color={colors.iconPrimary} />
                                 </TouchableOpacity>
                                 <TouchableOpacity 
-                                    onPress={() => deleteReminder(item.id, item.name)} 
+                                    onPress={() => handleRemoveReminder(item.id, item.name)} 
                                     style={styles.deleteIconButton}
                                 >
                                     <Ionicons name="trash-outline" size={20} color="#FF4444" />
@@ -294,22 +466,12 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                         </View>
                     );
                 }}
-                contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                contentContainerStyle={{ padding: 20 }}
             />
-
-            {/* Fixed Add Button */}
-            <View style={styles.fixedButtonContainer}>
-                <TouchableOpacity style={styles.addAlarmButton} onPress={() => setIsModalVisible(true)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                        <Ionicons name="calendar" size={24} color={colors.iconPrimary} />
-                        <Text style={styles.buttonText}>Nouveau rappel</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
-            </View>
 
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={styles.modalContainer}>
-                    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+                    <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 20, paddingBottom: 100 }}>
                         <Text style={styles.modalTitle}>
                             {editingReminder ? 'Modifier le rappel' : 'Nouveau rappel'}
                         </Text>
