@@ -20,6 +20,7 @@
     "expo-camera": "~16.1.6",
     "expo-linear-gradient": "~14.1.4",
     "expo-location": "~18.1.4",
+    "expo-notifications": "^0.31.4",
     "expo-status-bar": "~2.2.3",
     "i18next": "^25.2.1",
     "react": "19.0.0",
