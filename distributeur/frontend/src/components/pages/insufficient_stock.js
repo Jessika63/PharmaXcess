@@ -65,9 +65,8 @@ function InsufficientStock() {
             );
           });
         } else {
-          // GPS coordinates of Epitech Kremlin-Bicêtre
-          lat = 48.815273;
-          lon = 2.363006;
+          lat = config.Default_Location.lat;
+          lon = config.Default_Location.lon;
         }
       } catch (geoError) {
         console.log('Geolocation error:', geoError);
@@ -283,9 +282,8 @@ function InsufficientStock() {
             );
           });
         } else {
-          // GPS coordinates of Epitech Kremlin-Bicêtre
-          lat = 48.815273;
-          lon = 2.363006;
+          lat = config.Default_Location.lat;
+          lon = config.Default_Location.lon;
         }
       } catch (geoError) {
         console.log('Geolocation error:', geoError);

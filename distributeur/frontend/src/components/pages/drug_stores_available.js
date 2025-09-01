@@ -147,10 +147,9 @@ function DrugStoresAvailable() {
         }
       );
     } else {
-      alert("Position not supported by browser. Using default location (Epitech Paris Kremlin-Bicêtre).");
-      // GPS coordinates of Epitech Kremlin-Bicêtre
-      const defaultLat = 48.815273;
-      const defaultLon = 2.363006;
+      alert(`Position not supported by browser. Using default location (${config.Default_Location.name}).`);
+      const defaultLat = config.Default_Location.lat;
+      const defaultLon = config.Default_Location.lon;
       fetchPharmacies(defaultLat, defaultLon);
       setLoading(false);
     }

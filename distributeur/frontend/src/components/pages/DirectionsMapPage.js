@@ -111,17 +111,17 @@ function DirectionsMapPage() {
           fetchDirections(latitude, longitude);
         },
         () => {
-          alert("Impossible d'accéder à la position. Assurez-vous qu'elle est activée. Utilisation de la position par défaut (Epitech Paris Kremlin-Bicêtre).");
-          const defaultLat = 48.815273;
-          const defaultLon = 2.363006;
+          alert(`Impossible d'accéder à la position. Assurez-vous qu'elle est activée. Utilisation de la position par défaut (${config.Default_Location.name}).`);
+          const defaultLat = config.Default_Location.lat;
+          const defaultLon = config.Default_Location.lon;
           setUserCoords([defaultLat, defaultLon]);
           fetchDirections(defaultLat, defaultLon);
         }
       );
     } else {
-      alert("La géolocalisation n'est pas supportée par ce navigateur. Utilisation de la position par défaut (Epitech Paris Kremlin-Bicêtre).");
-      const defaultLat = 48.815273;
-      const defaultLon = 2.363006;
+      alert(`La géolocalisation n'est pas supportée par ce navigateur. Utilisation de la position par défaut (${config.Default_Location.name}).`);
+      const defaultLat = config.Default_Location.lat;
+      const defaultLon = config.Default_Location.lon;
       setUserCoords([defaultLat, defaultLon]);
       fetchDirections(defaultLat, defaultLon);
     }

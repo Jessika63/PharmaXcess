@@ -1,7 +1,10 @@
 
 services:
   react-app:
-    build: .
+    build:
+      context: .
+      args:
+        - DEFAULT_LOCATION=${DEFAULT_LOCATION:-paris}
     ports:
       - "3000:3000"
     volumes:
@@ -9,4 +12,5 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - REACT_APP_DEFAULT_LOCATION=${DEFAULT_LOCATION:-paris}
     container_name: "distributeur-frontend-app"

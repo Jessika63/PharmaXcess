@@ -20,9 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--back", action="store_true", help="Run backend-related operations.")
     parser.add_argument("--test", action="store_true", help="Run tests.")
     parser.add_argument("--front", action="store_true", help="Run frontend-related operations.")
-    parser.add_argument(
-        "--all", action="store_true", help="Run the whole application except for tests."
-    )
+    parser.add_argument("--all", action="store_true", help="Run the whole application except for tests.")
     parser.add_argument("--update", type=str, help="Function to update the database.")
     parser.add_argument("--down", action="store_true",
         help="Function to stop the containers, remove the images, and remove the volumes."
@@ -30,22 +28,23 @@ if __name__ == "__main__":
     parser.add_argument("--dump", action="store_true",
         help="Function to export the database dump."
     )
-    parser.add_argument("--export-images", type=str, help="Export backend and database Docker images to a tar file (provide output tar path).")
-    parser.add_argument("--import-images", type=str, help="Import backend and database Docker images from a tar file (provide input tar path).")
-    parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
-    parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
+    parser.add_argument("--export-images", type=str,
+        help="Export backend and database Docker images to a tar file (provide output tar path).")
+    parser.add_argument("--import-images", type=str,
+        help="Import backend and database Docker images from a tar file (provide input tar path).")
+    parser.add_argument("--container-name", type=str, default="distributeur-backend-app",
+        help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
+    parser.add_argument("--combo", action="store_true",help="Run verif, back, front, and test in sequence.")
     parser.add_argument("--restart", action="store_true",
-        help="Function to run down and then all to stop and start again the application."
-    )
+        help="Function to run down and then all to stop and start again the application.")
     parser.add_argument("--no-cache-back", action="store_true",
-        help="Build Backend Docker images without using cache."
-    )
+        help="Build Backend Docker images without using cache.")
     parser.add_argument("--no-cache-front", action="store_true",
-        help="Build Frontend Docker images without using cache."
-    )
+        help="Build Frontend Docker images without using cache.")
     parser.add_argument("--build-test", action="store_true",
-        help="Build Test Docker images before running."
-    )
+        help="Build Test Docker images before running.")
+    parser.add_argument("--location", type=str, choices=['paris', 'lyon'], default='paris',
+        help="Set the default location for the frontend (paris or lyon).")
 
     # Parse arguments
     args = parser.parse_args()
@@ -78,7 +77,7 @@ if __name__ == "__main__":
                 backend_folder, config["db_dump_date"], db_container_name,
                 back_app_container_name, no_cache=args.no_cache_back
             )
-            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
+            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, location=args.location)
 
             if args.combo or args.restart:
                 handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
@@ -94,13 +93,13 @@ if __name__ == "__main__":
                 handle_back(
                     backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
                 )
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, location=args.location)
             if args.back:
                 handle_back(
                     backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, location=args.location)
             if args.test:
                 handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
             if args.update:
