@@ -7,6 +7,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.pharmaxcess_server.pharmaxcess_server.service.LoginAttemptService;
+import com.pharmaxcess_server.pharmaxcess_server.security.BruteForceProtectionFilter;
 import com.pharmaxcess_server.pharmaxcess_server.security.JwtAuthenticationFilter;
 
 /**
@@ -16,15 +19,18 @@ import com.pharmaxcess_server.pharmaxcess_server.security.JwtAuthenticationFilte
 @Configuration
 public class SecurityConfig {
 
+    private final LoginAttemptService loginAttemptService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * Constructs a SecurityConfig instance.
      *
      * @param jwtAuthenticationFilter the custom JWT authentication filter
+     * @param loginAttemptService the service handling brute-force protection
      */
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginAttemptService loginAttemptService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.loginAttemptService = loginAttemptService;
     }
 
     /**
@@ -37,11 +43,15 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        BruteForceProtectionFilter bruteForceFilter = new BruteForceProtectionFilter(loginAttemptService);
+
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/*").permitAll()
                 .anyRequest().authenticated()
-            ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            )
+            .addFilterBefore(bruteForceFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
