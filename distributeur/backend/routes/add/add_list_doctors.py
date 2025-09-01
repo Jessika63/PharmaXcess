@@ -8,20 +8,26 @@ add_list_doctors_bp = Blueprint('add_list_doctors', __name__)
 @add_list_doctors_bp.route('/add_list_doctors', methods=['POST'])
 def add_list_doctors():
     """
-    Adds a list of doctors to the database.
+    Objectif: Adds multiple doctors to the database in a single operation.
 
-    Expected JSON request body:
-        - doctors (list): A list of doctor objects, where each object contains:
-            - first_name (str): Doctor's first name.
-            - last_name (str): Doctor's last name.
-            - rpps (str): RPPS code (French Regulation on Pharmaceutical Products).
-            - sector (str): Sector of activity.
-            - region (str): Region of practice.
+    Parameters:
+        - None
 
-    Returns:
-        - 201 Created: If all doctors are successfully added.
-        - 400 Bad Request: If any doctor is missing required fields.
-        - 500 Internal Server Error: If a database or unexpected error occurs.
+    Query parameters:
+        - None
+
+    Request Body:
+        - doctors: A list of doctor objects, each containing the required fields. (List of Objects, Required)
+            - first_name: Doctor's first name. (String, Required)
+            - last_name: Doctor's last name. (String, Required)
+            - rpps: RPPS code (French Regulation on Pharmaceutical Products). (String, Required)
+            - sector: Doctor's sector of activity. (String, Required)
+            - region: Doctor's region of practice. (String, Required)
+
+    Return Value:
+        - 201: JSON response confirming successful addition of all doctors. (Object)
+        - 400: JSON error response if the request body is invalid or any required field is missing. (Object)
+        - 500: JSON error response for database connection issues or other internal errors. (Object)
     """
 
     # Retrieve JSON data from the request

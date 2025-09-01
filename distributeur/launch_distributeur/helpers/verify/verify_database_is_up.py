@@ -7,9 +7,14 @@ from colored_print import colored_print
 
 def verify_database_is_up(db_container_name, nb_of_retry=1):
     """
-    Verifies that the database container is up and ready, with detailed error detection.
-    :param db_container_name: The name of the database container to check.
-    :param nb_of_retry: The number of retries before failing (default is 1).
+    Objectif: Verifies that the MySQL database container is up and responsive by executing a ping command within the container.
+
+    Parameters:
+        - db_container_name: The name of the Docker container running the MySQL database. (String)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program if the database fails to start. (NoneType)
     """
     waiting_time = 10  # Time in seconds between retries
     env_data = load_env_file(".env")
@@ -61,14 +66,14 @@ def verify_database_is_up(db_container_name, nb_of_retry=1):
             last_error = e
             colored_print(f"Unexpected error while checking database container: {e}", "red")
 
-        if attempt != nb_of_retry:
-            colored_print(
-                f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
-                "yellow"
-            )
-            time.sleep(waiting_time)
-        else:
+        if attempt == nb_of_retry:
             break
+
+        colored_print(
+            f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
+            "yellow"
+        )
+        time.sleep(waiting_time)
 
     colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
     if last_error:

@@ -5,9 +5,16 @@ import os
 # Function to load configuration
 def load_config():
     """
-    Load a JSON configuration file from the given path.
+    Objectif: Load and parse a JSON configuration file from a predefined path relative to the script's location.
 
-    :return: Parsed configuration as a dictionary
+    Parameters:
+        - None
+
+    Return Value:
+        - config: The parsed configuration data from the JSON file. (Dictionary)
+
+    Raises:
+        - SystemExit: If the configuration file is not found or contains invalid JSON.
     """
 
     # Default configuration file path relative to this script

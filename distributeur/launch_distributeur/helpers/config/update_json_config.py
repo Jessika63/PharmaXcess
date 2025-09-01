@@ -6,12 +6,16 @@ from helpers.colored_print import colored_print
 
 def update_json_config(config_relative_path, key_path, value, mode="change"):
     """
-    Updates a JSON configuration file with a new value at a specified key path.
+    Objectif: Updates a JSON configuration file by modifying a value at a specified nested key path, with options for direct replacement or conditional list updates.
 
-    :param config_relative_path: Relative path to the JSON config file.
-    :param key_path: List representing the nested key path to update.
-    :param value: The new value to set.
-    :param mode: "change" for replacing the value, "update" for modifying lists conditionally.
+    Parameters:
+        - config_relative_path: Relative path to the JSON configuration file from the script's directory. (String)
+        - key_path: List of keys representing the nested path to the target value. (List of Strings)
+        - value: New value to set at the specified key path. (Any JSON-serializable type)
+        - mode: Operation mode - "change" for direct value replacement, "update" for conditional list merging. Defaults to "change". (String)
+
+    Return Value:
+        - None: This function does not return a value but may print status/error messages and write to the configuration file.
     """
 
     # Locate the configuration file

@@ -11,13 +11,16 @@
         "app/pharmaXcess_app/package-lock.json",
         "app/pharmaXcess_app/yarn.lock",
         "app/web_server/package-lock.json",
-        "distributeur/backend/database_dump_px_03_07_2025.sql"
+        "distributeur/backend/database_dump_px_03_07_2025.sql",
+        "distributeur/docker-compose.yml"
     ],
     "ignore_dirs": [
         ".git",
         "distributeur/backend/__pycache__/",
         "distributeur/backend/.pytest_cache/",
         "distributeur/frontend/node_modules",
-        "distributeur/frontend/src/assets/"
+        "distributeur/frontend/src/assets/",
+        "distributeur/launch_distributeur/scripts/__pycache__/",
+        "distributeur/technical_docs/"
     ]
 }

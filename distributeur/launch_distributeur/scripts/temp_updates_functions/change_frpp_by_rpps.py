@@ -1,7 +1,13 @@
 
 def change_frpp_by_rpps():
     """
-    Function to rename the column 'frpp' to 'rpps' in the specified table.
+    Objectif: Generates an SQL command to rename the column 'frpp_code' to 'rpps_code' in the 'doctors' table.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - sql_command: The SQL ALTER TABLE command to perform the column renaming. (String)
     """
 
     return """

@@ -10,10 +10,16 @@ from helpers.env_functions.load_env_file import load_env_file
 from helpers.config.update_json_config import update_json_config
 
 def handle_dump(backend_folder, db_container_name, back_container_name):
-    # sourcery skip: extract-method, use-fstring-for-concatenation
     """
-    Handles the process of creating a database dump using Docker and updating
-    a JSON configuration file with the dump date.
+    Objectif: Handles the process of creating a database dump using Docker and updating configuration files with the dump date and file information.
+
+    Parameters:
+        - backend_folder: Path to the backend directory containing the database and environment configuration. (String)
+        - db_container_name: Name of the database Docker container. (String)
+        - back_container_name: Name of the backend application Docker container. (String)
+
+    Return Value:
+        - None: This function does not return a value but performs operations and prints status messages. (NoneType)
     """
 
     colored_print("Preparing to run tests...", "green")

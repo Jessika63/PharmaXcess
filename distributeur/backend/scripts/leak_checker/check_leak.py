@@ -41,10 +41,13 @@ FILE_SPECIFIC_FALSE_POSITIVES = {
 
 def setup_logging(log_file):
     """
-    Set up logging configuration.
+    Objectif: Configures the logging system to output log messages either to a specified file or to the terminal (stdout).
 
-    Args:
-        log_file (str): Path to the log file or None.
+    Parameters:
+        - log_file: The file path where logs should be written. If None, logs are output to terminal. (String or NoneType)
+
+    Return Value:
+        - None: This function configures the global logging system and does not return a value.
     """
     handlers = []
     if log_file:
@@ -61,17 +64,17 @@ def setup_logging(log_file):
 # Loaders and Configurations
 def load_config(script_dir):
     """
-    Load the configuration file.
+    Objectif: Loads and parses the configuration file (config.json) located in the specified script directory.
 
-    Args:
-        script_dir (str): The directory of the script.
+    Parameters:
+        - script_dir: The directory path where the script is located and where config.json is expected to be found. (String)
 
-    Returns:
-        dict: Parsed configuration from the JSON file.
+    Return Value:
+        - config_data: The parsed configuration data from the JSON file. (Dictionary)
 
     Raises:
-        FileNotFoundError: If the configuration file is not found.
-        json.JSONDecodeError: If the configuration file contains invalid JSON.
+        - FileNotFoundError: If the configuration file does not exist in the specified directory.
+        - json.JSONDecodeError: If the configuration file contains invalid JSON syntax.
     """
     config_path = os.path.join(script_dir, 'config.json')
 
@@ -87,13 +90,20 @@ def load_config(script_dir):
 
 def initialize_environment(config):
     """
-    Prepare environment variables and paths based on configuration.
+    Objectif: Initializes the environment by loading environment variables from specified files and setting up ignored files and directories based on the configuration.
 
-    Args:
-        config (dict): Configuration dictionary.
+    Parameters:
+        - config: Configuration dictionary containing paths and ignore settings. (Dictionary)
 
-    Returns:
-        tuple: Contains loaded environment variables, ignored files, ignored directories, and environment directories.
+    Return Value:
+        - tuple: A tuple containing:
+            - env_dict: Dictionary of loaded environment variables. (Dictionary)
+            - ignored_files: List of files to be ignored. (List)
+            - ignored_dirs: List of directories to be ignored. (List)
+            - env_dirs: List of environment directories derived from env_paths. (List)
+
+    Raises:
+        - SystemExit: If no environment variables are found in the specified paths.
     """
     env_paths = config.get("env_paths", [])
     env_dirs = [
@@ -113,13 +123,13 @@ def initialize_environment(config):
 
 def load_env_variables(env_files):
     """
-    Load environment variables from specified files.
+    Objectif: Loads environment variables from a list of .env files and maps them to their corresponding base directories.
 
-    Args:
-        env_files (list): List of paths to .env files.
+    Parameters:
+        - env_files: List of file paths pointing to .env files to be processed. (List of Strings)
 
-    Returns:
-        dict: Dictionary mapping directories to their environment variables.
+    Return Value:
+        - result: A dictionary where keys are base directory paths (with trailing separator) and values are dictionaries of environment variables loaded from each .env file. (Dictionary)
     """
     result = {}
 
@@ -148,15 +158,15 @@ def load_env_variables(env_files):
 # File Scanning
 def collect_files(base_dirs, ignored_files, ignored_dirs):
     """
-    Collect all files from the base directories, ignoring specified paths.
+    Objectif: Recursively collects all file paths from specified base directories while filtering out ignored files and directories.
 
-    Args:
-        base_dirs (list): List of base directories to scan.
-        ignored_files (list): List of files to ignore.
-        ignored_dirs (list): List of directories to ignore.
+    Parameters:
+        - base_dirs: List of root directories to scan for files. (List of Strings)
+        - ignored_files: List of specific file paths to exclude from collection. (List of Strings)
+        - ignored_dirs: List of directory paths to exclude from scanning. (List of Strings)
 
-    Returns:
-        list: List of file paths to scan.
+    Return Value:
+        - files: List of file paths found in the specified directories after applying ignore filters. (List of Strings)
     """
     files = []
 
@@ -174,14 +184,14 @@ def collect_files(base_dirs, ignored_files, ignored_dirs):
 
 def scan_for_leaks(env_dict, files):
     """
-    Scan all collected files for leaked environment variable values.
+    Objectif: Scans a list of files for potential leaks of environment variable values.
 
-    Args:
-        env_dict (dict): Dictionary of environment variables.
-        files (list): List of files to scan.
+    Parameters:
+        - env_dict: Dictionary of environment variables to check for leaks, organized by base directories. (Dictionary)
+        - files: List of file paths to be scanned for environment variable leaks. (List of Strings)
 
-    Returns:
-        dict: Dictionary of detected leaks categorized by file path.
+    Return Value:
+        - leaks: Dictionary where keys are file paths and values are lists of detected environment variable leaks in those files. (Dictionary)
     """
     leaks = {}
 
@@ -196,14 +206,14 @@ def scan_for_leaks(env_dict, files):
 
 def scan_file(file_path, env_dict):
     """
-    Scan a single file for leaks.
+    Objectif: Scans a single file for potential leaks of environment variable values by checking each line against environment variables applicable to the file's directory.
 
-    Args:
-        file_path (str): Path to the file to scan.
-        env_dict (dict): Dictionary of environment variables.
+    Parameters:
+        - file_path: The path to the file to be scanned. (String)
+        - env_dict: Dictionary of environment variables organized by base directory paths. (Dictionary)
 
-    Returns:
-        list: List of detected leaks, each represented as a tuple (line_number, key, line).
+    Return Value:
+        - leaks: List of tuples representing detected leaks, each containing (line_number, environment_variable_key, line_content). (List of Tuples)
     """
     leaks = []
 
@@ -231,15 +241,16 @@ def scan_file(file_path, env_dict):
 # Utilities
 def is_ignored(path, ignored_files, ignored_dirs):
     """
-    Check if a file or directory should be ignored.
+    Objectif: Determines if a given file or directory path should be ignored based on predefined ignore lists.
 
-    Args:
-        path (str): Path to the file or directory.
-        ignored_files (list): List of ignored files.
-        ignored_dirs (list): List of ignored directories.
+    Parameters:
+        - path: The file or directory path to check. (String)
+        - ignored_files: List of file paths that should be ignored. (List of Strings)
+        - ignored_dirs: List of directory paths that should be ignored. (List of Strings)
 
-    Returns:
-        bool: True if the path should be ignored, False otherwise.
+    Return Value:
+        - True: If the path matches any entry in the ignored files or is within an ignored directory. (Boolean)
+        - False: If the path should not be ignored. (Boolean)
     """
     normalized_path = os.path.abspath(path)
 
@@ -251,14 +262,15 @@ def is_ignored(path, ignored_files, ignored_dirs):
 
 def is_false_positive(line, file_path):
     """
-    Check if a line matches global or file-specific false positive patterns.
+    Objectif: Determines if a detected potential leak in a line of code is likely a false positive based on predefined patterns and file context.
 
-    Args:
-        line (str): The line to check.
-        file_path (str): Path of the file containing the line.
+    Parameters:
+        - line: The line of text from the file being scanned. (String)
+        - file_path: The full path to the file being scanned. (String)
 
-    Returns:
-        bool: True if the line is a false positive, False otherwise.
+    Return Value:
+        - True: If the line matches known false positive patterns for the given file. (Boolean)
+        - False: If the line does not match false positive patterns and should be considered a potential leak. (Boolean)
     """
     file_name = os.path.basename(file_path)
 
@@ -276,14 +288,14 @@ def is_false_positive(line, file_path):
 # Report Generation
 def report_results(leaks, output_file):
     """
-    Report detected leaks to the user.
+    Objectif: Generates a report of detected environment variable leaks and exits the program with an appropriate status code.
 
-    Args:
-        leaks (dict): Dictionary of detected leaks categorized by file path.
+    Parameters:
+        - leaks: Dictionary of detected leaks organized by file path. (Dictionary)
+        - output_file: Path to the file where the report should be written. If None, output is printed to stdout. (String or NoneType)
 
-    Exits:
-        1: If leaks are detected.
-        0: If no leaks are detected.
+    Return Value:
+        - None: This function does not return but terminates the program with exit code 0 (no leaks) or 1 (leaks detected).
     """
     if leaks:
         logging.warning("\nPotential leaks detected:")
@@ -317,18 +329,14 @@ def report_results(leaks, output_file):
 # Main Workflow
 def main_workflow():
     """
-    Execute the main workflow of the leak checker.
+    Objectif: Orchestrates the main workflow for scanning files for leaked secrets, including configuration loading, environment setup, file collection, scanning, and result reporting.
 
-    Steps:
-        1. Load configuration.
-        2. Initialize environment variables and paths.
-        3. Collect files to scan.
-        4. Scan files for leaks.
-        5. Report results.
+    Parameters:
+        - --output_file: Path to the output file for results. Defaults to stdout if not specified. (String, Optional)
+        - --log_file: Path to the log file. Defaults to stdout if not specified. (String, Optional)
 
-    Exits:
-        0: If no leaks are detected.
-        1: If leaks are detected.
+    Return Value:
+        - None: This function does not return but terminates the program with exit code 0 (no leaks detected) or 1 (leaks detected).
     """
     parser = argparse.ArgumentParser(description="Scan for leaked secrets in files.")
     parser.add_argument("--output_file", type=str, default=None, help="Path to the output file. Defaults to stdout.")

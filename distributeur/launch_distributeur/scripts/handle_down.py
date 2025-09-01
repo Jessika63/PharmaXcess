@@ -6,8 +6,13 @@ from helpers.troubleshooting_message_giver import troubleshooting_message_docker
 
 def handle_down():
     """
-    Stops and removes all Docker containers, images, and volumes.
-    Handles zombie container cases with troubleshooting suggestions.
+    Objectif: Stops and removes all Docker containers, images, and volumes to clean up the Docker environment.
+
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This function does not return a value but prints status messages for each cleanup operation. (NoneType)
     """
 
     colored_print("Stopping all running Docker containers...", "blue")

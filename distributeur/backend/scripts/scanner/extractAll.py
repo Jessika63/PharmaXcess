@@ -8,14 +8,14 @@ from paddleocr import PaddleOCR
 
 def add_background(img, scale_factor=1.5):
     """
-    Adds a white background around the input image to increase its size.
+    Objectif: Adds a white background around the input image to increase its dimensions while centering the original content.
 
     Parameters:
-    - img (numpy.ndarray): Original image.
-    - scale_factor (float): Scale factor to increase image dimensions.
+        - img: Original input image as a NumPy array. (numpy.ndarray)
+        - scale_factor: Multiplicative factor to increase image dimensions. Defaults to 1.5. (float)
 
-    Returns:
-    - numpy.ndarray: New image with a white background.
+    Return Value:
+        - new_image: New image with white background and original content centered. (numpy.ndarray)
     """
     if img is None:
         raise ValueError("Input image is None")
@@ -31,13 +31,13 @@ def add_background(img, scale_factor=1.5):
 
 def correct_orientation(image_path):
     """
-    Corrects the skew of an image using line detection and rotates it if needed.
+    Objectif: Corrects the skew and orientation of an image using line detection and rotates it to align with the detected median angle.
 
     Parameters:
-    - image_path (str): Path to the input image.
+        - image_path: Path to the input image file. (String)
 
-    Returns:
-    - str: Path to the saved, corrected image.
+    Return Value:
+        - corrected_image_path: Path to the saved, corrected image file. (String)
     """
     img = cv2.imread(image_path)
     img = add_background(img)
@@ -69,13 +69,13 @@ def correct_orientation(image_path):
 
 def extract_text_paddleocr(image_path):
     """
-    Extracts text from an image using PaddleOCR.
+    Objectif: Extracts text from an image using PaddleOCR with French language support and angle classification.
 
     Parameters:
-    - image_path (str): Path to the input image.
+        - image_path: Path to the input image file. (String)
 
-    Returns:
-    - str: Recognized text from the image.
+    Return Value:
+        - text: Recognized text from the image, concatenated into a single string with line breaks. (String)
     """
     ocr = PaddleOCR(use_angle_cls=True, lang='fr')
     result = ocr.ocr(image_path, cls=True)
@@ -87,13 +87,13 @@ def extract_text_paddleocr(image_path):
 
 def getInfosPrescription(text):
     """
-    Extracts structured data from a prescription text.
+    Objectif: Extracts structured information from a prescription text, including doctor details, patient information, and prescribed medications.
 
     Parameters:
-    - text (str): Raw OCR-extracted text.
+        - text: Raw OCR-extracted text from a prescription image. (String)
 
-    Returns:
-    - dict: Extracted information including doctor, RPPS, patient, and dates.
+    Return Value:
+        - infos: Dictionary containing structured prescription data with keys for doctor, RPPS, patient, prescription date, and medications. (Dictionary)
     """
     infos = {}
     spe = "NONE"
@@ -170,22 +170,21 @@ def getInfosPrescription(text):
 
     return infos
 
-
 def getInfosRectoID(text):
     """
-    Extracts structured data from the front of a French ID card.
+    Objectif: Extracts structured data from the front of a French ID card using OCR-extracted text.
 
     Parameters:
-    - text (str): Raw OCR-extracted text.
+        - text: Raw OCR-extracted text from the front of a French ID card. (String)
 
-    Returns:
-    - dict: Extracted information including name, nationality, sex, etc.
+    Return Value:
+        - infos: Dictionary containing extracted ID information including name, nationality, gender, birth date, and height. (Dictionary)
     """
     infos = {}
     text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
-               .replace("TM=Nom", "Nom").replace("PrenomS", "Prénoms") \
-               .replace("Nele", "Née le").replace("Taille", "Taille ") \
-               .replace("Sexe:", "Sexe:")
+                .replace("TM=Nom", "Nom").replace("PrenomS", "Prénoms") \
+                .replace("Nele", "Née le").replace("Taille", "Taille ") \
+                .replace("Sexe:", "Sexe:")
 
     match = re.search(r"Nationalité[:\s]*([A-Za-zéÉèàêâîç]+)", text)
     if match:
@@ -217,21 +216,21 @@ def getInfosRectoID(text):
 
 def getInfosVersoID(text):
     """
-    Extracts structured data from the back of a French ID card.
+    Objectif: Extracts structured data from the back of a French ID card using OCR-extracted text.
 
     Parameters:
-    - text (str): Raw OCR-extracted text.
+        - text: Raw OCR-extracted text from the back of a French ID card. (String)
 
-    Returns:
-    - dict: Extracted information including address, authority, delivery and validity dates.
+    Return Value:
+        - infos: Dictionary containing extracted information including address, delivery date, validity date, and issuing authority. (Dictionary)
     """
     infos = {}
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
-               .replace("delivreele", "délivrée le") \
-               .replace("Adresse.:", "Adresse:") \
-               .replace("Adresse.", "Adresse:") \
-               .replace("LaPrefete", "La Préfète") \
-               .replace("Par", "par")
+                .replace("delivreele", "délivrée le") \
+                .replace("Adresse.:", "Adresse:") \
+                .replace("Adresse.", "Adresse:") \
+                .replace("LaPrefete", "La Préfète") \
+                .replace("Par", "par")
 
     address_pattern = r"Adresse[:\s]*([0-9A-Z\- ]+)"
     address_match = re.search(address_pattern, text, re.IGNORECASE)
@@ -260,14 +259,18 @@ def getInfosVersoID(text):
 
 def flip_image(input_path, output_path, flip_code):
     """
-    Flip the image and save the result.
+    Objectif: Flips an image vertically, horizontally, or both and saves the result to a specified path.
 
-    :param input_path: Path to the input image
-    :param output_path: Path to save the flipped image
-    :param flip_code: 
-        0 for vertical flip,
-        1 for horizontal flip,
-        -1 for both vertical and horizontal
+    Parameters:
+        - input_path: Path to the input image file. (String)
+        - output_path: Path where the flipped image will be saved. (String)
+        - flip_code: Integer code specifying the flip direction:
+            - 0: Vertical flip
+            - 1: Horizontal flip
+            - -1: Both vertical and horizontal flip
+
+    Return Value:
+        - None: This function does not return a value but saves the flipped image to disk and prints status messages.
     """
     image = cv2.imread(input_path)
 
@@ -282,15 +285,18 @@ def flip_image(input_path, output_path, flip_code):
 
 def main(image_input, doc_type, is_bytes=False, flip_horizontal=False):
     """
-    Main function to process an image: correct orientation, extract text, and parse data.
+    Objectif: Processes an image to correct its orientation, extract text using OCR, and parse the extracted text based on the document type.
 
     Parameters:
-    - image_input: Path to the input image (str) OR raw bytes (bytes)
-    - doc_type (str): 'P', 'R' or 'V'
-    - is_bytes (bool): True si image_input est des bytes, False si c'est un chemin
+        - image_input: Path to the input image file or raw image bytes. (String or Bytes)
+        - doc_type: Type of document to process ('P' for prescription, 'R' for ID card front, 'V' for ID card back). (String)
+        - is_bytes: Indicates whether image_input is raw bytes (True) or a file path (False). Defaults to False. (Boolean)
+        - flip_horizontal: If True, flips the image horizontally before processing. Defaults to False. (Boolean)
 
-    Returns:
-    - dict: Parsed information extracted from the image.
+    Return Value:
+        - result: Dictionary containing:
+            - raw_text: The full OCR-extracted text from the image. (String)
+            - infos: Structured information parsed from the text based on the document type. (Dictionary)
     """
     if is_bytes:
         nparr = np.frombuffer(image_input, np.uint8)
@@ -343,10 +349,14 @@ def main(image_input, doc_type, is_bytes=False, flip_horizontal=False):
 
 if __name__ == "__main__":
     """
-    Entry point for command-line usage.
+    Objectif: Command-line entry point for extracting text and structured information from an image of a document.
 
-    Usage:
-        python3 extractAll.py <image_path> <P|R|V>
+    Command-line parameters:
+        - argv[1]: Path to the input image file. (String)
+        - argv[2]: Document type, must be one of: 'P' (prescription), 'R' (ID card front), 'V' (ID card back). (String)
+
+    Return Value:
+        - None: This script does not return a value but prints the extracted information as a JSON string to stdout.
     """
     if len(sys.argv) != 3:
         sys.exit(1)

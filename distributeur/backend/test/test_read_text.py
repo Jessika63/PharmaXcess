@@ -30,11 +30,14 @@ VALID_BASE64_IMAGE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42m
 @patch("scripts.scanner.extractAll.main")
 def test_extract_text_prescription_success(mock_main, client):
     """
-    Test case: Successful prescription text extraction.
+    Objectif: Test the /extractText endpoint for successful prescription text extraction with mocked OCR processing.
 
-    - Mocks OCR processing to return prescription data
-    - Sends POST request with valid base64 image and type 'P'
-    - Verifies 200 status code and expected response structure
+    Parameters:
+        - mock_main: Mock object for the OCR processing function. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Mock OCR response
     mock_main.return_value = {"raw_text": "Prescription text", "infos": {"medecin": {}, "patient": {}}}
@@ -56,11 +59,14 @@ def test_extract_text_prescription_success(mock_main, client):
 @patch("scripts.scanner.extractAll.main")
 def test_extract_text_recto_success(mock_main, client):
     """
-    Test case: Successful recto ID text extraction.
+    Objectif: Test the /extractText endpoint for successful recto ID text extraction with mocked OCR processing.
 
-    - Mocks OCR processing to return recto ID data
-    - Sends POST request with valid base64 image and type 'R'
-    - Verifies 200 status code and expected text in response
+    Parameters:
+        - mock_main: Mock object for the OCR processing function. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mock_main.return_value = {"raw_text": "Recto text", "infos": {"nom": "Durand"}}
 
@@ -77,11 +83,14 @@ def test_extract_text_recto_success(mock_main, client):
 @patch("scripts.scanner.extractAll.main")
 def test_extract_text_verso_success(mock_main, client):
     """
-    Test case: Successful verso ID text extraction.
+    Objectif: Test the /extractText endpoint for successful verso ID text extraction with mocked OCR processing.
 
-    - Mocks OCR processing to return verso ID data
-    - Sends POST request with valid base64 image and type 'V'
-    - Verifies 200 status code and expected text in response
+    Parameters:
+        - mock_main: Mock object for the OCR processing function. (Mock)
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mock_main.return_value = {"raw_text": "Verso text", "infos": {"adresse": "10 rue de Paris"}}
 
@@ -97,11 +106,13 @@ def test_extract_text_verso_success(mock_main, client):
 @pytest.mark.order(1) # LOX n°2
 def test_extract_text_missing_fields(client):
     """
-    Test case: Missing required fields in request.
+    Objectif: Test the /extractText endpoint when required fields (base64_image and type) are missing from the request.
 
-    - Sends request missing base64_image field
-    - Sends request missing type field
-    - Verifies 400 status code and error message for both cases
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     # Missing base64_image
     resp = client.post("/extractText", json={"type": "P"})
@@ -116,10 +127,13 @@ def test_extract_text_missing_fields(client):
 @pytest.mark.order(1) # LOX n°2
 def test_extract_text_invalid_doc_type(client):
     """
-    Test case: Invalid document type specified.
+    Objectif: Test the /extractText endpoint when an invalid document type is provided in the request.
 
-    - Sends request with invalid document type 'X'
-    - Verifies 400 status code and error message
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     payload = {"base64_image": "data:image/png;base64,AAA", "type": "X"}
     resp = client.post("/extractText", json=payload)
@@ -129,10 +143,13 @@ def test_extract_text_invalid_doc_type(client):
 @pytest.mark.order(1) # LOX n°2
 def test_extract_text_invalid_base64_returns_500(client):
     """
-    Test case: Invalid base64 image data handling.
+    Objectif: Test the /extractText endpoint when invalid base64 image data is provided in the request.
 
-    - Sends request with malformed base64 data
-    - Verifies 500 status code and error in response
+    Parameters:
+        - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     payload = {"base64_image": "data:image/png;base64,@@NOT_BASE64@@", "type": "P"}
     resp = client.post("/extractText", json=payload)
@@ -143,11 +160,13 @@ def test_extract_text_invalid_base64_returns_500(client):
 @pytest.mark.order(1) # LOX n°2
 def test_add_background_keeps_center(tmp_path):
     """
-    Test case: Image padding maintains content center.
+    Objectif: Test the add_background function to ensure it correctly pads an image while maintaining the content centered and increasing the dimensions by the specified scale factor.
 
-    - Creates test black image
-    - Applies padding with scale factor 1.2
-    - Verifies output dimensions are larger than original
+    Parameters:
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the image dimensions. (NoneType)
     """
     # Create test image
     img_path = tmp_path / "test_image.png"
@@ -163,10 +182,13 @@ def test_add_background_keeps_center(tmp_path):
 @pytest.mark.order(1) # LOX n°2
 def test_add_background_with_none():
     """
-    Test case: Error handling for None input.
+    Objectif: Test the add_background function's error handling when None is passed as input.
 
-    - Passes None to add_background function
-    - Verifies ValueError is raised with proper message
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but asserts that a ValueError is raised with the expected message. (NoneType)
     """
     with pytest.raises(ValueError) as excinfo:
         add_background(None)
@@ -175,12 +197,13 @@ def test_add_background_with_none():
 @pytest.mark.order(1) # LOX n°2
 def test_correct_orientation_creates_file(tmp_path):
     """
-    Test case: Orientation correction outputs file.
+    Objectif: Test the correct_orientation function to verify it creates an output file when processing an input image.
 
-    - Creates test image file
-    - Runs orientation correction
-    - Verifies output file exists
-    - Cleans up output file
+    Parameters:
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about file existence and performs cleanup. (NoneType)
     """
     img_path = tmp_path / "test_image.png"
     img = np.zeros((100, 100, 3), dtype=np.uint8)
@@ -195,11 +218,13 @@ def test_correct_orientation_creates_file(tmp_path):
 @pytest.mark.order(1) # LOX n°2
 def test_flip_image_writes_output(tmp_path):
     """
-    Test case: Image flip creates output file.
+    Objectif: Test the flip_image function to verify it creates an output file with content when flipping an input image.
 
-    - Creates test image
-    - Applies horizontal flip
-    - Verifies output file exists with content
+    Parameters:
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about file existence and content. (NoneType)
     """
     src = tmp_path / "test_image.png"
     img = np.zeros((100, 100, 3), dtype=np.uint8)
@@ -213,11 +238,14 @@ def test_flip_image_writes_output(tmp_path):
 @pytest.mark.order(1) # LOX n°2
 def test_flip_image_invalid_path(tmp_path, capsys):
     """
-    Test case: Error handling for invalid image path.
+    Objectif: Test the flip_image function's error handling when provided with an invalid/non-existent image path.
 
-    - Attempts to flip non-existent image
-    - Verifies error message in stdout
-    - Confirms no output file created
+    Parameters:
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+        - capsys: Pytest fixture for capturing stdout/stderr output. (CaptureFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about error messages and file existence. (NoneType)
     """
     invalid_path = tmp_path / "nonexistent_image.png"
     out_path = tmp_path / "flipped.png"
@@ -232,12 +260,14 @@ def test_flip_image_invalid_path(tmp_path, capsys):
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_main_with_bytes_and_flip(mock_paddleocr, tmp_path):
     """
-    Test case: OCR processing with byte input and flip.
+    Objectif: Test the main function with byte input and horizontal flip option, verifying OCR processing and response structure.
 
-    - Mocks PaddleOCR to return test text
-    - Creates test image and processes as bytes
-    - Enables horizontal flip option
-    - Verifies OCR response structure
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the OCR processing results. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [[(None, ("Mocked OCR text", 0.99))]]
@@ -260,11 +290,14 @@ def test_main_with_bytes_and_flip(mock_paddleocr, tmp_path):
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_main_with_path_without_flip(mock_paddleocr, tmp_path):
     """
-    Test case: OCR processing with file path input.
+    Objectif: Test the main function with file path input and no flipping, verifying OCR processing and response structure.
 
-    - Mocks PaddleOCR to return test text
-    - Processes image from file path without flipping
-    - Verifies OCR response structure
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the OCR processing results. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [[(None, ("Mocked OCR text", 0.99))]]
@@ -283,11 +316,14 @@ def test_main_with_path_without_flip(mock_paddleocr, tmp_path):
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_main_no_lines_detected(mock_paddleocr, tmp_path):
     """
-    Test case: OCR processing with blank image.
+    Objectif: Test the main function with a blank white image that has no detectable lines, ensuring it still returns a response with the raw_text field.
 
-    - Mocks PaddleOCR to return test text
-    - Processes blank white image
-    - Verifies raw_text exists in response
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response structure. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [[(None, ("Mocked OCR text", 0.99))]]
@@ -304,11 +340,14 @@ def test_main_no_lines_detected(mock_paddleocr, tmp_path):
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_main_invalid_doc_type(mock_paddleocr, tmp_path):
     """
-    Test case: Processing with invalid document type.
+    Objectif: Test the main function with an invalid document type, ensuring it returns an empty infos dictionary while still processing the OCR text.
 
-    - Mocks PaddleOCR to return test text
-    - Processes with invalid type 'X'
-    - Verifies empty infos in response
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the response structure. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [[(None, ("Mocked OCR text", 0.99))]]
@@ -324,11 +363,14 @@ def test_main_invalid_doc_type(mock_paddleocr, tmp_path):
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_extract_text_paddleocr(mock_paddleocr, tmp_path):
     """
-    Test case: PaddleOCR text extraction.
+    Objectif: Test the extract_text_paddleocr function to verify it correctly concatenates multiple lines of text extracted by the PaddleOCR library.
 
-    - Mocks PaddleOCR to return two text lines
-    - Processes test image
-    - Verifies concatenated text output
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the text extraction results. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [
@@ -346,11 +388,13 @@ def test_extract_text_paddleocr(mock_paddleocr, tmp_path):
 @pytest.mark.order(1) # LOX n°2
 def test_get_infos_prescription_edge_cases():
     """
-    Test case: Prescription parser edge cases.
+    Objectif: Test edge cases for the prescription parser function, including missing patient information, incomplete name formats, and valid name parsing.
 
-    - Tests parsing without patient information
-    - Tests parsing with incomplete patient name
-    - Tests parsing with correctly formatted patient name
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the prescription parsing results. (NoneType)
     """
     # No patient information
     text = "Dr Jean DUPONT\nMEDECIN GENERALISTE\nRPPS: 12345678901\n"
@@ -371,10 +415,13 @@ def test_get_infos_prescription_edge_cases():
 @pytest.mark.order(1) # LOX n°2
 def test_get_infos_recto_edge_cases():
     """
-    Test case: Recto ID parser edge cases.
+    Objectif: Test edge cases for the recto ID parser function, including missing nationality and height fields.
 
-    - Tests parsing without nationality field
-    - Tests parsing without height field
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the recto ID parsing results. (NoneType)
     """
     # Without nationality
     text = "Nom: DURAND\nPrénoms: PIERRELOUIS\nSexe: M\nNée le 01-02-1990\nTaille 1,80"
@@ -389,10 +436,13 @@ def test_get_infos_recto_edge_cases():
 @pytest.mark.order(1) # LOX n°2
 def test_get_infos_verso_edge_cases():
     """
-    Test case: Verso ID parser edge cases.
+    Objectif: Test edge cases for the verso ID parser function, including missing authority information and different date formats.
 
-    - Tests parsing without authority information
-    - Tests parsing with different date formats
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the verso ID parsing results. (NoneType)
     """
     # Without authority
     text = "Adresse: 10RUEDEMARSEILLE13000\nCarte valable jusqu'au 31.12.2030"
@@ -407,11 +457,13 @@ def test_get_infos_verso_edge_cases():
 @pytest.mark.order(1) # LOX n°2
 def test_parsers_on_synthetic_text():
     """
-    Test case: Parsers with synthetic text inputs.
+    Objectif: Test the prescription, recto ID, and verso ID parsers with complete synthetic text inputs to verify they extract all expected information correctly.
 
-    - Tests prescription parser with complete data
-    - Tests recto ID parser with complete data
-    - Tests verso ID parser with complete data
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the parsing results for all three document types. (NoneType)
     """
     # Prescription test
     pres_text = (
@@ -446,10 +498,13 @@ def test_parsers_on_synthetic_text():
 @pytest.mark.order(1) # LOX n°2
 def test_prescription_no_patient_and_with_date():
     """
-    Test case: Prescription without patient but with date.
+    Objectif: Test the prescription parser when the text contains doctor information and a prescription date but no patient information.
 
-    - Tests prescription with doctor info and date
-    - Verifies patient is missing but date is captured
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the prescription parsing results. (NoneType)
     """
     text = "Dr Jean DUPONT\nRPPS: 12345678901\nLe 12 mars 2023"
     infos = getInfosPrescription(text)
@@ -459,11 +514,13 @@ def test_prescription_no_patient_and_with_date():
 @pytest.mark.order(1) # LOX n°2
 def test_recto_multiple_prenoms():
     """
-    Test case: Recto ID with multiple first names.
+    Objectif: Test the recto ID parser with a compound first name to verify it correctly captures and normalizes multiple first names.
 
-    - Tests name parsing with compound first name
-    - Verifies first names are captured as list
-    - Checks name normalization
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the first name parsing and normalization. (NoneType)
     """
     text = "Nationalité: Française\nNom: MARTIN\nPrénoms: JEANPIERRELOUIS\nSexe: M\nNée le 01-01-2000"
     infos = getInfosRectoID(text)
@@ -475,12 +532,14 @@ def test_recto_multiple_prenoms():
 @pytest.mark.order(1) # LOX n°2
 def test_main_entry_point(tmp_path, capsys):
     """
-    Test case: Command-line entry point execution.
+    Objectif: Test the command-line entry point of the OCR extraction script with mocked PaddleOCR to verify proper JSON output structure.
 
-    - Creates test image file
-    - Mocks PaddleOCR with dummy implementation
-    - Simulates CLI execution with arguments
-    - Verifies JSON output structure
+    Parameters:
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+        - capsys: Pytest fixture for capturing stdout/stderr output. (CaptureFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the command-line output. (NoneType)
     """
     # Create test image
     img_path = tmp_path / "cli_image.png"
@@ -490,8 +549,30 @@ def test_main_entry_point(tmp_path, capsys):
     # Mock OCR with dummy implementation
     fake_result_text = "cli fake text"
     class DummyOCR:
-        def __init__(self, *args, **kwargs): pass
-        def ocr(self, *args, **kwargs): return [[(None, (fake_result_text, 0.99))]]
+        def __init__(self, *args, **kwargs):
+            """
+            Objectif: Initializes a dummy OCR class instance for testing purposes, accepting any arguments without implementation.
+
+            Parameters:
+                - *args: Variable length argument list (ignored). (Any)
+                - **kwargs: Arbitrary keyword arguments (ignored). (Any)
+
+            Return Value:
+                - None: This constructor does not return any value. (NoneType)
+            """
+            pass
+        def ocr(self, *args, **kwargs):
+            """
+            Objectif: Mock OCR method that returns a fixed test result structure for testing purposes.
+
+            Parameters:
+                - *args: Variable length argument list (ignored in this mock). (Any)
+                - **kwargs: Arbitrary keyword arguments (ignored in this mock). (Any)
+
+            Return Value:
+                - List containing one list of tuples with (None, (fake_text, confidence_score)) structure. (List)
+            """
+            return [[(None, (fake_result_text, 0.99))]]
 
     # Patch modules for CLI test
     fake_paddle = types.ModuleType("paddleocr")
@@ -512,11 +593,13 @@ def test_main_entry_point(tmp_path, capsys):
 @pytest.mark.order(1) # LOX n°2
 def test_prescription_with_empty_line():
     """
-    Test case: Prescription parsing ignores empty lines.
+    Objectif: Test the prescription parser's ability to handle and ignore empty lines and whitespace while correctly extracting medication information.
 
-    - Tests prescription text with empty lines
-    - Verifies medication parsing skips empty lines
-    - Checks correct medication data extraction
+    Parameters:
+        - None
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the prescription parsing results. (NoneType)
     """
     text = (
         "Dr Jean DUPONT\n\n"  # Empty line
@@ -536,11 +619,14 @@ def test_prescription_with_empty_line():
 @patch("scripts.scanner.extractAll.PaddleOCR")
 def test_main_with_verso_doc_type(mock_paddleocr, tmp_path):
     """
-    Test case: Processing verso document type.
+    Objectif: Test the main function's ability to process verso document types and extract address information using mocked OCR.
 
-    - Mocks PaddleOCR to return address text
-    - Processes as verso document type
-    - Verifies address extraction in infos
+    Parameters:
+        - mock_paddleocr: Mock object for the PaddleOCR class. (Mock)
+        - tmp_path: Pytest fixture providing a temporary directory path for test files. (Path)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about the verso document processing results. (NoneType)
     """
     mock_instance = mock_paddleocr.return_value
     mock_instance.ocr.return_value = [[(None, ("Adresse: 10RUEDEPARIS75001", 0.99))]]
@@ -559,12 +645,13 @@ def test_main_with_verso_doc_type(mock_paddleocr, tmp_path):
 @pytest.mark.order(1) # LOX n°2
 def test_cli_with_wrong_args(capsys):
     """
-    Test case: CLI argument validation errors.
+    Objectif: Test the command-line interface argument validation for the extractAll script, ensuring it exits with code 1 for incorrect argument counts.
 
-    - Tests with insufficient arguments (only image path)
-    - Tests with excessive arguments (extra parameter)
-    - Verifies system exits with code 1 in both cases
-    - Ensures original command-line arguments are restored
+    Parameters:
+        - capsys: Pytest fixture for capturing stdout/stderr output. (CaptureFixture)
+
+    Return Value:
+        - None: This test function does not return a value but makes assertions about system exit codes and restores original command-line arguments. (NoneType)
     """
     # Preserve original command-line arguments
     original_argv = sys.argv
