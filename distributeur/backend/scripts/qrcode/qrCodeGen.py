@@ -4,6 +4,19 @@ import os
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import base64
+
+# Clé secrète (doit être identique dans le lecteur)
+SECRET_KEY = b'_votre_cle_secrete_16_16' # Doit être 16, 24 ou 32 bytes
+
+def encrypt_data(data, key):
+    """Chiffre les données avec AES"""
+    cipher = AES.new(key, AES.MODE_ECB)
+    padded_data = pad(data.encode(), AES.block_size)
+    encrypted_data = cipher.encrypt(padded_data)
+    return base64.b64encode(encrypted_data).decode()
 
 def find_unique_filename(base_name, extension=".png"):
     """
@@ -30,6 +43,9 @@ def generate_rounded_qr_code(info, base_filename="prescription"):
     # Convert the information into formatted JSON
     json_content = json.dumps(info, ensure_ascii=False, indent=4)
 
+    # Chiffrer les données
+    encrypted_content = encrypt_data(json_content, SECRET_KEY)
+
     # Create a QR Code object
     qr = qrcode.QRCode(
         version=1,
@@ -39,7 +55,7 @@ def generate_rounded_qr_code(info, base_filename="prescription"):
     )
 
     # Add the data to the QR Code
-    qr.add_data(json_content)
+    qr.add_data(encrypted_content)
     qr.make(fit=True)
 
     # Generate a styled QR Code image

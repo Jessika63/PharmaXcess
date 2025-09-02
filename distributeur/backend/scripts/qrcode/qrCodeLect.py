@@ -4,6 +4,18 @@ import unicodedata
 import requests
 import json
 import sys
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+import base64
+
+# Clé secrète identique à celle du générateur
+SECRET_KEY = b'_votre_cle_secrete_16_16'
+
+def decrypt_data(encrypted_data, key):
+    """Déchiffre les données avec AES"""
+    cipher = AES.new(key, AES.MODE_ECB)
+    decrypted_data = cipher.decrypt(base64.b64decode(encrypted_data))
+    return unpad(decrypted_data, AES.block_size).decode()
 
 def read_qr_code(qr_filename):
     """
@@ -40,9 +52,18 @@ def read_qr_code(qr_filename):
         # Normalize text (useful if Unicode combined forms are present)
         data = unicodedata.normalize("NFKC", data)
 
-        print("QR Code content:")
+        print("QR Code content (chiffré):")
         print(data)
-        return data
+
+        try:
+            # Déchiffrer les données
+            decrypted_content = decrypt_data(data, SECRET_KEY)
+            print("QR Code content (déchiffré):")
+            print(decrypted_content)
+            return decrypted_content
+        except Exception as e:
+            print(f"Erreur de déchiffrement: {e}")
+            return None
 
     return None
 
@@ -50,10 +71,10 @@ def verify_doctor(qr_content):
     """
     Verifies doctor information via an API.
 
-    :param qr_content: Decoded content of the QR Code (JSON or plain text).
+    :param qr_content: Decrypted content of the QR Code (JSON).
     """
     try:
-        # Assume the content is in JSON; otherwise, this will raise an exception.
+        # Le contenu est déjà déchiffré, il suffit de le parser en JSON
         infos = json.loads(qr_content)
         doctor = infos.get("doctor", {})
         first_name = doctor.get("first_name")
@@ -66,14 +87,20 @@ def verify_doctor(qr_content):
         # Build the API URL with query parameters
         url = f"http://localhost:5000/find_doctor_by_name?first_name={first_name}&last_name={last_name}"
 
-        # Perform the GET request
-        response = requests.get(url)
+        try:
+            # Perform the GET request
+            response = requests.get(url)
 
-        if response.status_code == 200:
-            print("API result:")
-            print(response.json())
-        else:
-            print(f"API error: {response.status_code} - {response.text}")
+            if response.status_code == 200:
+                print("API result:")
+                print(response.json())
+            else:
+                print(f"API error: {response.status_code} - {response.text}")
+
+        except requests.exceptions.ConnectionError:
+            print("Error: Unable to connect to the API. Please ensure the server is running on localhost:5000")
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred during the API request: {e}")
 
     except json.JSONDecodeError:
         print("The QR Code content is not valid JSON.")
