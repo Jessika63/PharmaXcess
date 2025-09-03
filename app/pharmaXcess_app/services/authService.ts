@@ -7,7 +7,8 @@ import {
     ForgotPasswordData,
     ForgotPasswordResponse,
     ResetPasswordData,
-    ResetPasswordResponse
+    ResetPasswordResponse,
+    LogoutResponse
 } from './types/AuthTypes';
 
 /**
@@ -80,6 +81,27 @@ export async function resetPassword(data: ResetPasswordData, token: string): Pro
         return response.data;
     } catch (error: any) {
         console.error('Reset Password Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error.message);
+    }
+}
+
+/**
+ * Logout user
+ * @param token string
+ * @returns Promise<LogoutResponse>
+ */
+export async function logout(token: string): Promise<LogoutResponse> {
+    console.log('Logging out user with token:', token);
+    try {
+        const response = await api.post<LogoutResponse>('/api/auth/logout', {}, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        console.log('Logout Success:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('Logout Error:', error.response?.data || error.message);
         return Promise.reject(error.response?.data || error.message);
     }
 }
