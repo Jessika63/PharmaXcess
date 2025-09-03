@@ -1,5 +1,30 @@
 import api from './api';
-import { LoginData, LoginResponse, RegisterData, RegisterResponse } from './types/AuthTypes';
+import {
+    ForgotPasswordData,
+    ForgotPasswordResponse,
+    LoginData, 
+    LoginResponse, 
+    RegisterData,
+    RegisterResponse 
+} from './types/AuthTypes';
+
+
+/**
+ * Forgot password
+ * @param data ForgotPasswordData
+ * @returns Promise<ForgotPasswordResponse>
+ */
+export async function forgotPassword(data: ForgotPasswordData): Promise<ForgotPasswordResponse> {
+    console.log('Requesting password reset for:', data);
+    try {
+        const response = await api.post<ForgotPasswordResponse>('/api/auth/forgot-password', data);
+        console.log('Forgot Password Success:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('Forgot Password Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error.message);
+    }
+}
 
 /**
  * Login user
