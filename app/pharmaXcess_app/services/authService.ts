@@ -1,5 +1,22 @@
 import api from './api';
-import { RegisterData, RegisterResponse } from './types/AuthTypes';
+import { LoginData, LoginResponse, RegisterData, RegisterResponse } from './types/AuthTypes';
+
+/**
+ * Login user
+ * @param data LoginData
+ * @returns Promise<LoginResponse>
+ */
+export async function login(data: LoginData): Promise<LoginResponse> {
+    console.log('Logging in user with data:', data);
+    try {
+        const response = await api.post<LoginResponse>('/api/auth/login', data);
+        console.log('Login Success:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('Login Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error.message);
+    }
+}
 
 /**
  * Register a new user
