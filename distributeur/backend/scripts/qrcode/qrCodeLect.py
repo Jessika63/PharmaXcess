@@ -1,3 +1,4 @@
+
 import cv2
 from pyzbar.pyzbar import decode
 import unicodedata
@@ -7,9 +8,11 @@ import sys
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 import base64
+import os
 
-# Clé secrète identique à celle du générateur
-SECRET_KEY = b'_votre_cle_secrete_16_16'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+
+from launch_distributeur.helpers.env_functions.load_env_file import load_env_file
 
 def decrypt_data(encrypted_data, key):
     """Déchiffre les données avec AES"""
@@ -56,11 +59,30 @@ def read_qr_code(qr_filename):
         print(data)
 
         try:
+            env_data = load_env_file(".env")
+            secret_key_str = env_data["SECRET_QR_ENCRYPTION_KEY"]
+            
+            # Convertir la clé string en bytes et s'assurer qu'elle a la bonne longueur
+            secret_key = secret_key_str.encode('utf-8')
+            
+            # AES nécessite des clés de 16, 24 ou 32 octets
+            # Si la clé n'a pas la bonne longueur, on l'ajuste
+            if len(secret_key) < 16:
+                # Remplir avec des zéros si trop courte
+                secret_key = secret_key.ljust(16, b'\0')
+            elif len(secret_key) < 24:
+                secret_key = secret_key.ljust(24, b'\0')
+            elif len(secret_key) < 32:
+                secret_key = secret_key.ljust(32, b'\0')
+            else:
+                # Tronquer si trop longue
+                secret_key = secret_key[:32]
+
             # Déchiffrer les données
-            decrypted_content = decrypt_data(data, SECRET_KEY)
+            decrypted_content = decrypt_data(data, secret_key)
             print("QR Code content (déchiffré):")
             print(decrypted_content)
-            return decrypted_content
+            return decrypted_content  # Retourner le contenu au lieu de juste l'afficher
         except Exception as e:
             print(f"Erreur de déchiffrement: {e}")
             return None

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
@@ -35,18 +36,21 @@ function DirectionsMapPage() {
   const [userCoords, setUserCoords] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [generatingQR, setGeneratingQR] = useState(false);
   const apiCalledRef = useRef(false);
 
   // Keyboard navigation
-  const [focusedIndex, setFocusedIndex] = useState(0); // 0: Go Back, 1: Medicine List, 2: Home, 3: Map
+  const [focusedIndex, setFocusedIndex] = useState(0); // 0: Go Back, 1: Medicine List, 2: Home, 3: QR Code, 4: Map
   const goBackRef = useRef(null);
   const medListRef = useRef(null);
   const homeRef = useRef(null);
+  const qrCodeRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   useInactivityRedirect(() => setShowInactivityModal(true));
+  
   // Dismiss inactivity modal on user activity
   useEffect(() => {
     if (!showInactivityModal) {
@@ -116,7 +120,7 @@ function DirectionsMapPage() {
 
   // Focus management
   useEffect(() => {
-    const refs = [goBackRef, medListRef, homeRef, mapRef];
+    const refs = [goBackRef, medListRef, homeRef, qrCodeRef, mapRef];
     if (refs[focusedIndex] && refs[focusedIndex].current) {
       refs[focusedIndex].current.focus();
     }
@@ -126,17 +130,17 @@ function DirectionsMapPage() {
     const handleKeyDown = (e) => {
       // Handle left/right arrows, Tab, and Enter
       if (['ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-        if (focusedIndex < 3) {
+        if (focusedIndex < 4) {
           e.preventDefault();
         }
         if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
-          setFocusedIndex((prev) => (prev + 1) % 4);
+          setFocusedIndex((prev) => (prev + 1) % 5);
         } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
-          setFocusedIndex((prev) => (prev - 1 + 4) % 4);
+          setFocusedIndex((prev) => (prev - 1 + 5) % 5);
         }
       }
       // Handle zoom with up/down arrows when map is focused
-      if (focusedIndex === 3 && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      if (focusedIndex === 4 && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
         e.preventDefault();
         if (mapInstanceRef.current) {
           if (e.key === 'ArrowUp') {
@@ -146,10 +150,61 @@ function DirectionsMapPage() {
           }
         }
       }
+      // Handle Enter key on QR Code button
+      if (focusedIndex === 3 && e.key === 'Enter') {
+        e.preventDefault();
+        handleGenerateQR();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex, navigate]);
+
+  const handleGenerateQR = async () => {
+    setGeneratingQR(true);
+    try {
+      // Préparer les données pour le QR code
+      const qrData = {
+        pharmacy: {
+          name: pharmacy.name,
+          latitude: pharmacy.latitude,
+          longitude: pharmacy.longitude
+        },
+        transport: transport,
+        userCoords: userCoords,
+        routeCoords: routeCoords
+      };
+
+      // Appeler l'API pour générer le QR code
+      const response = await fetch(`${config.backendUrl}/generate_direction_qr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(qrData),
+      });
+
+      if (response.ok) {
+        // Convertir la réponse en blob
+        const blob = await response.blob();
+        // Créer une URL pour le blob
+        const qrCodeUrl = URL.createObjectURL(blob);
+        // Naviguer vers la page QR Code avec les données
+        navigate('/direction-qr', { 
+          state: { 
+            qrCodeUrl,
+            pharmacyName: pharmacy.name
+          } 
+        });
+      } else {
+        setError('Erreur lors de la génération du QR code');
+      }
+    } catch (err) {
+      setError('Erreur réseau: ' + err.message);
+    } finally {
+      setGeneratingQR(false);
+    }
+  };
 
   if (error) {
     return <ErrorPage message={error} />;
@@ -171,20 +226,22 @@ function DirectionsMapPage() {
   return (
     <>
       {showInactivityModal && (
-        <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className={`${config.fontSizes.lg} font-bold mb-4`}>
-            Inactivité détectée
-          </div>
-          <div className={`${config.fontSizes.sm} mb-4`}>
-            Vous allez être redirigé vers l'accueil dans 1 minute...
-          </div>
-          <button className={
-            `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
-            ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
-          } onClick={() => setShowInactivityModal(false)}>
-            Rester sur la page
-          </button>
-        </ModalStandard>
+        <div className="fixed inset-0 z-50">
+          <ModalStandard onClose={() => setShowInactivityModal(false)}>
+            <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+              Inactivité détectée
+            </div>
+            <div className={`${config.fontSizes.sm} mb-4`}>
+              Vous allez être redirigé vers l'accueil dans 1 minute...
+            </div>
+            <button className={
+              `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
+              ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
+            } onClick={() => setShowInactivityModal(false)}>
+              Rester sur la page
+            </button>
+          </ModalStandard>
+        </div>
       )}
       <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
         <div className="flex flex-row gap-6 mb-4">
@@ -227,6 +284,29 @@ function DirectionsMapPage() {
             <config.icons.home className="mr-2" />
             Accueil
           </button>
+          <button
+            ref={qrCodeRef}
+            tabIndex={focusedIndex === 3 ? 0 : -1}
+            className={
+              `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+              ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+              ${config.transitions.default} ${focusedIndex === 3 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
+            }
+            onClick={handleGenerateQR}
+            disabled={generatingQR}
+          >
+            {generatingQR ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white border-solid mr-2"></div>
+                Génération...
+              </>
+            ) : (
+              <>
+                <config.icons.qrCode className="mr-2" />
+                Générer QR Code
+              </>
+            )}
+          </button>
         </div>
         <div className="w-full h-full flex flex-col items-center">
           <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>
@@ -234,7 +314,7 @@ function DirectionsMapPage() {
           </h2>
           {/* Zoom Instructions - Only show when map is focused */}
           <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
-            {focusedIndex === 3 && (
+            {focusedIndex === 4 && (
               <span>
                 Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer
               </span>
@@ -242,8 +322,15 @@ function DirectionsMapPage() {
           </div>
           <div
             ref={mapRef}
-            tabIndex={focusedIndex === 3 ? 0 : -1}
-            style={{ outline: focusedIndex === 3 ? '2px solid #ec4899' : 'none', borderRadius: 12, width: '100%', height: '60vh' }}
+            tabIndex={focusedIndex === 4 ? 0 : -1}
+            style={{
+              outline: focusedIndex === 4 ? '2px solid #ec4899' : 'none',
+              borderRadius: 12,
+              width: '100%',
+              height: '60vh',
+              position: 'relative',
+              zIndex: 1
+            }}
           >
             <MapContainer
               center={center}

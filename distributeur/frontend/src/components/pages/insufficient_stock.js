@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import '../../App.css'
 import config from '../../config';
 import ModalStandard from '../modal_standard';
-// import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
+import ErrorPage from '../ErrorPage';
 
 function InsufficientStock() {
 
@@ -21,6 +21,7 @@ function InsufficientStock() {
   const [selectedPharmacyIndex, setSelectedPharmacyIndex] = useState(0);
   const [loadingPharmacies, setLoadingPharmacies] = useState(false);
   const [error, setError] = useState(null);
+  const [pharmaciesFetched, setPharmaciesFetched] = useState(false);
   const [transportModalOpen, setTransportModalOpen] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
@@ -48,7 +49,10 @@ function InsufficientStock() {
 
   // Fetch pharmacies data
   useEffect(() => {
-    const fetchAndCachePharmacies = async () => {
+    const fetchPharmacies = async () => {
+      setLoadingPharmacies(true);
+      setError(null);
+
       let lat, lon;
       try {
         if (navigator.geolocation) {
@@ -60,47 +64,68 @@ function InsufficientStock() {
                 resolve();
               },
               (error) => {
-                resolve();
+                reject(error);
               }
             );
           });
         }
       } catch (geoError) {
-        console.log('Geolocation error:', geoError);
+        setError('Impossible d\'obtenir votre position.');
+        setLoadingPharmacies(false);
+        return;
       }
 
       if (lat && lon) {
         setUserCoords({ lat, lon });
         const cacheKey = `${lat},${lon}`;
 
+        // Check local cache first
         if (pharmaciesCache.current[cacheKey]) {
           setPharmaciesList(pharmaciesCache.current[cacheKey]);
+          setLoadingPharmacies(false);
+          setPharmaciesFetched(true);
           return;
         }
 
+        // Check global cache
         const globalCache = getPharmaciesCache();
         if (globalCache) {
           pharmaciesCache.current[cacheKey] = globalCache;
           setPharmaciesList(globalCache);
+          setLoadingPharmacies(false);
+          setPharmaciesFetched(true);
           return;
         }
 
+        // Fetch from API
         try {
-          const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}`);
+          const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}`, undefined, 10000);
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+
           const data = await response.json();
           if (data.pharmacies && data.pharmacies.length > 0) {
             setPharmaciesList(data.pharmacies);
             pharmaciesCache.current[cacheKey] = data.pharmacies;
             setPharmaciesCache(data.pharmacies);
+            setPharmaciesFetched(true);
+          } else {
+            setError('Aucune pharmacie trouvée dans votre région.');
           }
         } catch (err) {
-          console.log('Fetch pharmacies failed:', err.message);
+          setError(err.message === 'Timeout'
+            ? 'Le serveur ne répond pas. Veuillez réessayer plus tard.'
+            : `Erreur: ${err.message}`);
         }
       }
+      setLoadingPharmacies(false);
     };
 
-    fetchAndCachePharmacies();
-  }, []);
+    if (!pharmaciesFetched) {
+      fetchPharmacies();
+    }
+  }, [pharmaciesFetched]);
 
   // Inactivity modal
   useEffect(() => {
@@ -233,10 +258,12 @@ function InsufficientStock() {
     const handleCloseModal = () => {
       setPharmaciesModalOpen(false);
       setTimeout(() => {
-        if (cancelButtonRef.current) cancelButtonRef.current.focus();
+        if (cancelButtonRef.current) {
+          cancelButtonRef.current.focus();
+        }
       }, 100);
     };
-    
+
     const handleTransportSelect = (mode) => {
       setTransportModalOpen(false);
       setPharmaciesModalOpen(false);
@@ -261,24 +288,31 @@ function InsufficientStock() {
     const openPharmaciesModal = async () => {
       setPharmaciesModalOpen(true);
       setSelectedPharmacyIndex(0);
-      setLoadingPharmacies(true);
+
+      // Si les pharmacies n'ont pas encore été récupérées, on les fetch
+      if (!pharmaciesFetched) {
+        setLoadingPharmacies(true);
 
       let lat, lon;
       try {
         if (navigator.geolocation) {
-          await new Promise((resolve) => {
+          await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(
               (position) => {
                 lat = position.coords.latitude;
                 lon = position.coords.longitude;
                 resolve();
               },
-              () => resolve()
+              (error) => {
+                reject(error);
+              }
             );
           });
         }
       } catch (geoError) {
-        console.log('Geolocation error:', geoError);
+        setError('Impossible d\'obtenir votre position.');
+        setLoadingPharmacies(false);
+        return;
       }
 
       if (lat && lon) {
@@ -288,24 +322,34 @@ function InsufficientStock() {
         if (pharmaciesCache.current[cacheKey]) {
           setPharmaciesList(pharmaciesCache.current[cacheKey]);
           setLoadingPharmacies(false);
+          setPharmaciesFetched(true);
           return;
         }
 
         try {
-          const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}`);
+          const response = await fetchWithTimeout(`${config.backendUrl}/get_pharmacies?lat=${lat}&lon=${lon}`, undefined, 10000);
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+
           const data = await response.json();
-          if (data.pharmacies?.length > 0) {
+          if (data.pharmacies && data.pharmacies.length > 0) {
             setPharmaciesList(data.pharmacies);
             pharmaciesCache.current[cacheKey] = data.pharmacies;
+            setPharmaciesCache(data.pharmacies);
+            setPharmaciesFetched(true);
+          } else {
+            setError('Aucune pharmacie trouvée dans votre région.');
           }
         } catch (err) {
           setError(err.message === 'Timeout'
-            ? 'Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.'
-            : 'Network Error');
+            ? 'Le serveur ne répond pas. Veuillez réessayer plus tard.'
+            : `Erreur: ${err.message}`);
         }
       }
       setLoadingPharmacies(false);
-    };
+    }
+  };
 
     // Calculate distance between user and pharmacy
     const calculateDistance = (userCoords, pharmacy) => {
@@ -326,6 +370,11 @@ function InsufficientStock() {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     };
+
+    // Afficher la page d'erreur si une erreur se produit
+    if (error && !pharmaciesModalOpen) {
+      return <ErrorPage message={error} />;
+    }
 
     return (
       <div className={`bg-background_color min-h-screen w-full flex flex-col items-center justify-center`}>
@@ -586,23 +635,26 @@ function InsufficientStock() {
 
       {/* Inactivity Modal */}
       {showInactivityModal && (
-        <ModalStandard onClose={() => setShowInactivityModal(false)}>
-          <div className={`${config.fontSizes.lg} font-bold mb-4`}>
-            Inactivité détectée
-          </div>
-          <div className={`${config.fontSizes.sm} mb-4`}>
-            Vous allez être redirigé vers l'accueil dans 1 minute...
-          </div>
-          <button
-            className={
-              `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
-              ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
-            }
-            onClick={() => setShowInactivityModal(false)}
-          >
-            Rester sur la page
-          </button>
-        </ModalStandard>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+          <ModalStandard onClose={() => setShowInactivityModal(false)}>
+            <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+              Inactivité détectée
+            </div>
+            <div className={`${config.fontSizes.sm} mb-4`}>
+              Vous allez être redirigé vers l'accueil dans 1 minute...
+            </div>
+            <button
+              className={
+                `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
+              }
+              onClick={() => setShowInactivityModal(false)}
+            >
+              Rester sur la page
+            </button>
+          </ModalStandard>
+        </div>
       )}
     </div>
   );
