@@ -1,27 +1,29 @@
 import api from './api';
 import {
-    ForgotPasswordData,
-    ForgotPasswordResponse,
+    RegisterData,
+    RegisterResponse,
     LoginData, 
     LoginResponse, 
-    RegisterData,
-    RegisterResponse 
+    ForgotPasswordData,
+    ForgotPasswordResponse,
+    ResetPasswordData,
+    ResetPasswordResponse
 } from './types/AuthTypes';
 
-
 /**
- * Forgot password
- * @param data ForgotPasswordData
- * @returns Promise<ForgotPasswordResponse>
+ * Register a new user
+ * @param data RegisterData
+ * @returns Promise<RegisterResponse>
  */
-export async function forgotPassword(data: ForgotPasswordData): Promise<ForgotPasswordResponse> {
-    console.log('Requesting password reset for:', data);
+export async function register(data: RegisterData): Promise<RegisterResponse> {
+    console.log('Registering user with data:', data);
     try {
-        const response = await api.post<ForgotPasswordResponse>('/api/auth/forgot-password', data);
-        console.log('Forgot Password Success:', response.data);
+        const response = await api.post<RegisterResponse>('/api/auth/register', data);
+        console.log('Register Success:', response.data);
         return response.data;
     } catch (error: any) {
-        console.error('Forgot Password Error:', error.response?.data || error.message);
+        console.error('Register Error:', error.response?.data || error.message);
+        console.log('Register Error:', error);
         return Promise.reject(error.response?.data || error.message);
     }
 }
@@ -44,19 +46,40 @@ export async function login(data: LoginData): Promise<LoginResponse> {
 }
 
 /**
- * Register a new user
- * @param data RegisterData
- * @returns Promise<RegisterResponse>
+ * Forgot password
+ * @param data ForgotPasswordData
+ * @returns Promise<ForgotPasswordResponse>
  */
-export async function register(data: RegisterData): Promise<RegisterResponse> {
-    console.log('Registering user with data:', data);
+export async function forgotPassword(data: ForgotPasswordData): Promise<ForgotPasswordResponse> {
+    console.log('Requesting password reset for:', data);
     try {
-        const response = await api.post<RegisterResponse>('/api/auth/register', data);
-        console.log('Register Success:', response.data);
+        const response = await api.post<ForgotPasswordResponse>('/api/auth/forgot-password', data);
+        console.log('Forgot Password Success:', response.data);
         return response.data;
     } catch (error: any) {
-        console.error('Register Error:', error.response?.data || error.message);
-        console.log('Register Error:', error);
+        console.error('Forgot Password Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error.message);
+    }
+}
+
+/**
+ * Reset password
+ * @param data ResetPasswordData
+ * @param token string
+ * @returns Promise<ResetPasswordResponse>
+ */
+export async function resetPassword(data: ResetPasswordData, token: string): Promise<ResetPasswordResponse> {
+    console.log('Resetting password with data:', data, 'and token:', token);
+    try {
+        const response = await api.post<ResetPasswordResponse>('/api/auth/reset-password', data, {
+            headers: {
+                Authorization: `${token}`,
+            },
+        });
+        console.log('Reset Password Success:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('Reset Password Error:', error.response?.data || error.message);
         return Promise.reject(error.response?.data || error.message);
     }
 }

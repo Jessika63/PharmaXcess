@@ -26,3 +26,13 @@ export interface ForgotPasswordData {
 export interface ForgotPasswordResponse {
     message: string;
 }
+
+export interface ResetPasswordData {
+    additionalProp1: string;
+    additionalProp2: string;
+    additionalProp3: string;
+}
+
+export interface ResetPasswordResponse {
+    message: string;
+}
