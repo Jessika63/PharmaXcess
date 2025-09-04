@@ -24,7 +24,6 @@ export async function register(data: RegisterData): Promise<RegisterResponse> {
         return response.data;
     } catch (error: any) {
         console.error('Register Error:', error.response?.data || error.message);
-        console.log('Register Error:', error);
         return Promise.reject(error.response?.data || error.message);
     }
 }
