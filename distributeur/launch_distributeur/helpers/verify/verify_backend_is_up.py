@@ -63,7 +63,7 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=10):
                 colored_print(f"Connection error: {last_error}", "yellow")
         except requests.Timeout:
             last_error = 'timeout'
-            colored_print("Connection to backend timed out. Backend may be slow to start or not listening.", "red")
+            colored_print("Connection to backend timed out. Backend may be slow to start or not listening.", "yellow")
         except Exception as e:
             last_error = e
             colored_print(f"Unexpected error while checking backend container: {e}", "yellow")

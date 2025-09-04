@@ -8,11 +8,8 @@ import sys
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 import base64
-import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
-
-from launch_distributeur.helpers.env_functions.load_env_file import load_env_file
+from .qrCodeGen import load_env_file
 
 def decrypt_data(encrypted_data, key):
     """Déchiffre les données avec AES"""
