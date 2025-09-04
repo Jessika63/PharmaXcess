@@ -10,7 +10,7 @@ import {
 /**
  * Create a new ticket
  * @param data CreateTicketData
- * @returns Promise<CreateTicketResponse>
+ * @returns Promise<Ticket>
  */
 export async function createTicket(data: CreateTicketData): Promise<Ticket> {
     console.log('Creating ticket with data:', data);
@@ -27,7 +27,7 @@ export async function createTicket(data: CreateTicketData): Promise<Ticket> {
 /**
  * Accept a ticket
  * @param data AcceptTicketData
- * @returns Promise<AcceptTicketResponse>
+ * @returns Promise<Ticket>
  */
 export async function acceptTicket(data: AcceptTicketData): Promise<Ticket> {
     console.log('Accepting ticket with data:', data);
