@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../api';
 import {
     RegisterData,
     RegisterResponse,
@@ -9,7 +9,7 @@ import {
     ResetPasswordData,
     ResetPasswordResponse,
     LogoutResponse
-} from './types/AuthTypes';
+} from './Types';
 
 /**
  * Register a new user
