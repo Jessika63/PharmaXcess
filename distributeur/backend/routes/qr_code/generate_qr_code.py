@@ -89,10 +89,15 @@ def generate_direction_qr():
                 return jsonify({"error": f"Le champ '{field}' est requis"}), 400
 
         # Générer le QR code avec ces données
-        img_buffer = generate_rounded_qr_code(data, return_buffer=True)
+        img_buffer = generate_rounded_qr_code(data, "direction", return_buffer=True)
 
-        return send_file(img_buffer, mimetype='image/png', as_attachment=True, download_name='direction_qr.png')
+        return send_file(
+            img_buffer,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name='direction_qr.png'
+        )
 
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e) or "Une erreur inconnue s'est produite"}), 500
+        print(f"Error generating direction QR: {str(e)}")
+        return jsonify({"error": "Erreur lors de la génération du QR code"}), 500

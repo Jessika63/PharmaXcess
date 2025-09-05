@@ -160,51 +160,24 @@ function DirectionsMapPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex, navigate]);
 
-  const handleGenerateQR = async () => {
-    setGeneratingQR(true);
-    try {
-      // Préparer les données pour le QR code
-      const qrData = {
-        pharmacy: {
-          name: pharmacy.name,
-          latitude: pharmacy.latitude,
-          longitude: pharmacy.longitude
-        },
-        transport: transport,
-        userCoords: userCoords,
-        routeCoords: routeCoords
-      };
-
-      // Appeler l'API pour générer le QR code
-      const response = await fetch(`${config.backendUrl}/generate_direction_qr`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(qrData),
-      });
-
-      if (response.ok) {
-        // Convertir la réponse en blob
-        const blob = await response.blob();
-        // Créer une URL pour le blob
-        const qrCodeUrl = URL.createObjectURL(blob);
-        // Naviguer vers la page QR Code avec les données
-        navigate('/direction-qr', { 
-          state: { 
-            qrCodeUrl,
-            pharmacyName: pharmacy.name
-          } 
-        });
-      } else {
-        setError('Erreur lors de la génération du QR code');
-      }
-    } catch (err) {
-      setError('Erreur réseau: ' + err.message);
-    } finally {
-      setGeneratingQR(false);
-    }
-  };
+  const handleGenerateQR = () => {
+    navigate('/direction-qr', {
+        state: {
+            generating: true,
+            pharmacyName: pharmacy.name,
+            qrData: {
+                pharmacy: {
+                    name: pharmacy.name,
+                    latitude: pharmacy.latitude,
+                    longitude: pharmacy.longitude
+                },
+                transport: transport,
+                userCoords: userCoords,
+                routeCoords: routeCoords
+            }
+        }
+    });
+};
 
   if (error) {
     return <ErrorPage message={error} />;

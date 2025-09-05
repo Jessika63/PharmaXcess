@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../../config';
@@ -8,7 +7,10 @@ import useInactivityRedirect from '../../utils/useInactivityRedirect';
 function DirectionQRPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { qrCodeUrl, pharmacyName } = location.state || {};
+    const { generating, pharmacyName, qrData } = location.state || {};
+    const [qrCodeUrl, setQrCodeUrl] = useState(null);
+    const [loading, setLoading] = useState(generating);
+    const [error, setError] = useState(null);
 
     // Keyboard navigation
     const [focusedIndex, setFocusedIndex] = useState(0); // 0: Go Back, 1: Medicine List, 2: Home
@@ -22,14 +24,14 @@ function DirectionQRPage() {
     // Dismiss inactivity modal on user activity
     useEffect(() => {
         if (!showInactivityModal) {
-        return;
-    }
-    const dismiss = () => setShowInactivityModal(false);
-    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+            return;
+        }
+        const dismiss = () => setShowInactivityModal(false);
+        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
 
-    events.forEach(event => window.addEventListener(event, dismiss));
+        events.forEach(event => window.addEventListener(event, dismiss));
 
-    return () => events.forEach(event => window.removeEventListener(event, dismiss));
+        return () => events.forEach(event => window.removeEventListener(event, dismiss));
     }, [showInactivityModal]);
 
     // Focus management
@@ -56,6 +58,68 @@ function DirectionQRPage() {
 
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [navigate]);
+
+    // Generate QR code on component mount if needed
+    useEffect(() => {
+        if (generating && qrData) {
+            generateQRCode();
+        }
+    }, [generating, qrData]);
+
+    const generateQRCode = async () => {
+        try {
+            const response = await fetch(`${config.backendUrl}/generate_direction_qr`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(qrData),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                setQrCodeUrl(url);
+            } else {
+                setError('Erreur lors de la génération du QR code');
+            }
+        } catch (err) {
+            setError('Erreur réseau: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
+                <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
+                    Génération du QR code...
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
+                <div className={`${config.fontSizes.md} ${config.textColors.danger} mb-4`}>
+                    {error}
+                </div>
+                <button
+                    className={
+                        `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
+                        ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                        ${config.transitions.default}`
+                    }
+                    onClick={() => navigate('/insufficient-stock')}
+                >
+                    Retour
+                </button>
+            </div>
+        );
+    }
 
     if (!qrCodeUrl) {
         return (
