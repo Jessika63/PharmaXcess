@@ -82,8 +82,9 @@ def read_qr_code(qr_filename):
             return decrypted_content  # Retourner le contenu au lieu de juste l'afficher
         except Exception as e:
             print(f"Erreur de déchiffrement: {e}")
-            return None
+            continue  # Continuer avec le prochain QR code au lieu de retourner None immédiatement
 
+    print("Aucun QR code n'a pu être déchiffré.")
     return None
 
 def verify_doctor(qr_content):
@@ -124,7 +125,8 @@ def verify_doctor(qr_content):
     except json.JSONDecodeError:
         print("The QR Code content is not valid JSON.")
 
-if __name__ == "__main__":
+def main():
+    """Fonction principale pour l'exécution en ligne de commande"""
     if len(sys.argv) != 2:
         print("Usage: python3 code.py <path_to_qrcode>")
         sys.exit(1)
