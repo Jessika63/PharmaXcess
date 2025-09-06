@@ -1,53 +1,43 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request, jsonify
+import sys
+import os
 import base64
-import sys, os
+import tempfile
+import cv2
+import numpy as np
 
-# Add the extractAll path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts/scanner'))
+from extractAll import main
 
-from scripts.scanner import extractAll
-
-# Blueprint for reading text from an image
 extract_text_bp = Blueprint("extract_text", __name__)
 
 @extract_text_bp.route("/extractText", methods=["POST"])
 def extract_text():
-    """
-    Objectif: Extracts text from a base64 encoded image based on the specified document type.
-
-    Parameters:
-        - None
-
-    Query parameters:
-        - None
-
-    Request Body:
-        - base64_image: Base64 encoded image data, optionally with data URI prefix. (String, Required)
-        - type: Document type to process. Must be one of: 'P' (prescription), 'R' (ID card front), 'V' (ID card back). (String, Required)
-
-    Return Value:
-        - 200: JSON response containing the extracted text data. (Object)
-        - 400: JSON error response for missing parameters or invalid document type. (Object)
-        - 500: JSON error response for processing failures or unexpected errors. (Object)
-    """
     try:
-        data = request.get_json()
-        base64_image = data.get("base64_image")
-        doc_type = data.get("type")
+        if "image" not in request.files or "doc_type" not in request.form:
+            return jsonify({"success": False, "error": "Missing parameters"}), 400
 
-        if not base64_image or not doc_type:
-            return jsonify({"error": "base64_image and type are required"}), 400
+        file = request.files["image"]
+        doc_type = request.form["doc_type"]
 
-        if doc_type not in ["P", "R", "V"]:
-            return jsonify({"error": "Invalid document type"}), 400
+        file_bytes = file.read()
+        nparr = np.frombuffer(file_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        header, encoded = base64_image.split(",", 1) if "," in base64_image else ("", base64_image)
-        image_data = base64.b64decode(encoded)
+        if img is None:
+            return jsonify({"success": False, "error": "Decoded image is None"}), 400
 
-        result = extractAll.main(image_data, doc_type, is_bytes=True, flip_horizontal=True)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        cv2.imwrite(tmp_file.name, img)
 
-        return jsonify(result), 200
+        result = main(tmp_file.name, doc_type, from_base64=False, flip_horizontal=True)
+
+        print("DEBUG: Result from OCR main():", result, flush=True)
+
+        if result.get("success", False):
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
 
     except Exception as e:
-        print("[ERROR extract_text route]", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
