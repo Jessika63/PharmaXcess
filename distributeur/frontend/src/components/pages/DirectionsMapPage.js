@@ -172,8 +172,7 @@ function DirectionsMapPage() {
                     longitude: pharmacy.longitude
                 },
                 transport: transport,
-                userCoords: userCoords,
-                routeCoords: routeCoords
+                userCoords: userCoords
             }
         }
     });

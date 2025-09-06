@@ -44,12 +44,8 @@ def generate_prescription_qr():
             if field not in data:
                 return jsonify({"error": f"Le champ '{field}' est requis"}), 400
 
-        # Modification de la fonction generate_rounded_qr_code pour retourner l'image en mémoire
-        # Au lieu de la sauvegarder dans un fichier
-        json_content = json.dumps(data, ensure_ascii=False, indent=4)
-
-        # Appel de la fonction modifiée (voir explication ci-dessous)
-        img_buffer = generate_rounded_qr_code(data, return_buffer=True)
+        # Appel de la fonction avec les bons paramètres
+        img_buffer = generate_rounded_qr_code(data, "prescription", True)
 
         return send_file(img_buffer, mimetype='image/png', as_attachment=True, download_name='prescription_qr.png')
 
@@ -88,8 +84,8 @@ def generate_direction_qr():
             if field not in data:
                 return jsonify({"error": f"Le champ '{field}' est requis"}), 400
 
-        # Générer le QR code avec ces données
-        img_buffer = generate_rounded_qr_code(data, "direction", return_buffer=True)
+        # Appel de la fonction avec les bons paramètres
+        img_buffer = generate_rounded_qr_code(data, "direction", True)
 
         return send_file(
             img_buffer,
@@ -99,5 +95,12 @@ def generate_direction_qr():
         )
 
     except Exception as e:
+        # Ajouter plus de détails sur l'erreur
+        import traceback
+        error_details = traceback.format_exc()
         print(f"Error generating direction QR: {str(e)}")
-        return jsonify({"error": "Erreur lors de la génération du QR code"}), 500
+        print(f"Traceback: {error_details}")
+        return jsonify({
+            "error": "Erreur lors de la génération du QR code",
+            "details": str(e)
+        }), 500
