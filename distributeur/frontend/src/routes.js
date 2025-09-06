@@ -11,6 +11,7 @@ import ErrorPage from './components/ErrorPage';
 import PaymentSuccess from './components/pages/PaymentSuccess';
 import PaymentError from './components/pages/PaymentError';
 import DocumentsFlow from './components/pages/DocumentsFlow';
+import DirectionQRPage from './components/pages/MapQrCodePage';
 
 function AppRoutes() {
     return (
@@ -29,6 +30,7 @@ function AppRoutes() {
                 <Route path="/error" element={<ErrorPage />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-error" element={<PaymentError />} />
+                <Route path="/direction-qr" element={<DirectionQRPage />} />
             </Routes>
         </Router>
     );

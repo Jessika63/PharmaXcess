@@ -24,7 +24,33 @@ function DocumentsChecking() {
         setIsModalOpen(false);
         setShowCamera(false);
 
-        if (currentDocType !== 'carte_vitale') {
+        if (currentDocType === 'ordonnance_qr') {
+            try {
+              // Convertir base64 en blob
+                const response = await fetch(base64Image);
+                const blob = await response.blob();
+
+                const formData = new FormData();
+                formData.append('image', blob, 'prescription_qr.jpg');
+
+                const uploadResponse = await fetch(`${config.backendUrl}/read_prescription_qr`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await uploadResponse.json();
+                if (data.success) {
+                    console.log("QR Code décodé :", data.prescription);
+                    alert("QR Code lu avec succès ! Voir la console pour les détails.");
+                } else {
+                    console.error("Erreur de lecture QR:", data.error);
+                    alert(`Erreur lors de la lecture du QR code: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Erreur client QR:", error);
+                alert("Erreur de connexion");
+            }
+        } else if (currentDocType !== 'carte_vitale') {
             let docCode = null;
 
             if (currentDocType === 'ordonnance') {
@@ -95,27 +121,30 @@ function DocumentsChecking() {
         if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex + 1) % 4;
+                const newIndex = (prevIndex + 1) % 5;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
         } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex - 1 + 4) % 4;
+                const newIndex = (prevIndex - 1 + 5) % 5;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
             console.log('Enter pressed, focusedIndex:', focusedIndexRef.current);
-            if (focusedIndexRef.current === 1) {
+            if (focusedIndexRef.current === 1) { // Nouveau cas
+                console.log('Calling handleOpenCamera for ordonnance_qr');
+                handleOpenCamera('ordonnance_qr');
+            } else if (focusedIndexRef.current === 2) {
                 console.log('Calling handleOpenCamera for ordonnance');
                 handleOpenCamera('ordonnance');
-            } else if (focusedIndexRef.current === 2) {
+            } else if (focusedIndexRef.current === 3) {
                 console.log('Calling handleOpenCamera for carte_vitale');
                 handleOpenCamera('carte_vitale');
-            } else if (focusedIndexRef.current === 3) {
+            } else if (focusedIndexRef.current === 4) {
                 console.log('Calling handleOpenCamera for carte_identite');
                 handleOpenCamera('carte_identite');
             } else if (focusedIndexRef.current === 0) {
@@ -206,9 +235,25 @@ function DocumentsChecking() {
                     </div>
 
                     <div className="w-full flex space-x-8">
-                        {/* Button 'Ordonnance' */}
+                        {/* Button 'Ordonnance QR' */}
                         <div
                             ref={(el) => (buttonsRef.current[0] = el)}
+                            tabIndex={0}
+                            className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
+                                ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
+                                ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
+                                ${config.focusStates.outline} ${focusedIndex === 4 ? config.scaleEffects.focus : ''}`}
+                            onClick={() => handleOpenCamera('ordonnance_qr')}
+                        >
+                            <config.icons.qrCode className="mr-4 text-4xl" />
+                            <p className={`${config.fontSizes.lg} text-center`}>
+                                Ordonnance QR
+                            </p>
+                        </div>
+
+                        {/* Button 'Ordonnance' */}
+                        <div
+                            ref={(el) => (buttonsRef.current[1] = el)}
                             tabIndex={0}
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
@@ -225,7 +270,7 @@ function DocumentsChecking() {
 
                         {/* Button 'Carte Vitale' */}
                         <div
-                            ref={(el) => (buttonsRef.current[1] = el)}
+                            ref={(el) => (buttonsRef.current[2] = el)}
                             tabIndex={0}
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
@@ -241,7 +286,7 @@ function DocumentsChecking() {
 
                         {/* Button 'Carte d'Identité' */}
                         <div
-                            ref={(el) => (buttonsRef.current[2] = el)}
+                            ref={(el) => (buttonsRef.current[3] = el)}
                             tabIndex={0}
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
