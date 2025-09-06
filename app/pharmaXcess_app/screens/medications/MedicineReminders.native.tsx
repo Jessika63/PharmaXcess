@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { TextInput } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
@@ -76,6 +77,155 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
 
     // For profile-based alarm management (simulated)
     const [profileAlarmsData, setProfileAlarmsData] = useState<string[]>([]);
+
+    // State to manage notifications 
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false); 
+    const [notificationIds, setNotificationIds] = useState<Map<string, string>>(new Map()); 
+
+    // Setup notifications on mount 
+    useEffect(() => { 
+        setupNotifications(); 
+    }, []); 
+
+    const setupNotifications = async () => {
+        // Setup notifications handler 
+        Notifications.setNotificationHandler({ 
+            handleNotification: async () => ({ 
+                shouldShowAlert: true, 
+                shouldPlaySound: true, 
+                shouldSetBadge: false, 
+                shouldShowBanner: true, 
+                shouldShowList: true, 
+            }),
+        }); 
+
+        // Ask for permissions 
+        const { status } = await Notifications.requestPermissionsAsync(); 
+        setNotificationsEnabled(status === 'granted'); 
+
+        if (status !== 'granted') { 
+            Alert.alert( 
+                'Permissions de notification', 
+                'Pour recevoir les rappels de médicaments, veuillez activer les notifications dans les paramètres de votre appareil.',
+                [{ text: 'OK' }]
+            ); 
+        }
+    }; 
+
+    // Schedule a notification for an alarm 
+    const scheduleNotification = async (alarm: Alarm) => { 
+        if (!notificationsEnabled) {
+            console.log(`⚠️ Notifications désactivées pour ${alarm.medicineName}`);
+            return;
+        }
+
+        console.log(`🔄 Programmation des notifications pour ${alarm.medicineName}...`);
+
+        // Cancel existing notification for this alarm first
+        await cancelNotification(alarm.id);
+
+        // Don't schedule if alarm is not active
+        if (!alarm.isActive || alarm.days.length === 0) {
+            console.log(`⏹️ Alarme ${alarm.medicineName} inactive ou pas de jours sélectionnés`);
+            return;
+        }
+
+        const now = new Date();
+        const [hours, minutes] = alarm.time.split(':').map(Number);
+        
+        // Map day names to day numbers (0 = Sunday, 1 = Monday, etc.)
+        const dayMap: { [key: string]: number } = {
+            'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 
+            'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6
+        };
+        
+        const alarmDays = alarm.days.map(day => dayMap[day]);
+        const scheduledNotifications: string[] = [];
+
+        try {
+            // Program notifications for the next 2 weeks maximum
+            let notificationsCount = 0;
+            const maxNotifications = 10;
+            
+            for (let day = 0; day < 14 && notificationsCount < maxNotifications; day++) {
+                const notificationDate = new Date();
+                notificationDate.setDate(now.getDate() + day);
+                notificationDate.setHours(hours, minutes, 0, 0);
+                
+                const dayOfWeek = notificationDate.getDay();
+                
+                // Check if this day is in the alarm days
+                if (alarmDays.includes(dayOfWeek)) {
+                    // Only schedule if the notification is in the future
+                    if (notificationDate <= now) {
+                        console.log(`⏭️ ${alarm.medicineName}: ${notificationDate.toLocaleString()} dans le passé, ignorée`);
+                        continue;
+                    }
+                    
+                    const triggerSeconds = Math.floor((notificationDate.getTime() - now.getTime()) / 1000);
+                    
+                    // Only schedule if the trigger time is at least 30 seconds in the future
+                    if (triggerSeconds < 30) {
+                        console.log(`⏭️ ${alarm.medicineName}: notification trop proche (${triggerSeconds}s), ignorée`);
+                        continue;
+                    }
+
+                    const notificationId = await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: `💊 Rappel: ${alarm.medicineName}`,
+                            body: `Il est temps de prendre votre médicament: ${alarm.medicineName} (${alarm.dosage})`,
+                            sound: true,
+                            data: {
+                                alarmId: alarm.id,
+                                type: 'medicine-reminder',
+                                scheduledTime: notificationDate.getTime()
+                            },
+                        },
+                        trigger: { 
+                            seconds: triggerSeconds 
+                        } as any,
+                    });
+
+                    scheduledNotifications.push(notificationId);
+                    notificationsCount++;
+                    
+                    console.log(`📅 ${alarm.medicineName}: notification programmée pour ${notificationDate.toLocaleDateString()} à ${notificationDate.toLocaleTimeString()} (dans ${Math.floor(triggerSeconds/60)} min)`);
+                }
+            }
+
+            // Store all notification IDs for this alarm
+            if (scheduledNotifications.length > 0) {
+                setNotificationIds(prev => new Map(prev.set(alarm.id, scheduledNotifications.join(','))));
+                console.log(`✅ ${scheduledNotifications.length} notifications programmées pour ${alarm.medicineName}`);
+            } else {
+                console.log(`⚠️ Aucune notification programmée pour ${alarm.medicineName} (peut-être que toutes les dates sont dans le passé)`);
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors de la programmation des notifications:', error);
+        }
+    }; 
+
+    // Cancel all scheduled notifications for an alarm
+    const cancelNotification = async (alarmId: string) => { 
+        const notificationIdsString = notificationIds.get(alarmId); 
+        if (notificationIdsString) { 
+            const ids = notificationIdsString.split(',');
+            try {
+                // Cancel all notifications for this alarm
+                for (const notificationId of ids) {
+                    await Notifications.cancelScheduledNotificationAsync(notificationId);
+                }
+                setNotificationIds(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(alarmId);
+                    return newMap;
+                }); 
+                console.log(`🗑️ ${ids.length} notification(s) annulée(s) pour l'alarme ${alarmId}`);
+            } catch (error) {
+                console.error(`❌ Erreur lors de l'annulation des notifications:`, error);
+            }
+        }
+    };
 
     // Simple alarm management by profile (simulated functions)
     const handleAddAlarmToProfile = async (alarmData: string): Promise<boolean> => {
@@ -156,18 +306,32 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     }, [alarms.length]);
 
     // Toggle alarm active state
-    const toggleAlarm = (id: string) => {
+    const toggleAlarm = async (id: string) => {
+        console.log(`🔄 Toggle alarme ${id}`);
+        
         if (isMainProfile) {
             setAlarms(prevAlarms => 
-                prevAlarms.map(alarm => 
-                    alarm.id === id 
-                        ? { 
+                prevAlarms.map(alarm => {
+                    if (alarm.id === id) {
+                        const updatedAlarm = { 
                             ...alarm, 
                             isActive: !alarm.isActive,
                             nextAlarm: calculateNextAlarm({ ...alarm, isActive: !alarm.isActive })
-                          }
-                        : alarm
-                )
+                        };
+                        
+                        // Only schedule/cancel notifications when toggling
+                        if (updatedAlarm.isActive) {
+                            console.log(`🔔 Activation alarme ${alarm.medicineName}`);
+                            setTimeout(() => scheduleNotification(updatedAlarm), 100);
+                        } else {
+                            console.log(`🔕 Désactivation alarme ${alarm.medicineName}`);
+                            setTimeout(() => cancelNotification(id), 100);
+                        }
+
+                        return updatedAlarm;
+                    }
+                    return alarm;
+                })
             );
         } else {
             // For other profiles: update profile data
@@ -183,6 +347,15 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 const updatedProfileAlarms = [...profileAlarmsData];
                 updatedProfileAlarms[alarmIndex] = JSON.stringify(updatedAlarm);
                 setProfileAlarmsData(updatedProfileAlarms);
+
+                // Only schedule/cancel notifications when toggling
+                if (updatedAlarm.isActive) {
+                    console.log(`🔔 Activation alarme ${currentAlarm.medicineName} (profil)`);
+                    setTimeout(() => scheduleNotification(updatedAlarm), 100);
+                } else {
+                    console.log(`🔕 Désactivation alarme ${currentAlarm.medicineName} (profil)`);
+                    setTimeout(() => cancelNotification(id), 100);
+                }
             }
         }
     };
@@ -209,7 +382,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     };
 
     // Delete alarm with confirmation
-    const deleteAlarm = (id: string, medicineName: string) => {
+    const deleteAlarm = async (id: string, medicineName: string) => {
         Alert.alert(
             'Supprimer l\'alarme',
             `Êtes-vous sûr de vouloir supprimer l'alarme pour ${medicineName} ?`,
@@ -218,7 +391,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 { 
                     text: 'Supprimer', 
                     style: 'destructive',
-                    onPress: () => {
+                    onPress: async () => {
+                        // Cancel the notification before deleting
+                        await cancelNotification(id);
                         setAlarms(prevAlarms => prevAlarms.filter(alarm => alarm.id !== id));
                     }
                 }
@@ -229,7 +404,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     const handleRemoveAlarm = async (id: string, medicineName: string) => {
         if (isMainProfile) {
             // For main profile: use existing delete function
-            deleteAlarm(id, medicineName);
+            await deleteAlarm(id, medicineName);
         } else {
             // For other profiles: remove from profile data
             Alert.alert(
@@ -241,6 +416,9 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         text: 'Supprimer', 
                         style: 'destructive',
                         onPress: async () => {
+                            // Cancel the notification before deleting
+                            await cancelNotification(id);
+                            
                             const currentAlarms = getCurrentAlarms();
                             const alarmIndex = currentAlarms.findIndex(alarm => alarm.id === id);
                             if (alarmIndex !== -1) {
@@ -275,15 +453,30 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         if (isMainProfile) {
             // For main profile: use existing logic
             if (editingAlarm) {
+                // Cancel existing notification if time or days changed
+                await cancelNotification(editingAlarm.id); 
+
                 // Edit existing alarm
                 setAlarms(prevAlarms => 
                     prevAlarms.map(alarm => 
                         alarm.id === editingAlarm.id ? alarmData : alarm
                     )
                 );
+                
+                // Only schedule notifications if alarm is active
+                if (alarmData.isActive && notificationsEnabled) {
+                    console.log(`🔄 Alarme modifiée: ${alarmData.medicineName} - Reprogrammation`);
+                    setTimeout(() => scheduleNotification(alarmData), 500);
+                }
             } else {
                 // Add new alarm
                 setAlarms(prevAlarms => [...prevAlarms, alarmData]);
+                
+                // Only schedule notifications if alarm is active  
+                if (alarmData.isActive && notificationsEnabled) {
+                    console.log(`🆕 Nouvelle alarme créée: ${alarmData.medicineName} - Programmation`);
+                    setTimeout(() => scheduleNotification(alarmData), 500);
+                }
             }
         } else {
             // For other profiles: add to profile data
@@ -292,10 +485,19 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 const currentAlarms = getCurrentAlarms();
                 const alarmIndex = currentAlarms.findIndex(alarm => alarm.id === editingAlarm.id);
                 if (alarmIndex !== -1) {
+                    // Cancel old notification if time or days changed 
+                    await cancelNotification(editingAlarm.id); 
+
                     const updatedProfileAlarms = [...profileAlarmsData];
                     updatedProfileAlarms[alarmIndex] = JSON.stringify(alarmData);
                     setProfileAlarmsData(updatedProfileAlarms);
                     Alert.alert('Succès', 'Alarme modifiée avec succès.');
+
+                    // Only schedule notifications if alarm is active
+                    if (alarmData.isActive && notificationsEnabled) {
+                        console.log(`🔄 Alarme modifiée (profil): ${alarmData.medicineName} - Reprogrammation`);
+                        setTimeout(() => scheduleNotification(alarmData), 500);
+                    }
                 } else {
                     Alert.alert('Erreur', 'Alarme introuvable.');
                 }
@@ -304,6 +506,12 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                 const success = await handleAddAlarmToProfile(JSON.stringify(alarmData));
                 if (success) {
                     Alert.alert('Succès', 'Alarme ajoutée avec succès.');
+
+                    // Only schedule notifications if alarm is active
+                    if (alarmData.isActive && notificationsEnabled) {
+                        console.log(`🆕 Nouvelle alarme créée (profil): ${alarmData.medicineName} - Programmation`);
+                        setTimeout(() => scheduleNotification(alarmData), 500);
+                    }
                 } else {
                     Alert.alert('Erreur', 'Cette alarme est déjà enregistrée ou une erreur est survenue.');
                 }
@@ -384,6 +592,95 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
 
     const currentAlarms = getCurrentAlarms();
 
+    // Removed automatic notification scheduling useEffects to prevent immediate notifications
+    // Notifications are now only scheduled manually when alarms are created/modified
+
+    const syncNotificationsForAlarm = async (alarm: Alarm) => {
+        if (!notificationsEnabled) return;
+
+        if (alarm.isActive && alarm.nextAlarm) {
+            await scheduleNotification(alarm);
+        } else {
+            await cancelNotification(alarm.id);
+        }
+    };
+
+    // const syncExistingNotifications = async () => {
+    //     const currentAlarms = getCurrentAlarms();
+        
+    //     // Cancel all existing notifications first to avoid duplicates
+    //     for (const [alarmId, notificationId] of notificationIds.entries()) {
+    //         try {
+    //             await Notifications.cancelScheduledNotificationAsync(notificationId);
+    //         } catch (error) {
+    //             console.log(`Failed to cancel notification ${notificationId}:`, error);
+    //         }
+    //     }
+        
+    //     // Clear the notification IDs map
+    //     setNotificationIds(new Map());
+        
+    //     // Schedule new notifications only for active alarms
+    //     for (const alarm of currentAlarms) {
+    //         if (alarm.isActive && alarm.nextAlarm) {
+    //             await scheduleNotification(alarm);
+    //         }
+    //     }
+    // };
+
+    // Test notification function for development
+    const testNotification = async () => {
+        if (!notificationsEnabled) {
+            Alert.alert('Erreur', 'Les notifications ne sont pas activées.');
+            return;
+        }
+
+        try {
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '🧪 Test - Rappel de médicament',
+                    body: 'Ceci est un test de notification pour les rappels de médicaments.',
+                    sound: true,
+                },
+                trigger: { seconds: 1 } as any,
+            });
+            Alert.alert('Test envoyé', 'Une notification de test va apparaître dans 1 seconde.');
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible d\'envoyer la notification de test.');
+        }
+    };
+
+    // Debug function to show scheduled notifications
+    const showScheduledNotifications = async () => {
+        try {
+            const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+            const medicineNotifications = scheduled.filter(n => n.content.data?.type === 'medicine-reminder');
+            
+            Alert.alert(
+                'Notifications programmées',
+                `${medicineNotifications.length} notifications de médicaments programmées:\n\n` +
+                medicineNotifications.map(n => 
+                    `• ${n.content.title}\n  ID: ${n.identifier.substring(0, 8)}...`
+                ).join('\n\n'),
+                [{ text: 'OK' }]
+            );
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de récupérer les notifications programmées.');
+        }
+    };
+
+    // Debug function to clear all notifications
+    const clearAllNotifications = async () => {
+        try {
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            setNotificationIds(new Map());
+            Alert.alert('Succès', 'Toutes les notifications ont été supprimées.');
+            console.log('🧹 Toutes les notifications supprimées');
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de supprimer les notifications.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <FlatList
@@ -426,6 +723,65 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                                 <Text style={styles.buttonText}>Nouvelle alarme</Text>
                             </LinearGradient>
                         </TouchableOpacity>
+
+                        {/* Button to test notifications */}
+                        {__DEV__ && (
+                            <>
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={testNotification}
+                                >
+                                    <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.gradient}>
+                                        <Ionicons name="notifications-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Test notification</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={showScheduledNotifications}
+                                >
+                                    <LinearGradient colors={['#607D8B', '#455A64']} style={styles.gradient}>
+                                        <Ionicons name="list-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Voir notifications programmées</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={clearAllNotifications}
+                                >
+                                    <LinearGradient colors={['#F44336', '#D32F2F']} style={styles.gradient}>
+                                        <Ionicons name="trash-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Supprimer toutes les notifications</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        
+                        {/* Indicator for notification status */}
+                        <View style={{ marginTop: 15, padding: 10, backgroundColor: colors.background, borderRadius: 8, borderWidth: 1, borderColor: colors.inputBorder }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons 
+                                    name={notificationsEnabled ? "checkmark-circle" : "alert-circle"} 
+                                    size={20} 
+                                    color={notificationsEnabled ? "#4CAF50" : "#FF9800"} 
+                                />
+                                <Text style={[
+                                    styles.alarmDays, 
+                                    { 
+                                        marginLeft: 8, 
+                                        textAlign: 'center',
+                                        color: notificationsEnabled ? "#4CAF50" : "#FF9800"
+                                    }
+                                ]}>
+                                    {notificationsEnabled 
+                                        ? "Notifications activées" 
+                                        : "Notifications désactivées"
+                                    }
+                                </Text>
+                            </View>
+                        </View>
                     </View>
                 )}
                 renderItem={({ item }) => (

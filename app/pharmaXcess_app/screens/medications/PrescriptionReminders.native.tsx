@@ -95,6 +95,8 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     }, []);
 
     const setupNotifications = async () => {
+        console.log('🔧 Configuration des notifications d\'ordonnances...');
+        
         // Setup notifications handler
         Notifications.setNotificationHandler({
             handleNotification: async () => ({
@@ -116,36 +118,56 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 'Pour recevoir les rappels d\'ordonnances, veuillez autoriser les notifications.',
                 [{ text: 'OK' }]
             );
+        } else {
+            console.log('✅ Permissions de notification accordées');
         }
     };
 
     // Schedule a notification for a reminder
     const scheduleNotification = async (reminder: Reminder) => {
-        if (!notificationsEnabled) return;
+        if (!notificationsEnabled) {
+            console.log(`⚠️ Notifications désactivées pour ${reminder.name}`);
+            return;
+        }
+
+        console.log(`🔄 Programmation notification pour ${reminder.name}...`);
         
         // Cancel any existing notification for this reminder first
         await cancelNotification(reminder.id);
 
-        // Don't schedule a notification if the reminder is completed or the due date is in the past
-        if (reminder.isCompleted) return;
+        // Don't schedule a notification if the reminder is completed
+        if (reminder.isCompleted) {
+            console.log(`⏹️ Rappel ${reminder.name} déjà terminé, pas de notification`);
+            return;
+        }
         
         const now = new Date();
         const reminderDate = new Date(reminder.dueDate);
         reminderDate.setHours(9, 0, 0, 0); // Schedule for 9 AM on the due date 
         
-        if (reminderDate <= now) return; // Don't schedule if date is past 
+        // Don't schedule if date is in the past
+        if (reminderDate <= now) {
+            console.log(`⏭️ ${reminder.name}: date ${reminderDate.toLocaleDateString()} dans le passé, ignorée`);
+            return;
+        }
 
         try {
             const priorityEmoji = reminder.priority === 'high' ? '🚨' : 
                                 reminder.priority === 'medium' ? '⚠️' : 'ℹ️';
 
             // Calculate the trigger time in seconds until the reminder date
-            const triggerSeconds = Math.max(1, Math.floor((reminderDate.getTime() - now.getTime()) / 1000));
+            const triggerSeconds = Math.max(30, Math.floor((reminderDate.getTime() - now.getTime()) / 1000));
+
+            // Only schedule if the trigger time is at least 30 seconds in the future
+            if (triggerSeconds < 30) {
+                console.log(`⏭️ ${reminder.name}: notification trop proche (${triggerSeconds}s), ignorée`);
+                return;
+            }
 
             const notificationId = await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `${priorityEmoji} Rappel d'ordonnance`,
-                    body: `${reminder.name}${reminder.notes ? '\n' + reminder.notes : ''}`,
+                    body: `Il est temps de renouveler votre ordonnance: ${reminder.name}${reminder.notes ? '\n' + reminder.notes : ''}`,
                     sound: true,
                     data: {
                         reminderId: reminder.id,
@@ -159,9 +181,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
             // Store the notification ID
             setNotificationIds(prev => new Map(prev.set(reminder.id, notificationId)));
-            console.log(`Notification programmée pour ${reminder.name} le ${reminderDate.toLocaleDateString()} à 9h00`);
+            console.log(`✅ Notification programmée pour ${reminder.name} le ${reminderDate.toLocaleDateString()} à 9h00 (dans ${Math.floor(triggerSeconds/3600)} heures)`);
         } catch (error) {
-            console.error('Erreur lors de la programmation de la notification:', error);
+            console.error('❌ Erreur lors de la programmation de la notification:', error);
         }
     };
 
@@ -289,11 +311,23 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     const toggleCompletion = (id: string) => {
         if (isMainProfile) {
             setReminders(prevReminders => 
-                prevReminders.map(reminder => 
-                    reminder.id === id 
-                        ? { ...reminder, isCompleted: !reminder.isCompleted }
-                        : reminder
-                )
+                prevReminders.map(reminder => {
+                    if (reminder.id === id) {
+                        const updatedReminder = { ...reminder, isCompleted: !reminder.isCompleted };
+                        
+                        // Handle notification based on completion status
+                        if (updatedReminder.isCompleted) {
+                            console.log(`✅ Rappel ${reminder.name} terminé - Annulation notification`);
+                            setTimeout(() => cancelNotification(id), 100);
+                        } else {
+                            console.log(`🔄 Rappel ${reminder.name} réactivé - Programmation notification`);
+                            setTimeout(() => scheduleNotification(updatedReminder), 100);
+                        }
+                        
+                        return updatedReminder;
+                    }
+                    return reminder;
+                })
             );
         } else {
             // For other profiles: update profile data
@@ -307,6 +341,15 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 const updatedProfileReminders = [...profileRemindersData];
                 updatedProfileReminders[reminderIndex] = JSON.stringify(updatedReminder);
                 setProfileRemindersData(updatedProfileReminders);
+
+                // Handle notification based on completion status
+                if (updatedReminder.isCompleted) {
+                    console.log(`✅ Rappel ${updatedReminder.name} terminé (profil) - Annulation notification`);
+                    setTimeout(() => cancelNotification(id), 100);
+                } else {
+                    console.log(`🔄 Rappel ${updatedReminder.name} réactivé (profil) - Programmation notification`);
+                    setTimeout(() => scheduleNotification(updatedReminder), 100);
+                }
             }
         }
     };
@@ -349,8 +392,11 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
             notes: newReminder.notes || '',
         };
 
-        // Schedule the notification automatically upon creation/modification
-        await scheduleNotification(reminderData);
+        // Only schedule notification if reminder is not completed
+        if (!reminderData.isCompleted && notificationsEnabled) {
+            console.log(`🆕 ${editingReminder ? 'Modification' : 'Création'} rappel: ${reminderData.name} - Programmation notification`);
+            setTimeout(() => scheduleNotification(reminderData), 500);
+        }
 
         if (isMainProfile) {
             // For main profile: use existing logic
@@ -467,21 +513,8 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         return a.dueDate.getTime() - b.dueDate.getTime(); // Sort by due date
     });
 
-    // Synchronize notifications when reminders or settings change
-    useEffect(() => {
-        if (notificationsEnabled) {
-            syncExistingNotifications();
-        }
-    }, [notificationsEnabled, reminders]);
-
-    const syncExistingNotifications = async () => {
-        const currentReminders = getCurrentReminders();
-        for (const reminder of currentReminders) {
-            if (!reminder.isCompleted) {
-                await scheduleNotification(reminder);
-            }
-        }
-    };
+    // Removed automatic notification scheduling useEffects to prevent immediate notifications  
+    // Notifications are now only scheduled manually when reminders are created/modified
 
     // Test notification function for development
     const testNotification = async () => {
@@ -502,6 +535,37 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
             Alert.alert('Test envoyé', 'Une notification de test va apparaître dans 1 seconde.');
         } catch (error) {
             Alert.alert('Erreur', 'Impossible d\'envoyer la notification de test.');
+        }
+    };
+
+    // Debug function to show scheduled notifications
+    const showScheduledNotifications = async () => {
+        try {
+            const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+            const prescriptionNotifications = scheduled.filter(n => n.content.data?.type === 'prescription-reminder');
+            
+            Alert.alert(
+                'Notifications programmées',
+                `${prescriptionNotifications.length} rappels d'ordonnances programmés:\n\n` +
+                prescriptionNotifications.map(n => 
+                    `• ${n.content.title}\n  ID: ${n.identifier.substring(0, 8)}...`
+                ).join('\n\n'),
+                [{ text: 'OK' }]
+            );
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de récupérer les notifications programmées.');
+        }
+    };
+
+    // Debug function to clear all notifications
+    const clearAllNotifications = async () => {
+        try {
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            setNotificationIds(new Map());
+            Alert.alert('Succès', 'Toutes les notifications ont été supprimées.');
+            console.log('🧹 Toutes les notifications supprimées');
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de supprimer les notifications.');
         }
     };
 
@@ -550,15 +614,37 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
                         {/* Button to test notifications */}
                         {__DEV__ && (
-                            <TouchableOpacity 
-                                style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
-                                onPress={testNotification}
-                            >
-                                <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.gradient}>
-                                    <Ionicons name="notifications-outline" size={24} color="white" />
-                                    <Text style={[styles.buttonText, { fontSize: 14 }]}>Test notification</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
+                            <>
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={testNotification}
+                                >
+                                    <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.gradient}>
+                                        <Ionicons name="notifications-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Test notification</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={showScheduledNotifications}
+                                >
+                                    <LinearGradient colors={['#607D8B', '#455A64']} style={styles.gradient}>
+                                        <Ionicons name="list-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Voir notifications programmées</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={[styles.addAlarmButton, { marginTop: 10, opacity: 0.8 }]} 
+                                    onPress={clearAllNotifications}
+                                >
+                                    <LinearGradient colors={['#F44336', '#D32F2F']} style={styles.gradient}>
+                                        <Ionicons name="trash-outline" size={24} color="white" />
+                                        <Text style={[styles.buttonText, { fontSize: 14 }]}>Supprimer toutes les notifications</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </>
                         )}
                         
                         {/* Indicator for notification status */}
