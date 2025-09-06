@@ -22,21 +22,23 @@ def read_qr_code(qr_filename):
     Reads and decodes a QR Code from an image, handling special characters.
 
     :param qr_filename: Path to the file containing the QR Code.
-    :return: The decoded content of the QR Code (in JSON or plain text).
+    :return: Tuple (success, result) where success is boolean and result is either the decrypted content or an error message.
     """
     # Load the image containing the QR Code
     image = cv2.imread(qr_filename)
 
     if image is None:
-        print(f"Error: Unable to load the image '{qr_filename}'.")
-        return None
+        error_msg = f"Error: Unable to load the image '{qr_filename}'."
+        print(error_msg)
+        return False, error_msg
 
     # Decode QR Codes present in the image
     qr_codes = decode(image)
 
     if not qr_codes:
-        print("No QR Code detected in the image.")
-        return None
+        error_msg = "No QR Code detected in the image."
+        print(error_msg)
+        return False, error_msg
 
     # Process each detected QR Code
     for qr_code in qr_codes:
@@ -58,10 +60,10 @@ def read_qr_code(qr_filename):
         try:
             env_data = load_env_file(".env")
             secret_key_str = env_data["SECRET_QR_ENCRYPTION_KEY"]
-            
+
             # Convertir la clé string en bytes et s'assurer qu'elle a la bonne longueur
             secret_key = secret_key_str.encode('utf-8')
-            
+
             # AES nécessite des clés de 16, 24 ou 32 octets
             # Si la clé n'a pas la bonne longueur, on l'ajuste
             if len(secret_key) < 16:
@@ -79,14 +81,15 @@ def read_qr_code(qr_filename):
             decrypted_content = decrypt_data(data, secret_key)
             print("QR Code content (déchiffré):")
             print(decrypted_content)
-            return decrypted_content  # Retourner le contenu au lieu de juste l'afficher
+            return True, decrypted_content
         except Exception as e:
-            print(f"Erreur de déchiffrement: {e}")
-            continue  # Continuer avec le prochain QR code au lieu de retourner None immédiatement
+            error_msg = f"Erreur de déchiffrement: {e}"
+            print(error_msg)
+            continue  # Continuer avec le prochain QR code
 
-    print("Aucun QR code n'a pu être déchiffré.")
-    return None
-
+    error_msg = "Aucun QR code n'a pu être déchiffré."
+    print(error_msg)
+    return False, error_msg
 def verify_doctor(qr_content):
     """
     Verifies doctor information via an API.
