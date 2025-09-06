@@ -305,7 +305,7 @@ function StartingPage() {
       <div className={`flex flex-col items-center ${config.spacing.xxl} w-full`}>
 
         {/* Button 'With Prescription Drugs' */}
-        <Link to="/documents-checking" className="w-full flex justify-center pointer-events-none">
+        <Link to="/documents-flow" className="w-full flex justify-center pointer-events-none">
           <div
             ref={prescriptionButtonRef}
             tabIndex={0}

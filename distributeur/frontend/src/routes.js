@@ -10,13 +10,16 @@ import Preorder from './components/pages/preorder';
 import ErrorPage from './components/ErrorPage';
 import PaymentSuccess from './components/pages/PaymentSuccess';
 import PaymentError from './components/pages/PaymentError';
-
+import DocumentsFlow from './components/pages/DocumentsFlow';
 
 function AppRoutes() {
     return (
         <Router>
             <Routes>
                 <Route path="/" element={<App />} />
+
+                <Route path="/documents-flow" element={<DocumentsFlow />} />
+
                 <Route path="/documents-checking" element={<DocumentsChecking />} />
                 <Route path="/drug-stores-available" element={<DrugStoresAvailable />} />
                 <Route path="/insufficient-stock" element={<InsufficientStock />} />
