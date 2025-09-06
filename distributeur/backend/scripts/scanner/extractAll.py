@@ -1,71 +1,221 @@
-import cv2
+#!/usr/bin/env python3
+import sys, os, re, json, tempfile, time, base64
 import numpy as np
-import re
-import sys
-import json
 import unicodedata
-import requests
-import tempfile
-from paddleocr import PaddleOCR
+import cv2
 
-# -----------------------------
-# Utilities
-# -----------------------------
-def add_background(img, scale_factor=1.5):
-    if img is None:
-        raise ValueError("Input image is None")
-    h, w, _ = img.shape
-    new_h = int(h * scale_factor)
-    new_w = int(w * scale_factor)
-    bg = np.ones((new_h, new_w, 3), dtype=np.uint8) * 255
-    sy = (new_h - h) // 2
-    sx = (new_w - w) // 2
-    bg[sy:sy+h, sx:sx+w] = img
-    return bg
+from doctr.models import ocr_predictor
+from doctr.io import DocumentFile
+
 
 def normalize_text(text):
-    # Fix OCR issues with missing spaces and accents
     text = text.replace(":", ": ")
     text = text.lower()
     text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
     text = re.sub(r"\s+", " ", text)
     return text
 
-# -----------------------------
-# Document type detection
-# -----------------------------
+
 def isPrescription(text):
-    text_norm = normalize_text(text)
-    keyword_groups = [
-        ["rpps"], ["ordonnance", "prescription"], ["comprime", "comprimes", "cp"],
-        ["capsule"], ["solution", "sol"], ["pommade"], ["sirop"], 
-        ["dr ", "docteur", "medecin"], ["patient"], ["posologie"],
-        ["mg", "ml", "dosage"], ["pulverisation", "pulv", "spray"]
-    ]
-    score = sum(1 for group in keyword_groups if any(kw in text_norm for kw in group))
-    return score >= 4
+    keywords = ["RPPS", "ordonnance", "prescription", "mg", "comprimé", "solution", "capsule", "Dr "]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
+    return score >= 2
 
 def isRectoID(text):
-    text_norm = normalize_text(text)
-    keyword_groups = [
-        ["nationalite"], ["nom"], ["prenoms", "prenom"], ["sexe"],
-        ["nee le", "n6ele", "date de naissance"], ["taille"], ["carte nationale"]
-    ]
-    score = sum(1 for group in keyword_groups if any(kw in text_norm for kw in group))
-    return score >= 3  # Plus tolérant pour l'OCR
-
-def isVersoID(text):
-    text_norm = normalize_text(text)
-    keyword_groups = [
-        ["adresse"], ["delivree", "delivreele", "délivrée"], ["valable"],
-        ["carte"], ["par", "prefecture", "autorite", "autorité"], ["signature"]
-    ]
-    score = sum(1 for group in keyword_groups if any(kw in text_norm for kw in group))
+    keywords = ["Nationalité", "Nom", "Prénoms", "Sexe", "Née le", "Taille"]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
     return score >= 3
 
-# -----------------------------
-# API verification
-# -----------------------------
+def isVersoID(text):
+    keywords = ["Adresse", "délivrée le", "valable", "Carte nationale", "par "]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
+    return score >= 2
+
+
+def getInfosPrescription(text):
+    infos = {}
+    spe = "NONE"
+
+    doctor_pattern = r"Dr\s+([A-Za-zÀ-ÿ]+)\s+([A-Za-zÀ-ÿ]+)"
+    doctors = re.findall(doctor_pattern, text)
+    if doctors:
+        firstname, lastname = doctors[0]
+        specialty_pattern = r"(MEDECIN\s+[A-Zéèêîàç\-]+|CARDIOLOGUE|DERMATOLOGUE|PEDIATRE|GYNECOLOGUE|OPHTALMOLOGISTE|PSYCHIATRE)"
+        specialty_match = re.search(specialty_pattern, text, re.IGNORECASE)
+        if specialty_match:
+            spe = specialty_match.group(0).strip()
+        infos["medecin"] = {
+            "prenom": firstname,
+            "nom": lastname,
+            "speciality": spe
+        }
+
+    rpps_pattern = r"RPPS[:\s]*([0-9]{11})"
+    rpps_match = re.search(rpps_pattern, text)
+    if rpps_match:
+        infos["rpps"] = rpps_match.group(1)
+
+    patient_pattern = r"(?:M\.|Mme\.)[^\S\r\n]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
+    patient = re.search(patient_pattern, text)
+    if patient:
+        last_name = patient.group(1)
+        first_name = patient.group(2)
+        infos["patient"] = {"prenom": first_name, "nom": last_name}
+
+    date_presc_match = re.search(r"Le\s+(\d{1,2}\s+[a-zéû]+\s+\d{4})", text, re.IGNORECASE)
+    if date_presc_match:
+        infos["date_prescription"] = date_presc_match.group(1)
+
+    lines = text.splitlines()
+    meds = []
+    current_med = None
+    capture_started = False
+
+    for line in lines:
+        line = line.strip()
+        if not capture_started and re.search(r"né\(e\)|née le", line, re.IGNORECASE):
+            capture_started = True
+            continue
+        if not capture_started or not line:
+            continue
+        if re.search(r"[A-Z]{3,}.*\b(mg|ml|g|%|cp|comprimé|sol|solution|pulv|capsule|pommade|sirop|gelule)\b", line, re.IGNORECASE):
+            current_med = {"nom": line, "posologie": ""}
+            meds.append(current_med)
+        elif current_med:
+            current_med["posologie"] += line + " "
+
+    for med in meds:
+        med["posologie"] = med["posologie"].strip()
+    if meds:
+        infos["medicaments"] = meds
+
+    return infos
+
+
+
+import re
+
+def getInfosRectoID(text):
+    infos = {}
+
+
+    text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
+               .replace("TM Nom:", "Nom:").replace("Prénom(s):", "Prénoms:") \
+               .replace("Né(e) le", "Né(e) le:").replace("Taille", "Taille:") \
+               .replace("Sexe :", "Sexe:").replace("à:", "lieu_naissance:")
+
+
+    match = re.search(r"CARTE NATIONALE D'IDENTITE\s+No[:\s]*([0-9A-Z]+)", text, re.IGNORECASE)
+    if match:
+        infos["numero_carte"] = match.group(1).strip()
+
+
+    match = re.search(r"Nationalité[:\s]*([A-Za-zéÉèàêâîç]+)", text)
+    if match:
+        infos["nationalite"] = match.group(1).strip()
+
+
+    match = re.search(r"Nom[:\s]*([A-Z]+)", text)
+    if match:
+        infos["nom"] = match.group(1).capitalize()
+
+
+    match = re.search(r"Prénoms[:\s]*([A-Z\s]+)", text)
+    if match:
+        raw = match.group(1).strip()
+
+        prenoms = [p.capitalize() for p in raw.split() if len(p) > 1]
+        infos["prenoms"] = prenoms
+
+
+    match = re.search(r"Sexe[:\s]*([MF])", text)
+    if match:
+        infos["sexe"] = "Homme" if match.group(1) == "M" else "Femme"
+
+
+    match = re.search(r"Né\(e\) le[:\s]*([0-9]{2}[./-][0-9]{2}[./-][0-9]{4})", text)
+    if match:
+        infos["date_naissance"] = match.group(1).replace('.', '/')
+
+
+    match = re.search(r"lieu_naissance[:\s]*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)", text)
+    if match:
+        raw_lieu = match.group(1).strip()
+
+        raw_lieu = re.split(r'\s*\n', raw_lieu)[0]
+        infos["lieu_naissance"] = raw_lieu.title()
+
+
+    match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
+    if match:
+        infos["taille"] = match.group(1).replace(',', '.')
+        
+    return infos
+
+
+
+import re
+
+def getInfosVersoID(text):
+    infos = {}
+
+
+    text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
+               .replace("delivreele", "délivrée le") \
+               .replace("Adresse.:", "Adresse:") \
+               .replace("Adresse.", "Adresse:") \
+               .replace("LaPrefete", "La Préfète", "Le Préfet", "LePrefet") \
+               .replace("par:", "par:") \
+               .replace("Signature de lautorité", "signature_autorite")
+
+
+    address_match = re.search(
+        r"Adresse[:\s]*([0-9A-Z\s\-]+)\s*\n\s*(\d{5})\s*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)",
+        text, re.IGNORECASE
+    )
+    if address_match:
+        infos["adresse"] = address_match.group(1).title().strip()
+        infos["code_postal"] = address_match.group(2)
+
+        infos["ville"] = address_match.group(3).split('\n')[0].title().strip()
+
+
+    valid_match = re.search(r"valable.*?(\d{2}[./-]\d{2}[./-]\d{4})", text)
+    if valid_match:
+        infos["date_validite"] = valid_match.group(1).replace('.', '/')
+
+
+    issued_match = re.search(r"délivrée le[:\s]*(\d{2}[./-]\d{2}[./-]\d{4})", text)
+    if issued_match:
+        infos["date_delivrance"] = issued_match.group(1).replace('.', '/')
+
+
+    by_match = re.search(r"par[:\s]*(.+)", text, re.IGNORECASE)
+    if by_match:
+        autorite = by_match.group(1).split('\n')[0].strip()
+        infos["autorite"] = autorite.title()
+
+
+    sig_match = re.search(r"signature_autorite[:\s]*(.+)", text, re.IGNORECASE | re.DOTALL)
+    if sig_match:
+        signature = sig_match.group(1).strip()
+        infos["signature_autorite"] = " ".join([line.strip() for line in signature.splitlines() if line.strip()])
+
+    return infos
+
+
+
+
+def flip_image(input_path, flip_code=1):
+    """ Flip the image and save the result """
+    image = cv2.imread(input_path)
+    if image is None:
+        raise FileNotFoundError(f"Could not read the image at {input_path}")
+    flipped = cv2.flip(image, flip_code)
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+    cv2.imwrite(tmp_file.name, flipped)
+    return tmp_file.name
+
 def verify_doctor(first_name, last_name):
     try:
         url = "http://localhost:5000/find_doctor_by_name"
@@ -82,171 +232,91 @@ def verify_doctor(first_name, last_name):
     except Exception as e:
         return False, {"error": str(e)}
 
-# -----------------------------
-# Information extraction
-# -----------------------------
-def getInfosPrescription(text):
-    infos = {}
-    m_doc = re.search(r"Dr\s+([A-ZÉÈÊÂÎÔÛÄËÏÖÜ][A-Za-zÀ-ÿ'\- ]+)", text)
-    if m_doc:
-        parts = m_doc.group(1).split()
-        infos["doctor_first_name"] = parts[0]
-        infos["doctor_last_name"] = parts[-1]
-    m_rpps = re.search(r"RPPS[:\s]*([0-9]{6,})", text, re.IGNORECASE)
-    if m_rpps: infos["rpps"] = m_rpps.group(1)
-    meds = [line.strip() for line in text.splitlines() if any(u in line.lower() for u in ["mg","g","cp","ml","sol","pulv","sirop","pommade"])]
-    if meds: infos["medicaments"] = meds
 
-    if "doctor_last_name" in infos:
-        ok, data = verify_doctor(infos.get("doctor_first_name",""), infos["doctor_last_name"])
-        infos["doctor_verified"] = ok
-        infos["doctor_data"] = data
-    else:
-        infos["doctor_verified"] = False
-        infos["doctor_data"] = {"error":"Doctor not detected"}
-    return infos
 
-def getInfosRectoID(text: str) -> dict:
+
+def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
     """
-    Extracts key information from the front of a French ID card.
-    Returns a dictionary with fields and identity verification status.
+    Extract text from image using Doctr OCR and return JSON with infos.
     """
-    infos = {}
+    result = {"success": False, "raw_text": "", "infos": {}, "error": ""}
 
-    # Normalize OCR text a bit more for extraction
-    text = text.replace(":", ": ").replace("\n", " ")
+    try:
 
-    # Nationality
-    m_nat = re.search(r"Nationalit[eé]\s*[:]? ?([A-Za-z]+)", text, re.IGNORECASE)
-    if m_nat:
-        infos["nationalite"] = m_nat.group(1).capitalize()
+        if from_base64:
+            image_data = base64.b64decode(image_input.split(",")[-1])
+            nparr = np.frombuffer(image_data, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            if not os.path.exists(image_input):
+                result["error"] = f"File '{image_input}' does not exist"
+                return result
+            img = cv2.imread(image_input)
 
-    # Last name
-    m_nom = re.search(r"Nom\s*[:]? ?([A-Z][A-Z\-]+)", text)
-    if m_nom:
-        infos["nom"] = m_nom.group(1).strip()
+        if img is None:
+            result["error"] = "Cannot read image file"
+            return result
 
-    # First name(s) (allowing hyphens and uppercase letters)
-    m_prenoms = re.search(r"Prenom\(s\)?\s*[:]? ?([A-Z\-]+)", text)
-    if m_prenoms:
-        infos["prenoms"] = m_prenoms.group(1).replace("-", "")
-
-    # Birth date (OCR-tolerant)
-    m_dn = re.search(r"N[6eé]\(?.*?\)?le\s*[:]? ?(\d{2}[./]\d{2}[./]\d{4})", text, re.IGNORECASE)
-    if m_dn:
-        infos["nee_le"] = m_dn.group(1)
-
-    # Sex
-    m_sexe = re.search(r"Sexe\s*[:]? ?(M|F)", text)
-    if m_sexe:
-        infos["sexe"] = m_sexe.group(1)
-
-    # Birth place (OCR-tolerant)
-    m_lieu = re.search(r"a\s*[:]? ?([A-Z\- ]+)", text)
-    if m_lieu:
-        infos["lieu"] = m_lieu.group(1).title()
-
-    # Height
-    m_taille = re.search(r"Taille[^\d]*(\d\.\d{2}m)", text)
-    if m_taille:
-        infos["taille"] = m_taille.group(1)
-
-    # Fill identity_verified
-    required_fields = ["nom", "prenoms", "nee_le", "sexe"]
-    infos["identity_verified"] = all(f in infos for f in required_fields)
-
-    return infos
-
-def getInfosVersoID(text: str) -> dict:
-    infos = {}
-    match_addr = re.search(r"^(\d+\s*[A-Z\s]+)", text, re.MULTILINE)
-    infos["adresse_complete"] = match_addr.group(1).strip() if match_addr else ""
-    match_cp_ville = re.search(r"(\d{5})([A-Z\- ]+)", text)
-    if match_cp_ville:
-        infos["code_postal"] = match_cp_ville.group(1)
-        infos["ville"] = match_cp_ville.group(2).strip()
-    else:
-        infos["code_postal"] = ""
-        infos["ville"] = ""
-    match_val = re.search(r"Carte valable.*?(\d{2}\.\d{2}\.\d{4})", text)
-    if match_val: infos["valable_jusquau"] = match_val.group(1)
-    match_deliv = re.search(r"delivreele\s*(\d{2}\.\d{2}\.\d{4})", text, re.IGNORECASE)
-    if match_deliv: infos["delivree_le"] = match_deliv.group(1)
-    match_auth = re.search(r"Par\s*([A-Z\s\-0-9]+)", text)
-    if match_auth: infos["autorite"] = match_auth.group(1).strip()
-    return infos
-
-# -----------------------------
-# Main pipeline
-# -----------------------------
-def main(image_input, doc_type, is_bytes=False, flip_horizontal=False):
-    import cv2
-    import numpy as np
-    import tempfile
-    from paddleocr import PaddleOCR
-
-    # --- Load image ---
-    if is_bytes:
-        nparr = np.frombuffer(image_input, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    else:
-        img = cv2.imread(image_input)
-    if flip_horizontal:
-        img = cv2.flip(img, 1)
-
-    # --- Add white background and resize ---
-    img = add_background(img)
-    img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
-
-    # --- Orientation correction ---
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(gray, 50, 150, 3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
-    if lines is not None:
-        angles = [np.arctan2(y2-y1, x2-x1) * 180 / np.pi for x1, y1, x2, y2 in lines[:, 0]]
-        median_angle = np.median(angles)
-        if median_angle != 0:
-            h, w = img.shape[:2]
-            M = cv2.getRotationMatrix2D((w // 2, h // 2), median_angle, 1.0)
-            img = cv2.warpAffine(img, M, (w, h))
-
-    # --- OCR ---
-    ocr = PaddleOCR(lang='fr')
-
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        cv2.imwrite(tmp.name, img)
-        tmp_path = tmp.name
-
-    res = ocr.ocr(tmp_path)
-
-    # --- Parsing text ---
-    text = "\n".join([word_info[1][0] for line in res for word_info in line])
-
-    # --- Document type detection ---
-    infos = {}
-    valid = False
-    if doc_type == "P":
-        valid = isPrescription(text)
-        infos = getInfosPrescription(text) if valid else {}
-    elif doc_type == "R":
-        valid = isRectoID(text)
-        infos = getInfosRectoID(text) if valid else {}
-    elif doc_type == "V":
-        valid = isVersoID(text)
-        infos = getInfosVersoID(text) if valid else {}
-
-    if not valid:
-        return {"raw_text": text, "error": f"The provided document does not match the expected type '{doc_type}'."}
-    return {"raw_text": text, "infos": infos}
+        if flip_horizontal:
+            img = cv2.flip(img, 1)
 
 
-# -----------------------------
-# CLI
-# -----------------------------
-if __name__=="__main__":
-    if len(sys.argv) != 3: sys.exit(1)
-    img_path = sys.argv[1]
-    doc_type = sys.argv[2].upper()
-    result = main(img_path, doc_type)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            tmp_path = tmp.name
+            cv2.imwrite(tmp_path, img)
+
+
+        predictor = ocr_predictor(pretrained=True)
+        doc = DocumentFile.from_images(tmp_path)
+        ocr_result = predictor(doc)
+
+        lines = []
+        for page in ocr_result.pages:
+            for block in page.blocks:
+                for line in block.lines:
+                    line_text = " ".join([word.value for word in line.words])
+                    lines.append(line_text)
+
+        text = "\n".join(lines).strip()
+        result["raw_text"] = text
+        print("OCR result text:", text[:200], flush=True)
+
+
+        valid = False
+        infos = {}
+
+        if doc_type.upper() == "P":
+            valid = isPrescription(text)
+            if valid:
+                infos = getInfosPrescription(text)
+        elif doc_type.upper() == "R":
+            valid = isRectoID(text)
+            if valid:
+                infos = getInfosRectoID(text)
+        elif doc_type.upper() == "V":
+            valid = isVersoID(text)
+            if valid:
+                infos = getInfosVersoID(text)
+
+        result["success"] = valid
+        result["infos"] = infos
+
+        if not valid:
+            result["error"] = f"The provided document does not match the expected type '{doc_type}'."
+
+    except Exception as e:
+        result["error"] = str(e)
+
+    return result
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python extractAll.py <image_path> <doc_type>")
+        sys.exit(1)
+
+    image_path = sys.argv[1]
+    doc_type = sys.argv[2] 
+
+    output = main(image_path, doc_type)
+    print(json.dumps(output, ensure_ascii=False, indent=2))
