@@ -45,21 +45,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, token: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (email === 'test@example.com' && password === 'password') {
+
+      if (email && password) {
         const userData: User = {
           id: '1',
           email: email,
-          name: 'Utilisateur Test'
+          name: email.split('@')[0]
         };
-        
         await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('authToken', 'fake-jwt-token');
+        await AsyncStorage.setItem('authToken', token);
         
         setUser(userData);
         return true;

@@ -112,7 +112,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
         try {
             const response: LoginResponse = await apiLogin(data);
-            await login(response);
+            await login(formData.email, formData.password, response.token);
             AccessibilityInfo.announceForAccessibility('Connexion réussie');
             console.log('Token reçu:', response.token);
         } catch (error) {
