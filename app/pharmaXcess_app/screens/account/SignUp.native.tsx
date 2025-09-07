@@ -18,6 +18,9 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import createStyles from '../../styles/SignUp.style';
 
+import { register as registerApi } from '../../services/auth/authService';
+import { RegisterData } from '../../services/auth/Types';
+
 type SignUpProps = {
     navigation: StackNavigationProp<any, any>;
 };
@@ -177,14 +180,17 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
         setErrors({});
 
         try {
+            const registerData: RegisterData = {
+                email: formData.email,
+                password: formData.password,
+                name: '',
+                surname: '',
+                username: formData.email.split('@')[0]
+            };
+            const response = await registerApi(registerData);
             const success = await register(formData.email, formData.password, formData.email.split('@')[0]);
-            
-            if (success) {
-                AccessibilityInfo.announceForAccessibility('Inscription réussie');
-                // La navigation sera automatiquement gérée par RootNavigation
-            } else {
-                throw new Error('Erreur lors de la création du compte');
-            }
+            AccessibilityInfo.announceForAccessibility('Inscription réussie');
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
             setErrors({ general: errorMessage });
