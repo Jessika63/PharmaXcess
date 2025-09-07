@@ -19,9 +19,6 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import createStyles from '../../styles/Login.style';
 
-import { login as apiLogin } from '../../services/auth/authService';
-import { LoginData, LoginResponse } from '../../services/auth/Types';
-
 type LoginProps = {
     navigation: StackNavigationProp<any, any>;
 };
@@ -105,16 +102,9 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
         setErrors({});
 
-        const data: LoginData = {
-            email: formData.email,
-            password: formData.password,
-        };
-
         try {
-            const response: LoginResponse = await apiLogin(data);
-            await login(formData.email, formData.password, response.token);
+            await login(formData.email, formData.password);
             AccessibilityInfo.announceForAccessibility('Connexion réussie');
-            console.log('Token reçu:', response.token);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
             setErrors({ general: errorMessage });

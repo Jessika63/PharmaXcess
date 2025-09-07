@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { login as apiLogin, register as apiRegister, logout as apiLogout } from '../services/auth/authService';
+import { LoginData, LoginResponse, RegisterData, RegisterResponse } from '../services/auth/Types';
+
 interface User {
   id: string;
   email: string;
@@ -45,11 +48,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string, token: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const loginParam: LoginData = {
+        email: email,
+        password: password
+      };
+      const response: LoginResponse = await apiLogin(loginParam);
 
       if (email && password) {
         const userData: User = {
@@ -58,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           name: email.split('@')[0]
         };
         await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem('authToken', response.token);
         
         setUser(userData);
         return true;
@@ -78,6 +86,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const registerParam: RegisterData = {
+        email: email,
+        password: password,
+        name: name || '',
+        surname: name || '',
+        username: email.split('@')[0]
+      };
+      const response: RegisterResponse = await apiRegister(registerParam);
       
       const userData: User = {
         id: Date.now().toString(),
@@ -100,6 +117,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      const token = await AsyncStorage.getItem('authToken');
+      // const response = await apiLogout(token || '' );
+      // console.log('Logout response:', response);
       await AsyncStorage.removeItem('user');
       await AsyncStorage.removeItem('authToken');
       setUser(null);
