@@ -13,14 +13,12 @@ import java.io.IOException;
 
 /**
  * Custom authentication filter that prevents brute-force login attempts.
- * <p>
  * This filter integrates with {@link LoginAttemptService} to:
  * <ul>
  *   <li>Block requests from IPs or users that exceed the maximum allowed failed attempts.</li>
  *   <li>Reset attempt counters after a successful authentication.</li>
  *   <li>Increment attempt counters on authentication failure.</li>
  * </ul>
- * </p>
  */
 public class BruteForceProtectionFilter extends UsernamePasswordAuthenticationFilter {
 

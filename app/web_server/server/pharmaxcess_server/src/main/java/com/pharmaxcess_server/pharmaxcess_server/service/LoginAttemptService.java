@@ -9,12 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * This service stores failed login attempts in memory and blocks users/IPs temporarily
  * after exceeding a maximum number of failed attempts.
  *
- * <p>Default configuration:
+ * Default configuration:
  * <ul>
  *   <li>Maximum failed attempts: 5</li>
  *   <li>Lock duration: 15 seconds</li>
  * </ul>
- * </p>
  */
 @Service
 public class LoginAttemptService {
