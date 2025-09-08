@@ -101,4 +101,15 @@ public class UserService {
         }
         return "";
     }
+
+    /**
+     * Checks if the provided raw password matches the encoded password of the user.
+     *
+     * @param user        The {@link User} whose password is to be checked.
+     * @param rawPassword The raw password to verify.
+     * @return {@code true} if the passwords match, {@code false} otherwise.
+     */
+    public boolean checkPassword(User user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
 }
