@@ -39,6 +39,8 @@ def register_blueprints():
     from routes.stripe.pay_with_stripe import create_payment_intent_bp
     from routes.stripe.vpn_check import vpn_check_bp
     from routes.stripe.update_stock import update_stock_bp
+    from routes.qr_code.generate_qr_code import generate_qr_bp
+    from routes.qr_code.read_qr_code import read_qr_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -53,6 +55,8 @@ def register_blueprints():
     app.register_blueprint(create_payment_intent_bp)
     app.register_blueprint(vpn_check_bp)
     app.register_blueprint(update_stock_bp)
+    app.register_blueprint(generate_qr_bp)
+    app.register_blueprint(read_qr_bp)
 
 register_blueprints()
 

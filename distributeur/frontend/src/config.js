@@ -22,7 +22,8 @@ import {
   FaCamera,
   FaUndo,
   FaTimesCircle,
-  FaHome
+  FaHome,
+  FaQrcode
 } from 'react-icons/fa';
 import logo from './assets/logo.png';
 
@@ -172,6 +173,8 @@ const config = {
     
     // Home icon
     home: FaHome,
+
+    qrCode: FaQrcode,
   },
   
   // Common button styles

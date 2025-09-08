@@ -7,6 +7,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Treatment = {
@@ -27,6 +29,8 @@ type treatmentsProps = {
 export default function Treatments({ navigation }: treatmentsProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const { currentProfile } = useProfile();
+    const { treatments: profileTreatments, addTreatment, removeTreatment } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
     const [treatments, setTreatments] =  useState<Treatment[]>([
@@ -99,6 +103,9 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const [editDurationUnit, setEditDurationUnit] = useState<string>('mois');
 
     const durationUnits = ['jour(s)', 'semaine(s)', 'mois', 'an(s)'];
+
+    // For simple treatment addition by profile 
+    const [newTreatmentSimple, setNewTreatmentSimple] = useState<string>('');
 
     const formatDate = (day: number, month: number, year: number): string => {
         const dayStr = day.toString().padStart(2, '0');
@@ -243,48 +250,245 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         );
     };
 
+    // Simple treatment management by profile 
+    const handleAddSimpleTreatment = async (): Promise<void> => {
+        // For other profiles, we only require the name field but save all available data
+        if (!newTreatment.name.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer le nom du traitement.');
+            return;
+        }
+
+        // Create complete treatment data even for other profiles
+        const treatmentData = {
+            name: newTreatment.name.trim(),
+            beginDate: formatDate(beginDay, beginMonth, beginYear),
+            endDate: formatDate(endDay, endMonth, endYear),
+            dosage: `${dosagePerDay} comprimé(s) par jour`,
+            duration: `${durationValue} ${durationUnit}`,
+            sideEffects: newTreatment.sideEffects || '',
+            disease: newTreatment.disease || ''
+        };
+
+        const success = await addTreatment(JSON.stringify(treatmentData));
+        if (success) {
+            // Reset all fields
+            setNewTreatmentSimple('');
+            setNewTreatment({
+                name: '',
+                beginDate: '',
+                endDate: '',
+                dosage: '',
+                duration: '',
+                sideEffects: '',
+                disease: '',
+            });
+            setModalVisible(false);
+            // Reset picker values
+            const today = new Date();
+            setBeginDay(1);
+            setBeginMonth(1);
+            setBeginYear(today.getFullYear());
+            setEndDay(1);
+            setEndMonth(1);
+            setEndYear(today.getFullYear());
+            setDosagePerDay(1);
+            setDurationValue(1);
+            setDurationUnit('mois');
+            Alert.alert('Succès', 'Traitement ajouté avec succès.');
+        } else {
+            Alert.alert('Erreur', 'Ce traitement est déjà enregistré ou une erreur est survenue.');
+        }
+    };
+
+    const handleRemoveTreatment = async (treatment: string): Promise<void> => {
+        Alert.alert(
+            'Confirmer la suppression',
+            `Êtes-vous sûr de vouloir supprimer "${treatment}" ?`,
+            [
+                {
+                    text: 'Annuler',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await removeTreatment(treatment);
+                        if (success) {
+                            Alert.alert('Succès', 'Traitement supprimé avec succès.');
+                        } else {
+                            Alert.alert('Erreur', 'Impossible de supprimer le traitement.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
+
+    // Determine if it's the main profile 
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
     return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.list}>
-                {treatments.map((treatment, index) => (
-                    <View key={index} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{treatment.name}</Text>
-                            <View style={styles.actionButtons}>
-                                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                                    <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
-                                    <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                </TouchableOpacity>
+        <View style={[styles.container, { flex: 1 }]}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                {/* Header for current profile */}
+                {currentProfile && (
+                    <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View>
+                                <Text style={[styles.title, { color: colors.primary, fontWeight: 'bold' }]}>
+                                    {getRelationshipText(currentProfile.relationship)}
+                                </Text>
+                                <Text style={[styles.content, { color: colors.primary, opacity: 0.8 }]}>
+                                    {currentProfile.name}
+                                </Text>
                             </View>
+                            <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                         </View>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Date de début: </Text>
-                            {treatment.beginDate}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Date de fin: </Text>
-                            {treatment.endDate}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Dosage: </Text>
-                            {treatment.dosage}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Durée: </Text>
-                            {treatment.duration}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Effets secondaires: </Text>
-                            {treatment.sideEffects}
-                        </Text>
-                        <Text style={styles.cardText}>
-                            <Text style={styles.bold}>Maladie: </Text>
-                            {treatment.disease}
-                        </Text>
                     </View>
-                ))}
+                )}
+
+                {/* Conditional display based on profile */} 
+                {isMainProfile ? ( 
+                    // For the main profile: predefined complex treatments
+                    <>
+                        {treatments.map((treatment, index) => (
+                            <View key={index} style={styles.card}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.cardTitle}>{treatment.name}</Text>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                            <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
+                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Date de début: </Text>
+                                    {treatment.beginDate}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Date de fin: </Text>
+                                    {treatment.endDate}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Dosage: </Text>
+                                    {treatment.dosage}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Durée: </Text>
+                                    {treatment.duration}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Effets secondaires: </Text>
+                                    {treatment.sideEffects}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Maladie: </Text>
+                                    {treatment.disease}
+                                </Text>
+                            </View>
+                        ))}
+                    </>
+                ) : ( 
+                    // For other profiles: full treatment display with same functionality
+                    <>
+                        {profileTreatments && profileTreatments.length > 0 ? (
+                            <>
+                                {profileTreatments.map((treatmentString, index) => {
+                                    // Parse treatment data (could be JSON string or simple name)
+                                    let treatment: Treatment;
+                                    try {
+                                        treatment = JSON.parse(treatmentString);
+                                    } catch {
+                                        // Fallback for simple string names
+                                        treatment = {
+                                            name: treatmentString,
+                                            beginDate: '',
+                                            endDate: '',
+                                            dosage: '',
+                                            duration: '',
+                                            sideEffects: '',
+                                            disease: ''
+                                        };
+                                    }
+                                    
+                                    return (
+                                        <View key={index} style={styles.card}>
+                                            <View style={styles.cardHeader}>
+                                                <Text style={styles.cardTitle}>{treatment.name}</Text>
+                                                <View style={styles.actionButtons}>
+                                                    <TouchableOpacity onPress={() => handleRemoveTreatment(treatmentString)} style={styles.deleteButton}>
+                                                        <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                            {treatment.beginDate && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Date de début: </Text>
+                                                    {treatment.beginDate}
+                                                </Text>
+                                            )}
+                                            {treatment.endDate && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Date de fin: </Text>
+                                                    {treatment.endDate}
+                                                </Text>
+                                            )}
+                                            {treatment.dosage && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Dosage: </Text>
+                                                    {treatment.dosage}
+                                                </Text>
+                                            )}
+                                            {treatment.duration && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Durée: </Text>
+                                                    {treatment.duration}
+                                                </Text>
+                                            )}
+                                            {treatment.sideEffects && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Effets secondaires: </Text>
+                                                    {treatment.sideEffects}
+                                                </Text>
+                                            )}
+                                            {treatment.disease && (
+                                                <Text style={styles.cardText}>
+                                                    <Text style={styles.bold}>Maladie: </Text>
+                                                    {treatment.disease}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </>
+                        ) : (
+                            <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
+                                <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                                <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
+                                    Aucun traitement enregistré pour ce profil.
+                                </Text>
+                                <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
+                                    Ajoutez vos traitements pour un meilleur suivi médical
+                                </Text>
+                            </View>
+                        )}
+                    </> 
+                )}
             </ScrollView>
 
             <View style={styles.buttonContainer}>
@@ -300,6 +504,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 </TouchableOpacity>
             </View>
 
+            {/* Modal for adding a new treatment - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
                 <ScrollView
                     contentContainerStyle={styles.modalContainer}
@@ -310,8 +515,16 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         
                         <TextInput
                             placeholder="Nom du traitement"
-                            value={newTreatment.name}
-                            onChangeText={(text) => setNewTreatment({ ...newTreatment, name: text })}
+                            value={isMainProfile ? newTreatment.name : newTreatmentSimple}
+                            onChangeText={(text) => {
+                                if (isMainProfile) {
+                                    setNewTreatment({ ...newTreatment, name: text })
+                                } else {
+                                    setNewTreatmentSimple(text);
+                                    // For other profiles, also update newTreatment.name for consistency
+                                    setNewTreatment({ ...newTreatment, name: text });
+                                }
+                            }}
                             style={styles.input}
                         />
                         
@@ -450,13 +663,37 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         />
                         
                         <View style={styles.buttonContainer}>
-                            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+                            <TouchableOpacity onPress={isMainProfile ? handleAddPress : handleAddSimpleTreatment} style={styles.button}>
                                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Ajouter</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                             
-                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.button}>
+                            <TouchableOpacity onPress={() => {
+                                setModalVisible(false);
+                                // Reset all fields for both main and other profiles
+                                setNewTreatmentSimple('');
+                                setNewTreatment({
+                                    name: '',
+                                    beginDate: '',
+                                    endDate: '',
+                                    dosage: '',
+                                    duration: '',
+                                    sideEffects: '',
+                                    disease: '',
+                                });
+                                // Reset picker values
+                                const today = new Date();
+                                setBeginDay(1);
+                                setBeginMonth(1);
+                                setBeginYear(today.getFullYear());
+                                setEndDay(1);
+                                setEndMonth(1);
+                                setEndYear(today.getFullYear());
+                                setDosagePerDay(1);
+                                setDurationValue(1);
+                                setDurationUnit('mois');
+                            }} style={styles.button}>
                                 <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
@@ -465,7 +702,9 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 </ScrollView>
             </Modal>
 
-            <Modal visible={isEditModalVisible} animationType="slide">
+            {/* Editing modal for the main profile */} 
+            {isMainProfile && ( 
+                <Modal visible={isEditModalVisible} animationType="slide">
                 <ScrollView
                     contentContainerStyle={styles.modalContainer}
                     keyboardShouldPersistTaps="handled"
@@ -629,6 +868,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         </View>
                 </ScrollView>
             </Modal>
+            )}
         </View>
     );
 }

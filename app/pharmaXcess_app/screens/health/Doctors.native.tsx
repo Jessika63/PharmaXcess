@@ -6,6 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import { useProfile } from '../../context/ProfileContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Doctor = {
@@ -25,6 +27,8 @@ type DoctorsProps = {
 export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element {
   const { colors } = useTheme();
     const { fontScale } = useFontScale();
+  const { currentProfile } = useProfile();
+  const { doctors: profileDoctors, addDoctor, removeDoctor } = useProfileData();
   const styles = createStyles(colors, fontScale);
 
   const [doctors, setDoctors] = useState<Doctor[]>([
@@ -67,7 +71,45 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
     hospital: '',
   });
 
-  const specialties = ['Médecin généraliste', 'Cardiologue', 'Dermatologue', 'Endocrinologue', 'Gastro-entérologue', 'Gynécologue', 'Neurologue', 'Oncologue', 'Ophtalumologue', 'ORL', 'Orthopédiste', 'Pédiatre', 'Psychiatre', 'Radiologue', 'Rhumatologue', 'Urologue', 'Autre'];
+  // For simple doctor addition by profile 
+  const [newDoctorSimple, setNewDoctorSimple] = useState<string>('');
+
+  const specialties = ['Médecin généraliste', 'Cardiologue', 'Dermatologue', 'Endocrinologue', 'Gastro-entérologue', 'Gynécologue', 'Neurologue', 'Oncologue', 'Ophtalumologue', 'ORL', 'Orthopédiste', 'Pédiatre', 'Psychiatre', 'Radiologue', 'Rhumatologue', 'Urologue', 'Autre']; 
+  const handleAddSimpleDoctor = async (): Promise<void> => {
+    // For other profiles, we only require the name field but save all available data
+    if (!newDoctor.name.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer le nom du médecin.');
+      return;
+    }
+
+    // Create complete doctor data even for other profiles
+    const doctorData = {
+      name: newDoctor.name.trim(),
+      specialty: newDoctor.specialty || specialties[0],
+      hospital: newDoctor.hospital || '',
+      phoneNumber: newDoctor.phoneNumber || '',
+      email: newDoctor.email || '',
+      address: newDoctor.address || ''
+    };
+
+    const success = await addDoctor(JSON.stringify(doctorData));
+    if (success) {
+      // Reset all fields
+      setNewDoctorSimple('');
+      setNewDoctor({
+        name: '',
+        specialty: '',
+        phoneNumber: '',
+        email: '',
+        address: '',
+        hospital: '',
+      });
+      setIsModalVisible(false);
+      Alert.alert('Succès', 'Médecin ajouté avec succès.');
+    } else {
+      Alert.alert('Erreur', 'Ce médecin est déjà enregistré ou une erreur est survenue.');
+    }
+  };
 
   const handleAddPress = (): void => {
     if (!newDoctor.name || !newDoctor.specialty || !newDoctor.phoneNumber || !newDoctor.email || !newDoctor.address || !newDoctor.hospital) {
@@ -130,44 +172,191 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
     );
   };
 
+  const handleRemoveDoctor = async (doctor: string): Promise<void> => {
+    Alert.alert(
+      'Confirmer la suppression',
+      `Êtes-vous sûr de vouloir supprimer "${doctor}" ?`,
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await removeDoctor(doctor);
+            if (success) {
+              Alert.alert('Succès', 'Médecin supprimé avec succès.');
+            } else {
+              Alert.alert('Erreur', 'Impossible de supprimer le médecin.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getRelationshipText = (relationship?: string) => {
+    switch (relationship) {
+      case 'self': return 'Mon profil';
+      case 'child': return 'Profil enfant';
+      case 'parent': return 'Profil parent';
+      case 'spouse': return 'Profil conjoint(e)';
+      case 'other': return 'Autre profil';
+      default: return 'Mon profil';
+    }
+  }; 
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'Médecins',
+    });
+  }, [navigation]);
+
+  // Determine if it's the main profile 
+  const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.list}>
-        {doctors.map((doctor, index) => (
-          <View key={index} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>{doctor.name}</Text>
-              <View style={styles.actionButtons}>
-                <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                  <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteDoctor(index)} style={styles.deleteButton}>
-                  <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                </TouchableOpacity>
+    <View style={[styles.container, { flex: 1 }]}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* Header for current profile */}
+        {currentProfile && (
+          <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={[styles.title, { color: colors.primary, fontWeight: 'bold' }]}>
+                  {getRelationshipText(currentProfile.relationship)}
+                </Text>
+                <Text style={[styles.content, { color: colors.primary, opacity: 0.8 }]}>
+                  {currentProfile.name}
+                </Text>
               </View>
+              <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
             </View>
-            <Text style={styles.cardText}>
-              <Text style={styles.bold}>Spécialité: </Text>
-              {doctor.specialty}
-            </Text>
-            <Text style={styles.cardText}>
-              <Text style={styles.bold}>Hôpital: </Text>
-              {doctor.hospital}
-            </Text>
-            <Text style={styles.cardText}>
-              <Text style={styles.bold}>Téléphone: </Text>
-              {doctor.phoneNumber}
-            </Text>
-            <Text style={styles.cardText}>
-              <Text style={styles.bold}>Email: </Text>
-              {doctor.email}
-            </Text>
-            <Text style={styles.cardText}>
-              <Text style={styles.bold}>Adresse: </Text>
-              {doctor.address}
-            </Text>
           </View>
-        ))}
+        )}
+
+        {/* Conditional display based on profile */}
+        {isMainProfile ? (
+          // For the main profile: predefined complex cards
+          <>
+            {doctors.map((doctor, index) => (
+              <View key={index} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{doctor.name}</Text>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                      <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteDoctor(index)} style={styles.deleteButton}>
+                      <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Text style={styles.cardText}>
+                  <Text style={styles.bold}>Spécialité: </Text>
+                  {doctor.specialty}
+                </Text>
+                <Text style={styles.cardText}>
+                  <Text style={styles.bold}>Hôpital: </Text>
+                  {doctor.hospital}
+                </Text>
+                <Text style={styles.cardText}>
+                  <Text style={styles.bold}>Téléphone: </Text>
+                  {doctor.phoneNumber}
+                </Text>
+                <Text style={styles.cardText}>
+                  <Text style={styles.bold}>Email: </Text>
+                  {doctor.email}
+                </Text>
+                <Text style={styles.cardText}>
+                  <Text style={styles.bold}>Adresse: </Text>
+                  {doctor.address}
+                </Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          // For other profiles: full doctor display
+          <>
+            {profileDoctors && profileDoctors.length > 0 ? (
+              <>
+                {profileDoctors.map((doctorString, index) => {
+                  // Parse doctor data (could be JSON string or simple name)
+                  let doctor: Doctor;
+                  try {
+                    doctor = JSON.parse(doctorString);
+                  } catch {
+                    // Fallback for simple string names
+                    doctor = {
+                      name: doctorString,
+                      specialty: '',
+                      hospital: '',
+                      phoneNumber: '',
+                      email: '',
+                      address: ''
+                    };
+                  }
+                  
+                  return (
+                    <View key={index} style={styles.card}>
+                      <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>{doctor.name}</Text>
+                        <View style={styles.actionButtons}>
+                          <TouchableOpacity onPress={() => handleRemoveDoctor(doctorString)} style={styles.deleteButton}>
+                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      {doctor.specialty && (
+                        <Text style={styles.cardText}>
+                          <Text style={styles.bold}>Spécialité: </Text>
+                          {doctor.specialty}
+                        </Text>
+                      )}
+                      {doctor.hospital && (
+                        <Text style={styles.cardText}>
+                          <Text style={styles.bold}>Hôpital: </Text>
+                          {doctor.hospital}
+                        </Text>
+                      )}
+                      {doctor.phoneNumber && (
+                        <Text style={styles.cardText}>
+                          <Text style={styles.bold}>Téléphone: </Text>
+                          {doctor.phoneNumber}
+                        </Text>
+                      )}
+                      {doctor.email && (
+                        <Text style={styles.cardText}>
+                          <Text style={styles.bold}>Email: </Text>
+                          {doctor.email}
+                        </Text>
+                      )}
+                      {doctor.address && (
+                        <Text style={styles.cardText}>
+                          <Text style={styles.bold}>Adresse: </Text>
+                          {doctor.address}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </>
+            ) : (
+              <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
+                <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
+                  Aucun médecin enregistré pour ce profil.
+                </Text>
+                <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
+                  Ajoutez vos médecins pour un meilleur suivi médical
+                </Text>
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
@@ -193,8 +382,16 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           
           <TextInput
             placeholder="Nom"
-            value={newDoctor.name}
-            onChangeText={(text) => setNewDoctor({ ...newDoctor, name: text })}
+            value={isMainProfile ? newDoctor.name : newDoctorSimple}
+            onChangeText={(text) => {
+              if (isMainProfile) {
+                setNewDoctor({ ...newDoctor, name: text })
+              } else {
+                setNewDoctorSimple(text);
+                // For other profiles, also update newDoctor.name for consistency
+                setNewDoctor({ ...newDoctor, name: text });
+              }
+            }}
             style={styles.input}
           />
           
@@ -239,12 +436,24 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           />
           
           <View style={styles.buttonContainer}>
-            <TouchableOpacity onPress={handleAddPress} style={styles.button}>
+            <TouchableOpacity onPress={isMainProfile ? handleAddPress : handleAddSimpleDoctor} style={styles.button}>
               <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Ajouter</Text>
               </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.button}>
+            <TouchableOpacity onPress={() => {
+              setIsModalVisible(false);
+              // Reset all fields for both main and other profiles
+              setNewDoctorSimple('');
+              setNewDoctor({
+                name: '',
+                specialty: '',
+                phoneNumber: '',
+                email: '',
+                address: '',
+                hospital: '',
+              });
+            }} style={styles.button}>
               <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
                 <Text style={styles.buttonText}>Annuler</Text>
               </LinearGradient>

@@ -12,7 +12,8 @@
             "IPHUB_API_KEY",
             "IPHUNTER_API_KEY",
             "ABUSEIPDB_API_KEY",
-            "GETIPINTEL_CONTACT"
+            "GETIPINTEL_CONTACT",
+            "SECRET_QR_ENCRYPTION_KEY"
         ],
         "db_dump_date": "03_07_2025"
     },

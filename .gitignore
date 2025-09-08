@@ -1,2 +1,7 @@
-
 .vscode
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
