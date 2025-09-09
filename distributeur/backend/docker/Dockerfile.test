@@ -23,7 +23,7 @@ RUN apt-get update && \
 # Copying and installing Python dependencies
 COPY requirements.txt /app/
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --default-timeout=1000 --no-cache-dir -r requirements.txt  && \
     pip install --upgrade Flask Werkzeug
 
 # Copy the application code
