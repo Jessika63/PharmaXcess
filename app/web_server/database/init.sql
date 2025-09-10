@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS machines (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     status VARCHAR(20) DEFAULT 'operational' NOT NULL CHECK (status IN ('operational', 'under maintenance', 'out of service')),
-    location GEOGRAPHY(POINT, 4326) NOT NULL
+    location GEOMETRY(POINT, 4326) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tickets (
