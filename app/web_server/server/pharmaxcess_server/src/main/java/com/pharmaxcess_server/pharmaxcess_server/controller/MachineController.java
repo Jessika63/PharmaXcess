@@ -3,7 +3,6 @@ package com.pharmaxcess_server.pharmaxcess_server.controller;
 import com.pharmaxcess_server.pharmaxcess_server.dto.LocationRequest;
 import com.pharmaxcess_server.pharmaxcess_server.dto.MachineDTO;
 import com.pharmaxcess_server.pharmaxcess_server.dto.NearestMachineRequest;
-import com.pharmaxcess_server.pharmaxcess_server.model.Machine;
 import com.pharmaxcess_server.pharmaxcess_server.service.MachineService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +17,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -73,7 +73,7 @@ public class MachineController {
      * @param body the request body containing the user's latitude and longitude
      * @return a list of the nearest vending machines
      */
-    @GetMapping("/nearest")
+    @PostMapping("/nearest")
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
         summary = "Get Nearest Vending Machines",
@@ -86,7 +86,7 @@ public class MachineController {
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public List<Machine> getNearestMachines(@RequestBody LocationRequest body) {
+    public List<Object[]> getNearestMachines(@RequestBody LocationRequest body) {
         Point userLocation = geometryFactory.createPoint(new Coordinate(body.getLatitude(), body.getLongitude()));
         return machineService.getNearestMachines(userLocation);
     }
