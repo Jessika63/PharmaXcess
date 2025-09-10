@@ -97,7 +97,7 @@ public class MachineController {
      * @param body the request body containing the user's location and the vending machine's ID
      * @return a URL for the driving directions to the specified vending machine
      */
-    @GetMapping("/itinary")
+    @PostMapping("/itinary")
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
         summary = "Get Machine Itinerary",
@@ -112,6 +112,9 @@ public class MachineController {
     })
     public String getMachineIntinary(@RequestBody NearestMachineRequest body) {
         Point machineLocation = machineService.getMachineLocationById(body.getId());
+
+        if (machineLocation == null)
+            return "Erreur : aucune machine trouvée avec l'identifiant fourni.";
 
         return String.format(
             "https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=driving",
