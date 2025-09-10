@@ -1,6 +1,7 @@
 package com.pharmaxcess_server.pharmaxcess_server.service;
 
 import com.pharmaxcess_server.pharmaxcess_server.dto.MachineDTO;
+import com.pharmaxcess_server.pharmaxcess_server.dto.NearestMachineDTO;
 import com.pharmaxcess_server.pharmaxcess_server.model.Machine;
 import com.pharmaxcess_server.pharmaxcess_server.repository.MachineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,9 +54,9 @@ public class MachineService {
      * Retrieves a list of operational machines within a specified range of the user's location.
      *
      * @param userLocation the location of the user to search for nearby machines
-     * @return a list of {@link Machine} objects that are operational and within range of the user's location
+     * @return a list of {@link NearestMachineDTO} objects that are operational and within range of the user's location
      */
-    public List<Machine> getNearestMachines(Point userLocation) {
+    public List<Object[]> getNearestMachines(Point userLocation) {
         return machineRepository.findByStatusAndLocationNear("operational", userLocation, 100000);
     }
 
