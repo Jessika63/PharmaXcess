@@ -1,6 +1,5 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
-import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
