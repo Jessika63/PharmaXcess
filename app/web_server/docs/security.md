@@ -38,6 +38,11 @@ This backend system is designed to manage sensitive medical data while adhering 
 - **Dependency security checks** are regularly performed to detect known vulnerabilities.
 - The application is developed with **secure coding practices** and subject to regular security audits.
 
+## 🛸 HTTPS security
+
+To be sure that every roots are secured, we use an SSL certificate to ensure protection. To create this certificate create a key in `src/main/resources` with :
+- `keytool -genkeypair -alias pharmaxcess-ssl -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore.p12 -validity 3650 -storepass changeit`
+
 ---
 
 For any security-related inquiries or to report a potential vulnerability, please contact the project maintainer.
