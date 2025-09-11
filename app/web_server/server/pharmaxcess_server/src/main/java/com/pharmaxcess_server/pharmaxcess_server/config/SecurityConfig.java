@@ -3,6 +3,7 @@ package com.pharmaxcess_server.pharmaxcess_server.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -17,6 +18,7 @@ import com.pharmaxcess_server.pharmaxcess_server.security.JwtAuthenticationFilte
  * This configuration disables CSRF protection, defines request authorization rules, and adds a custom JWT filter for user authentication.
  */
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     private final LoginAttemptService loginAttemptService;
@@ -47,7 +49,13 @@ public class SecurityConfig {
 
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/*").permitAll()
+                .requestMatchers(
+                    "/api/auth/*",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/api/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(bruteForceFilter, UsernamePasswordAuthenticationFilter.class)
