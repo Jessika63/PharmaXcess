@@ -23,9 +23,9 @@ public interface MachineRepository extends JpaRepository<Machine, Integer> {
      * @param distance the maximum distance (in meters) from the location
      * @return a list of machines matching the criteria
      */
-    @Query(value = "SELECT * FROM machines m WHERE m.status = :status AND ST_DWithin(m.location, :location, :distance)", 
+    @Query(value = "SELECT m.id AS id, m.name AS name, m.status AS status FROM machines m WHERE m.status = :status AND ST_DWithin(m.location, ST_SetSRID(:location, 4326), :distance)", 
            nativeQuery = true)
-    List<Machine> findByStatusAndLocationNear(@Param("status") String status,
+    List<Object[]> findByStatusAndLocationNear(@Param("status") String status,
                                               @Param("location") Point location,
                                               @Param("distance") double distance);
 

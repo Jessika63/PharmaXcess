@@ -1,6 +1,5 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
-import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +18,13 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * REST controller for handling OCR (Optical Character Recognition) operations on uploaded images.
+ * <p>
+ * Provides endpoints for uploading prescription images and extracting relevant
+ * information such as patient first and last names, as well as the raw OCR text.
+ * </p>
+ */
 @RestController
 @RequestMapping(path = "/api/ocr", produces = MediaType.APPLICATION_JSON_VALUE)
 @Validated
@@ -27,9 +33,22 @@ public class OCRController {
     private final OCRService ocrService = new OCRService();
 
     /**
-     * POST /api/ocr/upload
-     * Accepts a multipart/form-data image file and returns extracted first/last name
-     * and the full OCRed text.
+     * Handles the upload of an image file and extracts text content using OCR.
+     * <p>
+     * This endpoint accepts a multipart/form-data request containing an image
+     * of a prescription. It processes the image with Tesseract OCR, extracts
+     * the patient's first and last names when possible, and returns both the
+     * raw OCR text and extracted values.
+     * </p>
+     *
+     * @param file the uploaded image file containing the prescription (must not be null)
+     * @return a {@link ResponseEntity} containing a {@link NamesResponse} with:
+     *         <ul>
+     *             <li>raw OCR text</li>
+     *             <li>extracted first name (if found)</li>
+     *             <li>extracted last name (if found)</li>
+     *             <li>error message if OCR or file handling failed</li>
+     *         </ul>
      */
     @PostMapping(path = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<NamesResponse> uploadAndExtract(

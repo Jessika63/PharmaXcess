@@ -3,10 +3,14 @@ package com.pharmaxcess_server.pharmaxcess_server.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.pharmaxcess_server.pharmaxcess_server.service.LoginAttemptService;
+import com.pharmaxcess_server.pharmaxcess_server.security.BruteForceProtectionFilter;
 import com.pharmaxcess_server.pharmaxcess_server.security.JwtAuthenticationFilter;
 
 /**
@@ -14,17 +18,21 @@ import com.pharmaxcess_server.pharmaxcess_server.security.JwtAuthenticationFilte
  * This configuration disables CSRF protection, defines request authorization rules, and adds a custom JWT filter for user authentication.
  */
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
+    private final LoginAttemptService loginAttemptService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * Constructs a SecurityConfig instance.
      *
      * @param jwtAuthenticationFilter the custom JWT authentication filter
+     * @param loginAttemptService the service handling brute-force protection
      */
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginAttemptService loginAttemptService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.loginAttemptService = loginAttemptService;
     }
 
     /**
@@ -35,12 +43,23 @@ public class SecurityConfig {
      * @return the configured {@link SecurityFilterChain} object
      * @throws Exception if there is an error during configuration
      */
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        BruteForceProtectionFilter bruteForceFilter = new BruteForceProtectionFilter(loginAttemptService);
+
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/*").permitAll()
+                .requestMatchers(
+                    "/api/auth/*",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/api/**"
+                ).permitAll()
                 .anyRequest().authenticated()
-            ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            )
+            .addFilterBefore(bruteForceFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

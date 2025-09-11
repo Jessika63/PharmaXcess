@@ -72,6 +72,9 @@ public class AuthController {
             if (!user.isPresent())
                 return null;
 
+            if (!userService.checkPassword(user.get(), loginRequest.getPassword()))
+                return null;
+
             String token = jwtService.generateToken(loginRequest.getEmail(), user.get().getRole());
 
             Map<String, String> response = new HashMap<>();

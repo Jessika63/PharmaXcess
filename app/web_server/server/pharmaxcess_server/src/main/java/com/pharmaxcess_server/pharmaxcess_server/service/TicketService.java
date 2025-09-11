@@ -43,6 +43,9 @@ public class TicketService {
     public Ticket createTicket(TicketCreationRequest ticketCreationRequest) {
         Ticket ticket = new Ticket();
         ticket.setTitle(ticketCreationRequest.getTitle());
+        ticket.setCreatedAt(java.time.LocalDateTime.now());
+        ticket.setUpdatedAt(java.time.LocalDateTime.now());
+        ticket.setStatus("open");
         return ticketRepository.createTicket(ticket);
     }
 
