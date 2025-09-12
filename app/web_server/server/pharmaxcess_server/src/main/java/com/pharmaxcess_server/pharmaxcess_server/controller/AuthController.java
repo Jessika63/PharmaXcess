@@ -69,11 +69,17 @@ public class AuthController {
         try {
             Optional<User> user = userService.findByEmail(loginRequest.getEmail());
 
-            if (!user.isPresent())
-                return null;
+            if (!user.isPresent()) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Invalid email or password.");
+                return errorResponse;
+            }
 
-            if (!userService.checkPassword(user.get(), loginRequest.getPassword()))
-                return null;
+            if (!userService.checkPassword(user.get(), loginRequest.getPassword())) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Invalid email or password.");
+                return errorResponse;
+            }
 
             String token = jwtService.generateToken(loginRequest.getEmail(), user.get().getRole());
 
@@ -131,6 +137,7 @@ public class AuthController {
     public String logout(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String jwt = token.substring(7);
+
             jwtService.invalidateToken(jwt);
             return "Successfully logged out";
         }
@@ -146,8 +153,7 @@ public class AuthController {
      */
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody PasswordResetRequest request) {
-        userService.generatePasswordResetToken(request.getEmail());
-        return ResponseEntity.ok("An email as been sent.");
+        return ResponseEntity.ok(userService.generatePasswordResetToken(request.getEmail()));
     }
 
     /**
@@ -163,10 +169,9 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestBody Map<String, String> request) {
         String newPassword = request.get("newPassword");
 
-        if (userService.resetPassword(token, newPassword)) {
+        if (userService.resetPassword(token, newPassword))
             return ResponseEntity.ok("Password updated");
-        } else {
+        else
             return ResponseEntity.badRequest().body("Invalid reset link");
-        }
     }
 }
