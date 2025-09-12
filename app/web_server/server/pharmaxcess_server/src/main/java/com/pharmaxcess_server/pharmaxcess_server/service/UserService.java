@@ -97,7 +97,7 @@ public class UserService {
             user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
             userRepository.save(user);
 
-            return "http://localhost:8080/api/users/reset-password?token=" + token;
+            return "https://localhost:8080/api/auth/reset-password?token=" + token;
         }
         return "";
     }
