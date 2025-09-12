@@ -18,12 +18,13 @@ public class UserMapper {
      */
     public User userRegisterToUser(UserRegisterRequest userRegister) {
         User user = new User();
+        org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
 
         user.setEmail(userRegister.getEmail());
         user.setName(userRegister.getName());
         user.setSurname(userRegister.getSurname());
         user.setUsername(userRegister.getUsername());
-        user.setPassword(userRegister.getPassword());
+        user.setPassword(encoder.encode(userRegister.getPassword()));
 
         return user;
     }
