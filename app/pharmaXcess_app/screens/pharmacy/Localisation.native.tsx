@@ -8,12 +8,17 @@ import createStyles from '../../styles/Localisation.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 
+import { getMachines } from '../../services/machines/machinesService';
+import { Machine } from '../../services/machines/types';
+
+type MachineWithFakeDistance = Machine & { distance: number };
+
 type Distributor = {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  distance: number;
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+    distance: number;
 };
 
 // The Localisation component allows users to view their current location on a map, find nearby pharmacies, and navigate to a selected pharmacy.
@@ -28,6 +33,7 @@ export default function Localisation(): React.JSX.Element {
     const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
 
+
     // Request location permissions and fetch the user's current location when the component mounts
     useEffect(() => {
         (async () => {
@@ -41,15 +47,17 @@ export default function Localisation(): React.JSX.Element {
                 const currentLocation = await Location.getCurrentPositionAsync({});
                 setLocation(currentLocation);
     
-                // Mock data for nearby distributors (pharmacies)
-                const mockDistributors: Distributor[] = [
-                    { id: 1, name: 'Pharmacie A', latitude: currentLocation.coords.latitude + 0.01, longitude: currentLocation.coords.longitude + 0.01, distance: 1 },
-                    { id: 2, name: 'Pharmacie B', latitude: currentLocation.coords.latitude - 0.01, longitude: currentLocation.coords.longitude - 0.01, distance: 2 },
-                    { id: 3, name: 'Pharmacie C', latitude: currentLocation.coords.latitude + 0.02, longitude: currentLocation.coords.longitude - 0.02, distance: 3 },
-                ];
-    
-                // Sort distributors by distance
-                setDistributors(mockDistributors.sort((a, b) => a.distance - b.distance));
+                const machines = await getMachines();
+                const distributorsFromApi: Distributor[] = machines.map((machine, index) => ({
+                    id: machine.id,
+                    name: machine.name,
+                    latitude: machine.latitude,
+                    longitude: machine.longitude,
+                    distance: index + 1,
+            }));
+
+            setDistributors(distributorsFromApi);
+
             } catch (error) {
                 console.error('Erreur lors de la récupération de la localisation :', error);
             }
