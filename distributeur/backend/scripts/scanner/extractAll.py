@@ -27,9 +27,9 @@ def isRectoID(text):
     return score >= 3
 
 def isVersoID(text):
-    keywords = ["Adresse", "délivrée le", "valable", "Carte nationale", "par "]
+    keywords = ["Adresse", "délivrée le", "Carte valable jusqu'au", "Carte nationale", "par", "Signature de lautorité"]
     score = sum(1 for k in keywords if k.lower() in text.lower())
-    return score >= 2
+    return score >= 3
 
 
 def getInfosPrescription(text):
@@ -92,9 +92,6 @@ def getInfosPrescription(text):
     return infos
 
 
-
-import re
-
 def getInfosRectoID(text):
     infos = {}
 
@@ -153,18 +150,15 @@ def getInfosRectoID(text):
     return infos
 
 
-
-import re
-
 def getInfosVersoID(text):
     infos = {}
-
 
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
                .replace("delivreele", "délivrée le") \
                .replace("Adresse.:", "Adresse:") \
                .replace("Adresse.", "Adresse:") \
-               .replace("LaPrefete", "La Préfète", "Le Préfet", "LePrefet") \
+               .replace("LaPrefete", "La Préfète") \
+               .replace("LePrefet", "Le Préfèt") \
                .replace("par:", "par:") \
                .replace("Signature de lautorité", "signature_autorite")
 
@@ -279,6 +273,8 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
 
         text = "\n".join(lines).strip()
         result["raw_text"] = text
+        
+        
         print("OCR result text:", text[:200], flush=True)
 
 
@@ -295,19 +291,26 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
                 infos = getInfosRectoID(text)
         elif doc_type.upper() == "V":
             valid = isVersoID(text)
+
             if valid:
                 infos = getInfosVersoID(text)
 
-        result["success"] = valid
-        result["infos"] = infos
 
         if not valid:
             result["error"] = f"The provided document does not match the expected type '{doc_type}'."
 
+
+        result["success"] = valid
+        result["infos"] = infos
+
+        return result
+        
     except Exception as e:
         result["error"] = str(e)
+        print("result", result)
+        return None
 
-    return result
+
 
 
 if __name__ == "__main__":

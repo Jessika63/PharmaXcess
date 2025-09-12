@@ -11,6 +11,16 @@ function StepConfirmation({ goToNextStep, goBackStep }) {
     if (stored) {
       setMedicaments(JSON.parse(stored));
     }
+
+    // const medoc = [
+    //   { id: 1, nom: "TOXICORTOL PIVALATE", posologie: "1 % susp pulv nasal (PIVALOINE)" },
+    //   { id: 2, nom: "PARACETAMOL 1 g cp", posologie: "un comprimé 3 fois par jour si douleur ou fièvre" },
+    //   { id: 3, nom: "AMBROXOL CHLORHYDRATE 17,86 mg/ml sol", posologie: "pulv bucc (LYSOPAÏNE AMBROXOL Ment Ss sucre) 1 cp à sucer 6 fois par jour" }
+    // ];
+
+    setMedicaments(medoc)
+
+
   }, []);
 
   const handleConfirm = () => {
@@ -53,6 +63,10 @@ function StepConfirmation({ goToNextStep, goBackStep }) {
       <div className="w-4/5 mb-8">
         {medicaments.length > 0 ? (
           <ul className="space-y-3">
+
+
+
+
             {medicaments.map((m, index) => (
               <li
                 key={index}

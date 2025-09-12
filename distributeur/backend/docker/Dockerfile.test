@@ -32,9 +32,10 @@ COPY pytest.ini /app/
 
 # Creating directories and configuring them
 RUN mkdir -p /data
-# Copy the init script
+
+# Copy the init script and fix Windows CRLF issue
 COPY scripts/init_medicine.sh /init_medicine.sh
-RUN chmod +x /init_medicine.sh
+RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
 

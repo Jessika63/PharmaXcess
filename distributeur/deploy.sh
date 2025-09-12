@@ -39,18 +39,6 @@ else
 fi
 
 # ============================================================
-# 2. Update CORS in backend app.py
-# ============================================================
-APP_PY="$BACK_PATH/app.py"
-if [ -f "$APP_PY" ]; then
-    echo "Updating CORS settings in app.py..."
-    sed -i "s|\"http://.*:[0-9]*\"|\"http://$RPI_IP:$DOCKER_PORT\"|g" "$APP_PY"
-    echo "CORS in app.py updated"
-else
-    echo "app.py not found in $BACK_PATH"
-fi
-
-# ============================================================
 # 3. Build the frontend
 # ============================================================
 echo "Building frontend..."

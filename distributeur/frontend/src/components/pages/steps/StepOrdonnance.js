@@ -48,6 +48,8 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       });
 
       const data = await response.json();
+      console.log(data);
+      
       if (response.ok) {
         setExtractedText(data.raw_text || "");
         if (!data.success) {
@@ -55,6 +57,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
         } else {
           if (data.infos && data.infos.medicaments) {
             localStorage.setItem("medicaments", JSON.stringify(data.infos.medicaments));
+            console.log(JSON.stringify(data.infos.medicaments));
           }
 
           goToNextStep();
@@ -62,9 +65,6 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       } else {
         setError(data.error || "Erreur inconnue");
       }
-
-
-
 
     } catch (err) {
       setError(err.message);
