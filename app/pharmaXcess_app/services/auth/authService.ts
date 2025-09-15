@@ -11,6 +11,8 @@ import {
     LogoutResponse
 } from './Types';
 
+import defaultHeaders from '../sonarHeader';
+
 /**
  * Register a new user
  * @param data RegisterData
@@ -19,7 +21,7 @@ import {
 export async function register(data: RegisterData): Promise<RegisterResponse> {
     console.log('Registering user with data:', data);
     try {
-        const response = await api.post<RegisterResponse>('/api/auth/register', data);
+        const response = await api.post<RegisterResponse>('/api/auth/register', data, { headers: defaultHeaders });
         console.log('Register Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -36,7 +38,7 @@ export async function register(data: RegisterData): Promise<RegisterResponse> {
 export async function login(data: LoginData): Promise<LoginResponse> {
     console.log('Logging in user with data:', data);
     try {
-        const response = await api.post<LoginResponse>('/api/auth/login', data);
+        const response = await api.post<LoginResponse>('/api/auth/login', data, { headers: defaultHeaders });
         console.log('Login Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -53,7 +55,7 @@ export async function login(data: LoginData): Promise<LoginResponse> {
 export async function forgotPassword(data: ForgotPasswordData): Promise<ForgotPasswordResponse> {
     console.log('Requesting password reset for:', data);
     try {
-        const response = await api.post<ForgotPasswordResponse>('/api/auth/forgot-password', data);
+        const response = await api.post<ForgotPasswordResponse>('/api/auth/forgot-password', data, { headers: defaultHeaders });
         console.log('Forgot Password Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -73,6 +75,7 @@ export async function resetPassword(data: ResetPasswordData, token: string): Pro
     try {
         const response = await api.post<ResetPasswordResponse>('/api/auth/reset-password', data, {
             headers: {
+                ...defaultHeaders,
                 Authorization: `${token}`,
             },
         });
@@ -94,6 +97,7 @@ export async function logout(token: string): Promise<LogoutResponse> {
     try {
         const response = await api.post<LogoutResponse>('/api/auth/logout', {}, {
             headers: {
+                ...defaultHeaders,
                 Authorization: `Bearer ${token}`,
             },
         });

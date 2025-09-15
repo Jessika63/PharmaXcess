@@ -6,6 +6,8 @@ import {
     CreateTicketMessageData
 } from './types';
 
+import defaultHeaders from '../sonarHeader';
+
 /**
  * @param data TicketMessagePageData
  * @returns Promise<TicketMessagePageResponse>
@@ -15,6 +17,7 @@ export async function getTicketMessagesPage(data: TicketMessagePageData): Promis
     try {
         const response = await api.get<TicketMessagePageResponse>('/api/ticket/message/message_page', {
             params: data,
+            headers: defaultHeaders,
         });
         console.log('Get Ticket Messages Page Success:', response.data);
         return response.data;
@@ -32,7 +35,8 @@ export async function createTicketMessage(data: CreateTicketMessageData): Promis
     console.log('Creating ticket message with data:', data);
     try {
         const response = await api.get<TicketMessage>('/api/ticket/message/create', {
-            params: data
+            params: data,
+            headers: defaultHeaders,
         });
         console.log('Create Ticket Message Success:', response.data);
         return response.data;

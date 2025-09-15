@@ -7,6 +7,8 @@ import {
     TicketPageResponse,
 } from './types';
 
+import defaultHeaders from '../sonarHeader';
+
 /**
  * Create a new ticket
  * @param data CreateTicketData
@@ -15,7 +17,7 @@ import {
 export async function createTicket(data: CreateTicketData): Promise<Ticket> {
     console.log('Creating ticket with data:', data);
     try {
-        const response = await api.post<Ticket>('/api/ticket/create', data);
+        const response = await api.post<Ticket>('/api/ticket/create', data, { headers: defaultHeaders });
         console.log('Create Ticket Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -32,7 +34,7 @@ export async function createTicket(data: CreateTicketData): Promise<Ticket> {
 export async function acceptTicket(data: AcceptTicketData): Promise<Ticket> {
     console.log('Accepting ticket with data:', data);
     try {
-        const response = await api.post<Ticket>('/api/ticket/accept', data);
+        const response = await api.post<Ticket>('/api/ticket/accept', data, { headers: defaultHeaders });
         console.log('Accept Ticket Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -51,6 +53,7 @@ export async function getTicketsPage(data: TicketPageData): Promise<TicketPageRe
     try {
         const response = await api.get<TicketPageResponse>('/api/ticket/ticket_page', {
             params: data,
+            headers: defaultHeaders,
         });
         console.log('Get Tickets Page Success:', response.data);
         return response.data;

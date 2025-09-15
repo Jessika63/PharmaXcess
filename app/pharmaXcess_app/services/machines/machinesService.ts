@@ -7,6 +7,8 @@ import {
     ItineraryMachineResponse,
 } from './types';
 
+import defaultHeaders from '../sonarHeader';
+
 /**
  * Get all machines
  * @returns Promise<GetMachinesResponse>
@@ -14,7 +16,7 @@ import {
 export async function getMachines(): Promise<GetMachinesResponse> {
     console.log('Fetching all machines...');
     try {
-        const response = await api.get<GetMachinesResponse>('/api/machines');
+        const response = await api.get<GetMachinesResponse>('/api/machines', { headers: defaultHeaders });
         console.log('Get Machines Success:', response.data);
         return response.data;
     } catch (error: any) {
@@ -32,6 +34,7 @@ export async function getNearestMachines(data: NearestMachinesData): Promise<Nea
     try {
         const response = await api.get<NearestMachinesResponse>('/api/machines/nearest', {
             params: data,
+            headers: defaultHeaders,
         });
         console.log('Get Nearest Machines Success:', response.data);
         return response.data;
@@ -50,6 +53,7 @@ export async function getItineraryMachine(data: ItineraryMachineData): Promise<I
     try {
         const response = await api.get<ItineraryMachineResponse>('/api/machines/itinary', {
             params: data,
+            headers: defaultHeaders,
         });
         console.log('Get Itinerary Machine Success:', response.data);
         return response.data;
