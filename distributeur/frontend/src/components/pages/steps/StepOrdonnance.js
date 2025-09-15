@@ -132,7 +132,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       )}
 
       {error && (
-        <div className="text-red-600 font-semibold mt-6">Erreur : {error}</div>
+        <div className="text-red-600 font-semibold mt-6">L'ordonnance n'est pas reconnue, veuillez réessayer.</div>
       )}
     </div>
   );
