@@ -23,7 +23,7 @@ RUN apt-get update && \
 # Copying and installing Python dependencies
 COPY requirements.txt /app/
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --default-timeout=1000 --no-cache-dir -r requirements.txt  && \
     pip install --upgrade Flask Werkzeug
 
 # Copy the application code
@@ -32,9 +32,10 @@ COPY pytest.ini /app/
 
 # Creating directories and configuring them
 RUN mkdir -p /data
-# Copy the init script
+
+# Copy the init script and fix Windows CRLF issue
 COPY scripts/init_medicine.sh /init_medicine.sh
-RUN chmod +x /init_medicine.sh
+RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
 

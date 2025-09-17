@@ -13,7 +13,9 @@ RUN apt-get update && \
         tesseract-ocr \
         && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --default-timeout=1000 --no-cache-dir --no-build-isolation --upgrade pip setuptools wheel && \
+    pip install --default-timeout=1000 --no-cache-dir --no-build-isolation -r requirements.txt --no-build-isolation --no-cache-dir --no-cache-dir --no-build-isolation --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host=files.pythonhosted.org  && \
+    pip install --upgrade Flask Werkzeug
 
 COPY . /app
 
