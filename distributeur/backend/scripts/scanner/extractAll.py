@@ -3,6 +3,7 @@ import sys, os, re, json, tempfile, time, base64
 import numpy as np
 import unicodedata
 import cv2
+import requests
 
 from doctr.models import ocr_predictor
 from doctr.io import DocumentFile
@@ -164,7 +165,8 @@ def getInfosVersoID(text):
                .replace("delivreele", "délivrée le") \
                .replace("Adresse.:", "Adresse:") \
                .replace("Adresse.", "Adresse:") \
-               .replace("LaPrefete", "La Préfète", "Le Préfet", "LePrefet") \
+               .replace("LaPrefete", "La Préfète") \
+               .replace("LePrefet", "Le Préfet") \
                .replace("par:", "par:") \
                .replace("Signature de lautorité", "signature_autorite")
 
