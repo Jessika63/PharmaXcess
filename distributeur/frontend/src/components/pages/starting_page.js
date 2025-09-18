@@ -208,7 +208,7 @@ function StartingPage() {
     } else if (event.key === "Enter") {
       event.preventDefault();
       if (focusedIndex === 0) {
-        navigate('/documents-checking');
+        navigate("/documents-flow");
       } else if (focusedIndex === 1) {
         navigate('/non-prescription-drugs');
       }

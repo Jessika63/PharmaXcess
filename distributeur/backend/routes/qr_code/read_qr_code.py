@@ -1,13 +1,7 @@
 
 from flask import Blueprint, request, jsonify
-import json
-import sys
 import os
-
-# Ajouter le chemin des scripts pour pouvoir les importer
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
-
-from scripts.qrcode.qrCodeLect import read_qr_code
+import tempfile
 
 # Blueprint pour lire un QR code
 read_qr_bp = Blueprint('read_qr', __name__)
@@ -17,44 +11,46 @@ def read_prescription_qr():
     """
     Objectif: Lit et déchiffre un QR Code contenant des informations de prescription.
     """
+    # Vérifier si un fichier a été envoyé
+    if 'image' not in request.files:
+        return jsonify({"success": False, "error": "Aucun fichier image fourni"}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "Aucun fichier sélectionné"}), 400
+
     try:
-        # Vérifier si un fichier a été envoyé
-        if 'image' not in request.files:
-            return jsonify({"success": False, "error": "Aucun fichier image fourni"}), 400
-
-        file = request.files['image']
-
-        # Vérifier si un fichier a été sélectionné
-        if file.filename == '':
-            return jsonify({"success": False, "error": "Aucun fichier sélectionné"}), 400
-
-        # Sauvegarder temporairement le fichier pour le traitement
-        temp_path = os.path.join('/tmp', file.filename)
-        file.save(temp_path)
+        # Sauvegarder temporairement le fichier
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+            file.save(temp_file.name)
+            temp_path = temp_file.name
 
         # Appeler la fonction de lecture du QR code
+        from scripts.qrcode.qrCodeLect import read_qr_code
         success, result = read_qr_code(temp_path)
 
         # Nettoyer le fichier temporaire
-        os.remove(temp_path)
+        os.unlink(temp_path)
 
         if not success:
-            return jsonify({"success": False, "error": result}), 404
+            return jsonify({"success": False, "error": result}), 400
 
+        # Essayer de parser le JSON
         try:
-            # Parser le contenu JSON
+            import json
             prescription_data = json.loads(result)
             return jsonify({
                 "success": True,
-                "message": "QR Code décodé et déchiffré avec succès",
+                "message": "QR Code décodé avec succès",
                 "prescription": prescription_data
             }), 200
         except json.JSONDecodeError:
+            # Si ce n'est pas du JSON, retourner le contenu brut
             return jsonify({
-                "success": False,
-                "error": "Le contenu du QR Code n'est pas un JSON valide",
+                "success": True,
+                "message": "QR Code décodé (contenu non-JSON)",
                 "raw_content": result
-            }), 400
+            }), 200
+
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"success": False, "error": str(e) or "Une erreur inconnue s'est produite"}), 500
+        return jsonify({"success": False, "error": str(e)}), 500

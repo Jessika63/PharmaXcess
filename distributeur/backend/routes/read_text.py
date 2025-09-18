@@ -32,8 +32,6 @@ def extract_text():
 
         result = main(tmp_file.name, doc_type, from_base64=False, flip_horizontal=True)
 
-        print("DEBUG: Result from OCR main():", result, flush=True)
-
         if result.get("success", False):
             return jsonify(result), 200
         else:
