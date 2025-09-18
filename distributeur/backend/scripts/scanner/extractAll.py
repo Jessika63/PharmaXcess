@@ -28,9 +28,9 @@ def isRectoID(text):
     return score >= 3
 
 def isVersoID(text):
-    keywords = ["Adresse", "délivrée le", "valable", "Carte nationale", "par "]
+    keywords = ["Adresse", "délivrée le", "Carte valable jusqu'au", "Carte nationale", "par", "Signature de lautorité"]
     score = sum(1 for k in keywords if k.lower() in text.lower())
-    return score >= 2
+    return score >= 3
 
 
 def getInfosPrescription(text):
@@ -93,9 +93,6 @@ def getInfosPrescription(text):
     return infos
 
 
-
-import re
-
 def getInfosRectoID(text):
     infos = {}
 
@@ -150,23 +147,19 @@ def getInfosRectoID(text):
     match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
     if match:
         infos["taille"] = match.group(1).replace(',', '.')
-        
+
     return infos
 
 
-
-import re
-
 def getInfosVersoID(text):
     infos = {}
-
 
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
                .replace("delivreele", "délivrée le") \
                .replace("Adresse.:", "Adresse:") \
                .replace("Adresse.", "Adresse:") \
                .replace("LaPrefete", "La Préfète") \
-               .replace("LePrefet", "Le Préfet") \
+               .replace("LePrefet", "Le Préfèt") \
                .replace("par:", "par:") \
                .replace("Signature de lautorité", "signature_autorite")
 
@@ -207,7 +200,6 @@ def getInfosVersoID(text):
 
 
 
-
 def flip_image(input_path, flip_code=1):
     """ Flip the image and save the result """
     image = cv2.imread(input_path)
@@ -233,7 +225,6 @@ def verify_doctor(first_name, last_name):
         return False, {"error": f"API error {resp.status_code}"}
     except Exception as e:
         return False, {"error": str(e)}
-
 
 
 
@@ -281,8 +272,6 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
 
         text = "\n".join(lines).strip()
         result["raw_text"] = text
-        print("OCR result text:", text[:200], flush=True)
-
 
         valid = False
         infos = {}
@@ -297,19 +286,24 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
                 infos = getInfosRectoID(text)
         elif doc_type.upper() == "V":
             valid = isVersoID(text)
+
             if valid:
                 infos = getInfosVersoID(text)
 
-        result["success"] = valid
-        result["infos"] = infos
 
         if not valid:
             result["error"] = f"The provided document does not match the expected type '{doc_type}'."
 
+
+        result["success"] = valid
+        result["infos"] = infos
+
+        return result
+
     except Exception as e:
         result["error"] = str(e)
-
-    return result
+        print("result", result)
+        return None
 
 
 if __name__ == "__main__":
@@ -318,7 +312,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     image_path = sys.argv[1]
-    doc_type = sys.argv[2] 
+    doc_type = sys.argv[2]
 
     output = main(image_path, doc_type)
     print(json.dumps(output, ensure_ascii=False, indent=2))
