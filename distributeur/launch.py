@@ -1,5 +1,6 @@
 import os
 import argparse
+import subprocess
 
 from launch_distributeur.helpers.config.load_config_file import load_config_file
 from launch_distributeur.scripts.handle_verif import handle_verif
@@ -45,6 +46,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--build-test", action="store_true",
         help="Build Test Docker images before running."
+    )
+    parser.add_argument("--see-log", type=str, choices=["back", "front", "every"],
+        help="Stream Docker logs: 'back' for backend, 'front' for frontend, 'every' for both."
     )
 
     # Parse arguments
@@ -114,6 +118,21 @@ if __name__ == "__main__":
                 handle_import_images(args.import_images, back_app_image_name, back_app_container_name, db_container_name)
             if args.down:
                 handle_down()
+            if args.see_log:
+                def stream_logs(container_name):
+                    subprocess.call(["docker", "logs", "-f", container_name])
+
+                if args.see_log == "back":
+                    stream_logs(back_app_container_name)
+                elif args.see_log == "front":
+                    stream_logs(front_app_container_name)
+                elif args.see_log == "every":
+                    processes = [
+                        subprocess.Popen(["docker", "logs", "-f", back_app_container_name]),
+                        subprocess.Popen(["docker", "logs", "-f", front_app_container_name]),
+                    ]
+                    for proc in processes:
+                        proc.wait()
     else:
         parser.print_help()
         exit(1)
