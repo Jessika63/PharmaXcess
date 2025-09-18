@@ -10,13 +10,10 @@ import json
 import types
 
 from scripts.scanner.extractAll import (
-    add_background,
-    correct_orientation,
     flip_image,
     getInfosPrescription,
     getInfosRectoID,
     getInfosVersoID,
-    extract_text_paddleocr,
     main as extract_main,
 )
 

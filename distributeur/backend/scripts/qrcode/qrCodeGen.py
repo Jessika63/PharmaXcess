@@ -172,6 +172,3 @@ prescription_info = {
         "Amoxicillin 500mg - 1 capsule in the morning and evening for 7 days"
     ]
 }
-
-# Generate the rounded QR Code for the prescription
-generate_rounded_qr_code(prescription_info)

@@ -11,6 +11,7 @@ function StepConfirmation({ goToNextStep, goBackStep }) {
     if (stored) {
       setMedicaments(JSON.parse(stored));
     }
+
   }, []);
 
   const handleConfirm = () => {
@@ -53,6 +54,10 @@ function StepConfirmation({ goToNextStep, goBackStep }) {
       <div className="w-4/5 mb-8">
         {medicaments.length > 0 ? (
           <ul className="space-y-3">
+
+
+
+
             {medicaments.map((m, index) => (
               <li
                 key={index}
