@@ -1,6 +1,10 @@
 import os
 import argparse
 import subprocess
+import signal
+import sys
+import threading
+import time
 
 from launch_distributeur.helpers.config.load_config_file import load_config_file
 from launch_distributeur.scripts.handle_verif import handle_verif
@@ -12,6 +16,106 @@ from launch_distributeur.scripts.handle_down import handle_down
 from launch_distributeur.scripts.handle_dump import handle_dump
 from launch_distributeur.scripts.handle_export import handle_export_images
 from launch_distributeur.scripts.handle_import import handle_import_images
+
+# Variables globales pour la gestion des processus
+active_processes = []
+shutdown_requested = False
+
+def signal_handler(sig, frame):
+    """Gestionnaire de signal pour arrêt propre"""
+    global shutdown_requested
+    print('\n🛑 Arrêt en cours...')
+    shutdown_requested = True
+
+    # Arrêter tous les processus actifs
+    for proc in active_processes:
+        if proc and proc.poll() is None:  # Si le processus est encore en cours
+            print(f"   Arrêt du processus {proc.pid}...")
+            try:
+                proc.terminate()  # Signal SIGTERM
+                # Attendre 5 secondes pour un arrêt propre
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                print(f"   Force l'arrêt du processus {proc.pid}...")
+                proc.kill()  # Signal SIGKILL si nécessaire
+            except Exception as e:
+                print(f"   Erreur lors de l'arrêt du processus {proc.pid}: {e}")
+
+    print("✅ Arrêt terminé")
+    sys.exit(0)
+
+def stream_logs_improved(container_name):
+    """Version améliorée de stream_logs avec gestion des signaux"""
+    global active_processes, shutdown_requested
+
+    try:
+        print(f"📋 Affichage des logs pour {container_name}...")
+        print("   Appuyez sur Ctrl+C pour arrêter")
+
+        # Créer le processus
+        proc = subprocess.Popen(
+            ["docker", "logs", "-f", container_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1
+        )
+
+        # Ajouter à la liste des processus actifs
+        active_processes.append(proc)
+
+        # Lire les logs en temps réel
+        while not shutdown_requested and proc.poll() is None:
+            try:
+                line = proc.stdout.readline()
+                if line:
+                    print(line.rstrip())
+                else:
+                    time.sleep(0.1)  # Petite pause pour éviter la surcharge CPU
+            except KeyboardInterrupt:
+                break
+
+    except Exception as e:
+        print(f"❌ Erreur lors de l'affichage des logs: {e}")
+    finally:
+        # Nettoyer le processus
+        if proc in active_processes:
+            active_processes.remove(proc)
+        if proc and proc.poll() is None:
+            proc.terminate()
+
+def stream_logs_multiple(container_names):
+    """Stream logs pour plusieurs conteneurs simultanément"""
+    global active_processes, shutdown_requested
+
+    threads = []
+
+    def stream_single(container_name):
+        stream_logs_improved(container_name)
+
+    try:
+        print(f"📋 Affichage des logs pour: {', '.join(container_names)}")
+        print("   Appuyez sur Ctrl+C pour arrêter")
+
+        # Créer un thread pour chaque conteneur
+        for container_name in container_names:
+            thread = threading.Thread(target=stream_single, args=(container_name,))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+
+        # Attendre que tous les threads se terminent
+        for thread in threads:
+            thread.join()
+
+    except KeyboardInterrupt:
+        print("\n🛑 Arrêt demandé par l'utilisateur")
+    except Exception as e:
+        print(f"❌ Erreur lors de l'affichage des logs: {e}")
+
+# Configuration des signaux
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 # Main script
 if __name__ == "__main__":
@@ -119,20 +223,12 @@ if __name__ == "__main__":
             if args.down:
                 handle_down()
             if args.see_log:
-                def stream_logs(container_name):
-                    subprocess.call(["docker", "logs", "-f", container_name])
-
                 if args.see_log == "back":
-                    stream_logs(back_app_container_name)
+                    stream_logs_improved(back_app_container_name)
                 elif args.see_log == "front":
-                    stream_logs(front_app_container_name)
+                    stream_logs_improved(front_app_container_name)
                 elif args.see_log == "every":
-                    processes = [
-                        subprocess.Popen(["docker", "logs", "-f", back_app_container_name]),
-                        subprocess.Popen(["docker", "logs", "-f", front_app_container_name]),
-                    ]
-                    for proc in processes:
-                        proc.wait()
+                    stream_logs_multiple([back_app_container_name, front_app_container_name])
     else:
         parser.print_help()
         exit(1)
