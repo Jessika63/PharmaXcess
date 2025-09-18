@@ -20,11 +20,11 @@ RUN apt-get update && \
         libxrender1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Copying and installing Python dependencies
-COPY requirements.txt /app/
+# Copying and installing Python dependencies (use lightweight test requirements)
+COPY requirements-test.txt /app/
 RUN pip install --upgrade pip && \
-    pip install --default-timeout=1000 --no-cache-dir -r requirements.txt  && \
-    pip install --upgrade Flask Werkzeug
+    pip install --default-timeout=1000 --no-cache-dir -r requirements-test.txt && \
+    pip cache purge
 
 # Copy the application code
 COPY . /app
@@ -39,8 +39,7 @@ RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
 
-# Graphics Libraries Verification Test
-RUN ldconfig -p | grep libGL || echo "libGL not found, listing graphics files:" && \
-    find / -name "*libGL*" 2>/dev/null | head -10
+# Graphics Libraries Verification Test (kept minimal to avoid scanning whole FS)
+RUN ldconfig -p | grep libGL || echo "libGL not found"
 
 CMD ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]

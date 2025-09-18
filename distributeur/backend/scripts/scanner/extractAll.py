@@ -5,8 +5,22 @@ import unicodedata
 import cv2
 import requests
 
-from doctr.models import ocr_predictor
-from doctr.io import DocumentFile
+try:
+    from doctr.models import ocr_predictor  # type: ignore
+    from doctr.io import DocumentFile  # type: ignore
+except Exception:  # doctr not installed in lightweight CI image
+    class _MissingDoctrPredictor:
+        def __call__(self, *args, **kwargs):
+            raise ImportError("python-doctr is not installed; tests should patch 'ocr_predictor'.")
+
+    def ocr_predictor(*args, **kwargs):  # type: ignore
+        return _MissingDoctrPredictor()
+
+    class DocumentFile:  # type: ignore
+        @staticmethod
+        def from_images(path):
+            # Minimal shim: predictor in tests ignores the content type
+            return path
 
 
 def normalize_text(text):
