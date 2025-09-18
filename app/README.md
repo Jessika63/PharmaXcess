@@ -52,3 +52,11 @@ Make sure to replace `<container_name>` with the actual name of the container yo
 
 - Ensure that the MySQL database container is running before the server container.
 - If you make changes to the `.env` file, ensure that you restart the application to apply the new configuration.
+
+Environnement file must contains :
+
+- POSTGRES_USER (Database user)
+- POSTGRES_PASSWORD (Database password)
+- POSTGRES_DB (Database name)
+- JWT_SECRET (Auth key secret)
+- ORS_API_KEY (ORS API key)

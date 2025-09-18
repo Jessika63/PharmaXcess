@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -33,8 +35,10 @@ import java.util.List;
 @Tag(name = "Machines routes", description = "Operations related to machines")
 public class MachineController {
 
+    private final RestTemplate restTemplate = new RestTemplate();
     private final MachineService machineService;
     private final GeometryFactory geometryFactory = new GeometryFactory();
+    private static final String SECRET = System.getenv("ORS_API_KEY");
 
     /**
      * Constructs a MachineController.
@@ -92,7 +96,7 @@ public class MachineController {
     }
 
     /**
-     * Generates a Google Maps link for driving directions from the user's location to a specified vending machine.
+     * Generates a ORS Maps link for driving directions from the user's location to a specified vending machine.
      *
      * @param body the request body containing the user's location and the vending machine's ID
      * @return a URL for the driving directions to the specified vending machine
@@ -101,7 +105,7 @@ public class MachineController {
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
         summary = "Get Machine Itinerary",
-        description = "Generates a Google Maps link for driving directions from the user's location to the specified vending machine. Requires 'ROLE_USER' authority.",
+        description = "Generates a ORS Maps link for driving directions from the user's location to the specified vending machine. Requires 'ROLE_USER' authority.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
@@ -110,16 +114,33 @@ public class MachineController {
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public String getMachineIntinary(@RequestBody NearestMachineRequest body) {
+    public ResponseEntity<String> getMachineIntinary(@RequestBody NearestMachineRequest body) {
         Point machineLocation = machineService.getMachineLocationById(body.getId());
 
         if (machineLocation == null)
-            return "Erreur : aucune machine trouvée avec l'identifiant fourni.";
+            return ResponseEntity.badRequest().body("Erreur : aucune machine trouvée avec l'identifiant fourni.");
 
-        return String.format(
-            "https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=driving",
-            body.getLatitude(), body.getLongitude(),
+        String orsUrl = "https://api.openrouteservice.org/v2/directions/driving-car";
+        String requestBody = String.format(
+            "{\"coordinates\":[[%f,%f],[%f,%f]]}",
+            body.getLongitude(), body.getLatitude(),
             machineLocation.getX(), machineLocation.getY()
         );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", SECRET);
+
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                orsUrl, HttpMethod.POST, entity, String.class
+            );
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Erreur lors de l'appel à OpenRouteService: " + e.getMessage());
+        }
     }
 }

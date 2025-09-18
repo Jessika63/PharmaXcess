@@ -33,7 +33,7 @@ import java.util.List;
 public class JwtService {
 
     private final Set<String> invalidatedTokens = new HashSet<>();
-    private static final String SECRET = System.getenv("JWT_SECRET");;
+    private static final String SECRET = System.getenv("JWT_SECRET");
     private static final Key SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     /**
