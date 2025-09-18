@@ -48,6 +48,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       });
 
       const data = await response.json();
+
       if (response.ok) {
         setExtractedText(data.raw_text || "");
         if (!data.success) {
@@ -55,6 +56,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
         } else {
           if (data.infos && data.infos.medicaments) {
             localStorage.setItem("medicaments", JSON.stringify(data.infos.medicaments));
+            console.log(JSON.stringify(data.infos.medicaments));
           }
 
           goToNextStep();
@@ -62,9 +64,6 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       } else {
         setError(data.error || "Erreur inconnue");
       }
-
-
-
 
     } catch (err) {
       setError(err.message);
@@ -132,7 +131,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       )}
 
       {error && (
-        <div className="text-red-600 font-semibold mt-6">Erreur : {error}</div>
+        <div className="text-red-600 font-semibold mt-6">L'ordonnance n'est pas reconnue, veuillez réessayer.</div>
       )}
     </div>
   );

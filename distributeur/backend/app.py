@@ -10,7 +10,10 @@ app = Flask(__name__)
 
 CORS(app, resources={
     r"/*": {
-        "origins": "http://localhost:3000",
+        "origins": [
+            "http://192.168.10.168:3000",
+            "http://localhost:3000"
+            ],
         "allow_headers": ["*", "Content-Type", "Authorization", "X-AdBlock-Detected"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "supports_credentials": True
