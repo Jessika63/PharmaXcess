@@ -90,6 +90,7 @@ def read_qr_code(qr_filename):
     error_msg = "Aucun QR code n'a pu être déchiffré."
     print(error_msg)
     return False, error_msg
+
 def verify_doctor(qr_content):
     """
     Verifies doctor information via an API.
@@ -135,6 +136,6 @@ def main():
         sys.exit(1)
 
     filename = sys.argv[1]
-    content = read_qr_code(filename)
-    if content:
+    success, content = read_qr_code(filename)
+    if success:
         verify_doctor(content)
