@@ -49,7 +49,7 @@ jobs:
           IPHUNTER_API_KEY=${{ secrets.IPHUNTER_API_KEY }}
           ABUSEIPDB_API_KEY=${{ secrets.ABUSEIPDB_API_KEY }}
           GETIPINTEL_CONTACT=${{ secrets.GETIPINTEL_CONTACT }}
-          GETIPINTEL_CONTACT=${{ secrets.SECRET_QR_ENCRYPTION_KEY }}
+          SECRET_QR_ENCRYPTION_KEY=${{ secrets.SECRET_QR_ENCRYPTION_KEY }}
 
           EOF
 
