@@ -73,60 +73,61 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
     }
   };
 
-  const handlePhotoCaptured = async (base64Image) => {
-    closeModal();
-    try {
-      setLoading(true);
-      setError("");
-      setExtractedText("");
+const handlePhotoCaptured = async (base64Image) => {
+  closeModal();
+  try {
+    setLoading(true);
+    setError("");
+    setExtractedText("");
 
-      const byteString = atob(base64Image.split(",")[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: "image/jpeg" });
-
-      if (scanType === 'qr') {
-        // Traitement pour QR code
-        const qrData = await checkQRCode(blob);
-
-        if (qrData.success) {
-          // Si un QR code valide est détecté
-          setHasQRCode(true);
-
-          // Stocker les données de prescription du QR code
-          if (qrData.prescription && qrData.prescription.medicaments) {
-            localStorage.setItem("medicaments", JSON.stringify(qrData.prescription.medicaments));
-          }
-
-          goToNextStep({ hasQRCode: true });
-          return;
-        } else {
-          setError("Aucun QR code valide détecté. Veuillez réessayer ou scanner l'ordonnance.");
-        }
-      } else if (scanType === 'prescription') {
-        // Traitement pour ordonnance classique
-        const data = await extractPrescriptionText(blob);
-
-        if (data.success) {
-          setExtractedText(data.raw_text || "");
-          if (data.infos && data.infos.medicaments) {
-            localStorage.setItem("medicaments", JSON.stringify(data.infos.medicaments));
-          }
-          goToNextStep();
-        } else {
-          setError(data.error || "Erreur lors de l'analyse de l'ordonnance");
-        }
-      }
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    const byteString = atob(base64Image.split(",")[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
     }
-  };
+    const blob = new Blob([ab], { type: "image/jpeg" });
+
+    if (scanType === 'qr') {
+      // Traitement pour QR code
+      const qrData = await checkQRCode(blob);
+
+      if (qrData.success) {
+        // Si un QR code valide est détecté
+        setHasQRCode(true);
+
+        // Stocker les données de prescription du QR code
+        if (qrData.prescription && qrData.prescription.medicaments) {
+          localStorage.setItem("medicaments", JSON.stringify(qrData.prescription.medicaments));
+        }
+
+        goToNextStep({ hasQRCode: true });
+        return;
+      } else {
+        setError("Aucun QR code valide détecté. Veuillez réessayer ou scanner l'ordonnance.");
+      }
+    } else if (scanType === 'prescription') {
+      // Traitement pour ordonnance classique
+      const data = await extractPrescriptionText(blob);
+
+      if (data.success) {
+        setExtractedText(data.raw_text || "");
+        if (data.infos && data.infos.medicaments) {
+          localStorage.setItem("medicaments", JSON.stringify(data.infos.medicaments));
+          console.log(JSON.stringify(data.infos.medicaments));
+        }
+        goToNextStep();
+      } else {
+        setError(data.error || "Erreur lors de l'analyse de l'ordonnance");
+      }
+    }
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full h-full flex flex-col items-center bg-background_color">
@@ -199,7 +200,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       )}
 
       {error && (
-        <div className="text-red-600 font-semibold mt-6">Erreur : {error}</div>
+        <div className="text-red-600 font-semibold mt-6">L'ordonnance n'est pas reconnue, veuillez réessayer.</div>
       )}
 
       {isModalOpen && showCamera && (
