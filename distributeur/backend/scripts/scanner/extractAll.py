@@ -146,7 +146,7 @@ def getInfosRectoID(text):
     match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
     if match:
         infos["taille"] = match.group(1).replace(',', '.')
-        
+
     return infos
 
 
@@ -199,7 +199,6 @@ def getInfosVersoID(text):
 
 
 
-
 def flip_image(input_path, flip_code=1):
     """ Flip the image and save the result """
     image = cv2.imread(input_path)
@@ -225,7 +224,6 @@ def verify_doctor(first_name, last_name):
         return False, {"error": f"API error {resp.status_code}"}
     except Exception as e:
         return False, {"error": str(e)}
-
 
 
 
@@ -273,10 +271,6 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
 
         text = "\n".join(lines).strip()
         result["raw_text"] = text
-        
-        
-        print("OCR result text:", text[:200], flush=True)
-
 
         valid = False
         infos = {}
@@ -304,13 +298,11 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
         result["infos"] = infos
 
         return result
-        
+
     except Exception as e:
         result["error"] = str(e)
         print("result", result)
         return None
-
-
 
 
 if __name__ == "__main__":
@@ -319,7 +311,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     image_path = sys.argv[1]
-    doc_type = sys.argv[2] 
+    doc_type = sys.argv[2]
 
     output = main(image_path, doc_type)
     print(json.dumps(output, ensure_ascii=False, indent=2))

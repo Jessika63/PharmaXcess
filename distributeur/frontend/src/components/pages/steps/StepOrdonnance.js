@@ -48,8 +48,7 @@ function StepOrdonnance({ goToNextStep, goBackStep }) {
       });
 
       const data = await response.json();
-      console.log(data);
-      
+
       if (response.ok) {
         setExtractedText(data.raw_text || "");
         if (!data.success) {
