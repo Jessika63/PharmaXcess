@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Import the connection function
+from db_doctors import get_connection  # Import the connection function
 
 remove_doctor_bp = Blueprint('remove_doctor', __name__)
 

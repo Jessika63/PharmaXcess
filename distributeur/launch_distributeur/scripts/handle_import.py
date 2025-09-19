@@ -39,33 +39,51 @@ def handle_import_images(input_tar_path, backend_app_image_name, backend_contain
             colored_print(f"docker load failed with exit code {process.returncode}", "red")
             return
 
-        # Run backend app container
+        # Run backend app container with both DB configs
         colored_print(f"Running backend app container '{backend_container_name}' from image '{backend_app_image_name}'...", "blue")
         subprocess.run([
             "docker", "run", "-d",
             "--name", backend_container_name,
             "-p", "5000:5000",
             "-e", "FLASK_ENV=development",
-            "-e", f"DB_HOST=distributeur-backend-{env_data.get('DB_HOST')}",
-            "-e", f"DB_USER={env_data.get('DB_USER')}",
-            "-e", f"DB_PASSWORD={env_data.get('DB_PASSWORD')}",
-            "-e", f"DB_NAME={env_data.get('DB_NAME')}",
+            # App DB
+            "-e", f"APP_DB_HOST={env_data.get('APP_DB_HOST')}",
+            "-e", f"APP_DB_USER={env_data.get('APP_DB_USER')}",
+            "-e", f"APP_DB_PASSWORD={env_data.get('APP_DB_PASSWORD')}",
+            "-e", f"APP_DB_NAME={env_data.get('APP_DB_NAME')}",
+            # Doctors DB
+            "-e", f"DOCTORS_DB_HOST={env_data.get('DOCTORS_DB_HOST')}",
+            "-e", f"DOCTORS_DB_USER={env_data.get('DOCTORS_DB_USER')}",
+            "-e", f"DOCTORS_DB_PASSWORD={env_data.get('DOCTORS_DB_PASSWORD')}",
+            "-e", f"DOCTORS_DB_NAME={env_data.get('DOCTORS_DB_NAME')}",
             backend_app_image_name,
             "python", "app.py"
         ], check=True)
         colored_print(f"Backend app container '{backend_container_name}' started!", "green")
 
-        # Run database container
-        colored_print(f"Running db container '{db_container_name}'...", "blue")
+        # Run app DB container
+        colored_print(f"Running app DB container 'app-backend-db'...", "blue")
         subprocess.run([
             "docker", "run", "-d",
-            "--name", db_container_name,
+            "--name", "app-backend-db",
             "-e", "MYSQL_ROOT_PASSWORD=root",
-            "-e", f"MYSQL_DATABASE={env_data.get('DB_NAME')}",
+            "-e", f"MYSQL_DATABASE={env_data.get('APP_DB_NAME')}",
             "-p", "3307:3306",
             "mysql:5.7"
         ], check=True)
-        colored_print(f"DB container '{db_container_name}' started!", "green")
+        colored_print(f"App DB container 'app-backend-db' started!", "green")
+
+        # Run doctors DB container
+        colored_print(f"Running doctors DB container 'distributeur-backend-db'...", "blue")
+        subprocess.run([
+            "docker", "run", "-d",
+            "--name", "distributeur-backend-db",
+            "-e", "MYSQL_ROOT_PASSWORD=root",
+            "-e", f"MYSQL_DATABASE={env_data.get('DOCTORS_DB_NAME')}",
+            "-p", "3308:3306",
+            "mysql:5.7"
+        ], check=True)
+        colored_print(f"Doctors DB container 'distributeur-backend-db' started!", "green")
     except subprocess.CalledProcessError as e:
         colored_print(f"Failed to import or run Docker containers: {e}", "red")
     except Exception as e:

@@ -38,10 +38,14 @@ jobs:
       - name: Create .env file
         run: |
           cat <<EOF > distributeur/backend/.env
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_NAME=${{ secrets.DB_NAME }}
+          APP_DB_HOST=${{ secrets.APP_DB_HOST }}
+          APP_DB_USER=${{ secrets.APP_DB_USER }}
+          APP_DB_PASSWORD=${{ secrets.APP_DB_PASSWORD }}
+          APP_DB_NAME=${{ secrets.APP_DB_NAME }}
+          DOCTORS_DB_HOST=${{ secrets.DOCTORS_DB_HOST }}
+          DOCTORS_DB_USER=${{ secrets.DOCTORS_DB_USER }}
+          DOCTORS_DB_PASSWORD=${{ secrets.DOCTORS_DB_PASSWORD }}
+          DOCTORS_DB_NAME=${{ secrets.DOCTORS_DB_NAME }}
           MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
           OPENROUTESERVICE_API_KEY=${{ secrets.OPENROUTESERVICE_API_KEY }}
           STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
@@ -62,18 +66,25 @@ jobs:
         if: env.CI == 'true'
         run: |
           cat <<EOF > distributeur/backend/temp_fake_database_dump_px.sql
-          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
-          USE \`${{ secrets.DB_NAME }}\`;
-          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
+          -- App DB
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.APP_DB_NAME }}\`;
+          USE \`${{ secrets.APP_DB_NAME }}\`;
+          CREATE USER IF NOT EXISTS '${{ secrets.APP_DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.APP_DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON \`${{ secrets.APP_DB_NAME }}\`.* TO '${{ secrets.APP_DB_USER }}'@'%';
+          FLUSH PRIVILEGES;
+          -- Doctors DB
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DOCTORS_DB_NAME }}\`;
+          USE \`${{ secrets.DOCTORS_DB_NAME }}\`;
+          CREATE USER IF NOT EXISTS '${{ secrets.DOCTORS_DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DOCTORS_DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON \`${{ secrets.DOCTORS_DB_NAME }}\`.* TO '${{ secrets.DOCTORS_DB_USER }}'@'%';
           FLUSH PRIVILEGES;
           EOF
-          cat distributeur/backend/db/database.sql >> distributeur/backend/temp_fake_database_dump_px.sql
+          cat distributeur/backend/db/database_doctors.sql >> distributeur/backend/temp_fake_database_dump_px.sql
 
       - name: Replace DB_NAME placeholder in SQL
         if: env.CI == 'true'
         run: |
-          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
+          sed -i "s/__DB_NAME__/${{ secrets.DOCTORS_DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
 
       - name: Run backend tests
         working-directory: distributeur

@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Import function to establish a database connection
+from db_doctors import get_connection  # Import function to establish a database connection
 
 # Create a Blueprint for the add_list_doctors route
 add_list_doctors_bp = Blueprint('add_list_doctors', __name__)

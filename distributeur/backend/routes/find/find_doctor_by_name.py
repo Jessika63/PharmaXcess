@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db import get_connection  # Import the database connection function
+from db_doctors import get_connection  # Import the database connection function
 
 # Create a Blueprint for finding doctors by name
 find_doctor_by_name_bp = Blueprint('find_doctor_by_name', __name__)

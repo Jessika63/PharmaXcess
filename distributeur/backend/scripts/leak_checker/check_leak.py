@@ -11,7 +11,7 @@ import logging
 # Constants for False Positives
 GLOBAL_FALSE_POSITIVES = [
     r'container_name',   # Matches configuration references to container names
-    r'#.*DB_HOST',       # Comments mentioning DB_HOST are considered non-sensitive
+    r'#.*(APP_DB_HOST|DOCTORS_DB_HOST)',  # Comments mentioning only valid DB_HOST variants
     r'docker exec.*',    # Commands to execute in Docker containers
     r'from db import',   # Standard imports from a database module
     r'^\s*db:$',         # Lines defining a 'db' key in YAML/JSON
@@ -35,7 +35,8 @@ FILE_SPECIFIC_FALSE_POSITIVES = {
     ],
     'config.json': [
         # Patterns referencing files commonly used in example configurations.
-        r'database.sql',
+        r'database_doctors.sql',
+        r'database_users.sql',
     ],
 }
 
@@ -278,9 +279,6 @@ def is_false_positive(line, file_path):
         return True
 
     if file_name in FILE_SPECIFIC_FALSE_POSITIVES and any(re.search(pattern, line) for pattern in FILE_SPECIFIC_FALSE_POSITIVES[file_name]):
-        return True
-
-    if re.search(r'\bDB_HOST\b', line) and ("example" in file_path.lower() or "README" in file_path.lower()):
         return True
 
     return False

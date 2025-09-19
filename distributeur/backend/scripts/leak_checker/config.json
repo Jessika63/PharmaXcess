@@ -4,7 +4,8 @@
         "distributeur/backend/.env"
     ],
     "ignore_files": [
-        "distributeur/backend/db/database.sql",
+        "distributeur/backend/db/database_doctors.sql",
+        "distributeur/backend/db/database_users.sql",
         "distributeur/frontend/package-lock.json",
         "distributeur/backend/.coverage",
         "distributeur/backend/test/results.png",

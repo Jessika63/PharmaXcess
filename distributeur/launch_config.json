@@ -2,10 +2,14 @@
 {
     "verification_settings": {
         "required_env_keys": [
-            "DB_HOST",
-            "DB_USER",
-            "DB_PASSWORD",
-            "DB_NAME",
+            "APP_DB_HOST",
+            "APP_DB_USER",
+            "APP_DB_PASSWORD",
+            "APP_DB_NAME",
+            "DOCTORS_DB_HOST",
+            "DOCTORS_DB_USER",
+            "DOCTORS_DB_PASSWORD",
+            "DOCTORS_DB_NAME",
             "MYSQL_ROOT_PASSWORD",
             "OPENROUTESERVICE_API_KEY",
             "STRIPE_SECRET_KEY",
