@@ -5,3 +5,19 @@ node_modules/
 
 # Expo
 .expo/
+
+*/.env
+
+__pycache__
+
+.pytest_cache
+
+database_dump_px_*.sql
+
+.vscode
+
+**/.coverage
+
+node_modules
+
+*.tar

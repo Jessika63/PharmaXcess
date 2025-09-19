@@ -1,3 +1,0 @@
-
-generate_qr_code
-read_qr_code
