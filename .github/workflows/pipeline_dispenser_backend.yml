@@ -8,7 +8,7 @@ on:
       - dev_v2
     paths:
       - '**'
-      - 'distributeur/**'
+      - 'backend/**'
   pull_request:
     branches:
       - main
@@ -16,7 +16,7 @@ on:
       - dev_v2
     paths:
       - '**'
-      - 'distributeur/**'
+      - 'backend/**'
 
 jobs:
   vulnerability_check:
@@ -43,8 +43,8 @@ jobs:
 
     - name: Run Security Scan
       run: |
-        chmod +x ./distributeur/backend/scripts/safety/run_safety.sh
-        ./distributeur/backend/scripts/safety/run_safety.sh
+        chmod +x ./backend/scripts/safety/run_safety.sh
+        ./backend/scripts/safety/run_safety.sh
 
   check_leaks:
     runs-on: ubuntu-latest
@@ -62,4 +62,4 @@ jobs:
       run: pip install tqdm
 
     - name: Run Leak Checker
-      run: python distributeur/backend/scripts/leak_checker/check_leak.py
+      run: python backend/scripts/leak_checker/check_leak.py

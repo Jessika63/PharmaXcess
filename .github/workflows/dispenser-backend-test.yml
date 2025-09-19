@@ -8,14 +8,14 @@ on:
       - dev
       - dev_v2
     paths:
-      - 'distributeur/**'
+      - 'backend/**'
   pull_request:
     branches:
       - main
       - dev
       - dev_v2
     paths:
-      - 'distributeur/**'
+      - 'backend/**'
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Create .env file
         run: |
-          cat <<EOF > distributeur/backend/.env
+          cat <<EOF > backend/.env
           DB_HOST=${{ secrets.DB_HOST }}
           DB_USER=${{ secrets.DB_USER }}
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -59,27 +59,27 @@ jobs:
         run: |
           pip install --upgrade pip setuptools wheel
           pip install --upgrade "numpy==1.26.4" --only-binary=:all:
-          pip install -r distributeur/backend/requirements.txt --no-deps
+          pip install -r backend/requirements.txt --no-deps
 
       - name: Create fake database dump for CI
         if: env.CI == 'true'
         run: |
-          cat <<EOF > distributeur/backend/temp_fake_database_dump_px.sql
+          cat <<EOF > backend/temp_fake_database_dump_px.sql
           CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
           USE \`${{ secrets.DB_NAME }}\`;
           CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
           GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
           FLUSH PRIVILEGES;
           EOF
-          cat distributeur/backend/db/database.sql >> distributeur/backend/temp_fake_database_dump_px.sql
+          cat backend/db/database.sql >> backend/temp_fake_database_dump_px.sql
 
       - name: Replace DB_NAME placeholder in SQL
         if: env.CI == 'true'
         run: |
-          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
+          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" backend/temp_fake_database_dump_px.sql
 
       - name: Run backend tests
-        working-directory: distributeur
+        working-directory: .
         run: |
           python3 launch.py --verif
           python3 launch.py --back
