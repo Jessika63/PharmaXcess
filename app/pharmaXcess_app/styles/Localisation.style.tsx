@@ -4,16 +4,27 @@ import { ColorScheme } from './Colors';
 
 const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
-      flexGrow: 1,
-      padding: 20,
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.background,
+        flex: 1,
+        width: '100%',
+        height: '100%',
     },
     map: {
         flex: 1,
     },
+    // userMarker: {
+    //     width: 20, height: 20,
+    //     borderRadius: 10,
+    //     backgroundColor: 'blue',
+    //     borderWidth: 2,
+    //     borderColor: 'white',
+    // },
+    // machineMarker: {
+    //     width: 20, height: 20,
+    //     borderRadius: 10,
+    //     backgroundColor: 'red',
+    //     borderWidth: 2,
+    //     borderColor: 'white',
+    // },
     menu: {
         position: 'absolute',
         bottom: 0,

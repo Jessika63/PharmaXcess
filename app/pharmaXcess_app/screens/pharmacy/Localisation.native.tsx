@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, StyleProp, ViewStyle, TextStyle, Linking } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import React, { useState, useEffect,useRef } from 'react';
+import { View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import { FlatList, TextInput } from 'react-native-gesture-handler';
+
 import createStyles from '../../styles/Localisation.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
@@ -11,76 +11,80 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { getMachines } from '../../services/machines/machinesService';
 import { Machine } from '../../services/machines/types';
 
-type MachineWithFakeDistance = Machine & { distance: number };
+import MapView, { Marker, UrlTile } from 'react-native-maps';
+import type { Region } from 'react-native-maps';
 
-type Distributor = {
-    id: number;
-    name: string;
-    latitude: number;
-    longitude: number;
-    distance: number;
-};
 
-// The Localisation component allows users to view their current location on a map, find nearby pharmacies, and navigate to a selected pharmacy.
 export default function Localisation(): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const styles = createStyles(colors, fontScale);
-    // State to manage the user's current location, list of distributors, selected distributor, start location, and route coordinates
+
+    const mapRef = useRef<MapView>(null);
+
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const [distributors, setDistributors] = useState<Distributor[]>([]);
-    const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
-    const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
-    const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
+    const [machines, setMachines] = useState<Machine[]>([]);
+    const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
+
+    const FRANCE_BOUNDS = {
+        minLat: 41.27688,
+        maxLat: 51.32937,
+        minLng: -6.3,
+        maxLng: 9.8,
+    };
 
 
-    // Request location permissions and fetch the user's current location when the component mounts
+    const handleRegionChangeComplete = (region: Region) => {
+        let latitudeDelta = region.latitudeDelta;
+        let longitudeDelta = region.longitudeDelta;
+
+        const MIN_DELTA = 0.001;
+        const MAX_DELTA = 10;
+
+        if (latitudeDelta < MIN_DELTA) latitudeDelta = MIN_DELTA;
+        if (latitudeDelta > MAX_DELTA) latitudeDelta = MAX_DELTA;
+        if (longitudeDelta < MIN_DELTA) longitudeDelta = MIN_DELTA;
+        if (longitudeDelta > MAX_DELTA) longitudeDelta = MAX_DELTA;
+
+        let latitude = region.latitude;
+        let longitude = region.longitude;
+        if (latitude < FRANCE_BOUNDS.minLat) latitude = FRANCE_BOUNDS.minLat;
+        if (latitude > FRANCE_BOUNDS.maxLat) latitude = FRANCE_BOUNDS.maxLat;
+        if (longitude < FRANCE_BOUNDS.minLng) longitude = FRANCE_BOUNDS.minLng;
+        if (longitude > FRANCE_BOUNDS.maxLng) longitude = FRANCE_BOUNDS.maxLng;
+
+        mapRef.current?.animateToRegion({
+            latitude,
+            longitude,
+            latitudeDelta,
+            longitudeDelta,
+        }, 100);
+    };
+
+
     useEffect(() => {
         (async () => {
             try {
                 let { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
-                    Alert.alert('Permission refusée', 'Accordez la permission d\'accéder à votre position.');
+                    Alert.alert(
+                        'Permission refusée',
+                        'Accordez la permission d\'accéder à votre position.'
+                    );
                     return;
                 }
     
                 const currentLocation = await Location.getCurrentPositionAsync({});
                 setLocation(currentLocation);
     
-                const machines = await getMachines();
-                const distributorsFromApi: Distributor[] = machines.map((machine, index) => ({
-                    id: machine.id,
-                    name: machine.name,
-                    latitude: machine.latitude,
-                    longitude: machine.longitude,
-                    distance: index + 1,
-            }));
-
-            setDistributors(distributorsFromApi);
-
+                const machinesData = await getMachines();
+                setMachines(machinesData);
             } catch (error) {
                 console.error('Erreur lors de la récupération de la localisation :', error);
             }
         })();
-    }, []);
+    }, []); 
 
-    // To calculate the route to the selected distributor
-    const handleGoToDistributor = async () => {
-        if (!location || !selectedDistributor) {
-            Alert.alert('Erreur', 'Veuillez sélectionner une pharmacie et vérifier votre position.');
-            return;
-        }
-        const url = `https://www.google.com/maps?q=${selectedDistributor.latitude},${selectedDistributor.longitude}`;
-        Linking.openURL(url);
-        // Set route coordinates for navigation. 
-        setRouteCoordinates([
-            // Starting point is the user's current location
-            { latitude: location.coords.latitude, longitude: location.coords.longitude },
-            { latitude: selectedDistributor.latitude, longitude: selectedDistributor.longitude },
-        ]);
-    };
-
-    // Render a loading state if the location is not yet available
     if (!location) {
         return (
             <View style={styles.container}>
@@ -91,72 +95,65 @@ export default function Localisation(): React.JSX.Element {
 
     return (
         <View style={styles.container}>
-            {/* Render the map view with the user's current location and nearby pharmacies */}
             <MapView
+                ref={mapRef}
                 style={styles.map}
                 initialRegion={{
-                    latitude: location?.coords.latitude || 0,
-                    longitude: location?.coords.longitude || 0,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.5,
+                    longitudeDelta: 0.5
                 }}
+                onRegionChangeComplete={handleRegionChangeComplete}
             >
-                {/* the user's current location */} 
+                <UrlTile
+                    urlTemplate="https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key="
+                    maximumZ={20}
+                    tileSize={256}
+                    flipY={false}
+                    zIndex={0}
+                />
                 <Marker
-                // Display the user's current location on the map
                     coordinate={{
                         latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
+                        longitude: location.coords.longitude
                     }}
-                    title="Votre position"
+                    title="Vous êtes ici"
                 />
-
-                {/* Render markers for each distributor (pharmacy) */}
-                {distributors.map((distributor) => (
+                {machines.map((machine) => (
                     <Marker
-                        key={distributor.id}
+                        key={machine.id.toString()}
                         coordinate={{
-                            latitude: distributor.latitude,
-                            longitude: distributor.longitude,
+                            latitude: machine.latitude,
+                            longitude: machine.longitude
                         }}
-                        title={distributor.name}
-                        onPress={() => setSelectedDistributor(distributor)}
+                        title={machine.name}
                     />
                 ))}
-
-                {/* the route to the selected distributor */}
-                {routeCoordinates.length > 0 && (
-                    <Polyline
-                        coordinates={routeCoordinates}
-                        strokeColor={colors.secondary}
-                        strokeWidth={4}
-                    />
-                )}
             </MapView>
-
-            {/* displaying distributors and allowing the user to select one */}
-            <View style={styles.menu}>
+            {/* <View style={styles.menu}>
                 <FlatList
-                    data={distributors}
+                    data={machines}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
-                    <TouchableOpacity
-                    style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: colors.accent }]}
-                    onPress={() => setSelectedDistributor(item)}
-                    >
-                        <Text style={[
-                            styles.distributorText, 
-                            selectedDistributor?.id === item.id && { color: colors.background }
-                        ]}>
-                            {item.name}
-                        </Text>
-                        <Text style={[
-                            styles.distanceText, 
-                            selectedDistributor?.id === item.id && { color: colors.background }
-                        ]}>
-                            {item.distance} km
-                        </Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.distributorItem,
+                                selectedMachine?.id === item.id && {
+                                    backgroundColor: colors.accent,
+                                }
+                            ]}
+                            onPress={() => focusOnMachine(item)}
+                        >
+                            <Text style={[
+                                styles.distributorText, 
+                                selectedMachine?.id === item.id && {
+                                    color: colors.background
+                                }
+                            ]}>
+                                {item.name}
+                            </Text>
+                        </TouchableOpacity>
                     )}
                 />
                 {selectedDistributor && (
@@ -193,7 +190,7 @@ export default function Localisation(): React.JSX.Element {
                         </TouchableOpacity>
                     </View>
                 )}
-            </View>
+            </View> */}
         </View>
     );
 }
