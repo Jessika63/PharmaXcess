@@ -3,9 +3,24 @@ import sys, os, re, json, tempfile, time, base64
 import numpy as np
 import unicodedata
 import cv2
+import requests
 
-from doctr.models import ocr_predictor
-from doctr.io import DocumentFile
+try:
+    from doctr.models import ocr_predictor  # type: ignore
+    from doctr.io import DocumentFile  # type: ignore
+except Exception:  # doctr not installed in lightweight CI image
+    class _MissingDoctrPredictor:
+        def __call__(self, *args, **kwargs):
+            raise ImportError("python-doctr is not installed; tests should patch 'ocr_predictor'.")
+
+    def ocr_predictor(*args, **kwargs):  # type: ignore
+        return _MissingDoctrPredictor()
+
+    class DocumentFile:  # type: ignore
+        @staticmethod
+        def from_images(path):
+            # Minimal shim: predictor in tests ignores the content type
+            return path
 
 
 def normalize_text(text):
@@ -146,7 +161,7 @@ def getInfosRectoID(text):
     match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
     if match:
         infos["taille"] = match.group(1).replace(',', '.')
-        
+
     return infos
 
 
@@ -199,7 +214,6 @@ def getInfosVersoID(text):
 
 
 
-
 def flip_image(input_path, flip_code=1):
     """ Flip the image and save the result """
     image = cv2.imread(input_path)
@@ -228,7 +242,6 @@ def verify_doctor(first_name, last_name):
 
 
 
-
 def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
     """
     Extract text from image using Doctr OCR and return JSON with infos.
@@ -238,7 +251,15 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
     try:
 
         if from_base64:
-            image_data = base64.b64decode(image_input.split(",")[-1])
+            # Support both raw bytes and base64-encoded strings (optionally prefixed with a data URI)
+            if isinstance(image_input, (bytes, bytearray)):
+                image_data = bytes(image_input)
+            elif isinstance(image_input, str):
+                b64_payload = image_input.split(",")[-1]
+                image_data = base64.b64decode(b64_payload)
+            else:
+                raise TypeError("Unsupported image_input type for base64 mode")
+
             nparr = np.frombuffer(image_data, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         else:
@@ -273,10 +294,6 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
 
         text = "\n".join(lines).strip()
         result["raw_text"] = text
-        
-        
-        print("OCR result text:", text[:200], flush=True)
-
 
         valid = False
         infos = {}
@@ -304,13 +321,11 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
         result["infos"] = infos
 
         return result
-        
+
     except Exception as e:
         result["error"] = str(e)
         print("result", result)
-        return None
-
-
+        return result
 
 
 if __name__ == "__main__":
@@ -319,7 +334,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     image_path = sys.argv[1]
-    doc_type = sys.argv[2] 
+    doc_type = sys.argv[2]
 
     output = main(image_path, doc_type)
     print(json.dumps(output, ensure_ascii=False, indent=2))
