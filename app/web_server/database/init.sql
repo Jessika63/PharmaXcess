@@ -26,9 +26,22 @@ CREATE TABLE IF NOT EXISTS tickets (
     user_id INTEGER NOT NULL,
     assigned_to INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'open' NOT NULL CHECK (status IN ('open', 'inprogress', 'closed')),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'open' NOT NULL CHECK (status IN ('open', 'inprogress', 'closed'))
 );
+
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_ticket_timestamp
+BEFORE UPDATE ON tickets
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();
 
 CREATE TABLE IF NOT EXISTS ticket_message (
     id SERIAL PRIMARY KEY,
