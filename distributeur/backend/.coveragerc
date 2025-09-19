@@ -1,6 +1,0 @@
-
-[run]
-omit =
-    app.py
-    config.py
-    */config-*.py
