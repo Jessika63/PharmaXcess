@@ -1,0 +1,10 @@
+
+.env
+__pycache__
+.pytest_cache
+database_dump_px_*.sql
+.vscode
+.coverage
+**/.coverage
+node_modules
+*.tar

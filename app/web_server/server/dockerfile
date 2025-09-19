@@ -1,0 +1,15 @@
+FROM openjdk:17-jdk-alpine AS build
+
+WORKDIR /app
+
+ENV JWT_SECRET=this-is-a-dev-key-which-must-be-long-enough
+
+RUN apk add --no-cache maven
+
+COPY entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/entrypoint.sh"]

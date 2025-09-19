@@ -1,0 +1,46 @@
+/*
+* {
+  box-sizing: border-box; /* fix scrolling */
+/*}*/
+
+.dc_App {
+  position: absolute;
+  background-color: #e8c3cb;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* overflow-y: auto; */
+}
+
+.dc_header_container {
+  position: relative;
+  display: flex; /* fix elements on the same row */
+  width: 100%;
+  height: 20%;
+}
+
+.dc_back_button {
+  position: relative;
+  width: 250%;
+  height: 60%;
+  top: 50%;
+  left: 245%;
+}
+  
+.dc_logo_container {
+  position: relative;
+  width: 30%;
+  height: 10%;
+  top: 30%;
+  left: 44%;
+  transform: translate(-50%);
+}
+
+.dc_body_page {
+  position: relative;
+  width: 80%;
+  height: 75%;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+}

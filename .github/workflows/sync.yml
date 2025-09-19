@@ -1,0 +1,59 @@
+
+name: Automatic Mirror Sync
+
+on:
+  [push, delete]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check repository
+        run: |
+          if [ "$GITHUB_REPOSITORY" == "EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely" ]; then
+            echo "Already on the mirror repo: not doing anything"
+            exit 0
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get current branch
+        id: branch
+        run: echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GIT_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Remove sync.yml from commit (ensure no untracked files)
+        run: |
+          git clean -fd
+          git rm --cached .github/workflows/sync.yml || true
+          git commit -m "Mirror update (excluding sync.yml)" || true
+
+      - name: Push changes to mirror repository (excluding sync.yml)
+        run: |
+          git remote add mirror git@github.com:EpitechPromo2026/G-EIP-700-LYN-7-1-eip-jessica.ebely.git
+          git fetch mirror
+
+          # Créer une branche temporaire basée sur la branche actuelle
+          git checkout -b temp-mirror
+
+          # Pousser les changements vers la branche actuelle du miroir
+          git push --force mirror temp-mirror:${{ env.branch }}
+
+          # Nettoyage
+          git checkout ${{ env.branch }}
+          git branch -D temp-mirror

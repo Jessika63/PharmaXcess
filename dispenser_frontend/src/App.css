@@ -1,0 +1,52 @@
+.App {
+  position: absolute;
+  background-color: #e8c3cb; /* or #d5b0b8 */  
+  width: 100%;
+  height: 100%;
+}
+
+.logo_container {
+  position: relative;
+  width: 30%;
+  height: 10%;
+  top: 5%;
+  left: 50%;
+  transform: translate(-50%); /* fix horizontally */
+}
+
+.logo {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.starting_page {
+  position: relative;
+  width: 80%;
+  height: 75%;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+}
+
+.rectangle {
+  position: relative;
+  background: linear-gradient(to right, #e573a9 0%, #f06a7a 100%);
+  width: 50%;
+  height: 30%;
+  border-radius: 30px;
+  transform: translate(-50%, -50%);
+
+  /* child */
+  color: #333333; /* or #4A4A4A */
+  display: flex;
+  align-items: center; /* center vertically */
+  justify-content: center; /* center horizontally */
+
+  transition: background 0.4s ease, transform 0.4s ease; /* transition duration */
+}
+
+.rectangle:hover {
+  background: linear-gradient(to right, #d45b93, #e65866);
+  transform: translate(-50%, -50%) scale(1.05); /* slight zoom */
+}

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:13-3.1-alpine  # Utilisation de l'image officielle PostGIS
+    container_name: pharmaxcess-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql  # Si vous avez un fichier init.sql à exécuter
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - pharmaxcess-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: dockerfile  # Dockerfile pour votre serveur Spring
+    container_name: pharmaxcess-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - pharmaxcess-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/pharmaxcess_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_JPA_SHOW-SQL: "true"
+    volumes:
+      - ./server/pharmaxcess_server:/app/pharmaxcess_server
+      - maven-cache:/root/.m2
+
+networks:
+  pharmaxcess-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  maven-cache:
