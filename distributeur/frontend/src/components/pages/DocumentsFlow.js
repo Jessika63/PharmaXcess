@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import config from '../../config';
+import { PrescriptionProvider } from '../../context/PrescriptionContext';
 import StepHeader from './steps/StepHeader';
 import StepOrdonnance from './steps/StepOrdonnance';
 import StepCarteVitale from './steps/StepCarteVitale';
@@ -59,17 +60,19 @@ function DocumentsFlow({ stepsOrder }) {
     };
 
     return (
-        <div className="w-full h-screen flex flex-col bg-background_color">
-            <StepHeader steps={steps} currentStepIndex={currentStepIndex} />
+        <PrescriptionProvider>
+            <div className="w-full h-screen flex flex-col bg-background_color">
+                <StepHeader steps={steps} currentStepIndex={currentStepIndex} />
 
-            <div className="flex-1 flex items-center justify-center">
-                {React.createElement(currentStep.component, {
-                    goToNextStep,
-                    goBackStep,
-                    setHasQRCode: currentStep.id === 'ordonnance' ? setHasQRCode : undefined
-                })}
+                <div className="flex-1 flex items-center justify-center">
+                    {React.createElement(currentStep.component, {
+                        goToNextStep,
+                        goBackStep,
+                        setHasQRCode: currentStep.id === 'ordonnance' ? setHasQRCode : undefined
+                    })}
+                </div>
             </div>
-        </div>
+        </PrescriptionProvider>
     );
 }
 

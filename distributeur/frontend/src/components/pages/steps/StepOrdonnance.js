@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CameraComponent from "../../camera_component";
 import ModalCamera from "../../modal_camera";
+import { usePrescription } from "../../../context/PrescriptionContext";
 import config from "../../../config";
 
 function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
@@ -13,6 +14,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const [error, setError] = useState("");
   const [scanType, setScanType] = useState(null); // 'qr' or 'prescription'
   const navigate = useNavigate();
+  const { updatePrescriptionData } = usePrescription();
 
   const openCamera = (type) => {
     setScanType(type);
@@ -96,10 +98,21 @@ const handlePhotoCaptured = async (base64Image) => {
         // Si un QR code valide est détecté
         setHasQRCode(true);
 
-        // Stocker les données de prescription du QR code
-        if (qrData.prescription && qrData.prescription.medicaments) {
-          localStorage.setItem("medicaments", JSON.stringify(qrData.prescription.medicaments));
-        }
+        // Transformer les données du QR code pour correspondre au format attendu
+        const medicaments = qrData.prescription?.content?.map((med, index) => ({
+          id: index + 1,
+          nom: med.split(' - ')[0] || `Médicament ${index + 1}`,
+          posologie: med.split(' - ')[1] || med
+        })) || [];
+
+        // Mettre à jour le contexte de prescription avec les données du QR code
+        updatePrescriptionData({
+          medicaments: medicaments,
+          scanType: 'qr',
+          hasQRCode: true,
+          rawData: qrData.prescription,
+          extractedText: ''
+        });
 
         goToNextStep({ hasQRCode: true });
         return;
@@ -112,10 +125,16 @@ const handlePhotoCaptured = async (base64Image) => {
 
       if (data.success) {
         setExtractedText(data.raw_text || "");
-        if (data.infos && data.infos.medicaments) {
-          localStorage.setItem("medicaments", JSON.stringify(data.infos.medicaments));
-          console.log(JSON.stringify(data.infos.medicaments));
-        }
+        
+        // Mettre à jour le contexte de prescription avec les données de l'ordonnance
+        updatePrescriptionData({
+          medicaments: data.infos?.medicaments || [],
+          scanType: 'prescription',
+          hasQRCode: false,
+          extractedText: data.raw_text || '',
+          rawData: data.infos
+        });
+        
         goToNextStep();
       } else {
         setError(data.error || "Erreur lors de l'analyse de l'ordonnance");
