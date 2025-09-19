@@ -180,6 +180,10 @@ const handlePhotoCaptured = async (base64Image) => {
         Scanner votre ordonnance
       </h2>
 
+      <p className={`${config.fontSizes.md} text-gray-600 mb-4 text-center`}>
+        Scanner votre ordonnance papier
+      </p>
+
       {/* Modification 1: Boutons en colonne au lieu de ligne */}
       <div className="flex flex-col space-y-8 w-4/5 justify-center items-center">
         <button
@@ -196,6 +200,10 @@ const handlePhotoCaptured = async (base64Image) => {
           Scanner l'ordonnance
         </button>
 
+        <p className={`${config.fontSizes.md} text-gray-600 mb-4 text-center`}>
+          Ou scanner votre QR code d'ordonnance présent dans l'application mobile PharmaXcess
+        </p>
+
         <button
           onClick={() => openCamera('qr')}
           className={`
@@ -207,7 +215,7 @@ const handlePhotoCaptured = async (base64Image) => {
           `}
         >
           <config.icons.qrCode className="text-4xl mb-2" />
-          Scanner le QR code
+          Scan QR code
         </button>
       </div>
 
