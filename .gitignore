@@ -21,3 +21,5 @@ database_dump_px_*.sql
 node_modules
 
 *.tar
+
+*__pycache__*

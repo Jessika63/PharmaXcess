@@ -165,7 +165,6 @@ if __name__ == "__main__":
     backend_folder = "backend"
     frontend_folder = "dispenser_frontend"
     env_file_path = os.path.join(backend_folder, ".env")
-    db_container_name = "distributeur-backend-db"
     back_app_container_name = "distributeur-backend-app"
     back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
@@ -173,6 +172,9 @@ if __name__ == "__main__":
 
     # Load configuration
     config = load_config_file()
+    
+    # Extract database configurations
+    db_configs = config["verification_settings"]["databases"]
 
     # Execute operations based on flags
     if any(vars(args).values()):
@@ -183,46 +185,53 @@ if __name__ == "__main__":
 
             # Vérification + Backend
             handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
             )
             handle_back(
-                backend_folder, config["db_dump_date"], db_container_name,
-                back_app_container_name, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
 
             if args.combo or args.restart:
-                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
+                # Tests don't need a database, so we pass None
+                handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
         else:
             if args.verif:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                    env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
                 )
             if args.all:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                    env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
             if args.back:
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
             if args.test:
-                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
+                # Tests don't need a database, so we pass None
+                handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
             if args.update:
                 update_function = args.update
-                handle_update(update_function, db_container_name, backend_folder)
+                # Use the app database configuration for updates
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_update(update_function, app_db_config["container_name"], backend_folder)
             if args.dump:
-                handle_dump(backend_folder, db_container_name, back_app_container_name)
+                # Use the app database configuration for dumps
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_dump(backend_folder, app_db_config["container_name"], back_app_container_name)
             if args.export_images:
                 handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
             if args.import_images:
-                handle_import_images(args.import_images, back_app_image_name, back_app_container_name, db_container_name)
+                # Use the app database configuration for imports
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_import_images(args.import_images, back_app_image_name, back_app_container_name, app_db_config["container_name"])
             if args.down:
                 handle_down()
             if args.see_log:

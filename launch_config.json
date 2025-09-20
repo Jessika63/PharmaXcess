@@ -15,7 +15,22 @@
             "GETIPINTEL_CONTACT",
             "SECRET_QR_ENCRYPTION_KEY"
         ],
-        "db_dump_date": "03_07_2025"
+        "databases": [
+            {
+                "name": "dispenser_db",
+                "container_name": "distributeur-backend-db",
+                "db_dump_date": "03_07_2025",
+                "port": "3307",
+                "env_prefix": "DISPENSER_"
+            },
+            {
+                "name": "app_db",
+                "container_name": "distributeur-backend-app-db",
+                "db_dump_date": "03_07_2025",
+                "port": "3308",
+                "env_prefix": "APP_"
+            }
+        ]
     },
     "application_settings": {
         "debug_logs": "Yes"

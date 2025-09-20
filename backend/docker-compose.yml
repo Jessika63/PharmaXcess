@@ -17,6 +17,9 @@ services:
       - DB_NAME=${DB_NAME}  # Set the database name (use the environment variable from .env)
       - medicine_data:/data
     container_name: "distributeur-backend-app"  # Name of the container
+    depends_on:
+      - db
+      - app_db
 
   db:
     image: mysql/mysql-server:5.7  # Use MySQL version 5.7 for the database service
@@ -26,6 +29,15 @@ services:
     ports:
       - "3307:3306"  # Expose MySQL container port 3306 to host port 3307
     container_name: "distributeur-backend-db"  # Name of the MySQL container
+
+  app_db:
+    image: mysql/mysql-server:5.7  # Use MySQL version 5.7 for the app database service
+    environment:
+      MYSQL_ROOT_PASSWORD: ${APP_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}  # Set the MySQL root password for app DB
+      MYSQL_DATABASE: ${APP_DB_NAME:-${DB_NAME}}  # Set the MySQL database name for app DB
+    ports:
+      - "3308:3306"  # Expose MySQL container port 3306 to host port 3308
+    container_name: "distributeur-backend-app-db"  # Name of the MySQL app container
 
   test:
     build:
