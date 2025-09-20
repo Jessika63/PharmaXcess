@@ -12,7 +12,7 @@ def handle_test(backend_folder, db_container_name, back_container_name, build_fi
 
     Parameters:
         - backend_folder: Path to the backend directory containing the test configuration. (String)
-        - db_container_name: Name of the database Docker container. (String)
+        - db_container_name: Name of the database Docker container. (String or None if no database needed)
         - back_container_name: Name of the backend application Docker container. (String)
         - build_first: If True, builds the test image before running tests. Defaults to False. (Boolean)
 
@@ -24,8 +24,9 @@ def handle_test(backend_folder, db_container_name, back_container_name, build_fi
     # Step 0: Change working directory to backend/
     change_directory(backend_folder)
 
-    # Step 1: Check if containers is ready
-    verify_database_is_up(db_container_name)
+    # Step 1: Check if containers are ready
+    if db_container_name:
+        verify_database_is_up(db_container_name)
     verify_backend_is_up(back_container_name, nb_of_retry=10)
 
     # Step 2: Build test image if requested

@@ -18,7 +18,7 @@ def load_config_file():
     Return Value:
         - config_data: A dictionary containing the parsed configuration data with keys:
             - required_env_keys: List of required environment keys. (List)
-            - db_dump_date: Date of the database dump. (String)
+            - databases: List of database configurations. (List)
             - debug_logs: Flag indicating if debug logs are enabled ("yes" or "no"). (String)
 
     Raises:
@@ -39,8 +39,8 @@ def load_config_file():
     verification_settings = config.get("verification_settings", {})
     if "required_env_keys" not in verification_settings:
         missing_config_keys.append("required_env_keys")
-    if "db_dump_date" not in verification_settings:
-        missing_config_keys.append("db_dump_date")
+    if "databases" not in verification_settings:
+        missing_config_keys.append("databases")
 
     if missing_config_keys:
         colored_print(
@@ -50,9 +50,9 @@ def load_config_file():
 
     # Extract configuration data
     config_data = {
-        "required_env_keys": verification_settings.get("required_env_keys", [])
+        "required_env_keys": verification_settings.get("required_env_keys", []),
+        "databases": verification_settings.get("databases", [])
     }
-    config_data["db_dump_date"] = verification_settings.get("db_dump_date", "")
 
     # Extract application settings
     application_settings = config.get("application_settings", {})
