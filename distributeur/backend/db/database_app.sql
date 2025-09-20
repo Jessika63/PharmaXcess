@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     adresse TEXT,
     contact_urgence_nom VARCHAR(150),
     contact_urgence_tel VARCHAR(20),
-    role ENUM('admin','parent','enfant','epoux') DEFAULT 'parent',
+    role ENUM('admin','parent','enfant','epoux', 'moi') DEFAULT 'parent',
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
