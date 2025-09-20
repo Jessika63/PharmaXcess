@@ -45,9 +45,6 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        console.log(`Texte extrait CIN (${currentDocType}) :`, data.raw_text);
-        console.log("Infos extraites :", data.infos);
-
         setStatusSides(prev => {
           const updated = { ...prev, [currentDocType]: "valid" };
           if (updated.R === "valid" && updated.V === "valid") {
@@ -87,7 +84,6 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
 
   const handleKeyDown = useCallback((event) => {
-    console.log('Key pressed:', event.key, 'focusedIndex:', focusedIndexRef.current);
     if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
       event.preventDefault();
       setFocusedIndex((prevIndex) => {
@@ -104,7 +100,6 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
       });
     } else if (event.key === "Enter") {
       event.preventDefault();
-      console.log('Enter pressed, focusedIndex:', focusedIndexRef.current);
       if (focusedIndexRef.current === 1) {
         openCameraForSide("verso")
       } else if (focusedIndexRef.current === 2) {

@@ -17,6 +17,7 @@ from launch_files.scripts.handle_dump import handle_dump
 from launch_files.scripts.handle_export import handle_export_images
 from launch_files.scripts.handle_import import handle_import_images
 from launch_files.scripts.handle_logs import handle_logs
+from launch_files.scripts.handle_origins import handle_origins
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -90,6 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--see-log", type=str, choices=["back", "front", "every"],
         help="Stream Docker logs: 'back' for backend, 'front' for frontend, 'every' for both."
     )
+    parser.add_argument("--origins", action="store_true", help="List registered frontend origins")
 
     # Parse arguments
     args = parser.parse_args()
@@ -169,6 +171,8 @@ if __name__ == "__main__":
                 handle_down()
             if args.see_log:
                 handle_logs(args.see_log, back_app_container_name, front_app_container_name, active_processes, shutdown_requested)
+            if args.origins:
+                handle_origins(backend_folder)
     else:
         parser.print_help()
         exit(1)

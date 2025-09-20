@@ -13,7 +13,9 @@
             "IPHUNTER_API_KEY",
             "ABUSEIPDB_API_KEY",
             "GETIPINTEL_CONTACT",
-            "SECRET_QR_ENCRYPTION_KEY"
+            "SECRET_QR_ENCRYPTION_KEY",
+            "CORS_SECRET_KEY",
+            "SAFETY_API_KEY"
         ],
         "databases": [
             {

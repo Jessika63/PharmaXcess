@@ -98,16 +98,16 @@ def verify_databases_are_up(db_configs, nb_of_retry=1):
         - None: This function does not return a value but prints status messages and may terminate the program if any database fails to start. (NoneType)
     """
     colored_print(f"Verifying {len(db_configs)} database containers...", "blue")
-    
+
     for db_config in db_configs:
         container_name = db_config["container_name"]
         env_prefix = db_config.get("env_prefix", "")
-        
+
         # Use prefixed environment variables if available
         env_data = load_env_file(".env")
         root_password_key = f"{env_prefix}MYSQL_ROOT_PASSWORD"
         root_password = env_data.get(root_password_key, env_data.get("MYSQL_ROOT_PASSWORD"))
-        
+
         colored_print(f"Verifying database container '{container_name}'...", "blue")
         verify_database_is_up_with_config(container_name, root_password, nb_of_retry)
 

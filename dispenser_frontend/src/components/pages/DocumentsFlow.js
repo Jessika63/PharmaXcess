@@ -36,7 +36,6 @@ function DocumentsFlow({ stepsOrder }) {
         }));
         if (currentStepIndex < steps.length - 1) {
             // Si on a un QR code, on saute l'étape "Carte d'Identité"
-            console.log(nextHasQRCode)
             if (nextHasQRCode && steps[currentStepIndex].id === 'ordonnance') {
                 // On saute directement à l'étape "Carte Vitale" (index 2)
                 setCurrentStepIndex(2);
@@ -50,7 +49,6 @@ function DocumentsFlow({ stepsOrder }) {
         if (currentStepIndex > 0) {
             // Si on revient en arrière depuis la carte_vitale et qu'on avait un QR code
             if (hasQRCode && steps[currentStepIndex].id === 'carte_vitale') {
-                console.log(hasQRCode)
                 // On revient directement à l'étape "Ordonnance" (index 0)
                 setCurrentStepIndex(0);
             } else {
