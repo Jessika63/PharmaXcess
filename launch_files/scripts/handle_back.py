@@ -4,7 +4,7 @@ import subprocess
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 from helpers.start_containers import start_containers
-from helpers.verify.verify_database_is_up import verify_database_is_up, verify_databases_are_up
+from helpers.verify.verify_database_is_up import verify_databases_are_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
@@ -41,11 +41,11 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
         db_container_name = db_config["container_name"]
         db_dump_date = db_config["db_dump_date"]
         env_prefix = db_config.get("env_prefix", "")
-        
+
         # Use prefixed environment variables if available
         root_password_key = f"{env_prefix}MYSQL_ROOT_PASSWORD"
         root_password = env_data.get(root_password_key, env_data.get("MYSQL_ROOT_PASSWORD"))
-        
+
         # Use the fake dump in CI, otherwise use the real one
         if os.environ.get("CI", "false").lower() == "true":
             dump_file_name = "temp_fake_database_dump_px.sql"
@@ -58,7 +58,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
             else:
                 colored_print(f"Dump file '{dump_file_name}' not found in the backend folder!", "red")
             continue  # Skip this database dump import
-        
+
         try:
             colored_print(f"Importing database dump '{dump_file_name}' into container '{db_container_name}'...", "blue")
             with open(dump_file_name, "r", encoding="utf-8") as dump_file:

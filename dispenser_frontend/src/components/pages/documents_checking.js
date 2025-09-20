@@ -39,11 +39,7 @@ function DocumentsChecking() {
                 });
 
                 const data = await uploadResponse.json();
-                if (data.success) {
-                    console.log("QR Code décodé :", data.prescription);
-                    alert("QR Code lu avec succès ! Voir la console pour les détails.");
-                } else {
-                    console.error("Erreur de lecture QR:", data.error);
+                if (!data.success) {
                     alert(`Erreur lors de la lecture du QR code: ${data.error}`);
                 }
             } catch (error) {
@@ -62,10 +58,6 @@ function DocumentsChecking() {
             }
 
             try {
-                console.log("ENVOI API /extractText :");
-                console.log("base64_image (start)", base64Image?.slice(0, 50));
-                console.log("type:", docCode);
-
                 const response = await fetch(`${config.backendUrl}/extractText`, {
                     method: 'POST',
                     headers: {
@@ -78,10 +70,7 @@ function DocumentsChecking() {
                 });
 
                 const data = await response.json();
-                if (response.ok) {
-                    console.log(`Texte extrait pour ${currentDocType} (${docCode}) :`, data.raw_text);
-                    console.log(`Infos extraites :`, data.infos);
-                } else {
+                if (!response.ok) {
                     console.error("Erreur d'extraction :", data.error);
                 }
             } catch (error) {
@@ -99,12 +88,9 @@ function DocumentsChecking() {
     };
 
     const handleOpenCamera = useCallback((documentType) => {
-        console.log('handleOpenCamera called with:', documentType);
         if (documentType === 'carte_identite') {
-            console.log('Opening CIN options modal');
             setShowCINOptions(true);
         } else {
-            console.log('Opening camera modal for:', documentType);
             setCurrentDocType(documentType);
             setShowCamera(true);
             setIsModalOpen(true);
@@ -117,7 +103,6 @@ function DocumentsChecking() {
     };
 
     const handleKeyDown = useCallback((event) => {
-        console.log('Key pressed:', event.key, 'focusedIndex:', focusedIndexRef.current);
         if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
@@ -134,21 +119,15 @@ function DocumentsChecking() {
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
-            console.log('Enter pressed, focusedIndex:', focusedIndexRef.current);
             if (focusedIndexRef.current === 1) { // Nouveau cas
-                console.log('Calling handleOpenCamera for ordonnance_qr');
                 handleOpenCamera('ordonnance_qr');
             } else if (focusedIndexRef.current === 2) {
-                console.log('Calling handleOpenCamera for ordonnance');
                 handleOpenCamera('ordonnance');
             } else if (focusedIndexRef.current === 3) {
-                console.log('Calling handleOpenCamera for carte_vitale');
                 handleOpenCamera('carte_vitale');
             } else if (focusedIndexRef.current === 4) {
-                console.log('Calling handleOpenCamera for carte_identite');
                 handleOpenCamera('carte_identite');
             } else if (focusedIndexRef.current === 0) {
-                console.log('Navigating to home');
                 navigate('/');
             }
         }

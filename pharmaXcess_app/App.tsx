@@ -5,9 +5,25 @@ import { ThemeProvider } from './context/ThemeContext';
 import { FontScaleProvider } from './context/FontScaleContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { useCORSRegistration } from './hooks/useCORSRegistration';
+import CORSLoadingScreen from './components/CORSLoadingScreen';
 
-// App component serves as the root of the application, providing all context providers and the root navigation
-export default function App(): React.JSX.Element {
+// Composant interne pour gérer l'enregistrement CORS
+function AppWithCORS(): React.JSX.Element {
+    const { isRegistered, isLoading, error, retryRegistration } = useCORSRegistration();
+
+    // Afficher l'écran de chargement pendant l'enregistrement CORS
+    if (isLoading || !isRegistered) {
+        return (
+            <CORSLoadingScreen 
+                isLoading={isLoading}
+                error={error}
+                onRetry={retryRegistration}
+            />
+        );
+    }
+
+    // Une fois l'enregistrement CORS réussi, afficher l'application normale
     return (
         <ThemeProvider>
             <FontScaleProvider>
@@ -21,4 +37,9 @@ export default function App(): React.JSX.Element {
             </FontScaleProvider>
         </ThemeProvider>
     );
+}
+
+// App component serves as the root of the application, providing all context providers and the root navigation
+export default function App(): React.JSX.Element {
+    return <AppWithCORS />;
 }

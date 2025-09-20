@@ -81,10 +81,10 @@ function Preorder() {
         // Ici vous pouvez traiter les données du profil utilisateur
         // Par exemple, naviguer vers une page de profil ou stocker les données
         console.log("Profil utilisateur détecté:", qrData.profile);
-        
+
         // Optionnel: naviguer vers une autre page après succès
         // navigate('/profile-confirmation', { state: { profile: qrData.profile } });
-        
+
       } else {
         setError(qrData.error || "Aucun QR code de profil valide détecté.");
       }
