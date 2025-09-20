@@ -14,6 +14,7 @@ import { Machine } from '../../services/machines/types';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import type { Region } from 'react-native-maps';
 
+import { MAP_TILE_URL } from '@env';
 
 export default function Localisation(): React.JSX.Element {
     const { colors } = useTheme();
@@ -107,7 +108,7 @@ export default function Localisation(): React.JSX.Element {
                 onRegionChangeComplete={handleRegionChangeComplete}
             >
                 <UrlTile
-                    urlTemplate="https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key="
+                    urlTemplate={MAP_TILE_URL}
                     maximumZ={20}
                     tileSize={256}
                     flipY={false}
