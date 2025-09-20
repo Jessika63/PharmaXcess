@@ -16,6 +16,7 @@ from launch_files.scripts.handle_down import handle_down
 from launch_files.scripts.handle_dump import handle_dump
 from launch_files.scripts.handle_export import handle_export_images
 from launch_files.scripts.handle_import import handle_import_images
+from launch_files.scripts.handle_logs import handle_logs
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -44,74 +45,6 @@ def signal_handler(sig, frame):
     print("✅ Arrêt terminé")
     sys.exit(0)
 
-def stream_logs_improved(container_name):
-    """Version améliorée de stream_logs avec gestion des signaux"""
-    global active_processes, shutdown_requested
-
-    try:
-        print(f"📋 Affichage des logs pour {container_name}...")
-        print("   Appuyez sur Ctrl+C pour arrêter")
-
-        # Créer le processus
-        proc = subprocess.Popen(
-            ["docker", "logs", "-f", container_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1
-        )
-
-        # Ajouter à la liste des processus actifs
-        active_processes.append(proc)
-
-        # Lire les logs en temps réel
-        while not shutdown_requested and proc.poll() is None:
-            try:
-                line = proc.stdout.readline()
-                if line:
-                    print(line.rstrip())
-                else:
-                    time.sleep(0.1)  # Petite pause pour éviter la surcharge CPU
-            except KeyboardInterrupt:
-                break
-
-    except Exception as e:
-        print(f"❌ Erreur lors de l'affichage des logs: {e}")
-    finally:
-        # Nettoyer le processus
-        if proc in active_processes:
-            active_processes.remove(proc)
-        if proc and proc.poll() is None:
-            proc.terminate()
-
-def stream_logs_multiple(container_names):
-    """Stream logs pour plusieurs conteneurs simultanément"""
-    global active_processes, shutdown_requested
-
-    threads = []
-
-    def stream_single(container_name):
-        stream_logs_improved(container_name)
-
-    try:
-        print(f"📋 Affichage des logs pour: {', '.join(container_names)}")
-        print("   Appuyez sur Ctrl+C pour arrêter")
-
-        # Créer un thread pour chaque conteneur
-        for container_name in container_names:
-            thread = threading.Thread(target=stream_single, args=(container_name,))
-            thread.daemon = True
-            thread.start()
-            threads.append(thread)
-
-        # Attendre que tous les threads se terminent
-        for thread in threads:
-            thread.join()
-
-    except KeyboardInterrupt:
-        print("\n🛑 Arrêt demandé par l'utilisateur")
-    except Exception as e:
-        print(f"❌ Erreur lors de l'affichage des logs: {e}")
 
 # Configuration des signaux
 signal.signal(signal.SIGINT, signal_handler)
@@ -172,9 +105,9 @@ if __name__ == "__main__":
 
     # Load configuration
     config = load_config_file()
-    
+
     # Extract database configurations
-    db_configs = config["verification_settings"]["databases"]
+    db_configs = config["databases"]
 
     # Execute operations based on flags
     if any(vars(args).values()):
@@ -185,7 +118,7 @@ if __name__ == "__main__":
 
             # Vérification + Backend
             handle_verif(
-                env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
+                env_file_path, config["required_env_keys"], backend_folder, db_configs
             )
             handle_back(
                 backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
@@ -198,11 +131,11 @@ if __name__ == "__main__":
         else:
             if args.verif:
                 handle_verif(
-                    env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
+                    env_file_path, config["required_env_keys"], backend_folder, db_configs
                 )
             if args.all:
                 handle_verif(
-                    env_file_path, config["verification_settings"]["required_env_keys"], backend_folder, db_configs
+                    env_file_path, config["required_env_keys"], backend_folder, db_configs
                 )
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
@@ -235,12 +168,7 @@ if __name__ == "__main__":
             if args.down:
                 handle_down()
             if args.see_log:
-                if args.see_log == "back":
-                    stream_logs_improved(back_app_container_name)
-                elif args.see_log == "front":
-                    stream_logs_improved(front_app_container_name)
-                elif args.see_log == "every":
-                    stream_logs_multiple([back_app_container_name, front_app_container_name])
+                handle_logs(args.see_log, back_app_container_name, front_app_container_name, active_processes, shutdown_requested)
     else:
         parser.print_help()
         exit(1)
