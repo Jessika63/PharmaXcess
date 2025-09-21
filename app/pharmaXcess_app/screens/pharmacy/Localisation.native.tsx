@@ -29,6 +29,10 @@ export default function Localisation(): React.JSX.Element {
     const [pharmacies, setPharmacies] = useState<any[]>([]);
     const [path, setPath] = useState<{ id: string; coords: { latitude: number; longitude: number }[] } | null>(null);
 
+    const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
+    const [selectedDistributor, setSelectedDistributor] = useState<any | null>(null);
+    const [startLocation, setStartLocation] = useState<any | null>(null);
+
     const FRANCE_BOUNDS = {
         minLat: 41.27688,
         maxLat: 51.32937,
@@ -123,6 +127,28 @@ export default function Localisation(): React.JSX.Element {
         );
     }
 
+    const focusOnMachine = (machine: Machine) => {
+        setSelectedMachine(machine);
+        setSelectedDistributor(machine);
+        mapRef.current?.animateToRegion(
+            {
+                latitude: machine.latitude,
+                longitude: machine.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            },
+            500
+        );
+    };
+
+    const handleGoToDistributor = () => {
+        if (!selectedDistributor || !location) {
+            Alert.alert('Erreur', 'Veuillez sélectionner une destination et définir un point de départ.');
+            return;
+        }
+        simulatePath(selectedDistributor.id, selectedDistributor.latitude, selectedDistributor.longitude);
+    };
+
     return (
         <View style={styles.container}>
             <MapView
@@ -186,7 +212,7 @@ export default function Localisation(): React.JSX.Element {
                     />
                 )}
             </MapView>
-            {/* <View style={styles.menu}>
+            <View style={styles.menu}>
                 <FlatList
                     data={machines}
                     keyExtractor={(item) => item.id.toString()}
@@ -245,7 +271,7 @@ export default function Localisation(): React.JSX.Element {
                         </TouchableOpacity>
                     </View>
                 )}
-            </View> */}
+            </View>
         </View>
     );
 }
