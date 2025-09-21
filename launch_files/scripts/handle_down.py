@@ -1,88 +1,108 @@
 import subprocess
-
 from helpers.colored_print import colored_print
 from helpers.troubleshooting_message_giver import troubleshooting_message_docker_zombie
 
+def stop_container(container_name):
+    """Stoppe un conteneur spécifique si en cours dexécution"""
+    try:
+        result = subprocess.run(
+            ["docker", "stop", container_name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            colored_print(f"Container {container_name} stopped.", "green")
+        elif "No such container" in result.stderr:
+            colored_print(f"Container {container_name} not found.", "yellow")
+        else:
+            colored_print(f"Error stopping {container_name}: {result.stderr}", "red")
+    except Exception as e:
+        colored_print(f"Exception stopping {container_name}: {e}", "red")
 
-def handle_down():
+def remove_container(container_name):
+    """Supprime un conteneur spécifique"""
+    try:
+        result = subprocess.run(
+            ["docker", "rm", "-f", container_name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            colored_print(f"Container {container_name} removed.", "green")
+        elif "No such container" in result.stderr:
+            colored_print(f"Container {container_name} not found.", "yellow")
+        else:
+            colored_print(f"Error removing {container_name}: {result.stderr}", "red")
+    except Exception as e:
+        colored_print(f"Exception removing {container_name}: {e}", "red")
+
+def remove_image(image_name):
+    """Supprime une image spécifique"""
+    try:
+        result = subprocess.run(
+            ["docker", "rmi", "-f", image_name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            colored_print(f"Image {image_name} removed.", "green")
+        elif "No such image" in result.stderr:
+            colored_print(f"Image {image_name} not found.", "yellow")
+        else:
+            colored_print(f"Error removing {image_name}: {result.stderr}", "red")
+    except Exception as e:
+        colored_print(f"Exception removing {image_name}: {e}", "red")
+
+def remove_volume(volume_name):
+    """Supprime un volume spécifique"""
+    try:
+        result = subprocess.run(
+            ["docker", "volume", "rm", "-f", volume_name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            colored_print(f"Volume {volume_name} removed.", "green")
+        elif "No such volume" in result.stderr:
+            colored_print(f"Volume {volume_name} not found.", "yellow")
+        else:
+            colored_print(f"Error removing {volume_name}: {result.stderr}", "red")
+    except Exception as e:
+        colored_print(f"Exception removing {volume_name}: {e}", "red")
+
+def stop_mobile_app(mobile_app_process):
+    """Stoppe le process Expo si actif"""
+    if mobile_app_process and mobile_app_process.poll() is None:
+        colored_print(f"Stopping Expo mobile app (pid {mobile_app_process.pid})...", "blue")
+        try:
+            mobile_app_process.terminate()
+            mobile_app_process.wait(timeout=5)
+            colored_print("Expo mobile app stopped.", "green")
+        except subprocess.TimeoutExpired:
+            colored_print("Expo mobile app did not stop, killing...", "yellow")
+            mobile_app_process.kill()
+        except Exception as e:
+            colored_print(f"Error stopping Expo app: {e}", "red")
+    else:
+        colored_print("No Expo app running.", "yellow")
+
+def handle_down(mobile_app_process, containers, images, volumes):
     """
-    Objectif: Stops and removes all Docker containers, images, and volumes to clean up the Docker environment.
-
-    Parameters:
-        - None
-
-    Return Value:
-        - None: This function does not return a value but prints status messages for each cleanup operation. (NoneType)
+    Stoppe et supprime seulement les conteneurs, images, volumes
+    qui concernent PharmaXcess + mobile app Expo.
     """
+    colored_print("🔻 Shutting down PharmaXcess environment...", "blue")
 
-    colored_print("Stopping all running Docker containers...", "blue")
+    # 1. Stop  and Remove containers
+    for c in containers:
+        stop_container(c)
+        remove_container(c)
 
-    try:
-        containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
-        if containers and containers[0]:
-            result = subprocess.run(["docker", "stop"] + containers, capture_output=True, text=True)
-            if result.returncode == 0:
-                colored_print("All running containers stopped.", "green")
-            else:
-                colored_print("ERROR: Failed to stop containers.", "yellow")
-                if "tried to kill container, but did not receive an exit event" in result.stderr:
-                    colored_print("Detected zombie container state.", "yellow")
-                    colored_print(troubleshooting_message_docker_zombie, "red")
-                else:
-                    colored_print(f"Details: {result.stderr}", "red")
-        else:
-            colored_print("No running containers to stop.", "yellow")
-    except subprocess.CalledProcessError as e:
-        colored_print(f"Unexpected error while listing containers: {e}", "red")
+    # 2. Remove images
+    for i in images:
+        remove_image(i)
 
-    colored_print("Removing all Docker containers...", "blue")
+    # 3. Remove volumes
+    for v in volumes:
+        remove_volume(v)
 
-    try:
-        containers = subprocess.check_output(["docker", "ps", "-aq"], text=True).strip().split("\n")
-        if containers and containers[0]:
-            result = subprocess.run(["docker", "rm", "-f"] + containers, capture_output=True, text=True)
-            if result.returncode == 0:
-                colored_print("All Docker containers removed.", "green")
-            else:
-                colored_print("ERROR: Failed to remove containers.", "yellow")
-                if "tried to kill container, but did not receive an exit event" in result.stderr:
-                    colored_print("Detected zombie container state.", "yellow")
-                    colored_print(troubleshooting_message_docker_zombie, "red")
-                else:
-                    colored_print(f"Details: {result.stderr}", "red")
-        else:
-            colored_print("No containers to remove.", "yellow")
-    except subprocess.CalledProcessError as e:
-        colored_print(f"Unexpected error while listing containers: {e}", "red")
+    # 4. Stop mobile app (Expo)
+    stop_mobile_app(mobile_app_process)
 
-    colored_print("Removing all Docker images...", "blue")
-
-    try:
-        images = subprocess.check_output(["docker", "images", "-q"], text=True).strip().split("\n")
-        if images and images[0]:
-            result = subprocess.run(["docker", "rmi", "-f"] + images, capture_output=True, text=True)
-            if result.returncode == 0:
-                colored_print("All Docker images removed.", "green")
-            else:
-                colored_print("ERROR: Failed to remove images.", "red")
-                colored_print(f"Details: {result.stderr}", "red")
-        else:
-            colored_print("No images to remove.", "yellow")
-    except subprocess.CalledProcessError as e:
-        colored_print(f"Unexpected error while listing images: {e}", "red")
-
-    colored_print("Removing all Docker volumes...", "blue")
-
-    try:
-        volumes = subprocess.check_output(["docker", "volume", "ls", "-q"], text=True).strip().split("\n")
-        if volumes and volumes[0]:
-            result = subprocess.run(["docker", "volume", "rm", "-f"] + volumes, capture_output=True, text=True)
-            if result.returncode == 0:
-                colored_print("All Docker volumes removed.", "green")
-            else:
-                colored_print("ERROR: Failed to remove volumes.", "red")
-                colored_print(f"Details: {result.stderr}", "red")
-        else:
-            colored_print("No volumes to remove.", "yellow")
-    except subprocess.CalledProcessError as e:
-        colored_print(f"Unexpected error while listing volumes: {e}", "red")
+    colored_print("✅ Down completed (only PharmaXcess services).", "green")

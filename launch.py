@@ -1,3 +1,5 @@
+
+from modulefinder import test
 import os
 import argparse
 import subprocess
@@ -18,34 +20,46 @@ from launch_files.scripts.handle_export import handle_export_images
 from launch_files.scripts.handle_import import handle_import_images
 from launch_files.scripts.handle_logs import handle_logs
 from launch_files.scripts.handle_origins import handle_origins
+from launch_files.scripts.handle_app import handle_app
 
 # Variables globales pour la gestion des processus
 active_processes = []
+mobile_app_process = None  # Nouvelle variable pour le processus de l'app mobile
 shutdown_requested = False
 
 def signal_handler(sig, frame):
     """Gestionnaire de signal pour arrêt propre"""
-    global shutdown_requested
+    global shutdown_requested, mobile_app_process
     print('\n🛑 Arrêt en cours...')
     shutdown_requested = True
 
-    # Arrêter tous les processus actifs
+    # Arrêter le processus de l'app mobile
+    if mobile_app_process and mobile_app_process.poll() is None:
+        print(f"   Arrêt du processus mobile app {mobile_app_process.pid}...")
+        try:
+            mobile_app_process.terminate()
+            mobile_app_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            print(f"   Force l'arrêt du processus mobile app {mobile_app_process.pid}...")
+            mobile_app_process.kill()
+        except Exception as e:
+            print(f"   Erreur lors de l'arrêt du processus mobile app: {e}")
+
+    # Arrêter tous les processus actifs (Docker)
     for proc in active_processes:
-        if proc and proc.poll() is None:  # Si le processus est encore en cours
+        if proc and proc.poll() is None:
             print(f"   Arrêt du processus {proc.pid}...")
             try:
-                proc.terminate()  # Signal SIGTERM
-                # Attendre 5 secondes pour un arrêt propre
+                proc.terminate()
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 print(f"   Force l'arrêt du processus {proc.pid}...")
-                proc.kill()  # Signal SIGKILL si nécessaire
+                proc.kill()
             except Exception as e:
                 print(f"   Erreur lors de l'arrêt du processus {proc.pid}: {e}")
 
     print("✅ Arrêt terminé")
     sys.exit(0)
-
 
 # Configuration des signaux
 signal.signal(signal.SIGINT, signal_handler)
@@ -53,48 +67,51 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 # Main script
 if __name__ == "__main__":
-    # Argument parser setup
+    # Argument parser setup avec catégories
     parser = argparse.ArgumentParser(description="Utility script with multiple operations.")
-    parser.add_argument("--verif", action="store_true", help="Run verification steps.")
-    parser.add_argument("--back", action="store_true", help="Run backend-related operations.")
-    parser.add_argument("--test", action="store_true", help="Run tests.")
-    parser.add_argument("--front", action="store_true", help="Run frontend-related operations.")
-    parser.add_argument(
-        "--all", action="store_true", help="Run the whole application except for tests."
-    )
-    parser.add_argument("--update", type=str, help="Function to update the database.")
-    parser.add_argument("--down", action="store_true",
-        help="Function to stop the containers, remove the images, and remove the volumes."
-    )
-    parser.add_argument("--dump", action="store_true",
-        help="Function to export the database dump."
-    )
-    parser.add_argument("--export-images", type=str, help="Export backend and database Docker images to a tar file (provide output tar path).")
-    parser.add_argument("--import-images", type=str, help="Import backend and database Docker images from a tar file (provide input tar path).")
-    parser.add_argument("--container-name", type=str, default="distributeur-backend-app", help="For export: container to export. For import: name for the new image (default: distributeur-backend-app)")
-    parser.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
-    parser.add_argument("--restart", action="store_true",
-        help="Function to run down and then all to stop and start again the application."
-    )
-    parser.add_argument("--no-cache-back", action="store_true",
-        help="Build Backend Docker images without using cache."
-    )
-    parser.add_argument("--no-cache-front", action="store_true",
-        help="Build Frontend Docker images without using cache."
-    )
-    parser.add_argument("--install-front", action="store_true",
-        help="Install frontend dependencies with npm before starting the containers."
-    )
-    parser.add_argument("--build-test", action="store_true",
-        help="Build Test Docker images before running."
-    )
-    parser.add_argument("--see-log", type=str, choices=["back", "front", "every"],
-        help="Stream Docker logs: 'back' for backend, 'front' for frontend, 'every' for both."
-    )
-    parser.add_argument("--origins", action="store_true", help="List registered frontend origins")
-    parser.add_argument("--sudo", action="store_true",
-        help="Use sudo for npm install in frontend operations."
-    )
+
+    # Création des groupes
+    main_group = parser.add_argument_group("Main Operations")
+    database_group = parser.add_argument_group("Database Operations")
+    docker_group = parser.add_argument_group("Docker Images Management")
+    build_group = parser.add_argument_group("Build Options")
+    log_group = parser.add_argument_group("Logging & Debugging")
+    misc_group = parser.add_argument_group("Miscellaneous")
+
+    # Main Operations
+    main_group.add_argument("--verif", action="store_true", help="Run verification steps.")
+    main_group.add_argument("--back", action="store_true", help="Run backend-related operations.")
+    main_group.add_argument("--test", action="store_true", help="Run tests.")
+    main_group.add_argument("--front", action="store_true", help="Run dispenser frontend-related operations.")
+    main_group.add_argument("--app", action="store_true", help="Run the mobile app.")
+    main_group.add_argument("--all", action="store_true", help="Run the whole application except for tests.")
+    main_group.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
+    main_group.add_argument("--restart", action="store_true", help="Function to run down and then all to stop and start again the application.")
+
+    # Database Operations
+    database_group.add_argument("--update", type=str, help="Function to update the database.")
+    database_group.add_argument("--dump", action="store_true", help="Function to export the database dump.")
+
+    # Docker Images Management
+    docker_group.add_argument("--down", action="store_true", help="Stop containers, remove images and volumes.")
+    docker_group.add_argument("--export-images", type=str, help="Export Docker images to tar file (provide output path).")
+    docker_group.add_argument("--import-images", type=str, help="Import Docker images from tar file (provide input path).")
+    docker_group.add_argument("--container-name", type=str, default="distributeur-backend-app", help="Container name for export/import operations.")
+
+    # Build Options
+    build_group.add_argument("--no-cache-back", action="store_true", help="Build Backend without Docker cache.")
+    build_group.add_argument("--no-cache-front", action="store_true", help="Build Frontend without Docker cache.")
+    build_group.add_argument("--no-cache-app", action="store_true", help="Install app dependencies without cache.")
+    build_group.add_argument("--install-front", action="store_true", help="Install frontend dependencies with npm.")
+    build_group.add_argument("--install-app", action="store_true", help="Install mobile app dependencies with npm.")
+    build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
+
+    # Logging & Debugging
+    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "every"], help="Stream logs for components.")
+    log_group.add_argument("--origins", action="store_true", help="List registered frontend origins.")
+
+    # Miscellaneous
+    misc_group.add_argument("--sudo", action="store_true", help="Use sudo for npm install in frontend operations.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -102,10 +119,21 @@ if __name__ == "__main__":
     # Paths
     backend_folder = "backend"
     frontend_folder = "dispenser_frontend"
+    mobile_app_folder = "pharmaXcess_app"
+
+    # container names
     back_app_container_name = "distributeur-backend-app"
-    back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
     front_app_container_name = "distributeur-frontend-app"
+
+    # image names
+    back_app_image_name = "phx-backend-app"
+    test_image_name = "distributeur-backend-test:latest"
+
+    # db container name
+    app_db_container_name = "app-backend-db"
+    dispenser_db_container_name = "distributeur-backend-db"
+
 
     # Load configuration
     config = load_config_file()
@@ -129,7 +157,9 @@ if __name__ == "__main__":
                 backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
-
+            mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+            if mobile_app_process:
+                active_processes.append(mobile_app_process)
             if args.combo or args.restart:
                 # Tests don't need a database, so we pass None
                 handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
@@ -146,12 +176,19 @@ if __name__ == "__main__":
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
+                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+                if mobile_app_process:
+                    active_processes.append(mobile_app_process)
             if args.back:
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
+            if args.app:
+                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+                if mobile_app_process:
+                    active_processes.append(mobile_app_process)
             if args.test:
                 # Tests don't need a database, so we pass None
                 handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
@@ -171,9 +208,33 @@ if __name__ == "__main__":
                 app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
                 handle_import_images(args.import_images, back_app_image_name, back_app_container_name, app_db_config["container_name"])
             if args.down:
-                handle_down()
+                handle_down(
+                    mobile_app_process,
+                    containers=[
+                        back_app_container_name,
+                        front_app_container_name,
+                        back_test_container_name,
+                        app_db_container_name,
+                        dispenser_db_container_name
+                    ],
+                    images=[
+                        back_app_image_name,
+                        test_image_name,
+                        "mysql/mysql-server:5.7"
+                    ],
+                    volumes=[
+                        "medicine_data"
+                    ]
+                )
             if args.see_log:
-                handle_logs(args.see_log, back_app_container_name, front_app_container_name, active_processes, shutdown_requested)
+                handle_logs(
+                    args.see_log,
+                    back_app_container_name,
+                    front_app_container_name,
+                    mobile_app_process,  # Passer le processus de l'app mobile
+                    active_processes,
+                    shutdown_requested
+                )
             if args.origins:
                 handle_origins(backend_folder)
     else:

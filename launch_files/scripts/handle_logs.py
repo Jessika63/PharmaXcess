@@ -88,7 +88,33 @@ def stream_logs_multiple(container_names, active_processes, shutdown_requested):
     except Exception as e:
         print(f"❌ Erreur lors de l'affichage des logs: {e}")
 
-def handle_logs(log_type, back_app_container_name, front_app_container_name, active_processes, shutdown_requested):
+def stream_process_logs(process, process_name, active_processes, shutdown_requested):
+    """
+    Stream logs from a subprocess directly
+    """
+    try:
+        print(f"📋 Affichage des logs pour {process_name}...")
+        print("   Appuyez sur Ctrl+C pour arrêter")
+
+        active_processes.append(process)
+
+        while not shutdown_requested and process.poll() is None:
+            try:
+                # Lire la sortie en direct
+                output = process.stdout.readline()
+                if output:
+                    print(output.strip())
+                time.sleep(0.1)
+            except KeyboardInterrupt:
+                break
+
+    except Exception as e:
+        print(f"❌ Erreur lors de l'affichage des logs: {e}")
+    finally:
+        if process in active_processes:
+            active_processes.remove(process)
+
+def handle_logs(log_type, back_app_container_name, front_app_container_name, mobile_app_process, active_processes, shutdown_requested):
     """
     Objectif: Handles log streaming based on the specified log type.
 
@@ -96,6 +122,7 @@ def handle_logs(log_type, back_app_container_name, front_app_container_name, act
         - log_type: Type of logs to stream ("back", "front", or "every"). (String)
         - back_app_container_name: Name of the backend application container. (String)
         - front_app_container_name: Name of the frontend application container. (String)
+        - mobile_app_process: Process object for the mobile app. (Process)
         - active_processes: List to track active processes for cleanup. (List)
         - shutdown_requested: Flag indicating if shutdown was requested. (Boolean)
 
@@ -106,5 +133,23 @@ def handle_logs(log_type, back_app_container_name, front_app_container_name, act
         stream_logs_improved(back_app_container_name, active_processes, shutdown_requested)
     elif log_type == "front":
         stream_logs_improved(front_app_container_name, active_processes, shutdown_requested)
+    elif log_type == "app":
+        if mobile_app_process:
+            stream_process_logs(mobile_app_process, "mobile app", active_processes, shutdown_requested)
+        else:
+            print("❌ Aucun processus d'application mobile en cours d'exécution")
     elif log_type == "every":
-        stream_logs_multiple([back_app_container_name, front_app_container_name], active_processes, shutdown_requested)
+        # Lancer les logs pour back et front en parallèle
+        threads = []
+        for container in [back_app_container_name, front_app_container_name]:
+            thread = threading.Thread(target=stream_logs_improved, args=(container, active_processes, shutdown_requested))
+            thread.start()
+            threads.append(thread)
+
+        # Logs pour l'app mobile
+        if mobile_app_process:
+            stream_process_logs(mobile_app_process, "mobile app", active_processes, shutdown_requested)
+
+        # Attendre la fin des threads
+        for thread in threads:
+            thread.join()
