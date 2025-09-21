@@ -1,5 +1,3 @@
-version: "3.8"  # Compose file version (ignored in newer Docker versions, kept for clarity)
-
 services:
   # ----------------------------
   # Backend Flask app container
