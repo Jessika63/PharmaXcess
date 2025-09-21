@@ -99,7 +99,6 @@ if __name__ == "__main__":
     # Paths
     backend_folder = "backend"
     frontend_folder = "dispenser_frontend"
-    env_file_path = os.path.join(backend_folder, ".env")
     back_app_container_name = "distributeur-backend-app"
     back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
@@ -110,6 +109,7 @@ if __name__ == "__main__":
 
     # Extract database configurations
     db_configs = config["databases"]
+    env_configs = config["env_configs"]
 
     # Execute operations based on flags
     if any(vars(args).values()):
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
             # Vérification + Backend
             handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, db_configs
+                env_configs, backend_folder, db_configs
             )
             handle_back(
                 backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
@@ -133,11 +133,11 @@ if __name__ == "__main__":
         else:
             if args.verif:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, db_configs
+                    env_configs, backend_folder, db_configs
                 )
             if args.all:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, db_configs
+                    env_configs, backend_folder, db_configs
                 )
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back

@@ -1,25 +1,33 @@
 {
     "verification_settings": {
-        "required_env_keys": [
-            "APP_DB_HOST",
-            "APP_DB_USER",
-            "APP_DB_PASSWORD",
-            "APP_DB_NAME",
-            "DOCTORS_DB_HOST",
-            "DOCTORS_DB_USER",
-            "DOCTORS_DB_PASSWORD",
-            "DOCTORS_DB_NAME",
-            "MYSQL_ROOT_PASSWORD",
-            "OPENROUTESERVICE_API_KEY",
-            "STRIPE_SECRET_KEY",
-            "IPHUB_API_KEY",
-            "IPHUNTER_API_KEY",
-            "ABUSEIPDB_API_KEY",
-            "GETIPINTEL_CONTACT",
-            "SECRET_QR_ENCRYPTION_KEY",
-            "CORS_SECRET_KEY",
-            "SAFETY_API_KEY"
-        ],
+        "env_configs": {
+            "backend/" : [
+                "APP_DB_HOST",
+                "APP_DB_USER",
+                "APP_DB_PASSWORD",
+                "APP_DB_NAME",
+                "DOCTORS_DB_HOST",
+                "DOCTORS_DB_USER",
+                "DOCTORS_DB_PASSWORD",
+                "DOCTORS_DB_NAME",
+                "MYSQL_ROOT_PASSWORD",
+                "OPENROUTESERVICE_API_KEY",
+                "SAFETY_API_KEY",
+                "STRIPE_SECRET_KEY",
+                "IPHUB_API_KEY",
+                "IPHUNTER_API_KEY",
+                "ABUSEIPDB_API_KEY",
+                "GETIPINTEL_CONTACT",
+                "SECRET_QR_ENCRYPTION_KEY",
+                "CORS_SECRET_KEY"
+            ],
+            "dispenser_frontend/" : [
+                "REACT_APP_CORS_SECRET_KEY"
+            ],
+            "pharmaXcess_app/" : [
+                "EXPO_PUBLIC_CORS_SECRET_KEY"
+            ]
+        },
         "databases": [
             {
                 "name": "dispenser_db",

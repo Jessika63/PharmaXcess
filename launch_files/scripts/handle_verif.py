@@ -4,10 +4,10 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from helpers.env_functions.verify_env_file import verify_env_file
+from helpers.env_functions.verify_env_file import verify_env_files
 from helpers.verify.verify_db_dump import verify_db_dump
 
-def handle_verif(env_file_path, required_env_keys, backend_folder, db_configs):
+def handle_verif(env_configs, backend_folder, db_configs):
     """
     Objectif: Performs verification steps before starting backend operations, including environment file validation and database dump file presence check for multiple databases.
 
@@ -20,8 +20,8 @@ def handle_verif(env_file_path, required_env_keys, backend_folder, db_configs):
     Return Value:
         - None: This function does not return a value but may terminate the program if verifications fail. (NoneType)
     """
-    verify_env_file(env_file_path, required_env_keys)
-    
+    verify_env_files(env_configs)
+
     # Verify database dumps for each database configuration
     for db_config in db_configs:
         db_dump_date = db_config["db_dump_date"]

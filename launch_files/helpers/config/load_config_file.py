@@ -37,8 +37,8 @@ def load_config_file():
     # Validate required keys in 'verification_settings'
     missing_config_keys = []
     verification_settings = config.get("verification_settings", {})
-    if "required_env_keys" not in verification_settings:
-        missing_config_keys.append("required_env_keys")
+    if "env_configs" not in verification_settings:
+        missing_config_keys.append("env_configs")
     if "databases" not in verification_settings:
         missing_config_keys.append("databases")
 
@@ -50,7 +50,7 @@ def load_config_file():
 
     # Extract configuration data
     config_data = {
-        "required_env_keys": verification_settings.get("required_env_keys", []),
+        "env_configs": verification_settings.get("env_configs", []),
         "databases": verification_settings.get("databases", [])
     }
 
