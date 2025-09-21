@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - dev_v2
+    paths:
+      - '**'
+      - 'backend/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+      - dev_v2
+    paths:
+      - '**'
+      - 'backend/**'
+
+jobs:
+  vulnerability_check:
+    runs-on: ubuntu-latest
+    env:
+      SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+      PYTHONIOENCODING: utf-8
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Required for git rev-parse to work
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install "typer>=0.12.1,<0.17.0"
+        pip install safety==3.5.1
+
+    - name: Run Security Scan
+      run: |
+        chmod +x ./backend/scripts/safety/run_safety.sh
+        ./backend/scripts/safety/run_safety.sh
+
+  check_leaks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install tqdm
+
+    - name: Run Leak Checker
+      run: python backend/scripts/leak_checker/check_leak.py
