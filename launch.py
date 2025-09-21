@@ -16,6 +16,8 @@ from launch_files.scripts.handle_down import handle_down
 from launch_files.scripts.handle_dump import handle_dump
 from launch_files.scripts.handle_export import handle_export_images
 from launch_files.scripts.handle_import import handle_import_images
+from launch_files.scripts.handle_logs import handle_logs
+from launch_files.scripts.handle_origins import handle_origins
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -44,74 +46,6 @@ def signal_handler(sig, frame):
     print("✅ Arrêt terminé")
     sys.exit(0)
 
-def stream_logs_improved(container_name):
-    """Version améliorée de stream_logs avec gestion des signaux"""
-    global active_processes, shutdown_requested
-
-    try:
-        print(f"📋 Affichage des logs pour {container_name}...")
-        print("   Appuyez sur Ctrl+C pour arrêter")
-
-        # Créer le processus
-        proc = subprocess.Popen(
-            ["docker", "logs", "-f", container_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1
-        )
-
-        # Ajouter à la liste des processus actifs
-        active_processes.append(proc)
-
-        # Lire les logs en temps réel
-        while not shutdown_requested and proc.poll() is None:
-            try:
-                line = proc.stdout.readline()
-                if line:
-                    print(line.rstrip())
-                else:
-                    time.sleep(0.1)  # Petite pause pour éviter la surcharge CPU
-            except KeyboardInterrupt:
-                break
-
-    except Exception as e:
-        print(f"❌ Erreur lors de l'affichage des logs: {e}")
-    finally:
-        # Nettoyer le processus
-        if proc in active_processes:
-            active_processes.remove(proc)
-        if proc and proc.poll() is None:
-            proc.terminate()
-
-def stream_logs_multiple(container_names):
-    """Stream logs pour plusieurs conteneurs simultanément"""
-    global active_processes, shutdown_requested
-
-    threads = []
-
-    def stream_single(container_name):
-        stream_logs_improved(container_name)
-
-    try:
-        print(f"📋 Affichage des logs pour: {', '.join(container_names)}")
-        print("   Appuyez sur Ctrl+C pour arrêter")
-
-        # Créer un thread pour chaque conteneur
-        for container_name in container_names:
-            thread = threading.Thread(target=stream_single, args=(container_name,))
-            thread.daemon = True
-            thread.start()
-            threads.append(thread)
-
-        # Attendre que tous les threads se terminent
-        for thread in threads:
-            thread.join()
-
-    except KeyboardInterrupt:
-        print("\n🛑 Arrêt demandé par l'utilisateur")
-    except Exception as e:
-        print(f"❌ Erreur lors de l'affichage des logs: {e}")
 
 # Configuration des signaux
 signal.signal(signal.SIGINT, signal_handler)
@@ -157,6 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--see-log", type=str, choices=["back", "front", "every"],
         help="Stream Docker logs: 'back' for backend, 'front' for frontend, 'every' for both."
     )
+    parser.add_argument("--origins", action="store_true", help="List registered frontend origins")
 
     # Parse arguments
     args = parser.parse_args()
@@ -165,7 +100,6 @@ if __name__ == "__main__":
     backend_folder = "backend"
     frontend_folder = "dispenser_frontend"
     env_file_path = os.path.join(backend_folder, ".env")
-    db_container_name = "distributeur-backend-db"
     back_app_container_name = "distributeur-backend-app"
     back_app_image_name = "phx-backend-app"
     back_test_container_name = "distributeur-backend-test"
@@ -173,6 +107,9 @@ if __name__ == "__main__":
 
     # Load configuration
     config = load_config_file()
+
+    # Extract database configurations
+    db_configs = config["databases"]
 
     # Execute operations based on flags
     if any(vars(args).values()):
@@ -183,55 +120,59 @@ if __name__ == "__main__":
 
             # Vérification + Backend
             handle_verif(
-                env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                env_file_path, config["required_env_keys"], backend_folder, db_configs
             )
             handle_back(
-                backend_folder, config["db_dump_date"], db_container_name,
-                back_app_container_name, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
 
             if args.combo or args.restart:
-                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
+                # Tests don't need a database, so we pass None
+                handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
         else:
             if args.verif:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                    env_file_path, config["required_env_keys"], backend_folder, db_configs
                 )
             if args.all:
                 handle_verif(
-                    env_file_path, config["required_env_keys"], backend_folder, config["db_dump_date"]
+                    env_file_path, config["required_env_keys"], backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
             if args.back:
                 handle_back(
-                    backend_folder, config["db_dump_date"], db_container_name, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
             if args.test:
-                handle_test(backend_folder, db_container_name, back_app_container_name, build_first=args.build_test)
+                # Tests don't need a database, so we pass None
+                handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
             if args.update:
                 update_function = args.update
-                handle_update(update_function, db_container_name, backend_folder)
+                # Use the app database configuration for updates
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_update(update_function, app_db_config["container_name"], backend_folder)
             if args.dump:
-                handle_dump(backend_folder, db_container_name, back_app_container_name)
+                # Use the app database configuration for dumps
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_dump(backend_folder, app_db_config["container_name"], back_app_container_name)
             if args.export_images:
                 handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
             if args.import_images:
-                handle_import_images(args.import_images, back_app_image_name, back_app_container_name, db_container_name)
+                # Use the app database configuration for imports
+                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
+                handle_import_images(args.import_images, back_app_image_name, back_app_container_name, app_db_config["container_name"])
             if args.down:
                 handle_down()
             if args.see_log:
-                if args.see_log == "back":
-                    stream_logs_improved(back_app_container_name)
-                elif args.see_log == "front":
-                    stream_logs_improved(front_app_container_name)
-                elif args.see_log == "every":
-                    stream_logs_multiple([back_app_container_name, front_app_container_name])
+                handle_logs(args.see_log, back_app_container_name, front_app_container_name, active_processes, shutdown_requested)
+            if args.origins:
+                handle_origins(backend_folder)
     else:
         parser.print_help()
         exit(1)

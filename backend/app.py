@@ -1,24 +1,146 @@
-from flask import Flask, jsonify
-from dotenv import load_dotenv
 
-from flask_cors import CORS
+from flask import Flask, jsonify, request
+from dotenv import load_dotenv
+import os
+import json
+from functools import wraps
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://192.168.10.168:3000",
-            "http://localhost:3000"
-            ],
-        "allow_headers": ["*", "Content-Type", "Authorization", "X-AdBlock-Detected"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "supports_credentials": True
-    }
-})
+# Configuration pour CORS dynamique
+# Stockage dans /data à l'intérieur du conteneur (volume Docker)
+ALLOWED_ORIGINS_FILE = '/data/allowed_origins.json'
+CORS_SECRET_KEY = os.getenv('CORS_SECRET_KEY')
+
+# Charger les origines autorisées depuis le fichier
+def load_allowed_origins():
+    """Charge les origines autorisées depuis le fichier JSON"""
+    try:
+        if os.path.exists(ALLOWED_ORIGINS_FILE):
+            with open(ALLOWED_ORIGINS_FILE, 'r') as f:
+                return set(json.load(f))
+    except (json.JSONDecodeError, IOError):
+        pass
+    return set()
+
+def save_allowed_origins(origins):
+    """Sauvegarde les origines autorisées dans le fichier JSON"""
+    try:
+        # Créer le répertoire /data s'il n'existe pas
+        os.makedirs(os.path.dirname(ALLOWED_ORIGINS_FILE), exist_ok=True)
+        with open(ALLOWED_ORIGINS_FILE, 'w') as f:
+            json.dump(list(origins), f)
+    except IOError as e:
+        app.logger.error(f"Erreur lors de la sauvegarde des origines: {e}")
+
+# Charger les origines autorisées au démarrage
+allowed_origins = load_allowed_origins()
+
+# Decorator pour vérifier la clé secrète
+def require_secret_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        received_key = request.headers.get('X-Secret-Key')
+
+        if received_key != CORS_SECRET_KEY:
+            return jsonify({"error": "Unauthorized - Invalid secret key"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+# Middleware CORS dynamique
+@app.before_request
+def check_origin():
+    """Vérifie si l'origine est autorisée avant chaque requête"""
+    # Toujours permettre les requêtes OPTIONS (preflight CORS)
+    if request.method == 'OPTIONS':
+        return
+
+    # Permettre l'enregistrement d'origine même si pas encore autorisée
+    if request.endpoint == 'register_origin':
+        return
+
+    # Vérifier les autres requêtes
+    origin = request.headers.get('Origin')
+    if origin and origin not in allowed_origins:
+        return jsonify({"error": "Origin not allowed"}), 403
+
+@app.after_request
+def after_request(response):
+    """Ajoute les headers CORS appropriés après chaque requête"""
+    origin = request.headers.get('Origin')
+
+    # Pour les requêtes OPTIONS (preflight), toujours ajouter les headers CORS
+    if request.method == 'OPTIONS':
+        response.headers.add('Access-Control-Allow-Origin', origin or '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Secret-Key,X-AdBlock-Detected,Origin')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '86400')  # Cache preflight pour 24h
+    # Pour les autres requêtes, vérifier si l'origine est autorisée
+    elif origin and (origin in allowed_origins or request.endpoint == 'register_origin'):
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Secret-Key,X-AdBlock-Detected')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+
+    return response
+
+# Endpoint pour enregistrer une nouvelle origine
+@app.route('/register-origin', methods=['POST'])
+@require_secret_key
+def register_origin():
+    """
+    Endpoint pour enregistrer une nouvelle origine autorisée.
+    Nécessite une clé secrète dans les headers.
+    """
+    origin = request.headers.get('Origin')
+    if not origin:
+        return jsonify({"error": "Origin header required"}), 400
+
+    # Ajouter l'origine à la liste autorisée
+    allowed_origins.add(origin)
+    save_allowed_origins(allowed_origins)
+
+    app.logger.info(f"New origin registered: {origin}")
+    return jsonify({
+        "message": "Origin registered successfully",
+        "origin": origin,
+        "total_origins": len(allowed_origins)
+    }), 200
+
+# Endpoint pour lister les origines autorisées (pour debug)
+@app.route('/list-origins', methods=['GET'])
+@require_secret_key
+def list_origins():
+    """Liste toutes les origines autorisées"""
+    return jsonify({
+        "allowed_origins": list(allowed_origins),
+        "count": len(allowed_origins)
+    }), 200
+
+# Endpoint pour supprimer une origine (pour debug)
+@app.route('/remove-origin', methods=['POST'])
+@require_secret_key
+def remove_origin():
+    """Supprime une origine de la liste autorisée"""
+    data = request.get_json()
+    if not data or 'origin' not in data:
+        return jsonify({"error": "Origin required in request body"}), 400
+
+    origin = data['origin']
+    if origin in allowed_origins:
+        allowed_origins.remove(origin)
+        save_allowed_origins(allowed_origins)
+        app.logger.info(f"Origin removed: {origin}")
+        return jsonify({
+            "message": "Origin removed successfully",
+            "origin": origin
+        }), 200
+    else:
+        return jsonify({"error": "Origin not found"}), 404
 
 def register_blueprints():
     """

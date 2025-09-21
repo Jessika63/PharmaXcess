@@ -16,9 +16,26 @@
             "IPHUNTER_API_KEY",
             "ABUSEIPDB_API_KEY",
             "GETIPINTEL_CONTACT",
-            "SECRET_QR_ENCRYPTION_KEY"
+            "SECRET_QR_ENCRYPTION_KEY",
+            "CORS_SECRET_KEY",
+            "SAFETY_API_KEY"
         ],
-        "db_dump_date": "03_07_2025"
+        "databases": [
+            {
+                "name": "dispenser_db",
+                "container_name": "distributeur-backend-db",
+                "db_dump_date": "03_07_2025",
+                "port": "3307",
+                "env_prefix": "DOCTORS_"
+            },
+            {
+                "name": "app_db",
+                "container_name": "app-backend-db",
+                "db_dump_date": "",
+                "port": "3308",
+                "env_prefix": "APP_"
+            }
+        ]
     },
     "application_settings": {
         "debug_logs": "Yes"

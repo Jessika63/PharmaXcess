@@ -16,6 +16,9 @@ def verify_db_dump(dump_folder, expected_date):
     """
     colored_print("Verifying database dump file", "blue")
 
+    if expected_date is None or expected_date.strip() == "":
+        return
+
     # Construct the expected filename
     expected_file_pattern = f"database_dump_px_{expected_date}.sql"
     dump_file_path = os.path.join(dump_folder, expected_file_pattern)
