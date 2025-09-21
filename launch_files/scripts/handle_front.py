@@ -7,7 +7,7 @@ from helpers.start_containers import start_containers
 from helpers.verify.verify_frontend_is_up import verify_frontend_is_up
 from helpers.troubleshooting_message_giver import troubleshooting_message_front_install
 
-def handle_front(frontend_folder, front_app_container_name, no_cache=False, install_front=False):
+def handle_front(frontend_folder, front_app_container_name, no_cache=False, install_front=False, sudo=False):
     """
     Objectif: Handles frontend-related operations including dependency installation and Docker container management.
 
@@ -16,6 +16,7 @@ def handle_front(frontend_folder, front_app_container_name, no_cache=False, inst
         - front_app_container_name: Name of the frontend application Docker container. (String)
         - no_cache: If True, builds Docker images without cache. Defaults to False. (Boolean)
         - install_front: If True, installs npm dependencies before starting containers. Defaults to False. (Boolean)
+        - sudo: If True, uses sudo for npm install. Defaults to False. (Boolean)
 
     Return Value:
         - None: This function does not return a value but performs operations and prints status messages. (NoneType)
@@ -32,7 +33,9 @@ def handle_front(frontend_folder, front_app_container_name, no_cache=False, inst
     if install_front:
         try:
             colored_print("Installing dependencies using npm (forced by --install-front)...", "blue")
-            subprocess.run(["npm", "install"], shell=True, check=True)
+            # Utilisation de sudo si spécifié
+            command = ["sudo", "npm", "install"] if sudo else ["npm", "install"]
+            subprocess.run(command, shell=True, check=True)
             colored_print("Dependencies installed successfully!", "green")
         except FileNotFoundError:
             colored_print("npm is not installed or not found in PATH!", "red")

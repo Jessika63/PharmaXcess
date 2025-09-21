@@ -92,6 +92,9 @@ if __name__ == "__main__":
         help="Stream Docker logs: 'back' for backend, 'front' for frontend, 'every' for both."
     )
     parser.add_argument("--origins", action="store_true", help="List registered frontend origins")
+    parser.add_argument("--sudo", action="store_true",
+        help="Use sudo for npm install in frontend operations."
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -125,7 +128,7 @@ if __name__ == "__main__":
             handle_back(
                 backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
             )
-            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
+            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
 
             if args.combo or args.restart:
                 # Tests don't need a database, so we pass None
@@ -142,13 +145,13 @@ if __name__ == "__main__":
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             if args.back:
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
                 )
             if args.front:
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             if args.test:
                 # Tests don't need a database, so we pass None
                 handle_test(backend_folder, None, back_app_container_name, build_first=args.build_test)
