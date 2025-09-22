@@ -1,5 +1,7 @@
+
 import os
 import subprocess
+import shutil
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -32,6 +34,15 @@ def handle_front(frontend_folder, front_app_container_name, no_cache=False, inst
 
     if install_front:
         try:
+            # Clean existing dependencies if they exist
+            if package_lock_exists:
+                os.remove("package-lock.json")
+                colored_print("Removed package-lock.json", "yellow")
+
+            if node_modules_exists:
+                shutil.rmtree("node_modules")
+                colored_print("Removed node_modules directory", "yellow")
+
             colored_print("Installing dependencies using npm (forced by --install-front)...", "blue")
             # Utilisation de sudo si spécifié
             command = ["sudo", "npm", "install"] if sudo else ["npm", "install"]

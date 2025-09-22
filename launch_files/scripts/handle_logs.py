@@ -90,7 +90,7 @@ def stream_logs_multiple(container_names, active_processes, shutdown_requested):
 
 def stream_process_logs(process, process_name, active_processes, shutdown_requested):
     """
-    Stream logs from a subprocess directly
+    Stream logs from a subprocess directly - VERSION AMÉLIORÉE
     """
     try:
         print(f"📋 Affichage des logs pour {process_name}...")
@@ -98,13 +98,11 @@ def stream_process_logs(process, process_name, active_processes, shutdown_reques
 
         active_processes.append(process)
 
+        # Attendre simplement que le processus se termine
+        # Les logs sont déjà affichés en direct via stdout/stderr
         while not shutdown_requested and process.poll() is None:
             try:
-                # Lire la sortie en direct
-                output = process.stdout.readline()
-                if output:
-                    print(output.strip())
-                time.sleep(0.1)
+                time.sleep(0.5)  # Réduire la charge CPU
             except KeyboardInterrupt:
                 break
 

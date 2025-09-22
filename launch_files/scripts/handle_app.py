@@ -1,6 +1,9 @@
+
 import os
 import subprocess
 import platform
+import shutil
+import sys
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -29,6 +32,15 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False)
 
     if install_app:
         try:
+            # Clean existing dependencies if they exist
+            if package_lock_exists:
+                os.remove("package-lock.json")
+                colored_print("Removed package-lock.json", "yellow")
+
+            if node_modules_exists:
+                shutil.rmtree("node_modules")
+                colored_print("Removed node_modules directory", "yellow")
+
             colored_print("Installing dependencies using npm...", "blue")
 
             # Détection du système d'exploitation
@@ -63,13 +75,14 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False)
     try:
         colored_print("Starting React Native app...", "blue")
         is_windows = platform.system() == "Windows"
+
+        # Utiliser directement la sortie standard du script parent
         process = subprocess.Popen(
             ["npm", "start"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stdout=sys.stdout,  # Rediriger vers la sortie standard actuelle
+            stderr=sys.stderr,  # Rediriger vers l'erreur standard actuelle
             universal_newlines=True,
-            bufsize=1,
-            shell=is_windows  # Utiliser shell=True sur Windows
+            shell=is_windows
         )
         return process
     except Exception as e:
