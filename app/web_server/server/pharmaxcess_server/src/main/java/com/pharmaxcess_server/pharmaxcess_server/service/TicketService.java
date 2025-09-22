@@ -40,13 +40,13 @@ public class TicketService {
      * @param ticketCreationRequest the data required to create a new ticket
      * @return the created {@link Ticket}
      */
-    public Ticket createTicket(TicketCreationRequest ticketCreationRequest) {
+    public int createTicket(TicketCreationRequest ticketCreationRequest) {
         Ticket ticket = new Ticket();
         ticket.setTitle(ticketCreationRequest.getTitle());
         ticket.setCreatedAt(java.time.LocalDateTime.now());
         ticket.setUpdatedAt(java.time.LocalDateTime.now());
         ticket.setStatus("open");
-        return ticketRepository.createTicket(ticket);
+        return ticketRepository.createTicket(ticket.getTitle(), ticket.getStatus());
     }
 
     /**
@@ -55,7 +55,7 @@ public class TicketService {
      * @param ticketAcceptRequest the request containing the ticket ID and user ID
      * @return an {@link Optional} containing the updated {@link Ticket} if the update was successful, otherwise empty
      */
-    public Optional<Ticket> acceptTicket(TicketAcceptRequest ticketAcceptRequest) {
+    public int acceptTicket(TicketAcceptRequest ticketAcceptRequest) {
         return ticketRepository.updateTicketAssignedTo(ticketAcceptRequest.getUserID(), ticketAcceptRequest.getTicketID());
     }
 }

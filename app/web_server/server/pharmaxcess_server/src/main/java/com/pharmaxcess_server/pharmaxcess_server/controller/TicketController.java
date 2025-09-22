@@ -103,7 +103,7 @@ public class TicketController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public Ticket createTicket(@RequestBody TicketCreationRequest body) {
+    public int createTicket(@RequestBody TicketCreationRequest body) {
         return ticketService.createTicket(body);
     }
 
@@ -126,7 +126,7 @@ public class TicketController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_MEDIC')")
-    public Optional<Ticket> acceptTicket(@RequestBody TicketAcceptRequest body) {
+    public int acceptTicket(@RequestBody TicketAcceptRequest body) {
         return ticketService.acceptTicket(body);
     }
 }
