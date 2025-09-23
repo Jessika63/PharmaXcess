@@ -1,10 +1,12 @@
+
 {
   "name": "pharmaxcessapp",
   "version": "1.0.0",
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "start:tunnel": "expo start --tunnel",
+    "dev": "BACKEND_URL=http://localhost:5000 CORS_SECRET_KEY=ma-cle expo start",
+    "tunnel": "BACKEND_URL=http://10.109.255.220:5000 CORS_SECRET_KEY=ma-cle expo start --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"
@@ -16,8 +18,10 @@
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
+    "babel-preset-expo": "^54.0.2",
     "expo": "^54.0.0",
     "expo-camera": "~16.1.6",
+    "expo-constants": "~16.0.2",
     "expo-linear-gradient": "~14.1.4",
     "expo-location": "~18.1.4",
     "expo-status-bar": "~2.2.3",

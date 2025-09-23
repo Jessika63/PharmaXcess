@@ -8,7 +8,7 @@ import sys
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
 
-def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False):
+def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False, tunnel=False):
     """
     Objectif: Handles mobile app operations including dependency installation and startup.
 
@@ -17,6 +17,7 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False)
         - install_app: If True, installs npm dependencies before starting. Defaults to False. (Boolean)
         - sudo: If True, uses sudo for npm install. Defaults to False. (Boolean)
         - no_cache: If True, adds --no-cache flag to npm install. Defaults to False. (Boolean)
+        - tunnel: If True, starts Expo in tunnel mode. Defaults to False. (Boolean)  # NOUVEAU PARAMÈTRE
 
     Return Value:
         - process: Le processus de l'application mobile ou None en cas d'erreur
@@ -73,17 +74,35 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False)
 
     # Start the mobile app with Popen
     try:
-        colored_print("Starting React Native app...", "blue")
+        if tunnel:
+            colored_print("Starting React Native app in TUNNEL mode...", "blue")
+        else:
+            colored_print("Starting React Native app...", "blue")
+
         is_windows = platform.system() == "Windows"
+
+        # Construction de la commande en fonction du mode tunnel
+        if tunnel:
+            # Commande pour le mode tunnel
+            command = ["npx", "expo", "start", "--tunnel"]
+        else:
+            # Commande normale
+            command = ["npm", "start"]
 
         # Utiliser directement la sortie standard du script parent
         process = subprocess.Popen(
-            ["npm", "start"],
+            command,
             stdout=sys.stdout,  # Rediriger vers la sortie standard actuelle
             stderr=sys.stderr,  # Rediriger vers l'erreur standard actuelle
             universal_newlines=True,
             shell=is_windows
         )
+
+        if tunnel:
+            colored_print("📡 Expo started in TUNNEL mode - accessible from external networks", "green")
+        else:
+            colored_print("📱 Expo started in LAN mode - accessible on local network only", "green")
+
         return process
     except Exception as e:
         colored_print(f"Failed to start mobile app: {e}", "red")

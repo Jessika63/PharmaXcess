@@ -1,29 +1,25 @@
-/**
- * Configuration pour l'application PharmaXcess
- */
-export interface CORSConfig {
-  secretKey: string;
-  registerEndpoint: string;
-  isRegistered: boolean;
-}
 
 export interface AppConfig {
   backendUrl: string;
-  cors: CORSConfig;
+  corsSecretKey: string;
+  corsEndpoint: string;
 }
 
-console.log('CORS_SECRET_KEY from env:', process.env.EXPO_PUBLIC_CORS_SECRET_KEY);
-
+// Configuration qui utilise les variables EXPO_PUBLIC_*
 const config: AppConfig = {
-  // Configuration du backend
-  backendUrl: 'http://localhost:5000',
-
-  // Configuration CORS dynamique
-  cors: {
-    secretKey: process.env.EXPO_PUBLIC_CORS_SECRET_KEY,
-    registerEndpoint: '/register-origin',
-    isRegistered: false
-  }
+  backendUrl: process.env.EXPO_PUBLIC_BACKEND_URL,
+  corsSecretKey: process.env.EXPO_PUBLIC_CORS_SECRET_KEY,
+  corsEndpoint: '/register-origin'
 };
+
+// Log de débogage
+if (__DEV__) {
+  console.log('🔧 Configuration PharmaXcess:', {
+    backendUrl: config.backendUrl,
+    hasSecretKey: !!config.corsSecretKey && config.corsSecretKey !== 'default-secret-key',
+    secretKeyLength: config.corsSecretKey?.length,
+    mode: 'development'
+  });
+}
 
 export default config;
