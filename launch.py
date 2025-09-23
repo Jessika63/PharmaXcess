@@ -1,12 +1,9 @@
 
 from modulefinder import test
-import os
 import argparse
 import subprocess
 import signal
 import sys
-import threading
-import time
 
 from launch_files.helpers.config.load_config_file import load_config_file
 from launch_files.scripts.handle_verif import handle_verif
@@ -142,6 +139,10 @@ if __name__ == "__main__":
     db_configs = config["databases"]
     env_configs = config["env_configs"]
 
+    volumes=[
+        "medicine_data"
+    ]
+
     # Execute operations based on flags
     if any(vars(args).values()):
         # Combo ou All ou Restart
@@ -154,7 +155,7 @@ if __name__ == "__main__":
                 env_configs, backend_folder, db_configs
             )
             handle_back(
-                backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
@@ -173,7 +174,7 @@ if __name__ == "__main__":
                     env_configs, backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
@@ -181,7 +182,7 @@ if __name__ == "__main__":
                     active_processes.append(mobile_app_process)
             if args.back:
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
@@ -222,9 +223,7 @@ if __name__ == "__main__":
                         test_image_name,
                         "mysql/mysql-server:5.7"
                     ],
-                    volumes=[
-                        "medicine_data"
-                    ]
+                    volumes=volumes
                 )
             if args.see_log:
                 handle_logs(

@@ -8,7 +8,9 @@ from helpers.verify.verify_database_is_up import verify_databases_are_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
-def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=False):
+from .handle_down import remove_volume
+
+def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False):
     """
     Objectif: Orchestrates backend operations including environment verification, Docker container management, and database import for multiple databases.
 
@@ -26,10 +28,14 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
     # Step 0: Change working directory to backend/
     change_directory(backend_folder)
 
-    # Step 1: Start containers with docker-compose in detached mode
-    start_containers(no_cache=no_cache)
+    # Step 1: Si no_cache=True → on supprime les volumes avant rebuild
+    if no_cache:
+        colored_print("🗑 no_cache=True → Suppression des volumes avant rebuild...", "blue")
+        for v in volumes:
+            remove_volume(v)
 
-    verify_backend_is_up(back_app_container_name, nb_of_retry=10)
+    # Step 2: Start containers with docker-compose in detached mode
+    start_containers(no_cache=no_cache)
 
     # Step 2: Wait for all database containers to be ready
     verify_databases_are_up(db_configs, nb_of_retry=10)
@@ -43,7 +49,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
         db_dump_date = db_config["db_dump_date"]
         env_prefix = db_config.get("env_prefix", "")
 
-        if db_dump_date is None or db_dump_date.strip() == "":
+        if not db_dump_date or db_dump_date.strip() == "":
             continue  # Skip databases without a dump date
 
         # Use prefixed environment variables if available
@@ -75,6 +81,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
             colored_print(f"DB_PASSWORD: {env_data.get('DB_PASSWORD')}", "violet")
             colored_print(f"MYSQL_ROOT_PASSWORD: {root_password}", "violet")
             colored_print(f"Using dump file: {dump_file_name}", "violet")
+
             if os.path.exists(dump_file_name):
                 with open(dump_file_name, 'r', encoding='utf-8') as f:
                     dump_preview = f.read(1000)
@@ -83,14 +90,15 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
                 colored_print(f"Dump file {dump_file_name} does not exist!", "violet")
 
             colored_print(f"Running command: docker exec -i {db_container_name} mysql -uroot -p<hidden>", "violet")
+
             result = subprocess.run(
                 [
                     "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
                     "-p" + root_password
                 ],
-                input=dump_content,  # Pass the string content
-                text=True,           # Ensure subprocess expects a string
-                capture_output=True, # Capture stdout and stderr
+                input=dump_content,
+                text=True,
+                capture_output=True,
                 check=True
             )
             colored_print(f"Database dump imported successfully into '{db_container_name}'!", "green")
@@ -103,3 +111,11 @@ def handle_back(backend_folder, db_configs, back_app_container_name, no_cache=Fa
 
     # Final check: verify backend is up after all operations
     verify_backend_is_up(back_app_container_name, nb_of_retry=10)
+
+    # Erwann need to update this
+    if no_cache:
+        subprocess.run(
+            ["docker", "exec", back_app_container_name, "rm", "-f", "/data/allowed_origins.json"],
+            check=False
+        )
+        colored_print("Reset /data/allowed_origins.json inside container.", "yellow")
