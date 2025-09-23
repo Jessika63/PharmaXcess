@@ -100,10 +100,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         // Setup notifications handler
         Notifications.setNotificationHandler({
             handleNotification: async () => ({
-                shouldShowAlert: true,
+                shouldShowBanner: true,
                 shouldPlaySound: true,
                 shouldSetBadge: false,
-                shouldShowBanner: true,
                 shouldShowList: true,
             }),
         });
