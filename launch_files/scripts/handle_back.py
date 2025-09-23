@@ -1,5 +1,7 @@
+from calendar import c
 import os
 import subprocess
+import re
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -109,13 +111,67 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
             else:
                 colored_print(f"Failed to import the database dump into '{db_container_name}'!\nDetails: {error_message}", "red")
 
-    # Final check: verify backend is up after all operations
+    # # Final check: verify backend is up after all operations
     verify_backend_is_up(back_app_container_name, nb_of_retry=10)
 
-    # Erwann need to update this
     if no_cache:
-        subprocess.run(
-            ["docker", "exec", back_app_container_name, "rm", "-f", "/data/allowed_origins.json"],
-            check=False
-        )
-        colored_print("Reset /data/allowed_origins.json inside container.", "yellow")
+        colored_print("verifcation that origins is empty", "blue")
+
+        try:
+            import requests
+            try:
+                secret_key = env_data['CORS_SECRET_KEY']
+            except (ImportError, FileNotFoundError, KeyError):
+                # Fallback: lecture manuelle du fichier .env
+                secret_key = None
+                if os.path.exists(".env"):
+                    with open(".env", 'r') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith('#') and '=' in line:
+                                key, value = line.split('=', 1)
+                                if key.strip() == 'CORS_SECRET_KEY':
+                                    secret_key = value.strip()
+                                    break
+            secret_key = re.sub(r"^['\"]|['\"]$", '', secret_key)
+
+            # Appel à l'API /list-origins avec la clé secrète
+            response = requests.get(
+                "http://localhost:5000/list-origins",
+                headers={"X-Secret-Key": secret_key}
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                origins = data.get("allowed_origins", [])
+                if origins:
+                    colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
+                    for origin in origins:
+
+                        remove_resp = requests.post(
+                            "http://localhost:5000/remove-origin",
+                            headers={
+                                "X-Secret-Key": secret_key,
+                                "Content-Type": "application/json"
+                            },
+                            json={"origin": origin}
+                        )
+
+                        if remove_resp.status_code == 200:
+                            colored_print(f"Origin '{origin}' removed successfully", "green")
+                        else:
+                            colored_print(
+                                f"Failed to remove origin '{origin}' → {remove_resp.text}",
+                                "red"
+                            )
+                else:
+                    colored_print("No origins found, nothing to delete.", "green")
+            else:
+                colored_print(
+                    f"Could not list origins, status={response.status_code}, body={response.text}",
+                    "red"
+                )
+
+        except Exception as e:
+            colored_print(f"Exception while checking/removing origins: {e}", "red")
+
