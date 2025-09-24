@@ -50,7 +50,7 @@ function DirectionsMapPage() {
 
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   useInactivityRedirect(() => setShowInactivityModal(true));
-  
+
   // Dismiss inactivity modal on user activity
   useEffect(() => {
     if (!showInactivityModal) {
