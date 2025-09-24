@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: safety
         name: safety
-        entry: bash distributeur/backend/scripts/safety/run_safety.sh
+        entry: bash -c 'export PYTHONIOENCODING=utf-8 && bash distributeur/backend/scripts/safety/run_safety.sh'
         language: system
         types: [python]
         pass_filenames: false

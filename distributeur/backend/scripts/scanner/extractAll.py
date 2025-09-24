@@ -1,97 +1,53 @@
-import cv2
+#!/usr/bin/env python3
+import sys, os, re, json, tempfile, time, base64
 import numpy as np
-import os
-import re
-import sys
-import json
-from paddleocr import PaddleOCR
+import unicodedata
+import cv2
+import requests
 
-def add_background(img, scale_factor=1.5):
-    """
-    Adds a white background around the input image to increase its size.
+try:
+    from doctr.models import ocr_predictor  # type: ignore
+    from doctr.io import DocumentFile  # type: ignore
+except Exception:  # doctr not installed in lightweight CI image
+    class _MissingDoctrPredictor:
+        def __call__(self, *args, **kwargs):
+            raise ImportError("python-doctr is not installed; tests should patch 'ocr_predictor'.")
 
-    Parameters:
-    - img (numpy.ndarray): Original image.
-    - scale_factor (float): Scale factor to increase image dimensions.
+    def ocr_predictor(*args, **kwargs):  # type: ignore
+        return _MissingDoctrPredictor()
 
-    Returns:
-    - numpy.ndarray: New image with a white background.
-    """
-    height, width, _ = img.shape
-    new_height = int(height * scale_factor)
-    new_width = int(width * scale_factor)
-    background = np.ones((new_height, new_width, 3), dtype=np.uint8) * 255
-    start_y = (new_height - height) // 2
-    start_x = (new_width - width) // 2
-    background[start_y:start_y + height, start_x:start_x + width] = img
-    return background
+    class DocumentFile:  # type: ignore
+        @staticmethod
+        def from_images(path):
+            # Minimal shim: predictor in tests ignores the content type
+            return path
 
-def correct_orientation(image_path):
-    """
-    Corrects the skew of an image using line detection and rotates it if needed.
 
-    Parameters:
-    - image_path (str): Path to the input image.
+def normalize_text(text):
+    text = text.replace(":", ": ")
+    text = text.lower()
+    text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+    text = re.sub(r"\s+", " ", text)
+    return text
 
-    Returns:
-    - str: Path to the saved, corrected image.
-    """
-    img = cv2.imread(image_path)
-    img = add_background(img)
-    img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
 
-    if lines is not None:
-        angles = []
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            angle = np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
-            angles.append(angle)
-        median_angle = np.median(angles)
-        if median_angle != 0:
-            (h, w) = img.shape[:2]
-            center = (w // 2, h // 2)
-            M = cv2.getRotationMatrix2D(center, median_angle, 1.0)
-            img = cv2.warpAffine(img, M, (w, h))
+def isPrescription(text):
+    keywords = ["RPPS", "ordonnance", "prescription", "mg", "comprimé", "solution", "capsule", "Dr "]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
+    return score >= 2
 
-    corrected_dir = "corrected"
-    os.makedirs(corrected_dir, exist_ok=True)
-    filename = os.path.basename(image_path)
-    corrected_image_path = os.path.join(corrected_dir, f"corrected_{filename}")
-    cv2.imwrite(corrected_image_path, img)
-    return corrected_image_path
+def isRectoID(text):
+    keywords = ["Nationalité", "Nom", "Prénoms", "Sexe", "Née le", "Taille"]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
+    return score >= 3
 
-def extract_text_paddleocr(image_path):
-    """
-    Extracts text from an image using PaddleOCR.
+def isVersoID(text):
+    keywords = ["Adresse", "délivrée le", "Carte valable jusqu'au", "Carte nationale", "par", "Signature de lautorité"]
+    score = sum(1 for k in keywords if k.lower() in text.lower())
+    return score >= 3
 
-    Parameters:
-    - image_path (str): Path to the input image.
-
-    Returns:
-    - str: Recognized text from the image.
-    """
-    ocr = PaddleOCR(use_angle_cls=True, lang='fr')
-    result = ocr.ocr(image_path, cls=True)
-    output_text = []
-    for line in result:
-        for word_info in line:
-            output_text.append(word_info[1][0])
-    return "\n".join(output_text)
 
 def getInfosPrescription(text):
-    """
-    Extracts structured data from a prescription text.
-
-    Parameters:
-    - text (str): Raw OCR-extracted text.
-
-    Returns:
-    - dict: Extracted information including doctor, RPPS, patient, and dates.
-    """
     infos = {}
     spe = "NONE"
 
@@ -114,19 +70,12 @@ def getInfosPrescription(text):
     if rpps_match:
         infos["rpps"] = rpps_match.group(1)
 
-    patient_pattern = r"(?:M\.|Mme\.)\s+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)\s+([A-Za-z]+)"
+    patient_pattern = r"(?:M\.|Mme\.)[^\S\r\n]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
     patient = re.search(patient_pattern, text)
     if patient:
-        last_name, first_name = patient.groups()
-        infos["patient"] = {
-            "prenom": first_name,
-            "nom": last_name
-        }
-
-    # date_pattern = r"\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}"
-    # dates = re.findall(date_pattern, text)
-    # if dates:
-    #     infos["dates"] = dates
+        last_name = patient.group(1)
+        first_name = patient.group(2)
+        infos["patient"] = {"prenom": first_name, "nom": last_name}
 
     date_presc_match = re.search(r"Le\s+(\d{1,2}\s+[a-zéû]+\s+\d{4})", text, re.IGNORECASE)
     if date_presc_match:
@@ -139,17 +88,11 @@ def getInfosPrescription(text):
 
     for line in lines:
         line = line.strip()
-
         if not capture_started and re.search(r"né\(e\)|née le", line, re.IGNORECASE):
             capture_started = True
             continue
-
-        if not capture_started:
+        if not capture_started or not line:
             continue
-
-        if not line:
-            continue
-
         if re.search(r"[A-Z]{3,}.*\b(mg|ml|g|%|cp|comprimé|sol|solution|pulv|capsule|pommade|sirop|gelule)\b", line, re.IGNORECASE):
             current_med = {"nom": line, "posologie": ""}
             meds.append(current_med)
@@ -158,7 +101,6 @@ def getInfosPrescription(text):
 
     for med in meds:
         med["posologie"] = med["posologie"].strip()
-
     if meds:
         infos["medicaments"] = meds
 
@@ -166,135 +108,233 @@ def getInfosPrescription(text):
 
 
 def getInfosRectoID(text):
-    """
-    Extracts structured data from the front of a French ID card.
-
-    Parameters:
-    - text (str): Raw OCR-extracted text.
-
-    Returns:
-    - dict: Extracted information including name, nationality, sex, etc.
-    """
     infos = {}
+
+
     text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
-               .replace("TM=Nom", "Nom").replace("PrenomS", "Prénoms") \
-               .replace("Nele", "Née le").replace("Taille", "Taille ") \
-               .replace("Sexe:", "Sexe:")
+               .replace("TM Nom:", "Nom:").replace("Prénom(s):", "Prénoms:") \
+               .replace("Né(e) le", "Né(e) le:").replace("Taille", "Taille:") \
+               .replace("Sexe :", "Sexe:").replace("à:", "lieu_naissance:")
+
+
+    match = re.search(r"CARTE NATIONALE D'IDENTITE\s+No[:\s]*([0-9A-Z]+)", text, re.IGNORECASE)
+    if match:
+        infos["numero_carte"] = match.group(1).strip()
+
 
     match = re.search(r"Nationalité[:\s]*([A-Za-zéÉèàêâîç]+)", text)
     if match:
-        infos["nationalite"] = match.group(1)
+        infos["nationalite"] = match.group(1).strip()
+
 
     match = re.search(r"Nom[:\s]*([A-Z]+)", text)
     if match:
         infos["nom"] = match.group(1).capitalize()
 
-    match = re.search(r"Prénoms[:\s]*([A-Z]+)", text)
+
+    match = re.search(r"Prénoms[:\s]*([A-Z\s]+)", text)
     if match:
-        raw = match.group(1)
-        prenoms = re.findall(r'[A-Z][a-z]*', raw.capitalize())
+        raw = match.group(1).strip()
+
+        prenoms = [p.capitalize() for p in raw.split() if len(p) > 1]
         infos["prenoms"] = prenoms
+
 
     match = re.search(r"Sexe[:\s]*([MF])", text)
     if match:
         infos["sexe"] = "Homme" if match.group(1) == "M" else "Femme"
 
-    match = re.search(r"Née(?: le)?[:\s]*([0-9]{2}[.\-/][0-9]{2}[.\-/][0-9]{4})", text)
+
+    match = re.search(r"Né\(e\) le[:\s]*([0-9]{2}[./-][0-9]{2}[./-][0-9]{4})", text)
     if match:
         infos["date_naissance"] = match.group(1).replace('.', '/')
 
-    match = re.search(r"Taille\s*([0-9][.,][0-9]{2})", text)
+
+    match = re.search(r"lieu_naissance[:\s]*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)", text)
+    if match:
+        raw_lieu = match.group(1).strip()
+
+        raw_lieu = re.split(r'\s*\n', raw_lieu)[0]
+        infos["lieu_naissance"] = raw_lieu.title()
+
+
+    match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
     if match:
         infos["taille"] = match.group(1).replace(',', '.')
 
     return infos
 
+
 def getInfosVersoID(text):
-    """
-    Extracts structured data from the back of a French ID card.
-
-    Parameters:
-    - text (str): Raw OCR-extracted text.
-
-    Returns:
-    - dict: Extracted information including address, authority, delivery and validity dates.
-    """
     infos = {}
+
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
                .replace("delivreele", "délivrée le") \
                .replace("Adresse.:", "Adresse:") \
                .replace("Adresse.", "Adresse:") \
                .replace("LaPrefete", "La Préfète") \
-               .replace("Par", "par")
+               .replace("LePrefet", "Le Préfèt") \
+               .replace("par:", "par:") \
+               .replace("Signature de lautorité", "signature_autorite")
 
-    address_pattern = r"Adresse[:\s]*([0-9A-Z\- ]+)"
-    address_match = re.search(address_pattern, text, re.IGNORECASE)
+
+    address_match = re.search(
+        r"Adresse[:\s]*([0-9A-Z\s\-]+)\s*\n\s*(\d{5})\s*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)",
+        text, re.IGNORECASE
+    )
     if address_match:
-        adresse = address_match.group(1)
-        adresse = re.sub(r"(\d{5})([A-Z])", r"\1 \2", adresse)
-        infos["adresse"] = adresse.strip().title()
+        infos["adresse"] = address_match.group(1).title().strip()
+        infos["code_postal"] = address_match.group(2)
 
-    validity_pattern = r"valable.*?(\d{2}[./-]\d{2}[./-]\d{4})"
-    valid_match = re.search(validity_pattern, text)
+        infos["ville"] = address_match.group(3).split('\n')[0].title().strip()
+
+
+    valid_match = re.search(r"valable.*?(\d{2}[./-]\d{2}[./-]\d{4})", text)
     if valid_match:
         infos["date_validite"] = valid_match.group(1).replace('.', '/')
 
-    issued_pattern = r"délivrée\s*le\s*(\d{2}[./-]\d{2}[./-]\d{4})"
-    issued_match = re.search(issued_pattern, text)
+
+    issued_match = re.search(r"délivrée le[:\s]*(\d{2}[./-]\d{2}[./-]\d{4})", text)
     if issued_match:
         infos["date_delivrance"] = issued_match.group(1).replace('.', '/')
 
-    by_pattern = r"par\s*([A-Z\s\-]+)"
-    by_match = re.search(by_pattern, text, re.IGNORECASE)
+
+    by_match = re.search(r"par[:\s]*(.+)", text, re.IGNORECASE)
     if by_match:
-        infos["autorite"] = by_match.group(1).strip().title()
+        autorite = by_match.group(1).split('\n')[0].strip()
+        infos["autorite"] = autorite.title()
+
+
+    sig_match = re.search(r"signature_autorite[:\s]*(.+)", text, re.IGNORECASE | re.DOTALL)
+    if sig_match:
+        signature = sig_match.group(1).strip()
+        infos["signature_autorite"] = " ".join([line.strip() for line in signature.splitlines() if line.strip()])
 
     return infos
 
-def main(image_path, doc_type):
+
+
+def flip_image(input_path, flip_code=1):
+    """ Flip the image and save the result """
+    image = cv2.imread(input_path)
+    if image is None:
+        raise FileNotFoundError(f"Could not read the image at {input_path}")
+    flipped = cv2.flip(image, flip_code)
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+    cv2.imwrite(tmp_file.name, flipped)
+    return tmp_file.name
+
+def verify_doctor(first_name, last_name):
+    try:
+        url = "http://localhost:5000/find_doctor_by_name"
+        params = {"last_name": last_name}
+        if first_name:
+            params["first_name"] = first_name
+        resp = requests.get(url, params=params, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            if isinstance(data, list) and data:
+                return True, data
+            return False, {"error": "Doctor not found", "data": data}
+        return False, {"error": f"API error {resp.status_code}"}
+    except Exception as e:
+        return False, {"error": str(e)}
+
+
+
+def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
     """
-    Main function to process an image: correct orientation, extract text, and parse data.
-
-    Parameters:
-    - image_path (str): Path to the input image.
-    - doc_type (str): Type of document ('P' = prescription, 'R' = recto ID, 'V' = verso ID).
-
-    Returns:
-    - dict: Parsed information extracted from the image.
+    Extract text from image using Doctr OCR and return JSON with infos.
     """
-    corrected_image = correct_orientation(image_path)
-    text = extract_text_paddleocr(corrected_image)
+    result = {"success": False, "raw_text": "", "infos": {}, "error": ""}
 
-    print("\n=== TEXTE OCR ===\n")
-    print(text)
+    try:
 
-    data = {}
+        if from_base64:
+            # Support both raw bytes and base64-encoded strings (optionally prefixed with a data URI)
+            if isinstance(image_input, (bytes, bytearray)):
+                image_data = bytes(image_input)
+            elif isinstance(image_input, str):
+                b64_payload = image_input.split(",")[-1]
+                image_data = base64.b64decode(b64_payload)
+            else:
+                raise TypeError("Unsupported image_input type for base64 mode")
 
-    if doc_type == "P":
-        data = getInfosPrescription(text)
-    elif doc_type == "R":
-        data = getInfosRectoID(text)
-    elif doc_type == "V":
-        data = getInfosVersoID(text)
-    else:
-        print("Unknown. Use P, R, V.")
-        return
+            nparr = np.frombuffer(image_data, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            if not os.path.exists(image_input):
+                result["error"] = f"File '{image_input}' does not exist"
+                return result
+            img = cv2.imread(image_input)
 
-    print("\n=== INFOS JSON ===\n")
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-    return data
+        if img is None:
+            result["error"] = "Cannot read image file"
+            return result
+
+        if flip_horizontal:
+            img = cv2.flip(img, 1)
+
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            tmp_path = tmp.name
+            cv2.imwrite(tmp_path, img)
+
+
+        predictor = ocr_predictor(pretrained=True)
+        doc = DocumentFile.from_images(tmp_path)
+        ocr_result = predictor(doc)
+
+        lines = []
+        for page in ocr_result.pages:
+            for block in page.blocks:
+                for line in block.lines:
+                    line_text = " ".join([word.value for word in line.words])
+                    lines.append(line_text)
+
+        text = "\n".join(lines).strip()
+        result["raw_text"] = text
+
+        valid = False
+        infos = {}
+
+        if doc_type.upper() == "P":
+            valid = isPrescription(text)
+            if valid:
+                infos = getInfosPrescription(text)
+        elif doc_type.upper() == "R":
+            valid = isRectoID(text)
+            if valid:
+                infos = getInfosRectoID(text)
+        elif doc_type.upper() == "V":
+            valid = isVersoID(text)
+
+            if valid:
+                infos = getInfosVersoID(text)
+
+
+        if not valid:
+            result["error"] = f"The provided document does not match the expected type '{doc_type}'."
+
+
+        result["success"] = valid
+        result["infos"] = infos
+
+        return result
+
+    except Exception as e:
+        result["error"] = str(e)
+        print("result", result)
+        return result
+
 
 if __name__ == "__main__":
-    """
-    Entry point for command-line usage.
-
-    Usage:
-        python3 script.py <image_path> <P|R|V>
-    """
-    if len(sys.argv) != 3:
-        print("Usage: python3 extractAll.py <image_path> <P|R|V>")
+    if len(sys.argv) < 3:
+        print("Usage: python extractAll.py <image_path> <doc_type>")
         sys.exit(1)
 
-    img_path = sys.argv[1]
-    doc_type = sys.argv[2].upper()
-    main(img_path, doc_type)
+    image_path = sys.argv[1]
+    doc_type = sys.argv[2]
+
+    output = main(image_path, doc_type)
+    print(json.dumps(output, ensure_ascii=False, indent=2))

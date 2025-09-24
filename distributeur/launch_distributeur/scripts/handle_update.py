@@ -15,10 +15,15 @@ UPDATE_FUNCTIONS = {
 
 def handle_update(update_function, db_container_name, backend_folder):
     """
-    Handles database update operations by executing the specified update function.
+    Objectif: Executes a specified database update function by running the corresponding SQL command in the database container.
 
     Parameters:
-    - update_function (str): The name of the update function to execute.
+        - update_function: The name of the update function to execute, which must exist in the UPDATE_FUNCTIONS dictionary. (String)
+        - db_container_name: The name of the database Docker container where the update will be executed. (String)
+        - backend_folder: The path to the backend directory containing the database configuration. (String)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages and may terminate the program on errors. (NoneType)
     """
     colored_print("Starting database update...", "green")
 

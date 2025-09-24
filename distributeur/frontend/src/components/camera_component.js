@@ -78,16 +78,16 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
 
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)) {
+            if (["ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
 
             const totalButtons = getTotalButtons();
 
-            if (event.key === "ArrowRight") {
+            if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                 setFocusedButtonIndex((prev) => (prev + 1) % totalButtons);
-            } else if (event.key === "ArrowLeft") {
+            } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
                 setFocusedButtonIndex((prev) => (prev - 1 + totalButtons) % totalButtons);
             } else if (event.key === "Enter") {
                 if (!isPhotoTaken) {
@@ -124,27 +124,27 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                     </div>
 
                     <div className="flex justify-center gap-8 mt-6">
-                        <button 
-                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`} 
+                        <button
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`}
                             onClick={handleRetakePhoto}
                             tabIndex={focusedButtonIndex === 0 ? 0 : -1}
                         >
                             <FaRedo className="mr-2" />
                             Prendre une autre photo
                         </button>
-                        <button 
-                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''}`} 
+                        <button
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''}`}
                             onClick={handleValidatePhoto}
                             tabIndex={focusedButtonIndex === 1 ? 0 : -1}
                         >
                             <FaCheck className="mr-2" />
                             OK
                         </button>
-                        <button 
-                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 2 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                        <button
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 2 ? 'scale-110' : ''} ${config.buttonColors.redHover}`}
                             onClick={handleClose}
                             tabIndex={focusedButtonIndex === 2 ? 0 : -1}
                         >
@@ -160,8 +160,8 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                     </div>
 
                     <div className="flex justify-center gap-8 mt-6">
-                        <button 
-                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg 
+                        <button
+                            className={`px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-400 text-lg font-semibold rounded-lg
                             shadow-md hover:scale-110 transition-transform duration-300 ${focusedButtonIndex === 0 ? 'scale-110' : ''}`}
                             onClick={capturePhoto}
                             tabIndex={focusedButtonIndex === 0 ? 0 : -1}
@@ -169,9 +169,9 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                             <FaCamera className="mr-2" />
                             Prendre une photo
                         </button>
-                        <button 
-                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg 
-                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''} ${config.buttonColors.redHover}`} 
+                        <button
+                            className={`px-6 py-3 ${config.buttonColors.red} text-lg font-semibold rounded-lg
+                            shadow-md transition-transform duration-300 ${focusedButtonIndex === 1 ? 'scale-110' : ''} ${config.buttonColors.redHover}`}
                             onClick={handleClose}
                             tabIndex={focusedButtonIndex === 1 ? 0 : -1}
                         >

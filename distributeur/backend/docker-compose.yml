@@ -1,6 +1,6 @@
-
 services:
   app:
+    image: phx-backend-app
     build:
       context: .  # Use the current directory for building the Docker image
       dockerfile: docker/Dockerfile.app  # Specify the Dockerfile to use for the app
@@ -8,16 +8,18 @@ services:
       - "5000:5000"  # Expose port 5000 from the container to port 5000 on the host (adjust if app listens on a different port)
     volumes:
       - .:/app  # Mount the current directory to /app inside the container (for code updates)
+      - medicine_data:/data
     environment:
       - FLASK_ENV=development  # Set the Flask environment to development (for Flask)
       - DB_HOST=${DB_HOST}  # Set the database host (use the environment variable from .env)
       - DB_USER=${DB_USER}  # Set the database user (use the environment variable from .env)
       - DB_PASSWORD=${DB_PASSWORD}  # Set the database password (use the environment variable from .env)
       - DB_NAME=${DB_NAME}  # Set the database name (use the environment variable from .env)
+      - medicine_data:/data
     container_name: "distributeur-backend-app"  # Name of the container
 
   db:
-    image: mysql:5.7  # Use MySQL version 5.7 for the database service
+    image: mysql/mysql-server:5.7  # Use MySQL version 5.7 for the database service
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Set the MySQL root password (use the environment variable from .env)
       MYSQL_DATABASE: ${DB_NAME}  # Set the MySQL database name (use the environment variable from .env)
@@ -29,6 +31,7 @@ services:
     build:
       context: .  # Use the current directory for building the Docker image
       dockerfile: docker/Dockerfile.test  # Specify the Dockerfile to use for the test environment
+    image: distributeur-backend-test:latest  # explicit image name
     command: ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]  # Run the test suite with pytest
     volumes:
       - .:/app  # Mount the current directory to /app inside the container (for test execution)
@@ -41,3 +44,6 @@ services:
     profiles:
       - test  # Enable this service only in the 'test' profile
     container_name: "distributeur-backend-test"  # Name of the test container
+
+volumes:
+  medicine_data:

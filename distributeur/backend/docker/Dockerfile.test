@@ -1,22 +1,45 @@
-
 FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt /app/
-COPY requirements_ignored.txt /app/
+# Install system dependencies first (cache optimization)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libzbar0 \
+        netcat-openbsd \
+        libgl1 \
+        libglib2.0-0 \
+        tesseract-ocr \
+        libglx-mesa0 \
+        libglx0 \
+        libopengl0 \
+        libegl1 \
+        libgles2 \
+        libsm6 \
+        libxext6 \
+        libxrender1 && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip
+# Copying and installing Python dependencies (use lightweight test requirements)
+COPY requirements-test.txt /app/
+RUN pip install --upgrade pip && \
+    pip install --default-timeout=1000 --no-cache-dir -r requirements-test.txt && \
+    pip cache purge
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements_ignored.txt
-
-RUN apt-get update && apt-get install -y netcat-openbsd
-
-RUN pip install --upgrade Flask Werkzeug
-
+# Copy the application code
 COPY . /app
-
 COPY pytest.ini /app/
+
+# Creating directories and configuring them
+RUN mkdir -p /data
+
+# Copy the init script and fix Windows CRLF issue
+COPY scripts/init_medicine.sh /init_medicine.sh
+RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
+
+ENTRYPOINT ["/init_medicine.sh"]
+
+# Graphics Libraries Verification Test (kept minimal to avoid scanning whole FS)
+RUN ldconfig -p | grep libGL || echo "libGL not found"
 
 CMD ["pytest", "--ignore=app.py", "--cov=./", "--cov-report=term-missing", "-vv"]

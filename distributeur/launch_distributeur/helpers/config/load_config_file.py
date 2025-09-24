@@ -10,17 +10,19 @@ from colored_print import colored_print
 # Function to load and validate the configuration file
 def load_config_file():
     """
-    Loads and validates a configuration file, ensuring the presence of required keys.
+    Objectif: Loads and validates the configuration file, ensuring the presence of required sections and keys.
 
-    Returns:
-        dict: A dictionary containing the parsed configuration data, including:
-            - "required_env_keys" (list): A list of environment keys required for the application.
-            - "db_dump_date" (str): The date of the database dump.
-            - "debug_logs" (str): A flag indicating whether debug logs are enabled ("Yes" or "No").
+    Parameters:
+        - None
+
+    Return Value:
+        - config_data: A dictionary containing the parsed configuration data with keys:
+            - required_env_keys: List of required environment keys. (List)
+            - db_dump_date: Date of the database dump. (String)
+            - debug_logs: Flag indicating if debug logs are enabled ("yes" or "no"). (String)
 
     Raises:
-        SystemExit:
-            Exits the program with an error message if the configuration file is missing required keys.
+        - SystemExit: If the configuration file is missing required sections or keys.
     """
 
     # Load the configuration file

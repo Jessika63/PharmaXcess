@@ -3,17 +3,17 @@ import os
 
 def load_env_file(env_file_path):
     """
-    Loads environment variables from a .env file and returns them as a dictionary.
+    Objectif: Loads environment variables from a .env file and returns them as a dictionary.
 
-    Args:
-        env_file_path (str): Path to the .env file.
+    Parameters:
+        - env_file_path: Path to the .env file to load. (String)
 
-    Returns:
-        dict: Dictionary containing key-value pairs from the .env file.
+    Return Value:
+        - env_data: Dictionary containing key-value pairs parsed from the .env file. (Dictionary)
 
     Raises:
-        FileNotFoundError: If the .env file does not exist.
-        ValueError: If the .env file contains invalid lines.
+        - FileNotFoundError: If the specified .env file does not exist.
+        - ValueError: If the .env file contains invalid lines without an equals sign.
     """
     env_data = {}
 

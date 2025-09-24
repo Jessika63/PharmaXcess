@@ -5,12 +5,12 @@ import { ColorScheme } from './Colors';
 const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        alignItems: 'center',
         backgroundColor: colors.background,
     },
     prescriptionList: {
-      alignItems: 'center',
+      flexGrow: 1,
+      padding: 16,
+      paddingBottom: 100, // Space for bottom buttons
     },
     prescriptionCard: {
       width: '100%',
@@ -20,6 +20,14 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
+      shadowColor: colors.shadow || '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3.84,
+      elevation: 5,
     },
     prescriptionTitle: {
         fontSize: 20 * fontScale,
@@ -39,19 +47,34 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
       width: '100%',
     },
     photoPreview: {
+      width: '100%',
       alignItems: 'center',
-      marginBottom: 20,
+      marginVertical: 16,
+      padding: 16,
+      borderRadius: 10,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     image: {
-      width: 300,
-      height: 300,
-      marginBottom: 10,
+      width: '100%',
+      aspectRatio: 1,
+      maxWidth: 300,
+      maxHeight: 300,
+      marginBottom: 16,
+      borderRadius: 10,
     },
     buttonContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      width: '100%',
-      marginTop: 30,
+      padding: 16,
+      backgroundColor: colors.background,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     button: {
       flex: 1,

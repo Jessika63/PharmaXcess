@@ -11,18 +11,21 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 @get_pharmacies_bp.route('/get_pharmacies', methods=['GET'])
 def get_pharmacies():
     """
-    Searches for pharmacies near a given latitude and longitude.
+    Objectif: Search for and return a list of nearby pharmacies based on geographic coordinates.
+
+    Parameters:
+        - None
 
     Query parameters:
-        - lat: Latitude of the search location (required).
-        - lon: Longitude of the search location (required).
-        - radius: Search radius in meters (optional, default: 1000m).
+        - lat: Latitude of the search location. (Float, Required)
+        - lon: Longitude of the search location. (Float, Required)
+        - radius: Search radius in meters. Defaults to 1000m. (Integer, Optional)
 
     Return Value:
-        - 200 OK with a list of nearby pharmacies and a success message.
-        - 400 Bad Request, if lat or lon is missing.
-        - 404 Not Found, if no pharmacies are found.
-        - 500 Internal Server Error, if Overpass API or other error.
+        - 200: JSON response containing up to 10 nearest pharmacies with names and coordinates. (Object)
+        - 400: JSON error response if latitude or longitude parameters are missing. (Object)
+        - 404: JSON error response if no pharmacies are found in the specified area. (Object)
+        - 500: JSON error response for Overpass API failures or other server errors. (Object)
     """
 
     # Retrieve query parameters from the request URL
@@ -38,7 +41,6 @@ def get_pharmacies():
     pharmacies = []
     current_radius = radius
     while True:
-        print(f"Searching pharmacies at lat={lat}, lon={lon}, radius={current_radius}")
         try:
             # Construct the Overpass API query
             query = f"""
@@ -66,6 +68,18 @@ def get_pharmacies():
 
             # Sort by distance to (lat, lon) and keep only the 10 nearest
             def haversine(lat1, lon1, lat2, lon2):
+                """
+                Objectif: Calculate the great-circle distance between two points on the Earth using the Haversine formula.
+
+                Parameters:
+                    - lat1: Latitude of the first point in degrees. (Float)
+                    - lon1: Longitude of the first point in degrees. (Float)
+                    - lat2: Latitude of the second point in degrees. (Float)
+                    - lon2: Longitude of the second point in degrees. (Float)
+
+                Return Value:
+                    - distance: The distance between the two points in kilometers. (Float)
+                """
                 R = 6371  # Earth radius in km
                 phi1 = math.radians(lat1)
                 phi2 = math.radians(lat2)

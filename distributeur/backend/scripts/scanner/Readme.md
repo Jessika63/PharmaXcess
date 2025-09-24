@@ -29,7 +29,7 @@ python3 fillDBWithFile.py <file_path>
 
 ### 2.1. Description
 
-This script analyzes an image (photo or scan) to extract text using OCR (Tesseract). It can identify medical prescriptions, ID cards, and extract relevant information.
+This script analyzes an image (photo or scan) to extract text using OCR (UMI). It can identify medical prescriptions, ID cards, and extract relevant information.
 
 ### 2.2. Usage
 
@@ -51,32 +51,11 @@ python3 extractAll.py <image_path> <P|R|V>
 
 ---
 
-## 3. Script: `take_picture.py`
-
-### 3.1 Description
-
-This script captures an image from the webcam and saves it locally. It can also use an image recognition model (`MobileNetV2`) to classify objects present in the image.
-
-### 3.2. Usage
-
-```sh
-python3 take_picture.py [file_name]
-```
-
-- `file_name` (optional): Name of the image file without extension. By default, `captured_image.png` will be used.
-
-### 3.3. Functionality
-
-1. Activates the webcam and captures an image.
-2. Saves the image in the `screenFolder` directory.
-3. (Disabled option) Can use an image classification model to identify objects in the photo.
-
----
-
 ## Notes
-- The scripts use libraries such as `requests`, `cv2`, `pytesseract`, and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt && pip install -r requirements_ignored.txt`).
+
+- The scripts use libraries such as `requests`, `cv2` and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt`).
 - The API must be accessible locally (`http://localhost:5000`).
-- For `extractAll.py`, Tesseract OCR must be installed and configured on your machine.
+- For `extractAll.py`, UMI OCR must be installed and configured on your machine.
 
 ---
 

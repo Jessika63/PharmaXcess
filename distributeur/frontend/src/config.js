@@ -22,7 +22,10 @@ import {
   FaCamera,
   FaUndo,
   FaTimesCircle,
-  FaHome
+  FaHome,
+  FaQrcode,
+  FaInfoCircle,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import logo from './assets/logo.png';
 
@@ -172,6 +175,12 @@ const config = {
     
     // Home icon
     home: FaHome,
+
+    qrCode: FaQrcode,
+    
+    // Info and warning icons
+    info: FaInfoCircle,
+    warning: FaExclamationTriangle,
   },
   
   // Common button styles

@@ -9,7 +9,14 @@ BATCH_SIZE = 180  # Batch size
 
 def validate_row(row):
     """
-    Checks if a CSV row contains all required information.
+    Objectif: Validates if a CSV row contains all required fields with non-empty values.
+
+    Parameters:
+        - row: A dictionary representing a single CSV row, where keys are column names. (Dictionary)
+
+    Return Value:
+        - True: If all required fields are present and contain non-empty string values. (Boolean)
+        - False: If any required field is missing or contains an empty value. (Boolean)
     """
     required_fields = [
         "Practice First Name",
@@ -22,7 +29,13 @@ def validate_row(row):
 
 def clean_text(value):
     """
-    Cleans text by removing invalid or special characters.
+    Objectif: Cleans and normalizes text by removing invalid or special characters, including Unicode normalization and filtering to printable characters.
+
+    Parameters:
+    - value: The input text to be cleaned. Can be a string or None. (String or NoneType)
+
+    Return Value:
+    - cleaned_text: The cleaned and normalized text as a string, or an empty string if input is None or empty. (String)
     """
     if not value:
         return ""
@@ -32,7 +45,14 @@ def clean_text(value):
 
 def process_csv(csv_path):
     """
-    Reads a CSV file and prepares data in batches.
+    Objectif: Reads and processes a CSV file in batches, validating and cleaning each row to prepare doctor data for insertion.
+
+    Parameters:
+        - csv_path: The file path of the CSV to process. (String)
+
+    Return Value:
+        - Yields batches of validated and cleaned doctor dictionaries when available. (Generator[List[Dict]])
+        - Prints error messages for file not found or other exceptions without returning values.
     """
     doctors = []
     try:
@@ -59,7 +79,13 @@ def process_csv(csv_path):
 
 def process_json(json_path):
     """
-    Reads a JSON file and prepares data as a list.
+    Objectif: Reads and processes a JSON file containing doctor data, extracting the list of doctors from the file.
+
+    Parameters:
+        - json_path: The file path of the JSON file to process. (String)
+
+    Return Value:
+        - doctors: A list of doctor dictionaries extracted from the JSON file. Returns empty list on error. (List)
     """
     try:
         with open(json_path, mode='r', encoding='utf-8') as file:
@@ -74,7 +100,13 @@ def process_json(json_path):
 
 def send_data_to_api(doctors):
     """
-    Sends a batch of doctors to the API.
+    Objectif: Sends a batch of doctor data to a predefined API endpoint for processing or storage.
+
+    Parameters:
+        - doctors: A list of doctor dictionaries to be sent to the API. (List of Dictionaries)
+
+    Return Value:
+        - None: This function does not return a value but prints success or error messages to the console.
     """
     if not doctors:
         print("Error: No doctors to send.")
@@ -91,7 +123,13 @@ def send_data_to_api(doctors):
 
 def main(file_path):
     """
-    Detects the file type and sends the corresponding data to the API.
+    Objectif: Detects the file type based on the extension and processes the data accordingly, sending it to the API in the appropriate format.
+
+    Parameters:
+        - file_path: The path to the file to be processed. (String)
+
+    Return Value:
+        - None: This function does not return a value but may print status or error messages to the console.
     """
     if file_path.endswith(".json"):
         doctors = process_json(file_path)
