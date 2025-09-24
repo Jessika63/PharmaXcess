@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigation from './navigations/RootNavigation';
@@ -7,18 +8,19 @@ import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { useCORSRegistration } from './hooks/useCORSRegistration';
 import CORSLoadingScreen from './components/CORSLoadingScreen';
+import './utils/i18n';
 
 // Composant interne pour gérer l'enregistrement CORS
 function AppWithCORS(): React.JSX.Element {
-    const { isRegistered, isLoading, error, retryRegistration } = useCORSRegistration();
+    const { isRegistered, isLoading, error, retry } = useCORSRegistration();
 
     // Afficher l'écran de chargement pendant l'enregistrement CORS
     if (isLoading || !isRegistered) {
         return (
-            <CORSLoadingScreen 
+            <CORSLoadingScreen
                 isLoading={isLoading}
                 error={error}
-                onRetry={retryRegistration}
+                onRetry={retry}
             />
         );
     }

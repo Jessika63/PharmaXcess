@@ -1,12 +1,9 @@
 
 from modulefinder import test
-import os
 import argparse
 import subprocess
 import signal
 import sys
-import threading
-import time
 
 from launch_files.helpers.config.load_config_file import load_config_file
 from launch_files.scripts.handle_verif import handle_verif
@@ -84,8 +81,8 @@ if __name__ == "__main__":
     main_group.add_argument("--test", action="store_true", help="Run tests.")
     main_group.add_argument("--front", action="store_true", help="Run dispenser frontend-related operations.")
     main_group.add_argument("--app", action="store_true", help="Run the mobile app.")
-    main_group.add_argument("--all", action="store_true", help="Run the whole application except for tests.")
-    main_group.add_argument("--combo", action="store_true", help="Run verif, back, front, and test in sequence.")
+    main_group.add_argument("--all", action="store_true", help="Run the whole application (app, front & back) except for tests.")
+    main_group.add_argument("--combo", action="store_true", help="Run verif, back, front, app and test in sequence.")
     main_group.add_argument("--restart", action="store_true", help="Function to run down and then all to stop and start again the application.")
 
     # Database Operations
@@ -112,6 +109,7 @@ if __name__ == "__main__":
 
     # Miscellaneous
     misc_group.add_argument("--sudo", action="store_true", help="Use sudo for npm install in frontend operations.")
+    misc_group.add_argument("--tunnel", action="store_true", help="Start Expo in tunnel mode for mobile app.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -134,13 +132,16 @@ if __name__ == "__main__":
     app_db_container_name = "app-backend-db"
     dispenser_db_container_name = "distributeur-backend-db"
 
-
     # Load configuration
     config = load_config_file()
 
     # Extract database configurations
     db_configs = config["databases"]
     env_configs = config["env_configs"]
+
+    volumes=[
+        "medicine_data"
+    ]
 
     # Execute operations based on flags
     if any(vars(args).values()):
@@ -154,10 +155,10 @@ if __name__ == "__main__":
                 env_configs, backend_folder, db_configs
             )
             handle_back(
-                backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
-            mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+            mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
             if mobile_app_process:
                 active_processes.append(mobile_app_process)
             if args.combo or args.restart:
@@ -173,20 +174,20 @@ if __name__ == "__main__":
                     env_configs, backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
-                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:
                     active_processes.append(mobile_app_process)
             if args.back:
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             if args.app:
-                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app)
+                mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:
                     active_processes.append(mobile_app_process)
             if args.test:
@@ -222,9 +223,7 @@ if __name__ == "__main__":
                         test_image_name,
                         "mysql/mysql-server:5.7"
                     ],
-                    volumes=[
-                        "medicine_data"
-                    ]
+                    volumes=volumes
                 )
             if args.see_log:
                 handle_logs(
