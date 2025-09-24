@@ -25,7 +25,9 @@
                 "REACT_APP_CORS_SECRET_KEY"
             ],
             "pharmaXcess_app/" : [
-                "EXPO_PUBLIC_CORS_SECRET_KEY"
+                "EXPO_PUBLIC_CORS_SECRET_KEY",
+                "EXPO_PUBLIC_BACKEND_URL",
+                "NGROK_TOKEN"
             ]
         },
         "databases": [
