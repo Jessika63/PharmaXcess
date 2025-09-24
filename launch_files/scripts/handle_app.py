@@ -9,7 +9,7 @@ import requests
 import shutil
 
 from helpers.colored_print import colored_print
-from helpers.change_directory import change_directory
+from helpers.change_directory import change_directory, try_change
 
 def setup_ngrok(mobile_app_folder):
     """
@@ -17,12 +17,13 @@ def setup_ngrok(mobile_app_folder):
     """
     colored_print("Configuration de ngrok...", "blue")
 
+    change_directory(mobile_app_folder)
+
     # Lecture du token ngrok depuis le .env du frontend
-    env_file_path = os.path.join(mobile_app_folder, '.env')
     ngrok_token = None
 
     try:
-        with open(env_file_path, 'r') as f:
+        with open(".env", 'r') as f:
             for line in f:
                 if line.startswith('NGROK_TOKEN='):
                     ngrok_token = line.split('=', 1)[1].strip().strip('"').strip("'")
@@ -30,6 +31,9 @@ def setup_ngrok(mobile_app_folder):
     except Exception as e:
         colored_print(f"Erreur lecture .env: {e}", "red")
         return False
+
+    parent_dir = os.path.abspath(os.path.join(".."))
+    try_change(parent_dir)
 
     if not ngrok_token:
         colored_print("Token ngrok non trouvé dans .env", "red")
