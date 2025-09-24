@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { useCORSRegistration } from './hooks/useCORSRegistration';
 import CORSLoadingScreen from './components/CORSLoadingScreen';
+import './utils/i18n';
 
 // Composant interne pour gérer l'enregistrement CORS
 function AppWithCORS(): React.JSX.Element {
