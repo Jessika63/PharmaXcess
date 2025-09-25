@@ -64,8 +64,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * Retrieves a paginated list of tickets for a given user, sorted by creation date in descending order.
      *
      * @param userId the ID of the user
-     * @param x      the starting index (1-based)
-     * @param y      the ending index (inclusive)
+     * @param limit      the starting index (1-based)
+     * @param offset      the ending index (inclusive)
      * @return a list of {@link Ticket} between the given indices
      */
     @Query(
