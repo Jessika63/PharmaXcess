@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, Scrol
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Notifications from 'expo-notifications';
 import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
+import { NotificationService } from '../../utils/notificationService';
 
 type Reminder = {
     id: string;
@@ -83,6 +85,102 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
 
     // For profile-based reminder management (simulated) 
     const [profileRemindersData, setProfileRemindersData] = useState<string[]>([]);
+    
+    // State to manage notifications
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+    const [notificationIds, setNotificationIds] = useState<Map<string, string>>(new Map());
+
+    // Setup notifications on mount 
+    useEffect(() => { 
+        initializeNotifications(); 
+    }, []); 
+
+    const initializeNotifications = async () => {
+        const isEnabled = await NotificationService.requestPermissions();
+        setNotificationsEnabled(isEnabled);
+        
+        if (!isEnabled) {
+            Alert.alert(
+                'Notifications désactivées',
+                'Les rappels d\'ordonnances ne fonctionneront pas sans les notifications. Vous pouvez les activer dans les paramètres.',
+                [
+                    { text: 'Plus tard', style: 'cancel' },
+                    { text: 'Paramètres', onPress: () => NotificationService.requestPermissions() }
+                ]
+            );
+        }
+    };
+
+    // Schedule a notification for a reminder
+    const scheduleNotification = async (reminder: Reminder) => {
+        if (!notificationsEnabled) {
+            console.log(`⚠️ Notifications désactivées pour ${reminder.name}`);
+            return [];
+        }
+
+        console.log(`🔄 Programmation notification pour ${reminder.name}...`);
+        
+        // Don't schedule a notification if the reminder is completed
+        if (reminder.isCompleted) {
+            console.log(`⏹️ Rappel ${reminder.name} déjà terminé, pas de notification`);
+            return [];
+        }
+        
+        const now = new Date();
+        const reminderDate = new Date(reminder.dueDate);
+        reminderDate.setHours(9, 0, 0, 0); // Schedule for 9 AM on the due date 
+        
+        // Don't schedule if date is in the past
+        if (reminderDate <= now) {
+            console.log(`⏭️ ${reminder.name}: date ${reminderDate.toLocaleDateString()} dans le passé, ignorée`);
+            return [];
+        }
+
+        try {
+            const priorityEmoji = reminder.priority === 'high' ? '🚨' : 
+                                reminder.priority === 'medium' ? '⚠️' : 'ℹ️';
+
+            const notificationId = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: `${priorityEmoji} Rappel d'ordonnance`,
+                    body: `Il est temps de renouveler votre ordonnance: ${reminder.name}${reminder.notes ? '\n' + reminder.notes : ''}`,
+                    sound: true,
+                    data: {
+                        reminderId: reminder.id,
+                        type: 'prescription-reminder'
+                    },
+                },
+                trigger: {
+                    type: 'date',
+                    date: reminderDate,
+                } as any,
+            });
+
+            console.log(`✅ Notification programmée pour ${reminder.name} le ${reminderDate.toLocaleDateString()} à 9h00`);
+            return [notificationId];
+        } catch (error) {
+            console.error('❌ Erreur lors de la programmation de la notification:', error);
+            return [];
+        }
+    };
+
+    // Cancel a scheduled notification 
+    const cancelNotification = async (reminderId: string) => {
+        const notificationId = notificationIds.get(reminderId);
+        if (notificationId) {
+            try {
+                await Notifications.cancelScheduledNotificationAsync(notificationId);
+                setNotificationIds(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(reminderId);
+                    return newMap;
+                });
+                console.log(`Notification annulée pour le rappel ${reminderId}`);
+            } catch (error) {
+                console.error('Erreur lors de l\'annulation de la notification:', error);
+            }
+        }
+    };
 
     // Simple reminder management by profile (simulated functions)
     const handleAddReminderToProfile = async (reminderData: string): Promise<boolean> => {
@@ -190,11 +288,28 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     const toggleCompletion = (id: string) => {
         if (isMainProfile) {
             setReminders(prevReminders => 
-                prevReminders.map(reminder => 
-                    reminder.id === id 
-                        ? { ...reminder, isCompleted: !reminder.isCompleted }
-                        : reminder
-                )
+                prevReminders.map(reminder => {
+                    if (reminder.id === id) {
+                        const updatedReminder = { ...reminder, isCompleted: !reminder.isCompleted };
+                        
+                        // Handle notification based on completion status
+                        if (updatedReminder.isCompleted) {
+                            console.log(`✅ Rappel ${reminder.name} terminé - Annulation notification`);
+                            setTimeout(() => cancelNotification(id), 100);
+                        } else {
+                            console.log(`🔄 Rappel ${reminder.name} réactivé - Programmation notification`);
+                            setTimeout(async () => {
+                                const notificationIds = await scheduleNotification(updatedReminder);
+                                if (notificationIds.length > 0) {
+                                    setNotificationIds(prev => new Map(prev.set(id, notificationIds[0])));
+                                }
+                            }, 100);
+                        }
+                        
+                        return updatedReminder;
+                    }
+                    return reminder;
+                })
             );
         } else {
             // For other profiles: update profile data
@@ -208,12 +323,26 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 const updatedProfileReminders = [...profileRemindersData];
                 updatedProfileReminders[reminderIndex] = JSON.stringify(updatedReminder);
                 setProfileRemindersData(updatedProfileReminders);
+
+                // Handle notification based on completion status
+                if (updatedReminder.isCompleted) {
+                    console.log(`✅ Rappel ${updatedReminder.name} terminé (profil) - Annulation notification`);
+                    setTimeout(() => cancelNotification(id), 100);
+                } else {
+                    console.log(`🔄 Rappel ${updatedReminder.name} réactivé (profil) - Programmation notification`);
+                    setTimeout(async () => {
+                        const notificationIds = await scheduleNotification(updatedReminder);
+                        if (notificationIds.length > 0) {
+                            setNotificationIds(prev => new Map(prev.set(id, notificationIds[0])));
+                        }
+                    }, 100);
+                }
             }
         }
     };
 
     // Delete reminder with confirmation
-    const deleteReminder = (id: string, name: string) => {
+    const deleteReminder = async (id: string, name: string) => {
         Alert.alert(
             'Supprimer le rappel',
             `Êtes-vous sûr de vouloir supprimer le rappel "${name}" ?`,
@@ -222,7 +351,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 { 
                     text: 'Supprimer', 
                     style: 'destructive',
-                    onPress: () => {
+                    onPress: async () => {
+                        // Cancel the notification before deleting 
+                        await cancelNotification(id);
                         setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== id));
                     }
                 }
@@ -251,15 +382,30 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         if (isMainProfile) {
             // For main profile: use existing logic
             if (editingReminder) {
+                // Cancel existing notifications before updating
+                await cancelNotification(editingReminder.id);
+
                 // Edit existing reminder
                 setReminders(prevReminders => 
                     prevReminders.map(reminder => 
                         reminder.id === editingReminder.id ? reminderData : reminder
                     )
                 );
+                
+                console.log(`🔄 Rappel modifié: ${reminderData.name}`);
             } else {
                 // Add new reminder
                 setReminders(prevReminders => [...prevReminders, reminderData]);
+                console.log(`🆕 Nouveau rappel créé: ${reminderData.name}`);
+            }
+
+            // Schedule notification only once after state update
+            if (!reminderData.isCompleted && notificationsEnabled) {
+                console.log(`📅 Programmation notification pour: ${reminderData.name}`);
+                const notificationIds = await scheduleNotification(reminderData);
+                if (notificationIds.length > 0) {
+                    setNotificationIds(prev => new Map(prev.set(reminderData.id, notificationIds[0])));
+                }
             }
         } else {
             // For other profiles: add to profile data
@@ -268,10 +414,22 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 const currentReminders = getCurrentReminders();
                 const reminderIndex = currentReminders.findIndex(reminder => reminder.id === editingReminder.id);
                 if (reminderIndex !== -1) {
+                    // Cancel old notification
+                    await cancelNotification(editingReminder.id);
+
                     const updatedProfileReminders = [...profileRemindersData];
                     updatedProfileReminders[reminderIndex] = JSON.stringify(reminderData);
                     setProfileRemindersData(updatedProfileReminders);
                     Alert.alert('Succès', 'Rappel modifié avec succès.');
+
+                    // Schedule notification for profile reminder
+                    if (!reminderData.isCompleted && notificationsEnabled) {
+                        console.log(`📅 Programmation notification (profil) pour: ${reminderData.name}`);
+                        const notificationIds = await scheduleNotification(reminderData);
+                        if (notificationIds.length > 0) {
+                            setNotificationIds(prev => new Map(prev.set(reminderData.id, notificationIds[0])));
+                        }
+                    }
                 } else {
                     Alert.alert('Erreur', 'Rappel introuvable.');
                 }
@@ -280,6 +438,15 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 const success = await handleAddReminderToProfile(JSON.stringify(reminderData));
                 if (success) {
                     Alert.alert('Succès', 'Rappel ajouté avec succès.');
+
+                    // Schedule notification for new profile reminder
+                    if (!reminderData.isCompleted && notificationsEnabled) {
+                        console.log(`📅 Programmation notification (profil) pour: ${reminderData.name}`);
+                        const notificationIds = await scheduleNotification(reminderData);
+                        if (notificationIds.length > 0) {
+                            setNotificationIds(prev => new Map(prev.set(reminderData.id, notificationIds[0])));
+                        }
+                    }
                 } else {
                     Alert.alert('Erreur', 'Ce rappel est déjà enregistré ou une erreur est survenue.');
                 }
@@ -326,7 +493,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     const handleRemoveReminder = async (id: string, name: string) => {
         if (isMainProfile) {
             // For main profile: use existing delete function
-            deleteReminder(id, name);
+            await deleteReminder(id, name);
         } else {
             // For other profiles: remove from profile data
             Alert.alert(
@@ -338,6 +505,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                         text: 'Supprimer', 
                         style: 'destructive',
                         onPress: async () => {
+                            // Cancel the notification before deleting
+                            await cancelNotification(id);
+                            
                             const currentReminders = getCurrentReminders();
                             const reminderIndex = currentReminders.findIndex(reminder => reminder.id === id);
                             if (reminderIndex !== -1) {
@@ -359,6 +529,100 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         }
         return a.dueDate.getTime() - b.dueDate.getTime(); // Sort by due date
     });
+
+    // Removed automatic notification scheduling useEffects to prevent immediate notifications  
+    // Notifications are now only scheduled manually when reminders are created/modified
+
+    // Test notification function for development
+    const testNotification = async () => {
+        if (!notificationsEnabled) {
+            Alert.alert(
+                'Notifications désactivées', 
+                'Activez d\'abord les notifications dans les paramètres de votre appareil.',
+                [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Paramètres', onPress: () => NotificationService.requestPermissions() }
+                ]
+            );
+            return;
+        }
+
+        try {
+            await NotificationService.testNotification();
+            Alert.alert('Test envoyé', 'Une notification de test va apparaître dans 2 secondes.');
+        } catch (error) {
+            console.error('Erreur test notification:', error);
+            Alert.alert('Erreur', 'Impossible d\'envoyer la notification de test. Vérifiez les permissions.');
+        }
+    };
+
+    // Create a test reminder that triggers in 1 minute
+    const createTestReminder = async () => {
+        if (!notificationsEnabled) {
+            Alert.alert('Erreur', 'Activez d\'abord les notifications.');
+            return;
+        }
+
+        const now = new Date();
+        const testTime = new Date(now.getTime() + 60000); // +1 minute
+
+        const testReminder: Reminder = {
+            id: 'test-' + Date.now(),
+            name: 'Test Rappel Ordonnance',
+            date: `${testTime.getDate().toString().padStart(2, '0')}/${(testTime.getMonth() + 1).toString().padStart(2, '0')}/${testTime.getFullYear()}`,
+            dueDate: testTime,
+            sound: 'Son 1',
+            priority: 'high',
+            isCompleted: false,
+            notes: 'Ceci est un test de notification'
+        };
+
+        // Add to reminders list
+        setReminders(prev => [...prev, testReminder]);
+
+        // Schedule the notification
+        const notificationIds = await scheduleNotification(testReminder);
+        if (notificationIds.length > 0) {
+            setNotificationIds(prev => new Map(prev.set(testReminder.id, notificationIds[0])));
+            Alert.alert(
+                'Rappel test créé',
+                `Une notification test va arriver à ${testTime.toLocaleTimeString()}.\n\nVous pouvez la supprimer ensuite.`
+            );
+        } else {
+            Alert.alert('Erreur', 'Impossible de programmer le rappel test.');
+        }
+    };
+
+    // Debug function to show scheduled notifications
+    const showScheduledNotifications = async () => {
+        try {
+            const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+            const prescriptionNotifications = scheduled.filter(n => n.content.data?.type === 'prescription-reminder');
+            
+            Alert.alert(
+                'Notifications programmées',
+                `${prescriptionNotifications.length} rappels d'ordonnances programmés:\n\n` +
+                prescriptionNotifications.map(n => 
+                    `• ${n.content.title}\n  ID: ${n.identifier.substring(0, 8)}...`
+                ).join('\n\n'),
+                [{ text: 'OK' }]
+            );
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de récupérer les notifications programmées.');
+        }
+    };
+
+    // Debug function to clear all notifications
+    const clearAllNotifications = async () => {
+        try {
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            setNotificationIds(new Map());
+            Alert.alert('Succès', 'Toutes les notifications ont été supprimées.');
+            console.log('🧹 Toutes les notifications supprimées');
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible de supprimer les notifications.');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -402,6 +666,30 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                                 <Text style={styles.buttonText}>Nouveau rappel</Text>
                             </LinearGradient>
                         </TouchableOpacity>
+                        
+                        {/* Indicator for notification status */}
+                        <View style={{ marginTop: 15, padding: 10, backgroundColor: colors.background, borderRadius: 8, borderWidth: 1, borderColor: colors.inputBorder }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons 
+                                    name={notificationsEnabled ? "checkmark-circle" : "alert-circle"} 
+                                    size={20} 
+                                    color={notificationsEnabled ? "#4CAF50" : "#FF9800"} 
+                                />
+                                <Text style={[
+                                    styles.alarmDays, 
+                                    { 
+                                        marginLeft: 8, 
+                                        textAlign: 'center',
+                                        color: notificationsEnabled ? "#4CAF50" : "#FF9800"
+                                    }
+                                ]}>
+                                    {notificationsEnabled 
+                                        ? "Notifications activées" 
+                                        : "Notifications désactivées"
+                                    }
+                                </Text>
+                            </View>
+                        </View>
                     </View>
                 )}
                 renderItem={({ item }) => {
