@@ -1,6 +1,8 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.pharmaxcess_server.pharmaxcess_server.dto.LocationRequest;
+import com.pharmaxcess_server.pharmaxcess_server.dto.NearestMachineRequest;
 import com.pharmaxcess_server.pharmaxcess_server.dto.Pharmacy;
 import com.pharmaxcess_server.pharmaxcess_server.service.PharmacyService;
 
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -61,5 +64,30 @@ public class PharmacyController {
     })
     public List<Pharmacy> getNearestPharmacy(@RequestBody LocationRequest body) {
         return pharmacyService.getNearestPharmacies(body.getLatitude(), body.getLongitude());
+    }
+
+    /**
+     * Retrieves pharmacy itinary from the user's location.
+     *
+     * @param body the request body containing the user's latitude and longitude and pharmacy's id
+     * @return JsonNode of pharmacy itinary
+     */
+    @PostMapping("/itinerary")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Itinary of pharmacy retrieved successfully."),
+        @ApiResponse(responseCode = "400", description = "Invalid request body."),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
+        @ApiResponse(responseCode = "500", description = "Internal server error.")
+    })
+    public ResponseEntity<JsonNode> getItineraryToPharmacy(@RequestBody NearestMachineRequest body) {
+        double userLat = body.getLatitude();
+        double userLon = body.getLongitude();
+
+        double[] pharmacyCoords = pharmacyService.getPharmacyCoordinates(body.getId());
+        double pharmacyLat = pharmacyCoords[0];
+        double pharmacyLon = pharmacyCoords[1];
+
+        JsonNode route = pharmacyService.getItinerary(userLat, userLon, pharmacyLat, pharmacyLon);
+        return ResponseEntity.ok(route);
     }
 }
