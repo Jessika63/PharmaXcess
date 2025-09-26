@@ -18,6 +18,7 @@ from launch_files.scripts.handle_import import handle_import_images
 from launch_files.scripts.handle_logs import handle_logs
 from launch_files.scripts.handle_origins import handle_origins
 from launch_files.scripts.handle_app import handle_app
+from launch_files.scripts.handle_deploy_back import handle_deploy_back
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     main_group.add_argument("--all", action="store_true", help="Run the whole application (app, front & back) except for tests.")
     main_group.add_argument("--combo", action="store_true", help="Run verif, back, front, app and test in sequence.")
     main_group.add_argument("--restart", action="store_true", help="Function to run down and then all to stop and start again the application.")
+    main_group.add_argument("--deploy-back", action="store_true", help="Deploy backend to remote server (VM).")
 
     # Database Operations
     database_group.add_argument("--update", type=str, help="Function to update the database.")
@@ -236,6 +238,8 @@ if __name__ == "__main__":
                 )
             if args.origins:
                 handle_origins(backend_folder)
+            if args.deploy_back:
+                handle_deploy_back()
     else:
         parser.print_help()
         exit(1)
