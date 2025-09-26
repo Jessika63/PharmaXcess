@@ -132,7 +132,7 @@ python launch.py --all
 ### Main Configuration File
 
 - **`src/config.js`** - Central configuration file containing:
-  - **Backend URL**: API endpoint configuration (`backendUrl: 'http://localhost:5000'`)
+  - **Backend URL**: API endpoint configuration (`backendUrl: 'http://57.128.57.96:5000'`)
   - **UI Styling**: Colors, fonts, button styles, shadows, and transitions
   - **Icons**: All React Icons used throughout the application
   - **Layout Classes**: Common layout and spacing configurations

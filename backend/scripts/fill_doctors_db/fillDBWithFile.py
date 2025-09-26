@@ -2,7 +2,7 @@ import sys
 import json
 import requests
 
-API_URL = "http://localhost:5000/add_list_doctors"
+API_URL = "http://57.128.57.96:5000/add_list_doctors"
 
 def send_json_to_api(json_file_path):
     """
