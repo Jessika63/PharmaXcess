@@ -39,6 +39,21 @@ export default function Localisation(): React.ReactElement {
 
   const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+  // Function to calculate distance between two GPS coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radius of the Earth in kilometers 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    // Return the distance rounded to 1 decimal place 
+    return Math.round(distance * 10) / 10; 
+  };
   useEffect(() => {
     (async () => {
       try {
@@ -56,14 +71,27 @@ export default function Localisation(): React.ReactElement {
         );
         const data = await response.json();
         if (response.ok && data.pharmacies) {
-          setDistributors(
-            data.pharmacies.map((ph: any, index: number) => ({
+          const pharmaciesWithDistance = data.pharmacies.map((ph: any, index: number) => {
+            const distance = calculateDistance(
+              currentLocation.coords.latitude,
+              currentLocation.coords.longitude,
+              ph.latitude,
+              ph.longitude
+            );
+            
+            return {
               id: index,
               name: ph.name,
               latitude: ph.latitude,
               longitude: ph.longitude,
-            }))
-          );
+              distance: distance,
+            };
+          });
+
+          // List the pharmacies by distance
+          pharmaciesWithDistance.sort((a: Distributor, b: Distributor) => (a.distance || 0) - (b.distance || 0));
+          
+          setDistributors(pharmaciesWithDistance);
         } else {
           Alert.alert('Erreur', data.error || 'Impossible de récupérer les pharmacies');
         }
@@ -120,67 +148,119 @@ export default function Localisation(): React.ReactElement {
     }
   };
 
-  const renderDistributor = ({ item }: { item: Distributor }) => (
-    <TouchableOpacity
-      style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: colors.accent }]}
-      onPress={() => setSelectedDistributor(item)}
-    >
-      <Text style={[styles.distributorText, selectedDistributor?.id === item.id && { color: colors.background }]}>
-        {item.name}
-      </Text>
-      <Text style={[styles.distanceText, selectedDistributor?.id === item.id && { color: colors.background }]}>
-        {item.distance ?? '-'} km
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderDistributor = ({ item }: { item: Distributor }) => {
+    // Format the distance for display 
+    const formatDistance = (distance: number | undefined): string => {
+      if (!distance) return 'Distance inconnue';
+      
+      if (distance < 1) {
+        // If less than 1km, display in meters 
+        return `${Math.round(distance * 1000)} m`;
+      } else {
+        // If more than 1km, display in kilometers with 1 decimal place 
+        return `${distance.toFixed(1)} km`;
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={[styles.distributorItem, selectedDistributor?.id === item.id && { backgroundColor: colors.accent }]}
+        onPress={() => setSelectedDistributor(item)}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.distributorText, selectedDistributor?.id === item.id && { color: colors.background }]}>
+            {item.name}
+          </Text>
+          <Text style={[styles.distanceText, selectedDistributor?.id === item.id && { color: colors.background }]}>
+            📍 {formatDistance(item.distance)}
+          </Text>
+        </View>
+        {item.distance && item.distance <= 2 && (
+          <View style={{
+            backgroundColor: '#4CAF50',
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            alignSelf: 'center'
+          }}>
+            <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+              PROCHE
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const screenHeight = Dimensions.get('window').height;
 
   return (
     <View style={{ flex: 1 }}>
       {!showMap && (
-        <FlatList
-          data={distributors}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderDistributor}
-          contentContainerStyle={{ padding: 16 }}
-          ListFooterComponent={
-            selectedDistributor && (
-              <View style={styles.selectedDistributor}>
-                <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Départ"
-                  value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
-                  onChangeText={(text) => {
-                    const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
-                    if (!isNaN(latitude) && !isNaN(longitude)) {
-                      setStartLocation({
-                        coords: {
-                          latitude,
-                          longitude,
-                          altitude: null,
-                          accuracy: null,
-                          altitudeAccuracy: null,
-                          heading: null,
-                          speed: null,
-                        },
-                        timestamp: Date.now(),
-                      });
-                    } else {
-                      Alert.alert('Erreur', 'Coordonnées invalides');
-                    }
-                  }}
-                />
-                <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
-                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
-                    <Text style={styles.text}>Aller à la pharmacie</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            )
-          }
-        />
+        <>
+          {distributors.length > 0 && (
+            <View style={{
+              backgroundColor: colors.primary + '20',
+              padding: 12,
+              marginHorizontal: 16,
+              marginTop: 16,
+              borderRadius: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Text style={{
+                color: colors.primary,
+                fontWeight: 'bold',
+                fontSize: 14
+              }}>
+                📍 {distributors.length} pharmacies trouvées • Triées par distance
+              </Text>
+            </View>
+          )}
+          <FlatList
+            data={distributors}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderDistributor}
+            contentContainerStyle={{ padding: 16 }}
+            ListFooterComponent={
+              selectedDistributor && (
+                <View style={styles.selectedDistributor}>
+                  <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Départ"
+                    value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
+                    onChangeText={(text) => {
+                      const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
+                      if (!isNaN(latitude) && !isNaN(longitude)) {
+                        setStartLocation({
+                          coords: {
+                            latitude,
+                            longitude,
+                            altitude: null,
+                            accuracy: null,
+                            altitudeAccuracy: null,
+                            heading: null,
+                            speed: null,
+                          },
+                          timestamp: Date.now(),
+                        });
+                      } else {
+                        Alert.alert('Erreur', 'Coordonnées invalides');
+                      }
+                    }}
+                  />
+                  <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
+                      <Text style={styles.text}>Aller à la pharmacie</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )
+            }
+          />
+        </>
       )}
 
       {showMap && selectedDistributor && location && (
@@ -206,7 +286,7 @@ export default function Localisation(): React.ReactElement {
               <Polyline coordinates={routeCoordinates} strokeColor={colors.secondary} strokeWidth={4} />
             )}
           </MapView>
-          {/* Bouton retour pour relancer le processus */}
+          {/* Return button to restart the process  */}
           <TouchableOpacity
             style={[styles.goButton, { position: 'absolute', bottom: 20, alignSelf: 'center' }]}
             onPress={() => {
