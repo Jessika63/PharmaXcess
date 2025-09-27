@@ -226,7 +226,7 @@ def flip_image(input_path, flip_code=1):
 
 def verify_doctor(first_name, last_name):
     try:
-        url = "http://localhost:5000/find_doctor_by_name"
+        url = "http://57.128.57.96:5000/find_doctor_by_name"
         params = {"last_name": last_name}
         if first_name:
             params["first_name"] = first_name

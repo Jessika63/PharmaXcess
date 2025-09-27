@@ -31,7 +31,7 @@ import logo from './assets/logo.png';
 
 const config = {
   // Backend configuration
-  backendUrl: 'http://localhost:5000',
+  backendUrl: 'http://57.128.57.96:5000',
 
   // Configuration CORS dynamique
   cors: {

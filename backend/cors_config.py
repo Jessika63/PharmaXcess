@@ -8,7 +8,7 @@ import os
 CORS_SECRET_KEY = os.getenv('CORS_SECRET_KEY')
 
 # URL du backend pour l'enregistrement CORS
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://57.128.57.96:5000')
 
 # Endpoint pour l'enregistrement CORS
 REGISTER_ORIGIN_ENDPOINT = '/register-origin'

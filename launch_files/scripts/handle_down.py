@@ -87,7 +87,7 @@ def handle_down(mobile_app_process, containers, images, volumes):
     Stoppe et supprime seulement les conteneurs, images, volumes
     qui concernent PharmaXcess + mobile app Expo.
     """
-    colored_print("🔻 Shutting down PharmaXcess environment...", "blue")
+    colored_print("Shutting down PharmaXcess environment...", "blue")
 
     # 1. Stop  and Remove containers
     for c in containers:
@@ -105,4 +105,4 @@ def handle_down(mobile_app_process, containers, images, volumes):
     # 4. Stop mobile app (Expo)
     stop_mobile_app(mobile_app_process)
 
-    colored_print("✅ Down completed (only PharmaXcess services).", "green")
+    colored_print("Down completed (only PharmaXcess services).", "green")
