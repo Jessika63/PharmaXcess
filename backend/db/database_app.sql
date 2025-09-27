@@ -7,20 +7,26 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
     mot_de_passe VARCHAR(255) NOT NULL,
     date_naissance DATE,
     poids FLOAT,
     taille FLOAT,
     groupe_sanguin VARCHAR(10),
     telephone VARCHAR(20),
-    numero_securite_sociale VARCHAR(50),
+    numero_securite_sociale VARCHAR(20),
     adresse TEXT,
     contact_urgence_nom VARCHAR(150),
     contact_urgence_tel VARCHAR(20),
-    role ENUM('admin','parent','enfant','epoux', 'moi') DEFAULT 'parent',
-    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role ENUM('admin','parent','enfant','epoux','moi') DEFAULT 'parent',
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reset_token VARCHAR(255) NULL,
+    reset_token_expiration DATETIME NULL
 );
+
+-- Index supplémentaires pour la recherche rapide
+CREATE INDEX idx_utilisateur_tel ON utilisateurs(telephone);
+CREATE INDEX idx_utilisateur_secu ON utilisateurs(numero_securite_sociale);
 
 -- Table relations parent-enfant
 CREATE TABLE IF NOT EXISTS relations_parent_enfant (
@@ -99,7 +105,7 @@ CREATE TABLE IF NOT EXISTS medecins (
     specialite VARCHAR(150),
     hopital VARCHAR(150),
     telephone VARCHAR(20),
-    email VARCHAR(150),
+    email VARCHAR(255),
     adresse TEXT,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
@@ -161,10 +167,11 @@ CREATE TABLE IF NOT EXISTS discussion (
 CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     discussion_id INT,
-    auteur VARCHAR(150),
+    utilisateur_id INT,
     message TEXT,
     date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE
+    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
 -- Table QR Codes pour ordonnances
@@ -174,7 +181,7 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
     ordonnance_id INT NOT NULL,
     code_unique VARCHAR(255) UNIQUE NOT NULL,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
-    date_expiration DATETIME, -- optionnel : tu peux mettre une durée de validité
+    date_expiration DATETIME,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
     FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
 );
