@@ -5,82 +5,57 @@ import shutil
 from helpers.colored_print import colored_print
 
 def clean_project():
-    """
-    Supprime les fichiers/dossiers inutiles avant déploiement :
-    - __pycache__
-    - *.pyc
-    - .pytest_cache
-    - .DS_Store
-    """
     for root, dirs, files in os.walk(".", topdown=True):
-        # On ignore le dossier .git
-        if ".git" in dirs:
-            dirs.remove(".git")
-
-        # Suppression des dossiers __pycache__ et .pytest_cache
+        if ".git" in dirs: dirs.remove(".git")
         for d in dirs:
             if d in ["__pycache__", ".pytest_cache"]:
                 full_path = os.path.join(root, d)
-                try:
-                    shutil.rmtree(full_path)
-                    colored_print(f"🧹 Dossier supprimé : {full_path}", "violet")
-                except Exception as e:
-                    colored_print(f"⚠️ Impossible de supprimer {full_path} : {e}", "yellow")
-
-        # Suppression des fichiers inutiles
+                try: shutil.rmtree(full_path)
+                except: pass
         for f in files:
             if f.endswith(".pyc") or f == ".DS_Store":
                 full_path = os.path.join(root, f)
-                try:
-                    os.remove(full_path)
-                    colored_print(f"🧹 Fichier supprimé : {full_path}", "violet")
-                except Exception as e:
-                    colored_print(f"⚠️ Impossible de supprimer {full_path} : {e}", "yellow")
-
+                try: os.remove(full_path)
+                except: pass
 
 def handle_deploy_back():
-    try:
-        remote = "ubuntu@57.128.57.96"
-        remote_path = "/home/ubuntu/PharmaXcess"
+    remote = "ubuntu@57.128.57.96"
+    remote_path = "/home/ubuntu/PharmaXcess"
 
-        colored_print("🚀 Début du déploiement du backend sur la VM...", "blue")
+    colored_print("Début du déploiement du backend sur la VM...", "blue")
+    clean_project()
 
-        # Étape 0 : Nettoyage local
-        colored_print("🧹 Nettoyage des fichiers inutiles avant déploiement...", "blue")
-        clean_project()
+    colored_print("Envoi des fichiers sur la VM...", "blue")
+    scp_cmd = ["scp", "-i", os.path.expanduser("~/.ssh/id_rsa"), "-r",
+               "launch.py", "launch_config.json", "backend", "launch_files",
+               f"{remote}:{remote_path}"]
+    subprocess.run(scp_cmd, check=True)
 
-        # Étape 1 : envoi des fichiers
-        colored_print("📤 Envoi des fichiers (launch.py, launch_config.json, backend, launch_files)...", "blue")
-        result = subprocess.run([
-            "scp", "-i", "~/.ssh/id_rsa", "-r",
-            "launch.py", "launch_config.json", "backend", "launch_files",
-            f"{remote}:{remote_path}"
-        ], capture_output=True, text=True)
+    colored_print("Connexion SSH et modification du .env sur la VM...", "blue")
+    # Commande SSH sécurisée pour mettre à jour le .env uniquement sur la VM
+    ssh_env_cmd = (
+        f"cd {remote_path} && "
+        "sed -i '/^ENV=/d' backend/.env && "
+        "echo 'ENV=production' >> backend/.env && "
+        "cat backend/.env"
+    )
+    result = subprocess.run(["ssh", remote, ssh_env_cmd],
+                            capture_output=True, text=True, encoding="utf-8")
+    colored_print(f"Contenu du .env sur la VM :\n{result.stdout.strip()}", "green")
 
-        if result.returncode == 0:
-            colored_print("✅ Fichiers transférés avec succès.", "green")
-        else:
-            colored_print(f"❌ Échec du transfert des fichiers.\n{result.stderr}", "red")
+    colored_print("Arrêt du backend sur la VM...", "blue")
+    ssh_down_cmd = f"cd {remote_path} && python3 launch.py --down"
+    subprocess.run(["ssh", remote, ssh_down_cmd],
+                   capture_output=True, text=True, encoding="utf-8")
 
-        # Étape 2 : connexion SSH + config ENV + lancement backend
-        colored_print("🔗 Connexion SSH au serveur distant...", "blue")
-        ssh_command = f"""
-        ssh {remote} 'cd {remote_path} && \
-        echo "➡️ Passage en mode production dans backend/.env" && \
-        sed -i "s/^ENV=.*/ENV=production/" backend/.env && \
-        echo "⚡ Lancement du backend en mode production avec logs..." && \
-        python3 launch.py --back --see-log back'
-        """
-        result = subprocess.run(ssh_command, shell=True, capture_output=True, text=True)
+    colored_print("Lancement du backend en production sur la VM...", "blue")
+    # Lancement en arrière-plan avec nohup et redirection des logs
+    ssh_back_cmd = (
+        f"cd {remote_path} && "
+        f"export $(grep -v '^#' backend/.env | xargs) && "
+        f"python3 launch.py --back --no-cache-back"
+    )
+    # Affiche les logs en direct
+    subprocess.run(["ssh", remote, ssh_back_cmd], check=True)
 
-        if result.returncode == 0:
-            colored_print("✅ Backend déployé et démarré avec succès.", "green")
-        else:
-            colored_print(f"❌ Erreur lors de l'exécution sur la VM.\n{result.stderr}", "red")
-
-        colored_print("🏁 Fin du processus de déploiement.", "blue")
-
-    except subprocess.CalledProcessError as e:
-        colored_print(f"❌ Erreur critique lors du déploiement : {e}", "red")
-    except Exception as e:
-        colored_print(f"⚠️ Exception inattendue : {e}", "yellow")
+    colored_print("Déploiement terminé. Les logs sont dans back.log sur la VM.", "blue")

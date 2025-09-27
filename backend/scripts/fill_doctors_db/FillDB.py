@@ -4,7 +4,7 @@ import csv
 import requests
 import unicodedata
 
-API_URL = "http://localhost:5000/add_list_doctors"
+API_URL = "http://57.128.57.96:5000/add_list_doctors"
 BATCH_SIZE = 180  # Batch size
 
 def validate_row(row):

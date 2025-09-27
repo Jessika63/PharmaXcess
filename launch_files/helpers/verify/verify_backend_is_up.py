@@ -46,7 +46,7 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=10):
     last_error = None
     for attempt in range(1, nb_of_retry + 1):
         try:
-            response = requests.get("http://localhost:5000/", timeout=5)
+            response = requests.get("http://57.128.57.96:5000/", timeout=5)
             if response.status_code == 200:
                 colored_print("Backend is ready!", "green")
                 return  # Exit function successfully
