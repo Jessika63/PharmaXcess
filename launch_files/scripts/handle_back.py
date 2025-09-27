@@ -137,7 +137,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
 
             # Appel à l'API /list-origins avec la clé secrète
             response = requests.get(
-                "http://localhost:5000/list-origins",
+                "http://57.128.57.96:5000/list-origins",
                 headers={"X-Secret-Key": secret_key}
             )
 
@@ -149,7 +149,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                     for origin in origins:
 
                         remove_resp = requests.post(
-                            "http://localhost:5000/remove-origin",
+                            "http://57.128.57.96:5000/remove-origin",
                             headers={
                                 "X-Secret-Key": secret_key,
                                 "Content-Type": "application/json"

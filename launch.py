@@ -19,6 +19,8 @@ from launch_files.scripts.handle_logs import handle_logs
 from launch_files.scripts.handle_origins import handle_origins
 from launch_files.scripts.handle_app import handle_app
 from launch_files.scripts.handle_deploy_back import handle_deploy_back
+from launch_files.scripts.handle_exec_server import handle_exec_server
+from launch_files.scripts.handle_clean_server import handle_clean_server
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -75,6 +77,7 @@ if __name__ == "__main__":
     build_group = parser.add_argument_group("Build Options")
     log_group = parser.add_argument_group("Logging & Debugging")
     misc_group = parser.add_argument_group("Miscellaneous")
+    server_group = parser.add_argument_group("Server Operations")
 
     # Main Operations
     main_group.add_argument("--verif", action="store_true", help="Run verification steps.")
@@ -85,7 +88,6 @@ if __name__ == "__main__":
     main_group.add_argument("--all", action="store_true", help="Run the whole application (app, front & back) except for tests.")
     main_group.add_argument("--combo", action="store_true", help="Run verif, back, front, app and test in sequence.")
     main_group.add_argument("--restart", action="store_true", help="Function to run down and then all to stop and start again the application.")
-    main_group.add_argument("--deploy-back", action="store_true", help="Deploy backend to remote server (VM).")
 
     # Database Operations
     database_group.add_argument("--update", type=str, help="Function to update the database.")
@@ -112,6 +114,14 @@ if __name__ == "__main__":
     # Miscellaneous
     misc_group.add_argument("--sudo", action="store_true", help="Use sudo for npm install in frontend operations.")
     misc_group.add_argument("--tunnel", action="store_true", help="Start Expo in tunnel mode for mobile app.")
+
+    server_group.add_argument("--deploy-back", action="store_true", help="Deploy backend to remote server (VM).")
+    server_group.add_argument(
+        "--exec-server",
+        nargs='+',  # <-- permet plusieurs arguments
+        help="Transfers and executes Python files on the remote server (VM). The first file is executed."
+    )
+    server_group.add_argument("--clean-server", action="store_true", help="Nettoie Docker et met à jour complètement le serveur distant.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -240,6 +250,10 @@ if __name__ == "__main__":
                 handle_origins(backend_folder)
             if args.deploy_back:
                 handle_deploy_back()
+            if args.exec_server:
+                handle_exec_server(*args.exec_server)  # On décompresse la liste
+            if args.clean_server:
+                handle_clean_server()
     else:
         parser.print_help()
         exit(1)

@@ -341,7 +341,7 @@
 #         qrCodeLect.verify_doctor(qr_content)
 
 #         # Verify API was called with correct parameters
-#         mock_get.assert_called_once_with("http://localhost:5000/find_doctor_by_name?first_name=John&last_name=Doe")
+#         mock_get.assert_called_once_with("http://57.128.57.96:5000/find_doctor_by_name?first_name=John&last_name=Doe")
 
 # @pytest.mark.order(2) # LOX n°6
 # def test_verify_doctor_missing_info():

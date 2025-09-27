@@ -37,7 +37,7 @@ def handle_origins(backend_folder):
 
     try:
         response = requests.get(
-            "http://localhost:5000/list-origins",
+            "http://57.128.57.96:5000/list-origins",
             headers={'X-Secret-Key': secret_key}
         )
 
