@@ -3,8 +3,13 @@ import os
 import sys
 import subprocess
 import time
+import mysql.connector
+import requests
+from dotenv import load_dotenv
 
-# Fonction pour installer une librairie si elle n'existe pas
+# -----------------------
+# Installation dépendances
+# -----------------------
 def ensure_package(package_name, import_name=None):
     import_name = import_name or package_name
     try:
@@ -15,23 +20,21 @@ def ensure_package(package_name, import_name=None):
         subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
         print(f"✅ {import_name} installé.")
 
-# Installer les dépendances nécessaires
 ensure_package("mysql-connector-python", "mysql.connector")
 ensure_package("requests")
 ensure_package("python-dotenv", "dotenv")
 
-# Maintenant on peut importer les packages sans crasher
-import mysql.connector
-import requests
-from dotenv import load_dotenv
-
-# Charger .env depuis le projet
+# -----------------------
+# Charger .env
+# -----------------------
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env"))
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
-# Vérification des variables essentielles
+# -----------------------
+# Variables DB
+# -----------------------
 ENV = os.getenv("ENV")
 DB_HOST = os.getenv("APP_DB_HOST")
 DB_USER = os.getenv("APP_DB_USER")
@@ -57,6 +60,14 @@ DB_CONFIG = {
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
+# -----------------------
+# Helpers
+# -----------------------
+def to_latin1_safe(value):
+    if value is None:
+        return None
+    return value.encode("latin1", errors="replace").decode("latin1")
+
 def safe_overpass_request(query, max_retries=10):
     for attempt in range(1, max_retries + 1):
         try:
@@ -67,10 +78,13 @@ def safe_overpass_request(query, max_retries=10):
             return response.json()
         except requests.exceptions.RequestException as e:
             wait = 60
-            log(f"⚠️ Erreur Overpass : {e}. Nouvelle tentative dans {wait:.1f}s...")
+            log(f"⚠️ Erreur Overpass : {e}. Nouvelle tentative dans {wait}s...")
             time.sleep(wait)
     raise Exception("❌ Overpass API non disponible après plusieurs tentatives")
 
+# -----------------------
+# Récupération pharmacies
+# -----------------------
 def get_pharmacies_bbox(min_lat, min_lon, max_lat, max_lon):
     log(f"🔹 Récupération pharmacies bbox ({min_lat},{min_lon},{max_lat},{max_lon})")
     query = f"""
@@ -82,7 +96,6 @@ def get_pharmacies_bbox(min_lat, min_lon, max_lat, max_lon):
     pharmacies = []
 
     def is_in_france(lat, lon):
-        # France continentale + Corse bbox approximatif
         return 41.0 <= lat <= 51.0 and -5.0 <= lon <= 9.0
 
     for i, node in enumerate(data.get("elements", []), start=1):
@@ -93,10 +106,10 @@ def get_pharmacies_bbox(min_lat, min_lon, max_lat, max_lon):
 
         if country != "FR" and not is_in_france(lat, lon):
             log(f"  ⏭️ Node {i} ignoré (not in France)")
-            continue  # On ignore tout ce qui n'est pas France
+            continue
 
-        name = tags.get("name", "").strip()
-        address = tags.get("addr:full") or f"{tags.get('addr:street','')} {tags.get('addr:housenumber','')}".strip()
+        name = to_latin1_safe(tags.get("name", "").strip())
+        address = to_latin1_safe(tags.get("addr:full") or f"{tags.get('addr:street','')} {tags.get('addr:housenumber','')}".strip())
 
         if not name or not lat or not lon or not address:
             log(f"  ⏭️ Node {i} ignoré (infos manquantes)")
@@ -105,9 +118,22 @@ def get_pharmacies_bbox(min_lat, min_lon, max_lat, max_lon):
         pharmacies.append({"nom": name, "lat": lat, "lon": lon, "adresse": address})
         log(f"  🔸 Node {i}: {name} ({lat},{lon}) / {address}")
 
-        log(f"🔹 Total pharmacies valides: {len(pharmacies)}")
+    log(f"🔹 Total pharmacies valides: {len(pharmacies)}")
     return pharmacies
 
+# -----------------------
+# Vérifier doublons par latitude/longitude float avec epsilon
+# -----------------------
+def is_duplicate(cursor, lat, lon, epsilon=1e-4):
+    cursor.execute(
+        "SELECT id FROM distributeurs WHERE ABS(latitude - %s) < %s AND ABS(longitude - %s) < %s",
+        (lat, epsilon, lon, epsilon)
+    )
+    return cursor.fetchone() is not None
+
+# -----------------------
+# Insertion DB corrigée
+# -----------------------
 def insert_into_db(pharmacies):
     log("🔹 Connexion DB...")
     conn = None
@@ -117,20 +143,16 @@ def insert_into_db(pharmacies):
         inserted_count = skipped_count = 0
 
         for ph in pharmacies:
-            cursor.execute(
-                "SELECT id FROM distributeurs WHERE nom=%s AND latitude=%s AND longitude=%s AND adresse=%s",
-                (ph["nom"], ph["lat"], ph["lon"], ph["adresse"])
-            )
-            if not cursor.fetchone():
+            if not is_duplicate(cursor, ph["lat"], ph["lon"]):
                 cursor.execute(
                     "INSERT INTO distributeurs (nom, latitude, longitude, adresse) VALUES (%s,%s,%s,%s)",
-                    (ph["nom"], ph["lat"], ph["lon"], ph["adresse"])
+                    (to_latin1_safe(ph["nom"]), ph["lat"], ph["lon"], to_latin1_safe(ph["adresse"]))
                 )
                 inserted_count += 1
                 log(f"    ✅ {ph['nom']} inséré")
             else:
                 skipped_count += 1
-                log(f"    ⏭️ {ph['nom']} déjà présent")
+                log(f"    ⏭️ {ph['nom']} déjà présent (latitude/longitude float)")
 
         conn.commit()
         log(f"📊 Résumé: {inserted_count} insérés, {skipped_count} déjà présents")
@@ -141,8 +163,10 @@ def insert_into_db(pharmacies):
         if conn:
             conn.close()
 
+# -----------------------
+# Main
+# -----------------------
 def main():
-    # France bbox approximative
     min_lat, max_lat = 41, 51
     min_lon, max_lon = -5, 9
     step = 1
@@ -161,10 +185,10 @@ def main():
                         insert_into_db(pharmacies)
                     else:
                         log("⚠️ Aucune pharmacie trouvée")
-                    break  # Sortir de la boucle si réussi
+                    break
                 except Exception as e:
                     log(f"❌ Erreur bbox ({lat},{lon}): {e}. Nouvelle tentative dans 60s...")
-                    time.sleep(60)  # Attente avant de réessayer
+                    time.sleep(60)
 
     log("🎉 Traitement terminé")
 
