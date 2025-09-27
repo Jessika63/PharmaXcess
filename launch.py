@@ -155,6 +155,13 @@ if __name__ == "__main__":
         "medicine_data"
     ]
 
+    post_deploy_scripts = [
+        [
+            "backend/scripts/fill_app_db/docker_launcher.py",
+            "backend/scripts/fill_app_db/fill_distributeurs_table.py"
+        ]
+    ]
+
     # Execute operations based on flags
     if any(vars(args).values()):
         # Combo ou All ou Restart
@@ -249,7 +256,10 @@ if __name__ == "__main__":
             if args.origins:
                 handle_origins(backend_folder)
             if args.deploy_back:
+                handle_clean_server()
                 handle_deploy_back()
+                for script_group in post_deploy_scripts:
+                    handle_exec_server(*script_group)
             if args.exec_server:
                 handle_exec_server(*args.exec_server)  # On décompresse la liste
             if args.clean_server:

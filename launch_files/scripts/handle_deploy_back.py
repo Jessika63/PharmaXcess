@@ -32,7 +32,6 @@ def handle_deploy_back():
     subprocess.run(scp_cmd, check=True)
 
     colored_print("Connexion SSH et modification du .env sur la VM...", "blue")
-    # Commande SSH sécurisée pour mettre à jour le .env uniquement sur la VM
     ssh_env_cmd = (
         f"cd {remote_path} && "
         "sed -i '/^ENV=/d' backend/.env && "
@@ -49,13 +48,22 @@ def handle_deploy_back():
                    capture_output=True, text=True, encoding="utf-8")
 
     colored_print("Lancement du backend en production sur la VM...", "blue")
-    # Lancement en arrière-plan avec nohup et redirection des logs
     ssh_back_cmd = (
         f"cd {remote_path} && "
         f"export $(grep -v '^#' backend/.env | xargs) && "
         f"python3 launch.py --back --no-cache-back"
     )
-    # Affiche les logs en direct
     subprocess.run(["ssh", remote, ssh_back_cmd], check=True)
+
+    # 🔑 Extraire les infos DB du .env (côté VM)
+    colored_print("Mise à jour des droits MySQL pour px_user...", "blue")
+    ssh_db_cmd = (
+        f"cd {remote_path} && "
+        "export $(grep -v '^#' backend/.env | xargs) && "
+        "docker exec -i app-backend-db mysql "
+        "-u root -p$MYSQL_ROOT_PASSWORD "
+        "-e \"GRANT ALL PRIVILEGES ON $APP_DB_NAME.* TO '$APP_DB_USER'@'%' IDENTIFIED BY '$APP_DB_PASSWORD'; FLUSH PRIVILEGES;\""
+    )
+    subprocess.run(["ssh", remote, ssh_db_cmd], check=True)
 
     colored_print("Déploiement terminé. Les logs sont dans back.log sur la VM.", "blue")
