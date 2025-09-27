@@ -52,4 +52,13 @@ CREATE TABLE IF NOT EXISTS ticket_message (
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS ordonnances (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    doctor_name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    medications TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)
+
 CREATE INDEX IF NOT EXISTS idx_location ON machines USING GIST (location);
