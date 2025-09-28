@@ -6,7 +6,7 @@ import datetime
 
 reset_password_bp = Blueprint('reset_password', __name__)
 
-@reset_password_bp.route('/reset-password', methods=['POST'])
+@reset_password_bp.route('/reset_password', methods=['POST'])
 def reset_password():
     data = request.get_json()
     token = data.get("token")

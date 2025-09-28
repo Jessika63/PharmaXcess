@@ -10,6 +10,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_dev_key")
+
 # Configuration pour CORS dynamique
 # Stockage dans /data à l'intérieur du conteneur (volume Docker)
 ALLOWED_ORIGINS_FILE = '/data/allowed_origins.json'

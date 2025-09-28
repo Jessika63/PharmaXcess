@@ -5,7 +5,7 @@ from db_app import get_app_connection
 
 forgot_password_bp = Blueprint('forgot_password', __name__)
 
-@forgot_password_bp.route('/forgot-password', methods=['POST'])
+@forgot_password_bp.route('/forgot_password', methods=['POST'])
 def forgot_password():
     data = request.get_json()
     email = data.get("email")
