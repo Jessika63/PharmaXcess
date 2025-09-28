@@ -92,7 +92,6 @@ def stream_logs_multiple(container_names, active_processes, shutdown_requested):
 
 def stream_process_logs(process, process_name, active_processes, shutdown_requested):
     """
-    Stream logs from a subprocess directly - VERSION AMÉLIORÉE
     Stream logs from a subprocess directly.
     """
     try:
