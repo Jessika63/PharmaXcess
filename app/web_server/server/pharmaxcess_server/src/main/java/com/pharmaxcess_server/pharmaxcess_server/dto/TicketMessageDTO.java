@@ -1,6 +1,7 @@
 package com.pharmaxcess_server.pharmaxcess_server.dto;
 
-import com.pharmaxcess_server.pharmaxcess_server.Model.TicketMessage;
+import com.pharmaxcess_server.pharmaxcess_server.model.TicketMessage;
+import java.util.List;
 
 /**
  * The TicketMessage class represents tickets with their messages.

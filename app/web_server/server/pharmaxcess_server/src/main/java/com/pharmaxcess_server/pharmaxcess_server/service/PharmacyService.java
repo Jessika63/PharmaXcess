@@ -118,7 +118,7 @@ public class PharmacyService {
      * @param userLon     longitude of the user
      * @param pharmacyLat latitude of the pharmacy
      * @param pharmacyLon longitude of the pharmacy
-     * @return JsonNode containing the GeoJSON route with distance & duration
+     * @return JsonNode containing the GeoJSON route with distance and duration
      */
     public JsonNode getItinerary(double userLat, double userLon, double pharmacyLat, double pharmacyLon) {
         try {
