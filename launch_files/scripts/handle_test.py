@@ -38,7 +38,7 @@ def handle_test(backend_folder, db_container_name, back_container_name, build_fi
     # Step 1: Check if containers are ready
     if db_container_name:
         verify_database_is_up(db_container_name)
-    verify_backend_is_up(back_container_name, nb_of_retry=10)
+    verify_backend_is_up(back_container_name, backend_folder, nb_of_retry=10)
 
     # Step 2: Build test image if requested
     if build_first:
