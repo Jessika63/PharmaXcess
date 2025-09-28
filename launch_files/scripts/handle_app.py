@@ -140,7 +140,16 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False,
     """
     colored_print("Starting mobile app operations...", "blue")
 
-    env_data = load_env_file( os.path.join(mobile_app_folder, ".env") )
+    try:
+        env_data = load_env_file(os.path.join(mobile_app_folder, ".env") )
+    except FileNotFoundError:
+        try:
+            env_data = load_env_file(
+                os.path.join("..", mobile_app_folder, ".env")
+            )
+        except FileNotFoundError:
+            colored_print("Erreur : fichier .env introuvable", "red")
+
     env = env_data["EXPO_PUBLIC_ENV"]
     ngrok_url = None
 
