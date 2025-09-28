@@ -226,7 +226,14 @@ def flip_image(input_path, flip_code=1):
 
 def verify_doctor(first_name, last_name):
     try:
-        url = "http://57.128.57.96:5000/find_doctor_by_name"
+        env = os.getenv('ENV')
+
+        if env == 'production':
+            url = "http://57.128.57.96:5000/find_doctor_by_name"
+        elif env == 'development':
+            url = "http://localhost:5000/find_doctor_by_name"
+        else:
+            print("Erreur : la variable ENV n'est pas définie correctement")
         params = {"last_name": last_name}
         if first_name:
             params["first_name"] = first_name

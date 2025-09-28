@@ -20,7 +20,10 @@ python3 fillDBWithFile.py <file_path>
    - JSON: Ensures the presence of the `doctors` key.
    - CSV: Validates the required fields and processes data in batches of 180 doctors.
 2. Converts the data into a usable format.
-3. Sends the data to the API: `http://57.128.57.96:5000/add_list_doctors`.
+3. Sends the data to the API:
+   - If ENV=production → http://57.128.57.96:5000/add_list_doctors
+   - If ENV=development → http://localhost:5000/add_list_doctors
+   - Otherwise → displays an error about the undefined environment.
 4. Displays a success message or an error if something goes wrong.
 
 ---

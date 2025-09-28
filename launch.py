@@ -108,7 +108,7 @@ if __name__ == "__main__":
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
 
     # Logging & Debugging
-    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "every"], help="Stream logs for components.")
+    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")
     log_group.add_argument("--origins", action="store_true", help="List registered frontend origins.")
 
     # Miscellaneous
