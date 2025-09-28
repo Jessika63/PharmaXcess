@@ -1,0 +1,115 @@
+package com.pharmaxcess_server.pharmaxcess_server.model;
+
+import java.time.LocalDateTime;
+import jakarta.persistence.*;
+
+/**
+ * Represents a support ticket in the system.
+ */
+@Entity
+@Table(name = "ordonnances")
+public class Ordonnance {
+
+    /**
+     * Unique identifier for the ticket.
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    /**
+     * Doctor's name.
+     */
+    @Column(name = "doctor_name", nullable = false, length = 100)
+    private String doctor;
+
+    /**
+     * Identifier of the user who created the ticket.
+     */
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    /**
+     * Timestamp when the ticket was created.
+     */
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * Current medications of the ordonnance.
+     */
+    @Column(name = "medications", nullable = false)
+    private String medications;
+
+    /**
+     * Gets the unique identifier of the ordonnance.
+     *
+     * @return the ordonnance ID
+     */
+    public Integer getId() {
+        return id;
+    }
+
+    /**
+     * Sets the unique identifier of the ordonnance.
+     *
+     * @param id the ordonnance ID
+     */
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the doctor's name of the ordonnance.
+     *
+     * @return the ordonnance title
+     */
+    public String getDoctor() {
+        return doctor;
+    }
+
+    /**
+     * Sets the doctor's name.
+     *
+     * @param doctor name
+     */
+    public void setDoctor(String doctor) {
+        this.doctor = doctor;
+    }
+
+    /**
+     * Gets the identifier of the user who created the ordonnance.
+     *
+     * @return the user ID
+     */
+    public Integer getUserId() {
+        return userId;
+    }
+
+    /**
+     * Sets the identifier of the user who created the ordonnance.
+     *
+     * @param userId the user ID
+     */
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    /**
+     * Gets the timestamp when the ticket was created.
+     *
+     * @return the creation timestamp
+     */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    /**
+     * Sets the timestamp when the ticket was created.
+     *
+     * @param createdAt the creation timestamp
+     */
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
