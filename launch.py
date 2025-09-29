@@ -108,7 +108,7 @@ if __name__ == "__main__":
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
 
     # Logging & Debugging
-    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "every"], help="Stream logs for components.")
+    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")
     log_group.add_argument("--origins", action="store_true", help="List registered frontend origins.")
 
     # Miscellaneous
@@ -153,6 +153,13 @@ if __name__ == "__main__":
 
     volumes=[
         "medicine_data"
+    ]
+
+    post_deploy_scripts = [
+        [
+            "backend/scripts/fill_app_db/docker_launcher.py",
+            "backend/scripts/fill_app_db/fill_distributeurs_table.py"
+        ]
     ]
 
     # Execute operations based on flags
@@ -249,7 +256,10 @@ if __name__ == "__main__":
             if args.origins:
                 handle_origins(backend_folder)
             if args.deploy_back:
+                handle_clean_server()
                 handle_deploy_back()
+                for script_group in post_deploy_scripts:
+                    handle_exec_server(*script_group)
             if args.exec_server:
                 handle_exec_server(*args.exec_server)  # On décompresse la liste
             if args.clean_server:

@@ -1,193 +1,179 @@
 
-import time
 import subprocess
+import time
+from typing import List, Dict, Any
 
-from env_functions.load_env_file import load_env_file
-from colored_print import colored_print
+from helpers.env_functions.load_env_file import load_env_file
+from helpers.colored_print import colored_print
+from helpers.start_containers import start_containers
 
-def verify_database_is_up(db_container_name, nb_of_retry=1):
+
+def verify_database_is_ready(
+    db_container_name: str,
+    root_password: str,
+    db_name: str,
+    nb_of_retry: int = 5,
+    wait_seconds: int = 60
+) -> bool:
     """
-    Objectif: Verifies that the MySQL database container is up and responsive by executing a ping command within the container.
+    Vérifie qu'une DB MySQL dans un container Docker est :
+      1) accessible (mysqladmin ping)
+      2) contient au moins 1 table
 
-    Parameters:
-        - db_container_name: The name of the Docker container running the MySQL database. (String)
-        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
-
-    Return Value:
-        - None: This function does not return a value but prints status messages and may terminate the program if the database fails to start. (NoneType)
+    Si la DB est vide → restart des containers (start_containers(no_cache=False)) puis réessaye.
+    Attend `wait_seconds` entre chaque tentative.
+    Renvoie True si ok, False sinon.
     """
-    waiting_time = 10  # Time in seconds between retries
-    env_data = load_env_file(".env")
 
-    # 1. Check if Docker is installed
+    # Vérif minimal des paramètres
+    if not root_password:
+        colored_print("MYSQL root password not provided in environment.", "red")
+        return False
+
+    # 0) Vérifier que docker est installé (fatal)
     try:
-        subprocess.run(["docker", "--version"], check=True, capture_output=True)
+        subprocess.run(["docker", "--version"], check=True, capture_output=True, text=True)
     except FileNotFoundError:
         colored_print("Docker command not found! Ensure Docker is installed and in your PATH.", "red")
-        return
+        return False
     except Exception as e:
-        colored_print(f"Unexpected error when checking Docker installation: {e}", "red")
-        return
+        colored_print(f"Erreur lors de la vérification de Docker: {e}", "red")
+        return False
 
-    # 2. Check if the database container is running
+    # 1) Vérifier que le container tourne (fatal)
     try:
-        result = subprocess.run([
-            "docker", "ps", "--filter", f"name={db_container_name}", "--filter", "status=running", "--format", "{{.Names}}"
-        ], capture_output=True, text=True)
-        running = result.stdout.splitlines()
+        result = subprocess.run(
+            ["docker", "ps", "--filter", f"name={db_container_name}", "--filter", "status=running", "--format", "{{.Names}}"],
+            capture_output=True, text=True
+        )
+        running = [line.strip() for line in result.stdout.splitlines() if line.strip()]
         if db_container_name not in running:
             colored_print(f"Database container '{db_container_name}' is NOT running! Check logs with: docker logs {db_container_name}", "red")
-            return
+            return False
     except Exception as e:
-        colored_print(f"Error checking database container status: {e}", "red")
-        return
+        colored_print(f"Erreur lors de la vérification du container: {e}", "red")
+        return False
 
-    colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
     last_error = None
+
+    # Boucle de tentatives
     for attempt in range(1, nb_of_retry + 1):
+        colored_print(f"--- Vérification {attempt}/{nb_of_retry} pour '{db_name}' dans '{db_container_name}' ---", "blue")
+
+        # Step A : ping MySQL
         try:
-            result = subprocess.run([
-                "docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot",
-                "-p" + env_data["MYSQL_ROOT_PASSWORD"]
-            ], capture_output=True, text=True)
-            if "mysqld is alive" in result.stdout:
-                colored_print("Database container is ready!", "green")
-                return  # Exit function successfully
-            else:
-                last_error = result.stdout + result.stderr
-                colored_print(f"Database ping failed: {result.stdout.strip()} {result.stderr.strip()}", "yellow")
-        except FileNotFoundError:
-            colored_print("Docker command not found! Ensure Docker is installed and in your PATH.", "red")
-            return
-        except subprocess.CalledProcessError as cpe:
-            last_error = cpe
-            colored_print(f"Database command error: {cpe}", "red")
+            ping = subprocess.run(
+                ["docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p" + root_password],
+                capture_output=True, text=True
+            )
+            out = (ping.stdout or "") + (ping.stderr or "")
+            if "mysqld is alive" not in (ping.stdout or ""):
+                last_error = out.strip()
+                colored_print(f"Ping MySQL failed: {last_error}", "yellow")
+                # attendre puis retry
+                if attempt < nb_of_retry:
+                    colored_print(f"⏳ Attente {wait_seconds}s avant retry...", "yellow")
+                    time.sleep(wait_seconds)
+                continue
+            colored_print("✅ MySQL répond au ping", "green")
         except Exception as e:
-            last_error = e
-            colored_print(f"Unexpected error while checking database container: {e}", "red")
+            last_error = str(e)
+            colored_print(f"Erreur lors du mysqladmin ping: {e}", "yellow")
+            if attempt < nb_of_retry:
+                colored_print(f"⏳ Attente {wait_seconds}s avant retry...", "yellow")
+                time.sleep(wait_seconds)
+            continue
 
-        if attempt == nb_of_retry:
-            break
+        # Step B : vérifier qu'il y a des tables dans la DB
+        try:
+            show = subprocess.run(
+                [
+                    "docker", "exec", db_container_name, "mysql",
+                    "-uroot", "-p" + root_password,
+                    "-e", f"USE {db_name}; SHOW TABLES;"
+                ],
+                capture_output=True, text=True
+            )
 
-        colored_print(
-            f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
-            "yellow"
-        )
-        time.sleep(waiting_time)
+            stdout = (show.stdout or "").strip()
+            stderr = (show.stderr or "").strip()
 
-    colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
+            # Cas d'erreur (ex: Unknown database)
+            if show.returncode != 0:
+                last_error = stderr or stdout
+                # si base inconnue, on la considère comme "vide" pour relancer l'up/import
+                colored_print(f"Erreur lors du SHOW TABLES (traite comme DB vide): {last_error}", "yellow")
+                # restart below
+            else:
+                # parse des lignes non vides
+                lines = [l.strip() for l in stdout.splitlines() if l.strip()]
+                # parfois la 1ère ligne est "Tables_in_<dbname>" -> la supprimer
+                if lines and lines[0].lower().startswith("tables_in"):
+                    tables = lines[1:]
+                else:
+                    tables = lines
+
+                if tables:
+                    colored_print(f"✅ La DB '{db_name}' contient {len(tables)} table(s).", "green")
+                    return True
+                else:
+                    colored_print(f"⚠️ La DB '{db_name}' est vide (0 table).", "yellow")
+
+        except Exception as e:
+            last_error = str(e)
+            colored_print(f"Erreur lors de l'exécution du SHOW TABLES: {e}", "yellow")
+
+        # Step C : si on arrive ici, DB ou tables pas prêtes -> restart containers et retry
+        colored_print("♻️ Redémarrage des containers (start_containers no_cache=False)...", "blue")
+        try:
+            start_containers(no_cache=False)
+        except Exception as e:
+            # start_containers lève déjà des erreurs en interne ; on les logge mais on continue les retries
+            colored_print(f"Erreur lors du redémarrage des containers: {e}", "yellow")
+
+        if attempt < nb_of_retry:
+            colored_print(f"⏳ Attente {wait_seconds}s avant la prochaine tentative...", "yellow")
+            time.sleep(wait_seconds)
+
+    # Fin des retries
+    colored_print(f"❌ La DB '{db_name}' dans '{db_container_name}' est toujours vide ou inaccessible après {nb_of_retry} tentatives.", "red" if last_error is None else "yellow")
     if last_error:
-        colored_print(f"Last error: {last_error}", "red")
-    try:
-        log_result = subprocess.run([
-            "docker", "logs", "--tail", "20", db_container_name
-        ], capture_output=True, text=True)
-        colored_print(f"Last 20 lines of database container logs:\n{log_result.stdout}", "yellow")
-    except Exception as e:
-        colored_print(f"Could not retrieve database container logs: {e}", "red")
+        colored_print(f"Dernière erreur connue: {last_error}", "yellow")
+    return False
 
-def verify_databases_are_up(db_configs, nb_of_retry=1):
+
+def verify_databases_are_up(db_configs: List[Dict[str, Any]], nb_of_retry: int = 5, wait_seconds: int = 60) -> None:
     """
-    Objectif: Verifies that multiple MySQL database containers are up and responsive.
-
-    Parameters:
-        - db_configs: List of database configuration dictionaries containing container_name and env_prefix. (List)
-        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
-
-    Return Value:
-        - None: This function does not return a value but prints status messages and may terminate the program if any database fails to start. (NoneType)
+    Vérifie plusieurs bases listées dans db_configs.
+    db_configs: liste de dicts contenant au minimum 'container_name' et éventuellement 'env_prefix' et 'name'.
     """
-    colored_print(f"Verifying {len(db_configs)} database containers...", "blue")
+    colored_print(f"Vérification de {len(db_configs)} base(s) de données...", "blue")
+    env_data = load_env_file(".env")
 
-    for db_config in db_configs:
-        container_name = db_config["container_name"]
-        env_prefix = db_config.get("env_prefix", "")
+    for db_cfg in db_configs:
+        container_name = db_cfg.get("container_name")
+        env_prefix = db_cfg.get("env_prefix", "")
+        cfg_name = db_cfg.get("name", None)
 
-        # Use prefixed environment variables if available
-        env_data = load_env_file(".env")
         root_password_key = f"{env_prefix}MYSQL_ROOT_PASSWORD"
         root_password = env_data.get(root_password_key, env_data.get("MYSQL_ROOT_PASSWORD"))
 
-        colored_print(f"Verifying database container '{container_name}'...", "blue")
-        verify_database_is_up_with_config(container_name, root_password, nb_of_retry)
+        # determine db name: préfixé dans .env ou fallback au champ "name" du config
+        db_name = env_data.get(f"{env_prefix}MYSQL_DATABASE", env_data.get("MYSQL_DATABASE", cfg_name))
 
-def verify_database_is_up_with_config(db_container_name, root_password, nb_of_retry=1):
-    """
-    Objectif: Verifies that a specific MySQL database container is up and responsive using provided password.
+        if not container_name:
+            colored_print("Skipping a DB entry without container_name.", "yellow")
+            continue
 
-    Parameters:
-        - db_container_name: The name of the Docker container running the MySQL database. (String)
-        - root_password: The MySQL root password to use for verification. (String)
-        - nb_of_retry: Number of retry attempts before failing. Defaults to 1. (Integer)
-
-    Return Value:
-        - None: This function does not return a value but prints status messages and may terminate the program if the database fails to start. (NoneType)
-    """
-    waiting_time = 10  # Time in seconds between retries
-
-    # 1. Check if Docker is installed
-    try:
-        subprocess.run(["docker", "--version"], check=True, capture_output=True)
-    except FileNotFoundError:
-        colored_print("Docker command not found! Ensure Docker is installed and in your PATH.", "red")
-        return
-    except Exception as e:
-        colored_print(f"Unexpected error when checking Docker installation: {e}", "red")
-        return
-
-    # 2. Check if the database container is running
-    try:
-        result = subprocess.run([
-            "docker", "ps", "--filter", f"name={db_container_name}", "--filter", "status=running", "--format", "{{.Names}}"
-        ], capture_output=True, text=True)
-        running = result.stdout.splitlines()
-        if db_container_name not in running:
-            colored_print(f"Database container '{db_container_name}' is NOT running! Check logs with: docker logs {db_container_name}", "red")
-            return
-    except Exception as e:
-        colored_print(f"Error checking database container status: {e}", "red")
-        return
-
-    colored_print(f"Waiting for database container '{db_container_name}' to be ready...", "blue")
-    last_error = None
-    for attempt in range(1, nb_of_retry + 1):
-        try:
-            result = subprocess.run([
-                "docker", "exec", db_container_name, "mysqladmin", "ping", "-h", "localhost", "-uroot",
-                "-p" + root_password
-            ], capture_output=True, text=True)
-            if "mysqld is alive" in result.stdout:
-                colored_print(f"Database container '{db_container_name}' is ready!", "green")
-                return  # Exit function successfully
-            else:
-                last_error = result.stdout + result.stderr
-                colored_print(f"Database ping failed: {result.stdout.strip()} {result.stderr.strip()}", "yellow")
-        except FileNotFoundError:
-            colored_print("Docker command not found! Ensure Docker is installed and in your PATH.", "red")
-            return
-        except subprocess.CalledProcessError as cpe:
-            last_error = cpe
-            colored_print(f"Database command error: {cpe}", "red")
-        except Exception as e:
-            last_error = e
-            colored_print(f"Unexpected error while checking database container: {e}", "red")
-
-        if attempt == nb_of_retry:
-            break
-
-        colored_print(
-            f"Attempt {attempt}/{nb_of_retry}: Database not ready. Retrying in {waiting_time} seconds...",
-            "yellow"
+        colored_print(f"➡️ Vérification complète pour '{db_name}' (container: '{container_name}')", "blue")
+        ok = verify_database_is_ready(
+            db_container_name=container_name,
+            root_password=root_password,
+            db_name=db_name,
+            nb_of_retry=nb_of_retry,
+            wait_seconds=wait_seconds
         )
-        time.sleep(waiting_time)
 
-    colored_print(f"Database container '{db_container_name}' is not ready after {nb_of_retry} attempts!", "red")
-    if last_error:
-        colored_print(f"Last error: {last_error}", "red")
-    try:
-        log_result = subprocess.run([
-            "docker", "logs", "--tail", "20", db_container_name
-        ], capture_output=True, text=True)
-        colored_print(f"Last 20 lines of database container logs:\n{log_result.stdout}", "yellow")
-    except Exception as e:
-        colored_print(f"Could not retrieve database container logs: {e}", "red")
+        if not ok:
+            colored_print(f"Attention: la vérification de '{db_name}' a échoué.", "yellow")
+        # else OK -> nothing to do
