@@ -188,6 +188,19 @@ export default function Localisation(): React.ReactElement {
             </Text>
           </View>
         )}
+        {item.distance && item.distance > 10 && (
+          <View style={{
+            backgroundColor: '#F44336',
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            alignSelf: 'center'
+          }}>
+            <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+              LOIN
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
