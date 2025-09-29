@@ -17,6 +17,16 @@ type Distributor = {
   distance?: number;
 };
 
+type TransportMode = 'driving' | 'walking' |  'cycling'; 
+
+type TransportOption = { 
+  mode: TransportMode; 
+  icon: string; 
+  label: string;
+  color: string;
+}; 
+
+
 export default function Localisation(): React.ReactElement {
   const { colors } = useTheme();
   const { fontScale } = useFontScale();
@@ -26,6 +36,14 @@ export default function Localisation(): React.ReactElement {
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [selectedTransportMode, setSelectedTransportMode] = useState<TransportMode>('walking'); 
+
+  // Transport mode state 
+  const transportOptions: TransportOption[] = [
+    { mode: 'driving', icon: '🚗', label: 'Voiture', color: '#F57196' },
+    { mode: 'cycling', icon: '🚴', label: 'Vélo', color: '#F57196' },
+    { mode: 'walking', icon: '🚶', label: 'À pied', color: '#F57196' },
+  ];
 
   // States for the sliding panel 
   const screenHeight = Dimensions.get('window').height;
@@ -72,6 +90,14 @@ export default function Localisation(): React.ReactElement {
     }).start();
     setIsPanelOpen(!isPanelOpen);
   };
+
+  // Delete the itinerary if we change the transport mode
+  useEffect(() => { 
+    if (routeCoordinates.length > 0) {
+      setRouteCoordinates([]); 
+    }
+  }, [selectedTransportMode]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -132,7 +158,7 @@ export default function Localisation(): React.ReactElement {
       const origin = `${location.coords.latitude},${location.coords.longitude}`;
       const destination = `${selectedDistributor.latitude},${selectedDistributor.longitude}`;
       const response = await fetch(
-        `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=driving`
+        `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=${selectedTransportMode}`
       );
       const data = await response.json();
 
@@ -269,7 +295,11 @@ export default function Localisation(): React.ReactElement {
 
           {/* Display the itinerary if available */}
           {routeCoordinates.length > 0 && (
-            <Polyline coordinates={routeCoordinates} strokeColor={colors.secondary} strokeWidth={4} />
+            <Polyline 
+              coordinates={routeCoordinates} 
+              strokeColor={transportOptions.find(opt => opt.mode === selectedTransportMode)?.color || colors.secondary} 
+              strokeWidth={4} 
+            />
           )}
         </MapView>
       )}
@@ -354,9 +384,51 @@ export default function Localisation(): React.ReactElement {
                 <Text style={[styles.text, { fontSize: 14, color: colors.infoTextSecondary, marginTop: 5 }]}>
                   📍 Départ depuis votre position actuelle
                 </Text>
+
+                
+                {/* Sélecteur de mode de transport */}
+                <Text style={[styles.text, { fontSize: 16, fontWeight: 'bold', marginTop: 15, marginBottom: 10 }]}>
+                  🚶 Mode de transport :
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                  marginBottom: 15,
+                }}>
+                  {transportOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.mode}
+                      style={{
+                        flex: 1,
+                        minWidth: '48%',
+                        backgroundColor: selectedTransportMode === option.mode ? option.color : colors.inputBorder + '40',
+                        borderRadius: 8,
+                        padding: 12,
+                        margin: 2,
+                        alignItems: 'center',
+                        borderWidth: 2,
+                        borderColor: selectedTransportMode === option.mode ? option.color : 'transparent',
+                      }}
+                      onPress={() => setSelectedTransportMode(option.mode)}
+                    >
+                      <Text style={{ fontSize: 20, marginBottom: 4 }}>{option.icon}</Text>
+                      <Text style={{
+                        fontSize: 12,
+                        fontWeight: selectedTransportMode === option.mode ? 'bold' : 'normal',
+                        color: selectedTransportMode === option.mode ? 'white' : colors.text,
+                      }}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
                 <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
                   <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
-                    <Text style={styles.text}>🗺️ Afficher l'itinéraire</Text>
+                    <Text style={styles.text}>
+                      {transportOptions.find(opt => opt.mode === selectedTransportMode)?.icon} Afficher l'itinéraire
+                    </Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
