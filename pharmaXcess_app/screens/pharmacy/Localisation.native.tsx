@@ -252,15 +252,20 @@ export default function Localisation(): React.ReactElement {
           />
           
           {/* Pin the pharmacies locations */}
-          {distributors.map((distributor) => (
-            <Marker
-              key={distributor.id}
-              coordinate={{ latitude: distributor.latitude, longitude: distributor.longitude }}
-              title={distributor.name}
-              pinColor={selectedDistributor?.id === distributor.id ? "blue" : "green"}
-              onPress={() => setSelectedDistributor(distributor)}
-            />
-          ))}
+          {distributors.map((distributor) => {
+            const isSelected = selectedDistributor?.id === distributor.id;
+            const pinColor = isSelected ? "blue" : "green";
+            
+            return (
+              <Marker
+                key={`${distributor.id}-${isSelected ? 'selected' : 'unselected'}`}
+                coordinate={{ latitude: distributor.latitude, longitude: distributor.longitude }}
+                title={distributor.name}
+                pinColor={pinColor}
+                onPress={() => setSelectedDistributor(distributor)}
+              />
+            );
+          })}
 
           {/* Display the itinerary if available */}
           {routeCoordinates.length > 0 && (
