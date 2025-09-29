@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, Dimensions, Animated, PanResponder } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -36,10 +36,10 @@ export default function Localisation(): React.ReactElement {
   const translateY = useRef(new Animated.Value(panelHeight - peekHeight)).current;
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  // Récupérer l'ENV côté frontend
+  // Get the frontend ENV 
   const env = process.env.EXPO_PUBLIC_ENV || 'development';
 
-  // Choix dynamique de l'URL backend
+  // Dynamic choice of the backend URL
   const BACKEND_URL =
     env === 'production'
       ? process.env.EXPO_PUBLIC_BACKEND_URL
@@ -68,62 +68,11 @@ export default function Localisation(): React.ReactElement {
     Animated.spring(translateY, {
       toValue,
       useNativeDriver: true,
-      tension: 80,
+      tension: 100,
       friction: 8,
     }).start();
     setIsPanelOpen(!isPanelOpen);
   };
-
-  // PanResponder to handle drag gestures 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 20;
-      },
-      onPanResponderGrant: () => {
-        (translateY as any).setOffset((translateY as any)._value);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const newValue = gestureState.dy;
-        const clampedValue = Math.max(0, Math.min(panelHeight - peekHeight, newValue));
-        translateY.setValue(clampedValue);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        (translateY as any).flattenOffset();
-        
-        const velocity = gestureState.vy;
-        const currentValue = (translateY as any)._value;
-        const threshold = (panelHeight - peekHeight) / 2;
-
-        let toValue: number;
-        if (velocity > 0.5) {
-          // Fast swipe down - close
-          toValue = panelHeight - peekHeight;
-          setIsPanelOpen(false);
-        } else if (velocity < -0.5) {
-          // Fast swipe up - open
-          toValue = 0;
-          setIsPanelOpen(true);
-        } else {
-          // Based on position
-          if (currentValue > threshold) {
-            toValue = panelHeight - peekHeight;
-            setIsPanelOpen(false);
-          } else {
-            toValue = 0;
-            setIsPanelOpen(true);
-          }
-        }
-
-        Animated.spring(translateY, {
-          toValue,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }).start();
-      },
-    })
-  ).current;
   useEffect(() => {
     (async () => {
       try {
@@ -211,8 +160,16 @@ export default function Localisation(): React.ReactElement {
       }
 
       setRouteCoordinates(coords);
-      // Close the panel to better see the route
-      setIsPanelOpen(false);
+      // Close the panel smoothly to better see the route
+      if (isPanelOpen) {
+        setIsPanelOpen(false);
+        Animated.spring(translateY, {
+          toValue: panelHeight - peekHeight,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      }
     } catch (err) {
       console.error('Erreur fetch direction:', err);
       Alert.alert('Erreur', "Impossible de recuperer l'itineraire");
@@ -259,7 +216,7 @@ export default function Localisation(): React.ReactElement {
             </Text>
           </View>
         )}
-        {item.distance && item.distance > 10 && (
+        {item.distance && item.distance > 5 && (
           <View style={{
             backgroundColor: '#F44336',
             paddingHorizontal: 8,
@@ -332,19 +289,29 @@ export default function Localisation(): React.ReactElement {
           elevation: 6,
           transform: [{ translateY }],
         }}
-        {...panResponder.panHandlers}
       >
-        {/* Swipe handle  */}
-        <TouchableOpacity onPress={togglePanel} style={{
-          alignItems: 'center',
-          paddingVertical: 10,
-        }}>
+        {/* Swipe handle with visual indicator */}
+        <TouchableOpacity 
+          onPress={togglePanel} 
+          style={{
+            alignItems: 'center',
+            paddingVertical: 15,
+            paddingHorizontal: 50,
+          }}
+        >
           <View style={{
             width: 40,
             height: 4,
-            backgroundColor: colors.inputBorder,
+            backgroundColor: isPanelOpen ? colors.primary : colors.inputBorder,
             borderRadius: 2,
           }} />
+          <Text style={{ 
+            fontSize: 12, 
+            color: colors.infoTextSecondary,
+            marginTop: 4, 
+          }}>
+            {isPanelOpen ? '▼ Réduire' : '▲ Voir plus'}
+          </Text>
         </TouchableOpacity>
 
         {/* Panel header */}
