@@ -1,10 +1,12 @@
 import time
 import subprocess
 import requests
+import os
 
 from colored_print import colored_print
+from helpers.env_functions.load_env_file import load_env_file
 
-def verify_backend_is_up(backend_container_name, nb_of_retry=10):
+def verify_backend_is_up(backend_container_name, backend_folder, nb_of_retry=10):
     """
     Objectif: Verifies that the backend application within a Docker container is ready and responding by checking its health endpoint with retries.
 
@@ -43,10 +45,22 @@ def verify_backend_is_up(backend_container_name, nb_of_retry=10):
     time.sleep(waiting_time)  # Wait before starting the checks
     colored_print(f"Waiting for backend container '{backend_container_name}' to be ready...", "blue")
 
+    env_data = load_env_file(".env")
+    env = env_data['ENV']
+
+    if env == 'production':
+        url = "http://57.128.57.96:5000/"
+    elif env == 'development':
+        url = "http://localhost:5000/"
+    else:
+        colored_print("la variable ENV n'est pas définie correctement", "red")
+        url = None
+
     last_error = None
     for attempt in range(1, nb_of_retry + 1):
         try:
-            response = requests.get("http://localhost:5000/", timeout=5)
+            if url:
+                response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 colored_print("Backend is ready!", "green")
                 return  # Exit function successfully

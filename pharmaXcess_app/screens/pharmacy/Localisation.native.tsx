@@ -37,7 +37,14 @@ export default function Localisation(): React.ReactElement {
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
   const [showMap, setShowMap] = useState(false);
 
-  const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+  // Récupérer l'ENV côté frontend
+  const env = process.env.EXPO_PUBLIC_ENV || 'development';
+
+  // Choix dynamique de l'URL backend
+  const BACKEND_URL =
+    env === 'production'
+      ? process.env.EXPO_PUBLIC_BACKEND_URL
+      : process.env.EXPO_PUBLIC_NGROK_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
   // Function to calculate distance between two GPS coordinates (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {

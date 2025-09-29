@@ -36,10 +36,21 @@ def handle_origins(backend_folder):
     secret_key = re.sub(r"^['\"]|['\"]$", '', secret_key)
 
     try:
-        response = requests.get(
-            "http://localhost:5000/list-origins",
-            headers={'X-Secret-Key': secret_key}
-        )
+        env = env_data['ENV']
+
+        if env == 'production':
+            url = "http://57.128.57.96:5000/list-origins"
+        elif env == 'development':
+            url = "http://localhost:5000/list-origins"
+        else:
+            print("Erreur : la variable ENV n'est pas définie correctement")
+            url = None
+
+        if url:
+            response = requests.get(
+                url,
+                headers={'X-Secret-Key': secret_key}
+            )
 
         if response.status_code == 200:
             data = response.json()

@@ -18,6 +18,9 @@ from launch_files.scripts.handle_import import handle_import_images
 from launch_files.scripts.handle_logs import handle_logs
 from launch_files.scripts.handle_origins import handle_origins
 from launch_files.scripts.handle_app import handle_app
+from launch_files.scripts.handle_deploy_back import handle_deploy_back
+from launch_files.scripts.handle_exec_server import handle_exec_server
+from launch_files.scripts.handle_clean_server import handle_clean_server
 
 # Variables globales pour la gestion des processus
 active_processes = []
@@ -74,6 +77,7 @@ if __name__ == "__main__":
     build_group = parser.add_argument_group("Build Options")
     log_group = parser.add_argument_group("Logging & Debugging")
     misc_group = parser.add_argument_group("Miscellaneous")
+    server_group = parser.add_argument_group("Server Operations")
 
     # Main Operations
     main_group.add_argument("--verif", action="store_true", help="Run verification steps.")
@@ -104,12 +108,20 @@ if __name__ == "__main__":
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
 
     # Logging & Debugging
-    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "every"], help="Stream logs for components.")
+    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")
     log_group.add_argument("--origins", action="store_true", help="List registered frontend origins.")
 
     # Miscellaneous
     misc_group.add_argument("--sudo", action="store_true", help="Use sudo for npm install in frontend operations.")
     misc_group.add_argument("--tunnel", action="store_true", help="Start Expo in tunnel mode for mobile app.")
+
+    server_group.add_argument("--deploy-back", action="store_true", help="Deploy backend to remote server (VM).")
+    server_group.add_argument(
+        "--exec-server",
+        nargs='+',  # <-- permet plusieurs arguments
+        help="Transfers and executes Python files on the remote server (VM). The first file is executed."
+    )
+    server_group.add_argument("--clean-server", action="store_true", help="Nettoie Docker et met à jour complètement le serveur distant.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -141,6 +153,13 @@ if __name__ == "__main__":
 
     volumes=[
         "medicine_data"
+    ]
+
+    post_deploy_scripts = [
+        [
+            "backend/scripts/fill_app_db/docker_launcher.py",
+            "backend/scripts/fill_app_db/fill_distributeurs_table.py"
+        ]
     ]
 
     # Execute operations based on flags
@@ -236,6 +255,15 @@ if __name__ == "__main__":
                 )
             if args.origins:
                 handle_origins(backend_folder)
+            if args.deploy_back:
+                handle_clean_server()
+                handle_deploy_back()
+                for script_group in post_deploy_scripts:
+                    handle_exec_server(*script_group)
+            if args.exec_server:
+                handle_exec_server(*args.exec_server)  # On décompresse la liste
+            if args.clean_server:
+                handle_clean_server()
     else:
         parser.print_help()
         exit(1)

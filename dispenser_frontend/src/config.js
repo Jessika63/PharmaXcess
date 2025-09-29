@@ -29,9 +29,21 @@ import {
 } from 'react-icons/fa';
 import logo from './assets/logo.png';
 
+const env = process.env.REACT_APP_ENV;
+
+let backendUrl;
+
+if (env === 'production') {
+    backendUrl = 'http://57.128.57.96:5000';
+} else if (env === 'development') {
+    backendUrl = 'http://localhost:5000';
+} else {
+    console.error("⚠️ La variable ENV n'est pas définie correctement");
+}
+
 const config = {
   // Backend configuration
-  backendUrl: 'http://localhost:5000',
+  backendUrl: backendUrl,
 
   // Configuration CORS dynamique
   cors: {

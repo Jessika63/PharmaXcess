@@ -333,15 +333,23 @@
 #     with patch("scripts.qrcode.qrCodeLect.requests.get") as mock_get:
 #         # Mock successful API response
 #         mock_response = MagicMock()
-#         mock_response.status_code = 200
-#         mock_response.json.return_value = {"doctor": {"id": 1, "name": "John Doe"}}
-#         mock_get.return_value = mock_response
+        # mock_response.status_code = 200
+        # mock_response.json.return_value = {"doctor": {"id": 1, "name": "John Doe"}}
+        # mock_get.return_value = mock_response
 
-#         # This should not raise an exception
-#         qrCodeLect.verify_doctor(qr_content)
+        # # This should not raise an exception
+        # qrCodeLect.verify_doctor(qr_content)
 
-#         # Verify API was called with correct parameters
-#         mock_get.assert_called_once_with("http://localhost:5000/find_doctor_by_name?first_name=John&last_name=Doe")
+        # # Verify API was called with correct parameters
+
+        # env = os.getenv('ENV')
+
+        # if env == 'production':
+        #     mock_get.assert_called_once_with("http://57.128.57.96:5000/find_doctor_by_name?first_name=John&last_name=Doe")
+        # elif env == 'development':
+        #     mock_get.assert_called_once_with("http://localhost:5000/find_doctor_by_name?first_name=John&last_name=Doe")
+        # else:
+        #     print("Erreur : la variable ENV n'est pas définie correctement")
 
 # @pytest.mark.order(2) # LOX n°6
 # def test_verify_doctor_missing_info():

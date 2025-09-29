@@ -1,8 +1,16 @@
 import sys
 import json
 import requests
+import os
 
-API_URL = "http://localhost:5000/add_list_doctors"
+env = os.getenv('ENV')
+
+if env == 'production':
+    API_URL = "http://57.128.57.96:5000/add_list_doctors"
+elif env == 'development':
+    API_URL = "http://localhost:5000/add_list_doctors"
+else:
+    print("Erreur : la variable ENV n'est pas définie correctement")
 
 def send_json_to_api(json_file_path):
     """
