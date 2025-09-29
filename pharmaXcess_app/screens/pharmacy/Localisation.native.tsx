@@ -36,7 +36,14 @@ export default function Localisation(): React.ReactElement {
   const translateY = useRef(new Animated.Value(panelHeight - peekHeight)).current;
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+  // Récupérer l'ENV côté frontend
+  const env = process.env.EXPO_PUBLIC_ENV || 'development';
+
+  // Choix dynamique de l'URL backend
+  const BACKEND_URL =
+    env === 'production'
+      ? process.env.EXPO_PUBLIC_BACKEND_URL
+      : process.env.EXPO_PUBLIC_NGROK_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
   // Function to calculate distance between two GPS coordinates (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {

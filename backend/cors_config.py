@@ -8,7 +8,15 @@ import os
 CORS_SECRET_KEY = os.getenv('CORS_SECRET_KEY')
 
 # URL du backend pour l'enregistrement CORS
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
+
+env = os.getenv('ENV')
+
+if env == 'production':
+    BACKEND_URL = "http://57.128.57.96:5000"
+elif env == 'development':
+    BACKEND_URL = "localhost:5000"
+else:
+    print("Erreur : la variable ENV n'est pas définie correctement")
 
 # Endpoint pour l'enregistrement CORS
 REGISTER_ORIGIN_ENDPOINT = '/register-origin'

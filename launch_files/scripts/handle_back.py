@@ -2,6 +2,7 @@ from calendar import c
 import os
 import subprocess
 import re
+import requests
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -112,13 +113,12 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                 colored_print(f"Failed to import the database dump into '{db_container_name}'!\nDetails: {error_message}", "red")
 
     # # Final check: verify backend is up after all operations
-    verify_backend_is_up(back_app_container_name, nb_of_retry=10)
+    verify_backend_is_up(back_app_container_name, backend_folder, nb_of_retry=10)
 
     if no_cache:
         colored_print("verifcation that origins is empty", "blue")
 
         try:
-            import requests
             try:
                 secret_key = env_data['CORS_SECRET_KEY']
             except (ImportError, FileNotFoundError, KeyError):
@@ -135,37 +135,46 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                                     break
             secret_key = re.sub(r"^['\"]|['\"]$", '', secret_key)
 
-            # Appel à l'API /list-origins avec la clé secrète
-            response = requests.get(
-                "http://localhost:5000/list-origins",
-                headers={"X-Secret-Key": secret_key}
-            )
+            env = env_data['ENV']
+            if env == 'production':
+                base_url = "http://57.128.57.96:5000"
+            elif env == 'development':
+                base_url = "http://localhost:5000"
+            else:
+                print("Erreur : la variable ENV n'est pas définie correctement")
+                base_url = None
 
-            if response.status_code == 200:
-                data = response.json()
-                origins = data.get("allowed_origins", [])
-                if origins:
-                    colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
-                    for origin in origins:
+            if base_url:
+                # Appel à l'API /list-origins avec la clé secrète
+                response = requests.get(
+                    f"{base_url}/list-origins",
+                    headers={"X-Secret-Key": secret_key}
+                )
 
-                        remove_resp = requests.post(
-                            "http://localhost:5000/remove-origin",
-                            headers={
-                                "X-Secret-Key": secret_key,
-                                "Content-Type": "application/json"
-                            },
-                            json={"origin": origin}
-                        )
-
-                        if remove_resp.status_code == 200:
-                            colored_print(f"Origin '{origin}' removed successfully", "green")
-                        else:
-                            colored_print(
-                                f"Failed to remove origin '{origin}' → {remove_resp.text}",
-                                "red"
+                if response.status_code == 200:
+                    data = response.json()
+                    origins = data.get("allowed_origins", [])
+                    if origins:
+                        colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
+                        for origin in origins:
+                            remove_resp = requests.post(
+                                f"{base_url}/remove-origin",
+                                headers={
+                                    "X-Secret-Key": secret_key,
+                                    "Content-Type": "application/json"
+                                },
+                                json={"origin": origin}
                             )
-                else:
-                    colored_print("No origins found, nothing to delete.", "green")
+
+                            if remove_resp.status_code == 200:
+                                colored_print(f"Origin '{origin}' removed successfully", "green")
+                            else:
+                                colored_print(
+                                    f"Failed to remove origin '{origin}' → {remove_resp.text}",
+                                    "red"
+                                )
+                    else:
+                        colored_print("No origins found, nothing to delete.", "green")
             else:
                 colored_print(
                     f"Could not list origins, status={response.status_code}, body={response.text}",

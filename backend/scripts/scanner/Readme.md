@@ -20,7 +20,10 @@ python3 fillDBWithFile.py <file_path>
    - JSON: Ensures the presence of the `doctors` key.
    - CSV: Validates the required fields and processes data in batches of 180 doctors.
 2. Converts the data into a usable format.
-3. Sends the data to the API: `http://localhost:5000/add_list_doctors`.
+3. Sends the data to the API:
+   - If ENV=production → http://57.128.57.96:5000/add_list_doctors
+   - If ENV=development → http://localhost:5000/add_list_doctors
+   - Otherwise → displays an error about the undefined environment.
 4. Displays a success message or an error if something goes wrong.
 
 ---
@@ -54,7 +57,7 @@ python3 extractAll.py <image_path> <P|R|V>
 ## Notes
 
 - The scripts use libraries such as `requests`, `cv2` and `tensorflow`. Ensure they are installed before running (`pip install -r requirements.txt`).
-- The API must be accessible locally (`http://localhost:5000`).
+- The API must be accessible locally (`http://57.128.57.96:5000`).
 - For `extractAll.py`, UMI OCR must be installed and configured on your machine.
 
 ---

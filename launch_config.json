@@ -19,15 +19,19 @@
                 "ABUSEIPDB_API_KEY",
                 "GETIPINTEL_CONTACT",
                 "SECRET_QR_ENCRYPTION_KEY",
-                "CORS_SECRET_KEY"
+                "CORS_SECRET_KEY",
+                "ENV"
             ],
             "dispenser_frontend/" : [
-                "REACT_APP_CORS_SECRET_KEY"
+                "REACT_APP_CORS_SECRET_KEY",
+                "REACT_APP_ENV"
             ],
             "pharmaXcess_app/" : [
                 "EXPO_PUBLIC_CORS_SECRET_KEY",
                 "EXPO_PUBLIC_BACKEND_URL",
-                "NGROK_TOKEN"
+                "EXPO_PUBLIC_NGROK_BACKEND_URL",
+                "NGROK_TOKEN",
+                "EXPO_PUBLIC_ENV"
             ]
         },
         "databases": [
