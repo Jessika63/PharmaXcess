@@ -1,14 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Dimensions,
-} from 'react-native';
+import React, { useEffect, useState, useContext, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, Dimensions, Animated, PanResponder } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -35,7 +27,14 @@ export default function Localisation(): React.ReactElement {
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
-  const [showMap, setShowMap] = useState(false);
+
+  // States for the sliding panel 
+  const screenHeight = Dimensions.get('window').height;
+  const panelHeight = screenHeight * 0.6; // 60% of the screen height
+  const peekHeight = 120; // Height of the closed panel
+
+  const translateY = useRef(new Animated.Value(panelHeight - peekHeight)).current;
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -54,6 +53,70 @@ export default function Localisation(): React.ReactElement {
     // Return the distance rounded to 1 decimal place 
     return Math.round(distance * 10) / 10; 
   };
+
+
+  // Function to toggle the panel open/close
+  const togglePanel = () => {
+    const toValue = isPanelOpen ? panelHeight - peekHeight : 0;
+    Animated.spring(translateY, {
+      toValue,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 8,
+    }).start();
+    setIsPanelOpen(!isPanelOpen);
+  };
+
+  // PanResponder to handle drag gestures 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 20;
+      },
+      onPanResponderGrant: () => {
+        (translateY as any).setOffset((translateY as any)._value);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newValue = gestureState.dy;
+        const clampedValue = Math.max(0, Math.min(panelHeight - peekHeight, newValue));
+        translateY.setValue(clampedValue);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        (translateY as any).flattenOffset();
+        
+        const velocity = gestureState.vy;
+        const currentValue = (translateY as any)._value;
+        const threshold = (panelHeight - peekHeight) / 2;
+
+        let toValue: number;
+        if (velocity > 0.5) {
+          // Fast swipe down - close
+          toValue = panelHeight - peekHeight;
+          setIsPanelOpen(false);
+        } else if (velocity < -0.5) {
+          // Fast swipe up - open
+          toValue = 0;
+          setIsPanelOpen(true);
+        } else {
+          // Based on position
+          if (currentValue > threshold) {
+            toValue = panelHeight - peekHeight;
+            setIsPanelOpen(false);
+          } else {
+            toValue = 0;
+            setIsPanelOpen(true);
+          }
+        }
+
+        Animated.spring(translateY, {
+          toValue,
+          useNativeDriver: true,
+          tension: 80,
+          friction: 8,
+        }).start();
+      },
+    })
+  ).current;
   useEffect(() => {
     (async () => {
       try {
@@ -102,7 +165,7 @@ export default function Localisation(): React.ReactElement {
     })();
   }, []);
 
-  const handleGoToDistributor = async () => {
+    const handleGoToDistributor = async () => {
     if (!selectedDistributor) return;
 
     const originCoords = startLocation ?? location;
@@ -120,7 +183,7 @@ export default function Localisation(): React.ReactElement {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        Alert.alert('Erreur itinéraire', data.error || 'Impossible de récupérer l’itinéraire');
+        Alert.alert('Erreur itineraire', data.error || 'Impossible de recuperer l\'itineraire');
         return;
       }
 
@@ -141,10 +204,11 @@ export default function Localisation(): React.ReactElement {
       }
 
       setRouteCoordinates(coords);
-      setShowMap(true);
+      // Close the panel to better see the route
+      setIsPanelOpen(false);
     } catch (err) {
       console.error('Erreur fetch direction:', err);
-      Alert.alert('Erreur', "Impossible de récupérer l'itinéraire");
+      Alert.alert('Erreur', "Impossible de recuperer l'itineraire");
     }
   };
 
@@ -205,115 +269,145 @@ export default function Localisation(): React.ReactElement {
     );
   };
 
-  const screenHeight = Dimensions.get('window').height;
-
   return (
     <View style={{ flex: 1 }}>
-      {!showMap && (
-        <>
-          {distributors.length > 0 && (
-            <View style={{
-              backgroundColor: colors.primary + '20',
-              padding: 12,
-              marginHorizontal: 16,
-              marginTop: 16,
-              borderRadius: 8,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Text style={{
-                color: colors.primary,
-                fontWeight: 'bold',
-                fontSize: 14
-              }}>
-                📍 {distributors.length} pharmacies trouvées • Triées par distance
-              </Text>
-            </View>
-          )}
-          <FlatList
-            data={distributors}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderDistributor}
-            contentContainerStyle={{ padding: 16 }}
-            ListFooterComponent={
-              selectedDistributor && (
-                <View style={styles.selectedDistributor}>
-                  <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Départ"
-                    value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
-                    onChangeText={(text) => {
-                      const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
-                      if (!isNaN(latitude) && !isNaN(longitude)) {
-                        setStartLocation({
-                          coords: {
-                            latitude,
-                            longitude,
-                            altitude: null,
-                            accuracy: null,
-                            altitudeAccuracy: null,
-                            heading: null,
-                            speed: null,
-                          },
-                          timestamp: Date.now(),
-                        });
-                      } else {
-                        Alert.alert('Erreur', 'Coordonnées invalides');
-                      }
-                    }}
-                  />
-                  <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
-                      <Text style={styles.text}>Aller à la pharmacie</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              )
-            }
+      {/* Map in background  */} 
+      {location && (
+        <MapView
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        >
+          {/* Pin your location  */}
+          <Marker
+            coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
+            title="Votre position"
+            pinColor="#F57196"
           />
-        </>
+          
+          {/* Pin the pharmacies locations */}
+          {distributors.map((distributor) => (
+            <Marker
+              key={distributor.id}
+              coordinate={{ latitude: distributor.latitude, longitude: distributor.longitude }}
+              title={distributor.name}
+              pinColor={selectedDistributor?.id === distributor.id ? "blue" : "green"}
+              onPress={() => setSelectedDistributor(distributor)}
+            />
+          ))}
+
+          {/* Display the itinerary if available */}
+          {routeCoordinates.length > 0 && (
+            <Polyline coordinates={routeCoordinates} strokeColor={colors.secondary} strokeWidth={4} />
+          )}
+        </MapView>
       )}
 
-      {showMap && selectedDistributor && location && (
-        <View style={{ flex: 1 }}>
-          <MapView
-            style={{ flex: 1 }}
-            initialRegion={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
-              title="Vous"
-            />
-            <Marker
-              coordinate={{ latitude: selectedDistributor.latitude, longitude: selectedDistributor.longitude }}
-              title={selectedDistributor.name}
-            />
-            {routeCoordinates.length > 0 && (
-              <Polyline coordinates={routeCoordinates} strokeColor={colors.secondary} strokeWidth={4} />
-            )}
-          </MapView>
-          {/* Return button to restart the process  */}
-          <TouchableOpacity
-            style={[styles.goButton, { position: 'absolute', bottom: 20, alignSelf: 'center' }]}
-            onPress={() => {
-              setShowMap(false);
-              setRouteCoordinates([]);
-              setSelectedDistributor(null);
-            }}
-          >
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
-              <Text style={styles.text}>↩ Retour</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+      {/* Sliding panel at the bottom */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: panelHeight,
+          backgroundColor: colors.background,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.27,
+          shadowRadius: 4.65,
+          elevation: 6,
+          transform: [{ translateY }],
+        }}
+        {...panResponder.panHandlers}
+      >
+        {/* Swipe handle  */}
+        <TouchableOpacity onPress={togglePanel} style={{
+          alignItems: 'center',
+          paddingVertical: 10,
+        }}>
+          <View style={{
+            width: 40,
+            height: 4,
+            backgroundColor: colors.inputBorder,
+            borderRadius: 2,
+          }} />
+        </TouchableOpacity>
+
+        {/* Panel header */}
+        <View style={{
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+        }}>
+          <Text style={{
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: colors.text,
+            textAlign: 'center',
+          }}>
+            📍 {distributors.length} pharmacies trouvées
+          </Text>
+          <Text style={{
+            fontSize: 14,
+            color: colors.infoTextSecondary,
+            textAlign: 'center',
+            marginTop: 4,
+          }}>
+            Triées par distance
+          </Text>
         </View>
-      )}
+
+        {/* Pharmacies list  */}
+        <FlatList
+          data={distributors}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderDistributor}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            selectedDistributor && (
+              <View style={[styles.selectedDistributor, { marginTop: 20 }]}>
+                <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Départ (optionnel)"
+                  value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
+                  onChangeText={(text) => {
+                    const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
+                    if (!isNaN(latitude) && !isNaN(longitude)) {
+                      setStartLocation({
+                        coords: {
+                          latitude,
+                          longitude,
+                          altitude: null,
+                          accuracy: null,
+                          altitudeAccuracy: null,
+                          heading: null,
+                          speed: null,
+                        },
+                        timestamp: Date.now(),
+                      });
+                    } else if (text === '') {
+                      setStartLocation(null);
+                    }
+                  }}
+                />
+                <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
+                    <Text style={styles.text}>🗺️ Afficher l'itinéraire</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )
+          }
+        />
+      </Animated.View>
     </View>
   );
 }
