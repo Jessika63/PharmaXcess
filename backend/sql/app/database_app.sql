@@ -18,15 +18,12 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     adresse TEXT,
     contact_urgence_nom VARCHAR(150),
     contact_urgence_tel VARCHAR(20),
-    role ENUM('admin','parent','enfant','epoux','moi') DEFAULT 'parent',
+    role ENUM('admin', 'user', 'professional') DEFAULT 'user',
+    profile_type ENUM('parent','enfant','epoux','autre','moi') DEFAULT 'moi',
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reset_token VARCHAR(255) NULL,
     reset_token_expiration DATETIME NULL
 );
-
--- Index supplémentaires pour la recherche rapide
-CREATE INDEX idx_utilisateur_tel ON utilisateurs(telephone);
-CREATE INDEX idx_utilisateur_secu ON utilisateurs(numero_securite_sociale);
 
 -- Table relations parent-enfant
 CREATE TABLE IF NOT EXISTS relations_parent_enfant (
@@ -157,21 +154,22 @@ CREATE TABLE IF NOT EXISTS discussion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     utilisateur_id INT,
     sujet VARCHAR(255),
-    statut ENUM('ouvert','en_cours','ferme'),
-    pharmacien VARCHAR(150),
+    statut ENUM('ouvert','ferme'),
+    pharmacien_id INT,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+    date_fermeture DATETIME,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacien_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
 );
 
 -- Messages
 CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     discussion_id INT,
-    utilisateur_id INT,
+    auteur_id INT,
     message TEXT,
     date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE,
-    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE
 );
 
 -- Table QR Codes pour ordonnances
@@ -185,3 +183,13 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
     FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
 );
+
+-- Enable event scheduler
+SET GLOBAL event_scheduler = ON;
+
+-- Create event to automatically delete discussions closed more than 7 days ago
+CREATE EVENT IF NOT EXISTS delete_old_closed_discussions
+ON SCHEDULE EVERY 1 DAY
+DO
+  DELETE FROM discussion
+  WHERE statut='ferme' AND date_fermeture <= NOW() - INTERVAL 7 DAY;

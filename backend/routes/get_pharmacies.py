@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db_app import get_connection
+from db_app import get_app_connection
 import pymysql
 
 get_pharmacies_bp = Blueprint('get_pharmacies', __name__)
@@ -19,7 +19,7 @@ def get_pharmacies():
         return jsonify({"error": "Both 'lat' and 'lon' are required"}), 400
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             query = """
             SELECT

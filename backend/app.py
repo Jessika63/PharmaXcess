@@ -168,6 +168,17 @@ def register_blueprints():
     from routes.stripe.update_stock import update_stock_bp
     from routes.qr_code.generate_qr_code import generate_qr_bp
     from routes.qr_code.read_qr_code import read_qr_bp
+    from routes.tickets.discussions.create_discussion import create_discussion_bp
+    from routes.tickets.discussions.get_all_discussions import get_all_discussions_bp
+    from routes.tickets.discussions.get_user_discussions import get_user_discussions_bp
+    from routes.tickets.discussions.get_professional_discussions import get_professional_discussions_bp
+    from routes.tickets.discussions.get_discussion import get_discussion_bp
+    from routes.tickets.discussions.update_discussion import update_discussion_bp
+    from routes.tickets.discussions.reopen_discussion import reopen_discussion_bp
+    from routes.tickets.discussions.delete_discussion import delete_discussion_bp
+    from routes.tickets.messages.add_message import add_message_bp
+    from routes.tickets.messages.get_messages import get_messages_bp
+    from routes.tickets.messages.delete_message import delete_message_bp
 
     from routes.app.login import login_bp
     from routes.app.logout import logout_bp
@@ -190,6 +201,17 @@ def register_blueprints():
     app.register_blueprint(update_stock_bp)
     app.register_blueprint(generate_qr_bp)
     app.register_blueprint(read_qr_bp)
+    app.register_blueprint(create_discussion_bp)
+    app.register_blueprint(get_all_discussions_bp)
+    app.register_blueprint(get_user_discussions_bp)
+    app.register_blueprint(get_professional_discussions_bp)
+    app.register_blueprint(get_discussion_bp)
+    app.register_blueprint(update_discussion_bp)
+    app.register_blueprint(reopen_discussion_bp)
+    app.register_blueprint(delete_discussion_bp)
+    app.register_blueprint(add_message_bp)
+    app.register_blueprint(get_messages_bp)
+    app.register_blueprint(delete_message_bp)
 
     app.register_blueprint(login_bp)
     app.register_blueprint(logout_bp)
