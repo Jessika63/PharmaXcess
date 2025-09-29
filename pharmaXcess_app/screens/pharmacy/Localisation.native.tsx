@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, Dimensions, Animated } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -25,7 +25,6 @@ export default function Localisation(): React.ReactElement {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
-  const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
 
   // States for the sliding panel 
@@ -124,14 +123,13 @@ export default function Localisation(): React.ReactElement {
     const handleGoToDistributor = async () => {
     if (!selectedDistributor) return;
 
-    const originCoords = startLocation ?? location;
-    if (!originCoords) {
-      Alert.alert('Erreur', 'Impossible de récupérer le départ.');
+    if (!location) {
+      Alert.alert('Erreur', 'Impossible de récupérer votre position.');
       return;
     }
 
     try {
-      const origin = `${originCoords.coords.latitude},${originCoords.coords.longitude}`;
+      const origin = `${location.coords.latitude},${location.coords.longitude}`;
       const destination = `${selectedDistributor.latitude},${selectedDistributor.longitude}`;
       const response = await fetch(
         `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=driving`
@@ -347,31 +345,10 @@ export default function Localisation(): React.ReactElement {
           ListFooterComponent={
             selectedDistributor && (
               <View style={[styles.selectedDistributor, { marginTop: 20 }]}>
-                <Text style={styles.text}>Destination : {selectedDistributor.name}</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Départ (optionnel)"
-                  value={startLocation ? `${startLocation.coords.latitude}, ${startLocation.coords.longitude}` : ''}
-                  onChangeText={(text) => {
-                    const [latitude, longitude] = text.split(',').map((coord) => parseFloat(coord.trim()));
-                    if (!isNaN(latitude) && !isNaN(longitude)) {
-                      setStartLocation({
-                        coords: {
-                          latitude,
-                          longitude,
-                          altitude: null,
-                          accuracy: null,
-                          altitudeAccuracy: null,
-                          heading: null,
-                          speed: null,
-                        },
-                        timestamp: Date.now(),
-                      });
-                    } else if (text === '') {
-                      setStartLocation(null);
-                    }
-                  }}
-                />
+                <Text style={styles.text}>🎯 Destination : {selectedDistributor.name}</Text>
+                <Text style={[styles.text, { fontSize: 14, color: colors.infoTextSecondary, marginTop: 5 }]}>
+                  📍 Départ depuis votre position actuelle
+                </Text>
                 <TouchableOpacity style={styles.goButton} onPress={handleGoToDistributor}>
                   <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradientButton}>
                     <Text style={styles.text}>🗺️ Afficher l'itinéraire</Text>
