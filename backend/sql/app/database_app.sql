@@ -167,6 +167,7 @@ CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     discussion_id INT,
     auteur_id INT,
+    auteur_name VARCHAR(255),
     message TEXT,
     date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE
