@@ -3,7 +3,7 @@ from flask import Blueprint, request, send_file, jsonify
 import uuid
 import sys
 import os
-from db_app import get_connection
+from db_app import get_app_connection
 
 # Ajouter le chemin des scripts pour pouvoir les importer
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
@@ -48,7 +48,7 @@ def generate_prescription_qr():
     conn = None
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO qrcodes_ordonnances (utilisateur_id, ordonnance_id, code_unique) VALUES (%s,%s,%s)",
@@ -97,7 +97,7 @@ def generate_direction_qr():
     conn = None
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO qrcodes_maps (code_unique, data) VALUES (%s, %s)",
@@ -152,7 +152,7 @@ def generate_profile_qr():
 
     conn = None
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO qrcodes_profiles (utilisateur_id, code_unique) VALUES (%s, %s)",

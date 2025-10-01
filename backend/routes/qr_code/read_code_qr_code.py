@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db_app import get_connection
+from db_app import get_app_connection
 
 read_code_qr_bp = Blueprint('read_code_qr', __name__)
 
@@ -38,7 +38,7 @@ def read_prescription_qr_by_code():
 
     conn = None
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()
@@ -92,7 +92,7 @@ def read_direction_qr_by_code():
 
     conn = None
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_maps WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()
@@ -157,7 +157,7 @@ def read_profile_qr_by_code():
 
     conn = None
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_profiles WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()

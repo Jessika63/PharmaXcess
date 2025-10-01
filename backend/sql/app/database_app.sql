@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
 CREATE TABLE IF NOT EXISTS qrcodes_maps (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code_unique VARCHAR(255) UNIQUE NOT NULL,
-    data TEXT,
+    data TEXT
 );
 
 -- QR codes pour profiles
