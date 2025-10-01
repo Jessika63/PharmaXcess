@@ -180,8 +180,22 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
     utilisateur_id INT NOT NULL,
     ordonnance_id INT NOT NULL,
     code_unique VARCHAR(255) UNIQUE NOT NULL,
-    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
-    date_expiration DATETIME,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
     FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
+);
+
+-- QR codes pour maps
+CREATE TABLE IF NOT EXISTS qrcodes_maps (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code_unique VARCHAR(255) UNIQUE NOT NULL,
+    data TEXT,
+);
+
+-- QR codes pour profiles
+CREATE TABLE IF NOT EXISTS qrcodes_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    utilisateur_id INT NOT NULL,
+    code_unique VARCHAR(255) UNIQUE NOT NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
