@@ -34,12 +34,7 @@ def start_containers(no_cache=False):
             run_docker_command(["up", "-d"])
         else:
             colored_print("Starting containers with cache...", "blue")
-            # Séparer build et up pour docker compose v2
-            if isinstance(DOCKER_CMD, str):  # docker-compose
-                run_docker_command(["up", "--build", "-d"])
-            else:  # docker compose v2
-                run_docker_command(["build"])
-                run_docker_command(["up", "-d"])
+            run_docker_command(["up", "--build", "-d"])
         colored_print("Containers started successfully!", "green")
     except subprocess.CalledProcessError:
         colored_print(troubleshooting_message, "red")
