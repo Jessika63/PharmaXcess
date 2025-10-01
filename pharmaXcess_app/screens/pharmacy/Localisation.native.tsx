@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Dimensions, Animated, Vibration } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Dimensions, Animated, Vibration, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { CameraView, Camera } from 'expo-camera';
 import polyline from '@mapbox/polyline';
 import createStyles from '../../styles/Localisation.style';
 import { useTheme } from '../../context/ThemeContext';
@@ -46,6 +47,11 @@ export default function Localisation(): React.ReactElement {
   const [estimatedTime, setEstimatedTime] = useState<string>('');
   const [nextInstruction, setNextInstruction] = useState<string>('');
   const [locationSubscription, setLocationSubscription] = useState<Location.LocationSubscription | null>(null);
+  
+  // State for the QR code scanner
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [scanned, setScanned] = useState(false);
   
   // Ref to control the map
   const mapRef = useRef<MapView>(null); 
@@ -101,6 +107,113 @@ export default function Localisation(): React.ReactElement {
       friction: 8,
     }).start();
     setIsPanelOpen(!isPanelOpen);
+  };
+
+  // Function to request camera permission
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasCameraPermission(status === 'granted');
+    return status === 'granted';
+  };
+
+  const openQRScanner = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (hasPermission) {
+      setIsQRScannerOpen(true);
+      setScanned(false);
+    } else {
+      Alert.alert('Permission refusée', 'L\'accès à la caméra est nécessaire pour scanner les QR codes');
+    }
+  };
+
+  const closeQRScanner = () => {
+    setIsQRScannerOpen(false);
+    setScanned(false);
+  };
+
+  // Function to handle the scanned QR code
+  const handleQRCodeScanned = async ({ data }: { data: string }) => {
+    if (scanned) return;
+    setScanned(true);
+
+    try {
+      // Le QR code devrait contenir un JSON avec les informations de la pharmacie et de l'itinéraire
+      // Format attendu:
+      // {
+      //   "type": "pharmacy_route",
+      //   "pharmacy": {
+      //     "id": 123,
+      //     "name": "Pharmacie des Lilas",
+      //     "latitude": 48.8566,
+      //     "longitude": 2.3522,
+      //     "distance": 1.2
+      //   },
+      //   "route": {
+      //     "transportMode": "walking",
+      //     "coordinates": [
+      //       {"latitude": 48.8566, "longitude": 2.3522},
+      //       {"latitude": 48.8567, "longitude": 2.3523}
+      //     ]
+      //   }
+      // }
+      
+      const qrData = JSON.parse(data);
+      
+      if (qrData.type === 'pharmacy_route' && qrData.pharmacy && qrData.route) {
+        // Close the scanner
+        closeQRScanner();
+        
+        // Create a distributor object from the QR data
+        const distributorFromQR: Distributor = {
+          id: qrData.pharmacy.id || Date.now(),
+          name: qrData.pharmacy.name,
+          latitude: qrData.pharmacy.latitude,
+          longitude: qrData.pharmacy.longitude,
+          distance: qrData.pharmacy.distance
+        };
+
+        // Select the distributor from the QR code
+        setSelectedDistributor(distributorFromQR);
+
+        // Set the route if provided
+        if (qrData.route.coordinates) {
+          setRouteCoordinates(qrData.route.coordinates);
+        }
+
+        // Set the transport mode if specified
+        if (qrData.route.transportMode) {
+          setSelectedTransportMode(qrData.route.transportMode);
+        }
+
+        // Center the map on the pharmacy
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            latitude: distributorFromQR.latitude,
+            longitude: distributorFromQR.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }, 1000);
+        }
+
+        // Open the panel to display the details
+        setIsPanelOpen(true);
+
+        Alert.alert(
+          'QR Code scanné!', 
+          `Itinéraire vers ${distributorFromQR.name} chargé avec succès`,
+          [{ text: 'OK' }]
+        );
+
+      } else {
+        Alert.alert('QR Code invalide', 'Ce QR code ne contient pas d\'informations d\'itinéraire valides');
+      }
+    } catch (error) {
+      console.error('Erreur parsing QR code:', error);
+      Alert.alert('Erreur', 'Impossible de lire les données du QR code');
+    }
+    
+    // Reactivate scanning after a short delay to prevent multiple scans
+    setTimeout(() => setScanned(false), 2000);
   };
 
   // Recalculate the itinerary if we change the transport mode
@@ -624,6 +737,29 @@ export default function Localisation(): React.ReactElement {
         </View>
       )}
 
+      {/* Button to open QR scanner */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          top: 60,
+          right: 16,
+          backgroundColor: colors.background,
+          borderRadius: 25,
+          width: 50,
+          height: 50,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }}
+        onPress={openQRScanner}
+      >
+        <Text style={{ fontSize: 15 }}>📷</Text>
+      </TouchableOpacity>
+
       {/* Button to recenter the map */}
       {location && (
         <TouchableOpacity
@@ -804,6 +940,146 @@ export default function Localisation(): React.ReactElement {
           }
         />
       </Animated.View>
+
+      {/* Modal for the qr scanner */}
+      <Modal
+        visible={isQRScannerOpen}
+        animationType="slide"
+        onRequestClose={closeQRScanner}
+      >
+        <View style={{ flex: 1, backgroundColor: 'black' }}>
+          {/* Scanner header  */}
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            padding: 20,
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                Scanner QR Code
+              </Text>
+              <TouchableOpacity onPress={closeQRScanner}>
+                <Text style={{ color: 'white', fontSize: 16 }}>✕ Fermer</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: 'white', fontSize: 14, marginTop: 5 }}>
+              Scannez un QR code de pharmacie pour charger l'itinéraire
+            </Text>
+          </View>
+
+          {/* Camera scanner */}
+          {hasCameraPermission && (
+            <CameraView
+              style={{ flex: 1 }}
+              facing="back"
+              onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
+            >
+              {/* Scanner view */}
+              <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <View style={{
+                  width: 250,
+                  height: 250,
+                  borderWidth: 2,
+                  borderColor: 'white',
+                  borderRadius: 20,
+                  backgroundColor: 'transparent',
+                }}>
+                  <View style={{
+                    position: 'absolute',
+                    top: -10,
+                    left: -10,
+                    width: 40,
+                    height: 40,
+                    borderLeftWidth: 4,
+                    borderTopWidth: 4,
+                    borderColor: '#4CAF50',
+                    borderTopLeftRadius: 20,
+                  }} />
+                  <View style={{
+                    position: 'absolute',
+                    top: -10,
+                    right: -10,
+                    width: 40,
+                    height: 40,
+                    borderRightWidth: 4,
+                    borderTopWidth: 4,
+                    borderColor: '#4CAF50',
+                    borderTopRightRadius: 20,
+                  }} />
+                  <View style={{
+                    position: 'absolute',
+                    bottom: -10,
+                    left: -10,
+                    width: 40,
+                    height: 40,
+                    borderLeftWidth: 4,
+                    borderBottomWidth: 4,
+                    borderColor: '#4CAF50',
+                    borderBottomLeftRadius: 20,
+                  }} />
+                  <View style={{
+                    position: 'absolute',
+                    bottom: -10,
+                    right: -10,
+                    width: 40,
+                    height: 40,
+                    borderRightWidth: 4,
+                    borderBottomWidth: 4,
+                    borderColor: '#4CAF50',
+                    borderBottomRightRadius: 20,
+                  }} />
+                </View>
+              </View>
+
+              {/* Scanner view */}
+              <View style={{
+                position: 'absolute',
+                bottom: 60,
+                left: 20,
+                right: 20,
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                borderRadius: 10,
+                padding: 15,
+              }}>
+                <Text style={{ color: 'white', fontSize: 16, textAlign: 'center' }}>
+                  {scanned ? '✅ QR Code détecté!' : 'Pointez votre caméra vers le QR code'}
+                </Text>
+              </View>
+            </CameraView>
+          )}
+
+          {/* Message if there is not permission for the camera */}
+          {hasCameraPermission === false && (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+              <Text style={{ color: 'white', fontSize: 18, textAlign: 'center', marginBottom: 20 }}>
+                Permission caméra requise
+              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#4CAF50',
+                  padding: 15,
+                  borderRadius: 10,
+                  marginBottom: 10,
+                }}
+                onPress={requestCameraPermission}
+              >
+                <Text style={{ color: 'white', fontSize: 16 }}>Autoriser la caméra</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={closeQRScanner}>
+                <Text style={{ color: 'white', fontSize: 16 }}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
