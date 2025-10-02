@@ -1,29 +1,34 @@
+
 import os
 import re
 from colored_print import colored_print
 
-# Function to verify the database dump file
-def verify_db_dump(dump_folder, expected_date):
+
+def verify_db_dump(dump_folder, expected_date, expected_dumps=None):
     """
-    Objectif: Verifies the presence of the expected database dump file in the specified folder and checks for other dump files with similar naming patterns.
+    Objectif: Verifies the presence of the expected database dump file in the
+    specified folder and checks for other unexpected dump files.
 
     Parameters:
         - dump_folder: Path to the directory containing database dump files. (String)
         - expected_date: Expected date of the database dump file in 'DD_MM_YYYY' format. (String)
+        - expected_dumps: List of all valid dump filenames (List of Strings)
 
     Return Value:
-        - None: This function does not return a value but prints verification results and warnings. (NoneType)
+        - None: This function does not return a value but prints verification
+          results and warnings. (NoneType)
     """
     colored_print("Verifying database dump file", "blue")
 
-    if expected_date is None or expected_date.strip() == "":
+    if not expected_date or expected_date.strip() == "":
+        colored_print("No expected dump date provided.", "yellow")
         return
 
     # Construct the expected filename
     expected_file_pattern = f"database_dump_px_{expected_date}.sql"
     dump_file_path = os.path.join(dump_folder, expected_file_pattern)
 
-    # Check if the folder exists
+    # Ensure folder exists and is valid
     if not os.path.exists(dump_folder):
         colored_print(f"The dump folder '{dump_folder}' does not exist!", "red")
         return
@@ -44,14 +49,19 @@ def verify_db_dump(dump_folder, expected_date):
         colored_print(f"Unexpected error when checking dump file: {e}", "red")
         return
 
-    # List other dump files
+    # List and warn about truly unexpected dumps
     try:
-        other_dumps = [
+        all_dumps = [
             f for f in os.listdir(dump_folder)
             if re.match(r"database_dump_px_\d{2}_\d{2}_\d{4}\.sql", f)
-            and f != expected_file_pattern
         ]
-        if other_dumps:
-            colored_print(f"Other dump files found: {', '.join(other_dumps)}", "yellow")
+
+        if expected_dumps is None:
+            expected_dumps = [expected_file_pattern]
+
+        unexpected_dumps = [f for f in all_dumps if f not in expected_dumps]
+
+        if unexpected_dumps:
+            colored_print(f"Unexpected dump files found: {', '.join(unexpected_dumps)}", "yellow")
     except Exception as e:
         colored_print(f"Error listing dump files: {e}", "red")
