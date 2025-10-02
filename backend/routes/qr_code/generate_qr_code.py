@@ -1,65 +1,110 @@
 
-from flask import Blueprint, request, send_file, jsonify
+from flask import Blueprint, request, jsonify
 import random
 import string
 import sys
 import os
+import json
+import base64
+from io import BytesIO
+
 from db_app import get_app_connection
 
-# Ajouter le chemin des scripts pour pouvoir les importer
+# Add scripts path to import QR code generation
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
-
 from scripts.qrcode.qrCodeGen import generate_rounded_qr_code
 
-# Blueprint pour générer un QR code
+# Blueprint for QR code generation
 generate_qr_bp = Blueprint('generate_qr', __name__)
 
-# Fonction utilitaire pour générer un code unique de 10 caractères
+# ----------------------------
+# Utility functions
+# ----------------------------
 def generate_random_code(length=10):
+    """
+    Generate a random alphanumeric string of a given length.
+    Useful for unique identifiers, codes, or tokens.
+
+    Args:
+        length (int): The length of the generated string. Default = 10.
+
+    Returns:
+        str: Random alphanumeric string (A-Z, 0-9).
+    """
     chars = string.ascii_uppercase + string.digits
     return ''.join(random.choices(chars, k=length))
 
-# Fonction pour obtenir un code vraiment unique dans une table donnée
+
 def get_unique_code(cursor, table_name, column_name="code_unique", length=10):
+    """
+    Generate a truly unique code for a given table by checking the database.
+
+    Args:
+        cursor: Database cursor
+        table_name (str): Table name where uniqueness is enforced
+        column_name (str): Column where uniqueness is checked
+        length (int): Length of the generated code
+
+    Returns:
+        str: Unique alphanumeric code
+    """
     while True:
         code = generate_random_code(length)
         cursor.execute(f"SELECT 1 FROM {table_name} WHERE {column_name} = %s", (code,))
         if cursor.fetchone() is None:
             return code
 
+
+def qr_response(qr_data, base_filename="qr"):
+    """
+    Generate QR code image and return metadata + base64-encoded image.
+
+    Args:
+        qr_data (dict): Dictionary containing 'id' and 'code_unique'
+        base_filename (str): Prefix for the QR code file
+
+    Returns:
+        dict: {
+            "id": int,
+            "code_unique": str,
+            "image": str (base64 PNG)
+        }
+    """
+    buffer = generate_rounded_qr_code(qr_data, base_filename=base_filename, return_buffer=True)
+    buffer.seek(0)
+    img_bytes = buffer.read()
+    img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+    return {"id": qr_data['id'], "code_unique": qr_data['code_unique'], "image": img_base64}
+
+
+# ----------------------------
+# Generate Prescription QR
+# ----------------------------
 @generate_qr_bp.route('/generate_prescription_qr', methods=['POST'])
 def generate_prescription_qr():
     """
-    Objective: Generates a QR code for a prescription by creating a unique entry in the database.
-
-    Parameters:
-        - None
-
-    Query parameters:
-        - None
+    Generate a QR code for a prescription.
 
     Request Body (JSON):
-        - utilisateur_id: ID of the user (Integer, Required)
-        - ordonnance_id: ID of the prescription (Integer, Required)
+        - utilisateur_id (int, required): User ID
+        - ordonnance_id (int, required): Prescription ID
 
     Process:
-        - Validates the required fields in the request body
-        - Creates a new entry in the `qrcodes_ordonnances` database table with a unique code
-        - Generates a QR code containing the generated record ID
+        - Validate required fields
+        - Insert record in `qrcodes_ordonnances`
+        - Generate unique code + QR image
 
-    Return Value:
-        - 200: PNG image file of the generated QR code
-        - 400: JSON error response if required fields are missing
-        - 500: JSON error response in case of database or generation error
+    Returns:
+        - 200: JSON {id, code_unique, image}
+        - 400: Missing required fields
+        - 500: Internal error
     """
-
-    data = request.get_json()
+    data = request.get_json() or {}
     if not data.get('utilisateur_id') or not data.get('ordonnance_id'):
-        return jsonify({"error": "utilisateur_id et ordonnance_id requis"}), 400
+        return jsonify({"error": "utilisateur_id and ordonnance_id are required"}), 400
 
-    qr_data = {"id": None}
+    qr_data = {"id": None, "code_unique": None}
     conn = None
-
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
@@ -72,8 +117,8 @@ def generate_prescription_qr():
             conn.commit()
 
         qr_data['id'] = qr_id
-        buffer = generate_rounded_qr_code(qr_data, base_filename="prescription", return_buffer=True)
-        return send_file(buffer, mimetype='image/png', as_attachment=True, download_name='prescription_qr.png')
+        qr_data['code_unique'] = code_unique
+        return jsonify(qr_response(qr_data, base_filename="prescription"))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -82,46 +127,48 @@ def generate_prescription_qr():
             conn.close()
 
 
+# ----------------------------
+# Generate Direction QR
+# ----------------------------
 @generate_qr_bp.route('/generate_direction_qr', methods=['POST'])
 def generate_direction_qr():
     """
-    Objective: Generates a QR code for navigation/direction data by creating a unique entry in the database.
-
-    Parameters:
-        - None
-
-    Query parameters:
-        - None
+    Generate a QR code for navigation/direction.
 
     Request Body (JSON):
-        - data: Custom data payload to be stored and encoded into the QR code (String or Object, Optional)
+        - data (str|dict, optional): Custom payload to embed in the QR
 
     Process:
-        - Creates a new entry in the `qrcodes_maps` database table with a unique code and associated data
-        - Generates a QR code containing the generated record ID
+        - Serialize payload if dict
+        - Insert record in `qrcodes_maps`
+        - Generate unique code + QR image
 
-    Return Value:
-        - 200: PNG image file of the generated QR code
-        - 500: JSON error response in case of database or generation error
+    Returns:
+        - 200: JSON {id, code_unique, image}
+        - 500: Internal error
     """
-    data = request.get_json()
-    qr_data = {"id": None}
+    data = request.get_json() or {}
+    qr_data = {"id": None, "code_unique": None}
     conn = None
-
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
             code_unique = get_unique_code(cursor, "qrcodes_maps")
+
+            payload = data.get('data', '')
+            if isinstance(payload, dict):
+                payload = json.dumps(payload)
+
             cursor.execute(
                 "INSERT INTO qrcodes_maps (code_unique, data) VALUES (%s, %s)",
-                (code_unique, data.get('data', ''))
+                (code_unique, payload)
             )
             qr_id = cursor.lastrowid
             conn.commit()
 
         qr_data['id'] = qr_id
-        buffer = generate_rounded_qr_code(qr_data, base_filename="direction", return_buffer=True)
-        return send_file(buffer, mimetype='image/png', as_attachment=True, download_name='direction_qr.png')
+        qr_data['code_unique'] = code_unique
+        return jsonify(qr_response(qr_data, base_filename="direction"))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -130,40 +177,34 @@ def generate_direction_qr():
             conn.close()
 
 
+# ----------------------------
+# Generate Profile QR
+# ----------------------------
 @generate_qr_bp.route('/generate_profile_qr', methods=['POST'])
 def generate_profile_qr():
     """
-    Objective: Generates a QR code for a user profile by creating a unique entry in the database.
-
-    Parameters:
-        - None
-
-    Query parameters:
-        - None
+    Generate a QR code for a user profile.
 
     Request Body (JSON):
-        - utilisateur_id: ID of the user for whom the QR code is generated (Integer, Required)
+        - utilisateur_id (int, required): User ID
 
     Process:
-        - Validates that `utilisateur_id` is provided
-        - Creates a new entry in the `qrcodes_profiles` table with a unique code
-        - Generates a QR code containing the generated record ID
+        - Validate utilisateur_id
+        - Insert record in `qrcodes_profiles`
+        - Generate unique code + QR image
 
-    Return Value:
-        - 200: PNG image file of the generated QR code
-        - 400: JSON error response if `utilisateur_id` is missing
-        - 500: JSON error response in case of database or generation error
+    Returns:
+        - 200: JSON {id, code_unique, image}
+        - 400: Missing utilisateur_id
+        - 500: Internal error
     """
-
-    data = request.get_json()
+    data = request.get_json() or {}
     utilisateur_id = data.get('utilisateur_id')
-
     if not utilisateur_id:
-        return jsonify({"error": "utilisateur_id requis"}), 400
+        return jsonify({"error": "utilisateur_id is required"}), 400
 
-    qr_data = {"id": None}
+    qr_data = {"id": None, "code_unique": None}
     conn = None
-
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
@@ -176,8 +217,8 @@ def generate_profile_qr():
             conn.commit()
 
         qr_data['id'] = qr_id
-        buffer = generate_rounded_qr_code(qr_data, base_filename="profile", return_buffer=True)
-        return send_file(buffer, mimetype='image/png', as_attachment=True, download_name='profile_qr.png')
+        qr_data['code_unique'] = code_unique
+        return jsonify(qr_response(qr_data, base_filename="profile"))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
