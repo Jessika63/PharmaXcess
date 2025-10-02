@@ -40,14 +40,16 @@
                 "container_name": "distributeur-backend-db",
                 "db_dump_date": "03_07_2025",
                 "port": "3307",
-                "env_prefix": "DOCTORS_"
+                "env_prefix": "DOCTORS_",
+                "nbr_of_tables": 1
             },
             {
                 "name": "app_db",
                 "container_name": "app-backend-db",
                 "db_dump_date": "26_09_2025",
                 "port": "3308",
-                "env_prefix": "APP_"
+                "env_prefix": "APP_",
+                "nbr_of_tables": 17
             }
         ]
     },

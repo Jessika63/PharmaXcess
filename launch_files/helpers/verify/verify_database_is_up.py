@@ -11,8 +11,17 @@ from helpers.start_containers import start_containers
 
 def ensure_event_scheduler(db_container_name: str, root_password: str) -> None:
     """
-    Check if MySQL event_scheduler is ON. If not, activate it.
-    This ensures MySQL events (like automatic deletes) will run.
+    Objective: Ensures that the MySQL `event_scheduler` variable inside a Dockerized MySQL container
+    is enabled. If it is OFF, the function activates it so scheduled MySQL events (e.g., automatic deletes)
+    can run.
+
+    Parameters:
+        - db_container_name: The name of the Docker container running the MySQL database. (String)
+        - root_password: The root password used to connect to MySQL inside the container. (String)
+
+    Return Value:
+        - None: This function does not return a value but prints status messages about whether the
+        `event_scheduler` was already enabled, successfully activated, or if an error occurred. (NoneType)
     """
     try:
         # Check current value
@@ -45,12 +54,30 @@ def verify_database_is_ready(
     db_container_name: str,
     root_password: str,
     db_name: str,
+    expected_tables: int = None,
     nb_of_retry: int = 10,
     wait_seconds: int = 60
 ) -> bool:
     """
-    Verify that a MySQL database inside a Docker container is ready.
-    Optionally restarts containers once if DB is empty at first attempt.
+    Objective:
+    Verifies that a MySQL database running inside a Docker container is ready and accessible.
+    Performs repeated connection attempts, validates the existence of tables, and ensures that
+    the MySQL event scheduler is activated. If the database is empty on the first attempt, it
+    automatically restarts the containers once and retries.
+
+    Parameters:
+        - db_container_name: The name of the Docker container running the MySQL database. (String)
+        - root_password: The root password used to connect to MySQL inside the container. (String)
+        - db_name: The name of the database to verify. (String)
+        - expected_tables: The expected number of tables in the database. If provided,
+        the actual count will be compared against this value. Defaults to None. (Integer | None)
+        - nb_of_retry: Number of retry attempts before failing. Defaults to 10. (Integer)
+        - wait_seconds: Number of seconds to wait between retries. Defaults to 60. (Integer)
+
+    Return Value:
+        - True: If the database is accessible, contains tables (and matches expected_tables if given),
+        and the event scheduler is activated. (Boolean)
+        - False: If the database remains empty or inaccessible after all retries. (Boolean)
     """
     if not root_password:
         colored_print("MYSQL root password not provided in environment.", "red")
@@ -113,7 +140,19 @@ def verify_database_is_ready(
                 tables = lines
 
             if tables:
-                colored_print(f"✅ Database '{db_name}' contains {len(tables)} table(s).", "green")
+                actual_count = len(tables)
+                if expected_tables is not None:
+                    if actual_count == expected_tables:
+                        colored_print(f"✅ Database '{db_name}' contains {actual_count} table(s).", "green")
+                    else:
+                        colored_print(
+                            f"⚠️ Database '{db_name}' contains {actual_count} table(s), "
+                            f"but {expected_tables} were expected.",
+                            "yellow"
+                        )
+                else:
+                    colored_print(f"✅ Database '{db_name}' contains {len(tables)} table(s).", "green")
+
                 # Ensure event scheduler is active
                 ensure_event_scheduler(db_container_name, root_password)
                 return True
@@ -140,8 +179,23 @@ def verify_database_is_ready(
 
 def verify_databases_are_up(db_configs: List[Dict[str, Any]], nb_of_retry: int = 5, wait_seconds: int = 60) -> None:
     """
-    Verify multiple MySQL databases listed in db_configs.
-    Each dict should contain at minimum 'container_name' and optionally 'env_prefix' and 'name'.
+    Objective:
+    Verifies that multiple MySQL databases running inside Docker containers are up, accessible,
+    and properly initialized. For each database configuration, it checks connectivity, validates
+    the number of tables (if specified), and ensures the MySQL event scheduler is active.
+
+    Parameters:
+        - db_configs: A list of dictionaries, each describing a database. Each dict must contain:
+            * 'container_name': The name of the Docker container running the MySQL database. (String, required)
+            * 'name': The name of the database. (String, required if not provided in environment)
+            * 'env_prefix': Optional prefix for environment variable names (e.g., "DEV_", "PROD_"). (String, optional)
+            * 'nbr_of_tables': The expected number of tables in the database. Defaults to None. (Integer, optional)
+        - nb_of_retry: Number of retry attempts before failing each database verification. Defaults to 5. (Integer)
+        - wait_seconds: Number of seconds to wait between retries for each database. Defaults to 60. (Integer)
+
+    Return Value:
+        - None: This function does not return a value.
+        It prints status messages for each database and logs warnings if verification fails. (NoneType)
     """
     colored_print(f"Verifying {len(db_configs)} database(s)...", "blue")
     env_data = load_env_file(".env")
@@ -150,6 +204,7 @@ def verify_databases_are_up(db_configs: List[Dict[str, Any]], nb_of_retry: int =
         container_name = db_cfg.get("container_name")
         env_prefix = db_cfg.get("env_prefix", "")
         cfg_name = db_cfg.get("name", None)
+        expected_tables = db_cfg.get("nbr_of_tables", None)
 
         root_password_key = f"{env_prefix}MYSQL_ROOT_PASSWORD"
         root_password = env_data.get(root_password_key, env_data.get("MYSQL_ROOT_PASSWORD"))
@@ -165,6 +220,7 @@ def verify_databases_are_up(db_configs: List[Dict[str, Any]], nb_of_retry: int =
             db_container_name=container_name,
             root_password=root_password,
             db_name=db_name,
+            expected_tables=expected_tables,
             nb_of_retry=nb_of_retry,
             wait_seconds=wait_seconds
         )
