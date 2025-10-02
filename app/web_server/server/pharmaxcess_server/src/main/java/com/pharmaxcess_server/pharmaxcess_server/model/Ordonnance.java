@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 /**
- * Represents a support ticket in the system.
+ * Represents a support ordonnance in the system.
  */
 @Entity
 @Table(name = "ordonnances")
@@ -21,7 +21,7 @@ public class Ordonnance {
      * Doctor's name.
      */
     @Column(name = "doctor_name", nullable = false, length = 100)
-    private String doctor;
+    private String doctor_name;
 
     /**
      * Identifier of the user who created the ticket.
@@ -33,7 +33,7 @@ public class Ordonnance {
      * Timestamp when the ticket was created.
      */
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime created_at;
 
     /**
      * Current medications of the ordonnance.
@@ -65,7 +65,7 @@ public class Ordonnance {
      * @return the ordonnance title
      */
     public String getDoctor() {
-        return doctor;
+        return doctor_name;
     }
 
     /**
@@ -74,7 +74,7 @@ public class Ordonnance {
      * @param doctor name
      */
     public void setDoctor(String doctor) {
-        this.doctor = doctor;
+        this.doctor_name = doctor;
     }
 
     /**
@@ -101,7 +101,7 @@ public class Ordonnance {
      * @return the creation timestamp
      */
     public LocalDateTime getCreatedAt() {
-        return createdAt;
+        return created_at;
     }
 
     /**
@@ -110,6 +110,6 @@ public class Ordonnance {
      * @param createdAt the creation timestamp
      */
     public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+        this.created_at = createdAt;
     }
 }
