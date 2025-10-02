@@ -27,7 +27,7 @@ public class Ordonnance {
      * Identifier of the user who created the ticket.
      */
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Integer user_id;
 
     /**
      * Timestamp when the ticket was created.
@@ -83,7 +83,7 @@ public class Ordonnance {
      * @return the user ID
      */
     public Integer getUserId() {
-        return userId;
+        return user_id;
     }
 
     /**
@@ -92,7 +92,7 @@ public class Ordonnance {
      * @param userId the user ID
      */
     public void setUserId(Integer userId) {
-        this.userId = userId;
+        this.user_id = userId;
     }
 
     /**
