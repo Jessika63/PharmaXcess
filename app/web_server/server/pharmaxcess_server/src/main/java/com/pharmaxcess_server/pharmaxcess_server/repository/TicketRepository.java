@@ -22,7 +22,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * @return an {@link Optional} containing the found {@link Ticket}, or empty if not found
      * @throws IllegalArgumentException if id is {@code null}
      */
-    @Query("SELECT t FROM tickets t WHERE t.id = :id")
+    @Query("SELECT t FROM Ticket t WHERE t.id = :id")
     Optional<Ticket> findTicketById(@Param("id") Long id);
 
     /**
@@ -37,7 +37,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * @return the persisted {@link int} with any auto-generated fields (such as ID) populated
      * @throws IllegalArgumentException if the ticket is {@code null}
      */
-    @Query(value = "INSERT INTO tickets (title, status) VALUES (:title, :status)", nativeQuery = true)
+    @Query(value = "INSERT INTO Ticket (title, status) VALUES (:title, :status)", nativeQuery = true)
     int createTicket(@Param("title") String title,
                      @Param("status") String status);
 
@@ -48,7 +48,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * @param assignedTo the ID of the user to assign the ticket to
      * @return an {@link Optional} containing the updated ticket if found, otherwise empty
      */
-    @Query("UPDATE tickets t SET t.assignedTo = :assignedTo WHERE t.id = :id")
+    @Query("UPDATE Ticket t SET t.assignedTo = :assignedTo WHERE t.id = :id")
     int updateTicketAssignedTo(@Param("id") Long id, @Param("assignedTo") Long assignedTo);
 
     /**
@@ -58,7 +58,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * @param status the new status of the ticket
      * @return an {@link Optional} containing the updated ticket if found, otherwise empty
      */
-    @Query("UPDATE tickets t SET t.status = :status WHERE t.id = :id")
+    @Query("UPDATE Ticket t SET t.status = :status WHERE t.id = :id")
     int updateTicketStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
@@ -70,7 +70,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * @return a list of {@link Ticket} between the given indices
      */
     @Query(
-      value = "SELECT * FROM tickets " +
+      value = "SELECT * FROM Ticket " +
               "WHERE user_id = :userId " +
               "ORDER BY created_at DESC " +
               "LIMIT :limit OFFSET :offset",
