@@ -3,9 +3,6 @@ import os
 import sys
 import subprocess
 import time
-import mysql.connector
-import requests
-from dotenv import load_dotenv
 
 # -----------------------
 # Installation dépendances
@@ -23,6 +20,10 @@ def ensure_package(package_name, import_name=None):
 ensure_package("mysql-connector-python", "mysql.connector")
 ensure_package("requests")
 ensure_package("python-dotenv", "dotenv")
+
+import mysql.connector
+import requests
+from dotenv import load_dotenv
 
 # -----------------------
 # Charger .env
