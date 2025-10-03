@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db_app import get_connection
+from db_app import get_app_connection
 
 delete_qr_bp = Blueprint('delete_qr', __name__)
 

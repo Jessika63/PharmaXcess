@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 import tempfile, os, json
-from db_app import get_connection
+from db_app import get_app_connection
 from scripts.qrcode.qrCodeLect import read_qr_code
 
 read_qr_bp = Blueprint('read_qr', __name__)

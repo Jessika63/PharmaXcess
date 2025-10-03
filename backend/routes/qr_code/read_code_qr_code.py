@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db_app import get_connection
+from db_app import get_app_connection
 
 read_code_qr_bp = Blueprint('read_code_qr', __name__)
 
