@@ -1,4 +1,3 @@
-# routes/auth/reset_password.py
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from db_app import get_app_connection
@@ -12,6 +11,9 @@ def reset_password():
     token = data.get("token")
     new_password = data.get("new_password")
 
+    if not token or not new_password:
+        return jsonify({"error": "Missing token or new password"}), 400
+
     hashed_password = generate_password_hash(new_password)
 
     conn = None
@@ -20,7 +22,9 @@ def reset_password():
         with conn.cursor() as cursor:
             cursor.execute(
                 """UPDATE utilisateurs 
-                   SET mot_de_passe=%s, reset_token=NULL, reset_token_expiration=NULL 
+                   SET mot_de_passe=%s, 
+                       reset_token=NULL, 
+                       reset_token_expiration=NULL
                    WHERE reset_token=%s AND reset_token_expiration > %s""",
                 (hashed_password, token, datetime.datetime.now())
             )
@@ -28,9 +32,10 @@ def reset_password():
         conn.commit()
 
         if updated:
-            return jsonify({"message": "Password reset successful"}), 200
+            return jsonify({"message": "Password reset successful. Token has been cleared."}), 200
         else:
             return jsonify({"error": "Invalid or expired token"}), 400
     finally:
         if conn:
             conn.close()
+
