@@ -17,6 +17,14 @@ def login():
         user = cursor.fetchone()
 
     if user and check_password_hash(user["mot_de_passe"], password):
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE utilisateurs 
+                SET reset_token = NULL, reset_token_expiration = NULL
+                WHERE id = %s
+            """, (user["id"],))
+        conn.commit()
+
         session["user_id"] = user["id"]
         return jsonify({"message": "Login successful", "user_id": user["id"]}), 200
     else:

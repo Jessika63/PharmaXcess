@@ -18,7 +18,6 @@ def reset_password():
 
     conn = get_app_connection()
     with conn.cursor() as cursor:
-        # Met à jour le mot de passe uniquement si le token est encore valide
         cursor.execute(
             """UPDATE utilisateurs 
                SET mot_de_passe=%s, 
