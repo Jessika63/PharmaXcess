@@ -10,7 +10,7 @@ def get_professional_discussions(professional_id):
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM discussion WHERE pharmacien_id=%s ORDER BY date_creation DESC", (professional_id,))
+            cursor.execute("SELECT * FROM discussion WHERE professionnel_id=%s ORDER BY date_creation DESC", (professional_id,))
             discussions = cursor.fetchall()
         return jsonify(discussions)
     finally:

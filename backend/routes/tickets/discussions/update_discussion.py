@@ -9,7 +9,7 @@ update_discussion_bp = Blueprint('update_discussion', __name__, url_prefix='/dis
 def update_discussion(discussion_id):
     data = request.json
     statut = data.get("statut")
-    pharmacien_id = data.get("pharmacien_id")
+    professionnel_id = data.get("professionnel_id")
 
     conn = None
     try:
@@ -29,9 +29,12 @@ def update_discussion(discussion_id):
                 if statut == "ferme":
                     updates.append("date_fermeture=%s")
                     values.append(datetime.now())
-            if pharmacien_id:
-                updates.append("pharmacien_id=%s")
-                values.append(pharmacien_id)
+            if professionnel_id:
+                updates.append("professionnel_id=%s")
+                values.append(professionnel_id)
+
+            if not updates:
+                return jsonify({"error": "Nothing to update"}), 400
 
             values.append(discussion_id)
             sql = f"UPDATE discussion SET {', '.join(updates)} WHERE id=%s"

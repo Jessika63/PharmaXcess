@@ -155,11 +155,13 @@ CREATE TABLE IF NOT EXISTS discussion (
     utilisateur_id INT,
     sujet VARCHAR(255),
     statut ENUM('ouvert','en_cours','ferme'),
-    pharmacien_id INT,
+    professionnel_id  INT,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
     date_fermeture DATETIME,
+    destinataire ENUM('pharmacien','medecin','all') DEFAULT 'all',
+    region VARCHAR(255),
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
-    FOREIGN KEY (pharmacien_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
+    FOREIGN KEY (professionnel_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
 );
 
 -- Messages
@@ -187,7 +189,7 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
 CREATE TABLE IF NOT EXISTS qrcodes_maps (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code_unique VARCHAR(255) UNIQUE NOT NULL,
-    data TEXT,
+    data TEXT
 );
 
 -- QR codes pour profiles

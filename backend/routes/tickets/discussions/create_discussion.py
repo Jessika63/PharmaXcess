@@ -8,27 +8,29 @@ create_discussion_bp = Blueprint('create_discussion', __name__, url_prefix='/dis
 def create_discussion():
     data = request.json
     utilisateur_id = data.get("utilisateur_id")
-    sujet = data.get("subject")       # title
-    auteur_name = data.get("name")    # user full name
-    question = data.get("question")   # first message
-    pharmacien_id = data.get("pharmacien_id")  # optional
+    sujet = data.get("subject")
+    auteur_name = data.get("name")
+    question = data.get("question")
+    destinataire = data.get("flag")  # "pharmacien", "medecin", or None
+    region = data.get("region")
 
-    if not utilisateur_id or not sujet or not auteur_name or not question:
-        return jsonify({"error": "utilisateur_id, subject, name and question are required"}), 400
+    if not utilisateur_id or not sujet or not auteur_name or not question or not region:
+        return jsonify({"error": "utilisateur_id, subject, name, question and region are required"}), 400
+
+    if destinataire not in ("pharmacien", "medecin"):
+        destinataire = "all"
 
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            # Create discussion (default status "ouvert")
             cursor.execute("""
-                INSERT INTO discussion (utilisateur_id, sujet, statut, pharmacien_id)
-                VALUES (%s, %s, 'ouvert', %s)
-            """, (utilisateur_id, sujet, pharmacien_id))
+                INSERT INTO discussion (utilisateur_id, sujet, statut, destinataire, region)
+                VALUES (%s, %s, 'ouvert', %s, %s)
+            """, (utilisateur_id, sujet, destinataire, region))
             conn.commit()
             discussion_id = cursor.lastrowid
 
-            # Insert first message automatically
             cursor.execute("""
                 INSERT INTO messages (discussion_id, auteur_id, auteur_name, message)
                 VALUES (%s, %s, %s, %s)
@@ -39,6 +41,8 @@ def create_discussion():
         return jsonify({
             "message": "Discussion created with first message",
             "discussion_id": discussion_id,
+            "destinataire": destinataire,
+            "region": region,
             "first_message": {
                 "message_id": message_id,
                 "auteur_id": utilisateur_id,
