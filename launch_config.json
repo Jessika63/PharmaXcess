@@ -36,7 +36,7 @@
         },
         "databases": [
             {
-                "name": "dispenser_db",
+                "name": "doctors_db",
                 "container_name": "distributeur-backend-db",
                 "db_dump_date": "03_07_2025",
                 "port": "3307",
@@ -45,7 +45,7 @@
             {
                 "name": "app_db",
                 "container_name": "app-backend-db",
-                "db_dump_date": "",
+                "db_dump_date": "26_09_2025",
                 "port": "3308",
                 "env_prefix": "APP_"
             }

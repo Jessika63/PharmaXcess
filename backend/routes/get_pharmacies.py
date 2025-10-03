@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from db_app import get_connection
+from db_app import get_app_connection
 import pymysql
 
 get_pharmacies_bp = Blueprint('get_pharmacies', __name__)

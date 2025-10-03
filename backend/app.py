@@ -10,6 +10,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_dev_key")
+
 # Configuration pour CORS dynamique
 # Stockage dans /data à l'intérieur du conteneur (volume Docker)
 ALLOWED_ORIGINS_FILE = '/data/allowed_origins.json'
@@ -167,6 +169,12 @@ def register_blueprints():
     from routes.qr_code.generate_qr_code import generate_qr_bp
     from routes.qr_code.read_qr_code import read_qr_bp
 
+    from routes.app.login import login_bp
+    from routes.app.logout import logout_bp
+    from routes.app.register import register_bp
+    from routes.app.forgot_password import forgot_password_bp
+    from routes.app.reset_password import reset_password_bp
+    
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
     app.register_blueprint(find_doctor_by_rpps_bp)
@@ -182,6 +190,13 @@ def register_blueprints():
     app.register_blueprint(update_stock_bp)
     app.register_blueprint(generate_qr_bp)
     app.register_blueprint(read_qr_bp)
+
+    app.register_blueprint(login_bp)
+    app.register_blueprint(logout_bp)
+    app.register_blueprint(register_bp)
+    app.register_blueprint(forgot_password_bp)
+    app.register_blueprint(reset_password_bp)
+
 
 register_blueprints()
 
