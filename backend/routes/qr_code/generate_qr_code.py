@@ -3,7 +3,7 @@ from flask import Blueprint, request, send_file, jsonify
 import uuid
 import sys
 import os
-from db_app import get_connection
+from db_app import get_app_connection
 
 # Ajouter le chemin des scripts pour pouvoir les importer
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))

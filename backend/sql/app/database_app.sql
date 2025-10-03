@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS discussion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     utilisateur_id INT,
     sujet VARCHAR(255),
-    statut ENUM('ouvert','ferme'),
+    statut ENUM('ouvert','en_cours','ferme'),
     pharmacien_id INT,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
     date_fermeture DATETIME,
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS qrcodes_ordonnances (
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
     FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
 );
-  
+
 -- QR codes pour maps
 CREATE TABLE IF NOT EXISTS qrcodes_maps (
     id INT AUTO_INCREMENT PRIMARY KEY,
