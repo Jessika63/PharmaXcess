@@ -12,8 +12,23 @@ prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_pr
 @prescription_reminders_bp.route('/<int:user_id>', methods=['GET'])
 def get_prescription_reminders(user_id):
     """
-    Get all prescription reminders for a specific user with ordonnance details
+    Objective:
+    Retrieves all prescription reminders for a specific user, including details from the associated ordonnance.
+
+    Parameters:
+    - user_id: The unique identifier of the user whose prescription reminders are requested. (Integer)
+
+    Process:
+    - Queries the 'prescription_reminders' table for all reminders linked to the given user.
+    - Performs a LEFT JOIN with the 'ordonnances' table to include ordonnance details such as description, prescribing doctor, prescription date, expiration date, and status.
+    - Converts all relevant date fields to ISO 8601 string format.
+    - Calculates the number of days until each reminder is due, but only if the reminder is not completed.
+
+    Return Value:
+    - Success: Returns a JSON list of prescription reminders with associated ordonnance details and computed 'days_until_due', along with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 500 in case of a database or processing error. (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -69,8 +84,30 @@ def get_prescription_reminders(user_id):
 @prescription_reminders_bp.route('', methods=['POST'])
 def create_prescription_reminder():
     """
-    Create a new prescription reminder linked to an ordonnance
+    Objective:
+    Creates a new prescription reminder linked to an existing ordonnance for a specific user.
+
+    Expected JSON Body:
+    - utilisateur_id: ID of the user to whom the reminder belongs. (Integer)
+    - ordonnance_id: ID of the ordonnance the reminder is associated with. (Integer)
+    - name: Name or title of the reminder. (String)
+    - due_date: Date when the reminder is due, in 'YYYY-MM-DD' format. (String)
+    - sound (optional): Sound to play when the reminder triggers. Defaults to 'Son 1'. (String)
+    - is_completed (optional): Boolean flag indicating if the reminder has already been completed. Defaults to False. (Boolean)
+    - notes (optional): Additional notes related to the reminder. (String)
+
+    Process:
+    - Validates that all required fields are provided.
+    - Confirms that the given ordonnance exists and belongs to the specified user.
+    - Converts the 'due_date' field to a Python date object.
+    - Inserts the new reminder into the 'prescription_reminders' table.
+    - Commits the transaction to persist the new record.
+
+    Return Value:
+    - Success: Returns a JSON message with the new reminder's ID and HTTP status code 201. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 400 (missing/invalid fields), 404 (ordonnance not found), or 500 (database error). (Response)
     """
+
     try:
         data = request.get_json()
         required_fields = ['utilisateur_id', 'ordonnance_id', 'name', 'due_date']
@@ -125,8 +162,31 @@ def create_prescription_reminder():
 @prescription_reminders_bp.route('/<reminder_id>', methods=['PUT'])
 def update_prescription_reminder(reminder_id):
     """
-    Update an existing prescription reminder — keeps is_completed unchanged if not provided
+    Objective:
+    Update an existing prescription reminder with new values for one or more fields.
+
+    Parameters:
+    - reminder_id: ID of the prescription reminder to update. (Integer)
+
+    Expected JSON Body (any combination):
+    - name: Updated name or title of the reminder. (String)
+    - due_date: Updated due date in 'YYYY-MM-DD' format. (String)
+    - sound: Updated sound for the reminder. (String)
+    - is_completed: Updated completion status. (Boolean)
+    - notes: Updated notes. (String)
+
+    Process:
+    - Validates that the reminder exists.
+    - Dynamically updates only the fields provided in the request.
+    - Leaves 'is_completed' unchanged if not provided.
+    - Updates the 'updated_at' timestamp automatically.
+    - Commits the changes to the database.
+
+    Return Value:
+    - Success: Returns a JSON message confirming update with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 400 (invalid fields or date format), 404 (reminder not found), or 500 (database error). (Response)
     """
+
     try:
         data = request.get_json()
         connection = get_app_connection()
@@ -196,8 +256,22 @@ def update_prescription_reminder(reminder_id):
 @prescription_reminders_bp.route('/<reminder_id>', methods=['DELETE'])
 def delete_prescription_reminder(reminder_id):
     """
-    Delete a prescription reminder
+    Objective:
+    Delete a prescription reminder by its ID.
+
+    Parameters:
+    - reminder_id: ID of the prescription reminder to delete. (Integer)
+
+    Process:
+    - Checks if the prescription reminder exists in the database.
+    - Deletes the reminder if found.
+    - Commits the deletion to the database.
+
+    Return Value:
+    - Success: Returns a JSON message confirming deletion with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 404 (reminder not found) or 500 (database error). (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -221,8 +295,22 @@ def delete_prescription_reminder(reminder_id):
 @prescription_reminders_bp.route('/<reminder_id>/toggle', methods=['PUT'])
 def toggle_prescription_reminder(reminder_id):
     """
-    Toggle prescription reminder completion status
+    Objective:
+    Toggle the completion status of a prescription reminder by its ID.
+
+    Parameters:
+    - reminder_id: ID of the prescription reminder to toggle. (Integer)
+
+    Process:
+    - Retrieves the current `is_completed` status of the reminder.
+    - Switches the status from True to False or vice versa.
+    - Updates the database with the new status and current timestamp.
+
+    Return Value:
+    - Success: Returns a JSON message confirming the status update along with the new `is_completed` value and HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 404 (reminder not found) or 500 (database error). (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -252,8 +340,23 @@ def toggle_prescription_reminder(reminder_id):
 @prescription_reminders_bp.route('/<int:user_id>/upcoming', methods=['GET'])
 def get_upcoming_prescription_reminders(user_id):
     """
-    Get upcoming prescription reminders (within next 30 days)
+    Objective:
+    Retrieve upcoming prescription reminders for a specific user within the next 30 days that are not yet completed.
+
+    Parameters:
+    - user_id: ID of the user whose upcoming prescription reminders are being requested. (Integer)
+
+    Process:
+    - Queries the database for reminders linked to the user where `is_completed` is False.
+    - Filters reminders with `due_date` between today and 30 days from today.
+    - Joins each reminder with its related ordonnance to include additional details.
+    - Converts date fields to ISO 8601 format for consistency.
+
+    Return Value:
+    - Success: Returns a JSON list of upcoming prescription reminders with ordonnance details and HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -302,8 +405,22 @@ def get_upcoming_prescription_reminders(user_id):
 @prescription_reminders_bp.route('/ordonnance/<int:ordonnance_id>', methods=['GET'])
 def get_reminders_by_ordonnance(ordonnance_id):
     """
-    Get all reminders for a specific ordonnance
+    Objective:
+    Retrieve all prescription reminders associated with a specific ordonnance.
+
+    Parameters:
+    - ordonnance_id: ID of the ordonnance for which reminders are requested. (Integer)
+
+    Process:
+    - Queries the database for all reminders linked to the given ordonnance.
+    - Orders the results by due_date in descending order.
+    - Converts the `due_date` field to ISO 8601 format for consistency.
+
+    Return Value:
+    - Success: Returns a JSON list of reminders for the specified ordonnance with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -343,8 +460,22 @@ def get_reminders_by_ordonnance(ordonnance_id):
 @prescription_reminders_bp.route('/<int:user_id>/ordonnances', methods=['GET'])
 def get_ordonnances_for_reminders(user_id):
     """
-    Get all active ordonnances for a user that can be used to create reminders
+    Objective:
+    Retrieve all active ordonnances for a specific user that are eligible for creating prescription reminders.
+
+    Parameters:
+    - user_id: ID of the user whose active ordonnances are requested. (Integer)
+
+    Process:
+    - Queries the database for ordonnances linked to the given user with status 'active'.
+    - Orders the results by expiration date in descending order.
+    - Converts date fields (`date_prescription` and `date_expiration`) to ISO 8601 format.
+
+    Return Value:
+    - Success: Returns a JSON list of active ordonnances with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:

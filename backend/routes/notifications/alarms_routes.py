@@ -10,7 +10,23 @@ alarms_bp = Blueprint('alarms', __name__, url_prefix='/alarms')
 @alarms_bp.route('/<int:user_id>', methods=['GET'])
 def get_alarms(user_id):
     """
-    Get all alarms for a specific user
+    Objective:
+    Retrieves all alarms associated with a specific user from the database, formats the data, and returns it as a JSON response.
+
+    Parameters:
+    - user_id: The unique identifier of the user whose alarms are being retrieved. (Integer)
+
+    Process:
+    - Establishes a connection to the application database.
+    - Executes an SQL query to select all alarm records linked to the given user ID.
+    - Converts certain fields for better JSON compatibility:
+        * 'days' (stored as JSON string) is converted to a Python list.
+        * 'next_alarm' (stored as datetime) is converted to an ISO 8601 string.
+    - Returns the list of alarms sorted by time and medicine name.
+
+    Return Value:
+    - Success: Returns a JSON array containing all alarms and an HTTP status code 200. (Response)
+    - Failure: Returns a JSON object with an error message and an HTTP status code 500. (Response)
     """
     try:
         connection = get_app_connection()
@@ -43,8 +59,34 @@ def get_alarms(user_id):
 @alarms_bp.route('', methods=['POST'])
 def create_alarm():
     """
-    Create a new alarm
+    Objective:
+    Creates a new alarm entry in the database using the data provided in the JSON request body.
+
+    Parameters:
+    - None directly (the JSON payload is read from the request body).
+
+    Expected JSON Fields:
+    - utilisateur_id: The ID of the user associated with the alarm. (Integer)
+    - medicine_name: The name of the medicine linked to the alarm. (String)
+    - time: The time at which the alarm should trigger (in HH:MM:SS format). (String)
+    - days: A list of days on which the alarm should repeat. (List)
+    - sound: The sound type or file associated with the alarm. (String)
+    - dosage: The dosage information for the medicine. (String)
+    - is_active (optional): Whether the alarm is active. Defaults to True. (Boolean)
+    - next_alarm (optional): The next scheduled alarm time in ISO 8601 format. (String)
+
+    Process:
+    - Validates that all required fields are present.
+    - Serializes the 'days' field to JSON for database storage.
+    - Converts the optional 'next_alarm' field from ISO format to a Python datetime object.
+    - Inserts the new alarm into the 'alarmes' table.
+    - Commits the transaction and retrieves the newly created alarm ID.
+
+    Return Value:
+    - Success: Returns a JSON object with a success message and the new alarm ID, along with HTTP status code 201. (Response)
+    - Failure: Returns a JSON object with an error message and HTTP status code 400 (missing fields) or 500 (database error). (Response)
     """
+
     try:
         data = request.get_json()
         required_fields = ['utilisateur_id', 'medicine_name', 'time', 'days', 'sound', 'dosage']
@@ -88,8 +130,34 @@ def create_alarm():
 @alarms_bp.route('/<alarm_id>', methods=['PUT'])
 def update_alarm(alarm_id):
     """
-    Update an existing alarm
+    Objective:
+    Updates an existing alarm record in the database with the provided JSON data.
+
+    Parameters:
+    - alarm_id: The unique identifier of the alarm to update, passed as a URL path parameter. (Integer)
+
+    Expected JSON Fields:
+    - medicine_name: The updated name of the medicine linked to the alarm. (String)
+    - time: The updated alarm trigger time (in HH:MM:SS format). (String)
+    - days: A list of updated days when the alarm should repeat. (List)
+    - sound: The updated sound type or file associated with the alarm. (String)
+    - is_active: The updated activation status of the alarm. (Boolean)
+    - dosage: The updated dosage information. (String)
+    - next_alarm (optional): The next scheduled alarm time in ISO 8601 format. (String)
+
+    Process:
+    - Checks if the alarm with the given ID exists in the 'alarmes' table.
+    - If it does not exist, returns a 404 error.
+    - Converts the 'days' list to a JSON string for database storage.
+    - Parses the 'next_alarm' field to a Python datetime object if provided.
+    - Updates all relevant fields in the database and refreshes the 'updated_at' timestamp.
+    - Commits the changes to persist the update.
+
+    Return Value:
+    - Success: Returns a JSON message confirming the successful update with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message and HTTP status code 404 (not found) or 500 (database error). (Response)
     """
+
     try:
         data = request.get_json()
 
@@ -139,8 +207,23 @@ def update_alarm(alarm_id):
 @alarms_bp.route('/<alarm_id>', methods=['DELETE'])
 def delete_alarm(alarm_id):
     """
-    Delete an alarm
+    Objective:
+    Deletes a specific alarm from the database based on its unique ID.
+
+    Parameters:
+    - alarm_id: The unique identifier of the alarm to delete, passed as a URL path parameter. (Integer)
+
+    Process:
+    - Checks if the alarm with the given ID exists in the 'alarmes' table.
+    - If the alarm does not exist, returns a 404 error.
+    - Deletes the alarm record from the database.
+    - Commits the transaction to persist the deletion.
+
+    Return Value:
+    - Success: Returns a JSON message confirming the deletion with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message and HTTP status code 404 (not found) or 500 (database error). (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
@@ -163,8 +246,24 @@ def delete_alarm(alarm_id):
 @alarms_bp.route('/<alarm_id>/toggle', methods=['PUT'])
 def toggle_alarm(alarm_id):
     """
-    Toggle alarm active status
+    Objective:
+    Toggles the active status of a specific alarm. If the alarm is currently active, it will be deactivated, and vice versa.
+
+    Parameters:
+    - alarm_id: The unique identifier of the alarm to toggle, passed as a URL path parameter. (Integer)
+
+    Process:
+    - Checks if the alarm with the given ID exists in the 'alarmes' table.
+    - Retrieves the current 'is_active' status of the alarm.
+    - Inverts the status (True becomes False, False becomes True).
+    - Updates the 'is_active' field in the database and refreshes the 'updated_at' timestamp.
+    - Commits the transaction to persist the change.
+
+    Return Value:
+    - Success: Returns a JSON message confirming the status update, including the new 'is_active' value, with HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message and HTTP status code 404 (not found) or 500 (database error). (Response)
     """
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
