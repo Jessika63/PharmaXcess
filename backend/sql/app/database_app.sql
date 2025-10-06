@@ -24,10 +24,6 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     reset_token_expiration DATETIME NULL
 );
 
--- Index supplémentaires pour la recherche rapide
-CREATE INDEX idx_utilisateur_tel ON utilisateurs(telephone);
-CREATE INDEX idx_utilisateur_secu ON utilisateurs(numero_securite_sociale);
-
 -- Table relations parent-enfant
 CREATE TABLE IF NOT EXISTS relations_parent_enfant (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,6 +113,11 @@ CREATE TABLE IF NOT EXISTS ordonnances (
     date_ajout DATETIME DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
     fichier VARCHAR(255),
+    medecin_nom VARCHAR(255),
+    date_prescription DATE,
+    date_expiration DATE,
+    medicaments JSON,
+    statut ENUM('active', 'expiree', 'utilisee') DEFAULT 'active',
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
@@ -124,11 +125,32 @@ CREATE TABLE IF NOT EXISTS ordonnances (
 CREATE TABLE IF NOT EXISTS alarmes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     utilisateur_id INT NOT NULL,
-    medicament VARCHAR(150),
-    frequence VARCHAR(50),
-    heure TIME,
-    statut ENUM('active','inactive') DEFAULT 'active',
+    medicine_name VARCHAR(255) NOT NULL,
+    time VARCHAR(10) NOT NULL,
+    days JSON NOT NULL,
+    sound VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    dosage VARCHAR(100) NOT NULL,
+    next_alarm DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+);
+
+-- prescription reminders
+CREATE TABLE IF NOT EXISTS prescription_reminders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    utilisateur_id INT NOT NULL,
+    ordonnance_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    due_date DATE NOT NULL,
+    sound VARCHAR(100) NOT NULL,
+    is_completed BOOLEAN DEFAULT FALSE,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
 );
 
 -- Distributeurs
@@ -199,3 +221,49 @@ CREATE TABLE IF NOT EXISTS qrcodes_profiles (
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
+
+-- Index supplémentaires pour la recherche rapide
+CREATE INDEX idx_utilisateur_tel ON utilisateurs(telephone);
+CREATE INDEX idx_utilisateur_secu ON utilisateurs(numero_securite_sociale);
+CREATE INDEX idx_alarmes_utilisateur ON alarmes(utilisateur_id);
+CREATE INDEX idx_alarmes_active ON alarmes(is_active);
+CREATE INDEX idx_prescription_reminders_utilisateur ON prescription_reminders(utilisateur_id);
+CREATE INDEX idx_prescription_reminders_ordonnance ON prescription_reminders(ordonnance_id);
+CREATE INDEX idx_prescription_reminders_due_date ON prescription_reminders(due_date);
+CREATE INDEX idx_prescription_reminders_completed ON prescription_reminders(is_completed);
+
+-- Enable event scheduler
+SET GLOBAL event_scheduler = ON;
+
+-- Create event to automatically generate prescription reminders 30 days before expiration
+CREATE EVENT IF NOT EXISTS auto_create_prescription_reminders
+ON SCHEDULE EVERY 1 DAY
+DO
+BEGIN
+    INSERT IGNORE INTO prescription_reminders (
+        id,
+        utilisateur_id,
+        ordonnance_id,
+        name,
+        due_date,
+        sound,
+        is_completed,
+        priority,
+        notes,
+        reminder_type
+    )
+    SELECT
+        CONCAT('auto_', o.id),
+        o.utilisateur_id,
+        o.id,
+        CONCAT('Renouvellement: ', COALESCE(o.description, 'Ordonnance')),
+        DATE_SUB(o.date_expiration, INTERVAL 30 DAY),
+        'Son 1',
+        FALSE,
+        'high',
+        CONCAT('Ordonnance expire le ', o.date_expiration),
+        'renewal'
+    FROM ordonnances o
+    WHERE o.statut = 'active'
+        AND o.date_expiration = CURDATE() + INTERVAL 30 DAY;
+END;
