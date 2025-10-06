@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     adresse TEXT,
     contact_urgence_nom VARCHAR(150),
     contact_urgence_tel VARCHAR(20),
-    role ENUM('admin','parent','enfant','epoux','moi') DEFAULT 'parent',
+    role ENUM('admin', 'user', 'professional') DEFAULT 'user',
+    profile_type ENUM('parent','enfant','epoux','autre','moi') DEFAULT 'moi',
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reset_token VARCHAR(255) NULL,
     reset_token_expiration DATETIME NULL
@@ -180,20 +181,24 @@ CREATE TABLE IF NOT EXISTS discussion (
     utilisateur_id INT,
     sujet VARCHAR(255),
     statut ENUM('ouvert','en_cours','ferme'),
-    pharmacien VARCHAR(150),
+    professionnel_id  INT,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+    date_fermeture DATETIME,
+    destinataire ENUM('pharmacien','medecin','all') DEFAULT 'all',
+    region VARCHAR(255),
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (professionnel_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
 );
 
 -- Messages
 CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     discussion_id INT,
-    utilisateur_id INT,
+    auteur_id INT,
+    auteur_name VARCHAR(255),
     message TEXT,
     date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE,
-    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+    FOREIGN KEY (discussion_id) REFERENCES discussion(id) ON DELETE CASCADE
 );
 
 -- Table QR Codes pour ordonnances
@@ -267,3 +272,10 @@ BEGIN
     WHERE o.statut = 'active'
         AND o.date_expiration = CURDATE() + INTERVAL 30 DAY;
 END;
+
+-- Create event to automatically delete discussions closed more than 7 days ago
+CREATE EVENT IF NOT EXISTS delete_old_closed_discussions
+ON SCHEDULE EVERY 1 DAY
+DO
+  DELETE FROM discussion
+  WHERE statut='ferme' AND date_fermeture <= NOW() - INTERVAL 7 DAY;

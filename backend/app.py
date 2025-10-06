@@ -175,6 +175,18 @@ def register_blueprints():
     from routes.authentication.reset_password import reset_password_bp
     from routes.notifications.alarms_routes import alarms_bp
     from routes.notifications.prescription_reminders_routes import prescription_reminders_bp
+    from routes.tickets.discussions.create_discussion import create_discussion_bp
+    from routes.tickets.discussions.get_all_discussions import get_all_discussions_bp
+    from routes.tickets.discussions.get_user_discussions import get_user_discussions_bp
+    from routes.tickets.discussions.get_professional_discussions import get_professional_discussions_bp
+    from routes.tickets.discussions.get_discussion import get_discussion_bp
+    from routes.tickets.discussions.update_discussion import update_discussion_bp
+    from routes.tickets.discussions.reopen_discussion import reopen_discussion_bp
+    from routes.tickets.discussions.delete_discussion import delete_discussion_bp
+    from routes.tickets.discussions.get_open_discussions import get_open_discussions_bp
+    from routes.tickets.messages.add_message import add_message_bp
+    from routes.tickets.messages.get_messages import get_messages_bp
+    from routes.tickets.messages.delete_message import delete_message_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -191,6 +203,18 @@ def register_blueprints():
     app.register_blueprint(update_stock_bp)
     app.register_blueprint(generate_qr_bp)
     app.register_blueprint(read_qr_bp)
+    app.register_blueprint(create_discussion_bp)
+    app.register_blueprint(get_all_discussions_bp)
+    app.register_blueprint(get_user_discussions_bp)
+    app.register_blueprint(get_professional_discussions_bp)
+    app.register_blueprint(get_discussion_bp)
+    app.register_blueprint(update_discussion_bp)
+    app.register_blueprint(reopen_discussion_bp)
+    app.register_blueprint(delete_discussion_bp)
+    app.register_blueprint(get_open_discussions_bp)
+    app.register_blueprint(add_message_bp)
+    app.register_blueprint(get_messages_bp)
+    app.register_blueprint(delete_message_bp)
     app.register_blueprint(login_bp)
     app.register_blueprint(logout_bp)
     app.register_blueprint(register_bp)

@@ -18,6 +18,7 @@ def register():
 
     hashed_password = generate_password_hash(password)
 
+    conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
@@ -30,3 +31,7 @@ def register():
         return jsonify({"message": "User registered successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+

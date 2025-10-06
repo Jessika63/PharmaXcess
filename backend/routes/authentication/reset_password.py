@@ -16,20 +16,25 @@ def reset_password():
 
     hashed_password = generate_password_hash(new_password)
 
-    conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute(
-            """UPDATE utilisateurs 
-               SET mot_de_passe=%s, 
-                   reset_token=NULL, 
-                   reset_token_expiration=NULL
-               WHERE reset_token=%s AND reset_token_expiration > %s""",
-            (hashed_password, token, datetime.datetime.now())
-        )
-        updated = cursor.rowcount
-    conn.commit()
+    conn = None
+    try:
+        conn = get_app_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """UPDATE utilisateurs 
+                   SET mot_de_passe=%s, 
+                       reset_token=NULL, 
+                       reset_token_expiration=NULL
+                   WHERE reset_token=%s AND reset_token_expiration > %s""",
+                (hashed_password, token, datetime.datetime.now())
+            )
+            updated = cursor.rowcount
+        conn.commit()
 
-    if updated:
-        return jsonify({"message": "Password reset successful. Token has been cleared."}), 200
-    else:
-        return jsonify({"error": "Invalid or expired token"}), 400
+        if updated:
+            return jsonify({"message": "Password reset successful. Token has been cleared."}), 200
+        else:
+            return jsonify({"error": "Invalid or expired token"}), 400
+    finally:
+        if conn:
+            conn.close()

@@ -13,15 +13,19 @@ def forgot_password():
     reset_token = str(uuid.uuid4())
     expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
 
-    conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute(
-            "UPDATE utilisateurs SET reset_token=%s, reset_token_expiration=%s WHERE email=%s",
-            (reset_token, expiration, email)
-        )
-    conn.commit()
-
-    return jsonify({
-        "message": "Password reset token generated",
-        "token": reset_token
-    }), 200
+    conn = None
+    try:
+        conn = get_app_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE utilisateurs SET reset_token=%s, reset_token_expiration=%s WHERE email=%s",
+                (reset_token, expiration, email)
+            )
+        conn.commit()
+        return jsonify({
+            "message": "Password reset token generated",
+            "token": reset_token
+        }), 200
+    finally:
+        if conn:
+            conn.close()
