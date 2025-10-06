@@ -36,7 +36,7 @@ def delete_prescription_qr_list():
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             format_strings = ','.join(['%s'] * len(ids))
             cursor.execute(f"DELETE FROM qrcodes_ordonnances WHERE id IN ({format_strings})", tuple(ids))
@@ -82,7 +82,7 @@ def delete_map_qr_list():
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             format_strings = ','.join(['%s'] * len(ids))
             cursor.execute(f"DELETE FROM qrcodes_maps WHERE id IN ({format_strings})", tuple(ids))
@@ -126,7 +126,7 @@ def delete_profile_qr_list():
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             format_strings = ','.join(['%s'] * len(ids))
             cursor.execute(f"DELETE FROM qrcodes_profiles WHERE id IN ({format_strings})", tuple(ids))

@@ -168,8 +168,6 @@ def register_blueprints():
     from routes.stripe.update_stock import update_stock_bp
     from routes.qr_code.generate_qr_code import generate_qr_bp
     from routes.qr_code.read_qr_code import read_qr_bp
-    from routes.qr_code.delete_qr_code import delete_qr_bp
-    from routes.qr_code.read_code_qr_code import read_code_qr_bp
     from routes.authentication.login import login_bp
     from routes.authentication.logout import logout_bp
     from routes.authentication.register import register_bp
@@ -222,8 +220,6 @@ def register_blueprints():
     app.register_blueprint(register_bp)
     app.register_blueprint(forgot_password_bp)
     app.register_blueprint(reset_password_bp)
-    app.register_blueprint(delete_qr_bp)
-    app.register_blueprint(read_code_qr_bp)
     app.register_blueprint(alarms_bp)
     app.register_blueprint(prescription_reminders_bp)
 

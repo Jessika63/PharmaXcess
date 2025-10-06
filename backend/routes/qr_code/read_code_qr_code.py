@@ -32,14 +32,13 @@ def read_prescription_qr_by_code():
         - 500: JSON error response in case of database or server error
     """
 
-    data = request.get_json()
-    code = data.get("code_unique") if data else None
+    code = request.form.get('code_unique')
     if not code:
         return jsonify({"error": "code_unique requis"}), 400
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()
@@ -87,14 +86,13 @@ def read_direction_qr_by_code():
         - 500: JSON error response in case of database or server error
     """
 
-    data = request.get_json()
-    code = data.get("code_unique") if data else None
+    code = request.form.get('code_unique')
     if not code:
         return jsonify({"error": "code_unique requis"}), 400
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_maps WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()
@@ -159,23 +157,17 @@ def read_profile_qr_by_code():
 
     conn = None
     try:
-        conn = get_app_connection()
+        conn = get_connection()
         with conn.cursor() as cursor:
-            # Récupérer le QR code
             cursor.execute("SELECT * FROM qrcodes_profiles WHERE code_unique=%s", (code,))
             qr_entry = cursor.fetchone()
             if not qr_entry:
                 return jsonify({"error": "QR code introuvable"}), 404
 
-            # Récupérer les infos de l'utilisateur
             cursor.execute("SELECT * FROM utilisateurs WHERE id=%s", (qr_entry['utilisateur_id'],))
             user = cursor.fetchone()
 
-            # Supprimer le QR code (one-time use)
-            cursor.execute("DELETE FROM qrcodes_profiles WHERE id=%s", (qr_entry['id'],))
-            conn.commit()
-
-        # Filtrer les infos selon le rôle
+        # filtrer les infos selon le rôle
         if scan_role == "distributeur":
             filtered = {
                 "nom": user['nom'],

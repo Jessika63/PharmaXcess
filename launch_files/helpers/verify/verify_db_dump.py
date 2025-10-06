@@ -47,7 +47,7 @@ def verify_db_dump(dump_folder, db_name, expected_date):
 
     # Lister les autres dumps pour **la même base**
     try:
-        all_dumps = [
+        other_dumps = [
             f for f in os.listdir(dump_folder)
             if re.match(rf"database_dump_px_{db_name}_\d{{2}}_\d{{2}}_\d{{4}}\.sql", f)
             and f != expected_file_name
