@@ -239,6 +239,7 @@ def handle_dump(
     launch_config_path = os.path.abspath(os.path.join(base_dir, "../launch_config.json"))
     leak_config_path = os.path.abspath(os.path.join(base_dir, "scripts/leak_checker/config.json"))
 
+    # Mettre à jour launch_config.json
     for db_config in db_configs_to_update:
         update_json_config(
             launch_config_path,
@@ -248,5 +249,8 @@ def handle_dump(
             db_name=db_config["name"]
         )
 
-    update_json_config(leak_config_path, ["ignore_files"], dumped_files, mode="update")
+    # Supprimer le dossier du chemin pour leak_config_path
+    dumped_files_basename = [os.path.basename(f) for f in dumped_files]
+
+    update_json_config(leak_config_path, ["ignore_files"], dumped_files_basename, mode="update")
     colored_print("✅ Dump process completed successfully!", "green")

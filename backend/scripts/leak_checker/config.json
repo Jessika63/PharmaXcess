@@ -11,11 +11,8 @@
         "app/pharmaXcess_app/package-lock.json",
         "app/pharmaXcess_app/yarn.lock",
         "backend/docker-compose.yml",
-        "database_dump_px_doctors_db_05_10_2025.sql",
-        "database_dump_px_app_db_05_10_2025.sql",
-        "database_dump_px_app_db_05_10_2025.sql",
-        "backend\\database_dump_px_doctors_db_06_10_2025.sql",
-        "backend\\database_dump_px_app_db_06_10_2025.sql"
+        "database_dump_px_doctors_db_06_10_2025.sql",
+        "database_dump_px_app_db_06_10_2025.sql"
     ],
     "ignore_dirs": [
         ".git",

@@ -51,11 +51,19 @@ def update_json_config(config_relative_path, key_path, value, mode="change", db_
 
             elif mode == "update":
                 if isinstance(temp[last_key], list) and isinstance(value, list):
-                    # Supprime tous les anciens dumps avant d'ajouter les nouveaux
-                    temp[last_key] = [
-                        item for item in temp[last_key]
-                        if not item.startswith("backend/database_dump_px_")
-                    ]
+                    # Supprime seulement les anciens dumps correspondant à db_name si précisé
+                    if db_name:
+                        temp[last_key] = [
+                            item for item in temp[last_key]
+                            if not item.startswith(f"database_dump_px_{db_name}_")
+                        ]
+                    else:
+                        # Sinon supprime tous les dumps
+                        temp[last_key] = [
+                            item for item in temp[last_key]
+                            if not item.startswith("database_dump_px_")
+                        ]
+
                     # Ajoute les nouveaux dumps
                     for item in value:
                         if item not in temp[last_key]:
