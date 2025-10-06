@@ -3,7 +3,8 @@ import os
 import re
 from helpers.colored_print import colored_print
 
-def verify_db_dump(dump_folder, db_name, expected_date):
+# Function to verify the database dump file
+def verify_db_dump(dump_folder, expected_date):
     """
     Objective:
     Verify the presence of a database dump file for a given database and list other existing dumps for the same database.
@@ -47,7 +48,7 @@ def verify_db_dump(dump_folder, db_name, expected_date):
 
     # Lister les autres dumps pour **la même base**
     try:
-        other_dumps = [
+        all_dumps = [
             f for f in os.listdir(dump_folder)
             if re.match(rf"database_dump_px_{db_name}_\d{{2}}_\d{{2}}_\d{{4}}\.sql", f)
             and f != expected_file_name

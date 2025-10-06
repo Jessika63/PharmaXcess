@@ -52,7 +52,7 @@ def read_prescription_qr():
         data = json.loads(content)
         qr_id = data.get("id")
 
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
@@ -119,7 +119,7 @@ def read_direction_qr():
         if not qr_id:
             return jsonify({"error": "QR code invalide"}), 400
 
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_maps WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
@@ -199,7 +199,7 @@ def read_profile_qr():
         if not qr_id:
             return jsonify({"error": "QR code invalide"}), 400
 
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_profiles WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
