@@ -3,8 +3,7 @@ import os
 import re
 from helpers.colored_print import colored_print
 
-# Function to verify the database dump file
-def verify_db_dump(dump_folder, expected_date):
+def verify_db_dump(dump_folder, db_name, expected_date):
     """
     Objective:
     Verify the presence of a database dump file for a given database and list other existing dumps for the same database.
