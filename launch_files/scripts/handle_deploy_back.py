@@ -18,12 +18,30 @@ def clean_project():
                 try: os.remove(full_path)
                 except: pass
 
+def convert_env_to_unix():
+    """Convertit le fichier .env en format Unix pour éviter les ^M"""
+    env_path = os.path.join("backend", ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "rb") as f:
+            content = f.read()
+        # Convertir CRLF → LF
+        new_content = content.replace(b"\r\n", b"\n")
+        if new_content != content:
+            with open(env_path, "wb") as f:
+                f.write(new_content)
+            colored_print("✔ Fichier .env converti en format Unix (LF).", "green")
+    else:
+        colored_print("⚠ Aucun fichier .env trouvé dans backend/", "yellow")
+
 def handle_deploy_back():
     remote = "ubuntu@57.128.57.96"
     remote_path = "/home/ubuntu/PharmaXcess"
 
     colored_print("Début du déploiement du backend sur la VM...", "blue")
     clean_project()
+
+    # Convertir .env en Unix avant de copier
+    convert_env_to_unix()
 
     colored_print("Envoi des fichiers sur la VM...", "blue")
     scp_cmd = ["scp", "-i", os.path.expanduser("~/.ssh/id_rsa"), "-r",

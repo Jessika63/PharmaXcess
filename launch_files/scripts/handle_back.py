@@ -50,7 +50,8 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     for db_config in db_configs:
         db_container_name = db_config["container_name"]
         db_dump_date = db_config["db_dump_date"]
-        env_prefix = db_config.get("env_prefix", "")
+        env_prefix = db_config["env_prefix"]
+        db_name = db_config["name"]
 
         if not db_dump_date or db_dump_date.strip() == "":
             continue  # Skip databases without a dump date
@@ -63,7 +64,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
         if os.environ.get("CI", "false").lower() == "true":
             dump_file_name = "temp_fake_database_dump_px.sql"
         else:
-            dump_file_name = f"database_dump_px_{db_dump_date}.sql"
+            dump_file_name = f"database_dump_px_{db_name}_{db_dump_date}.sql"
 
         if not os.path.exists(dump_file_name):
             if os.environ.get("CI", "false").lower() == "true":

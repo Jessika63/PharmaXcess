@@ -1,29 +1,30 @@
+
 import os
 import re
-from colored_print import colored_print
+from helpers.colored_print import colored_print
 
-# Function to verify the database dump file
-def verify_db_dump(dump_folder, expected_date):
+def verify_db_dump(dump_folder, db_name, expected_date):
     """
-    Objectif: Verifies the presence of the expected database dump file in the specified folder and checks for other dump files with similar naming patterns.
+    Objectif: Vérifie la présence du fichier dump pour une base donnée et liste les autres dumps existants.
 
     Parameters:
-        - dump_folder: Path to the directory containing database dump files. (String)
-        - expected_date: Expected date of the database dump file in 'DD_MM_YYYY' format. (String)
+        - dump_folder: dossier contenant les dumps (str)
+        - db_name: nom de la base pour laquelle vérifier le dump (str)
+        - expected_date: date attendue du dump au format 'DD_MM_YYYY' (str)
 
     Return Value:
-        - None: This function does not return a value but prints verification results and warnings. (NoneType)
+        - None
     """
-    colored_print("Verifying database dump file", "blue")
+    colored_print(f"Verifying database dump for '{db_name}'...", "blue")
 
-    if expected_date is None or expected_date.strip() == "":
+    if not expected_date or expected_date.strip() == "":
+        colored_print(f"No dump date provided for '{db_name}', skipping verification.", "yellow")
         return
 
-    # Construct the expected filename
-    expected_file_pattern = f"database_dump_px_{expected_date}.sql"
-    dump_file_path = os.path.join(dump_folder, expected_file_pattern)
+    expected_file_name = f"database_dump_px_{db_name}_{expected_date}.sql"
+    dump_file_path = os.path.join(dump_folder, expected_file_name)
 
-    # Check if the folder exists
+    # Vérification du dossier
     if not os.path.exists(dump_folder):
         colored_print(f"The dump folder '{dump_folder}' does not exist!", "red")
         return
@@ -31,27 +32,20 @@ def verify_db_dump(dump_folder, expected_date):
         colored_print(f"The path '{dump_folder}' is not a directory!", "red")
         return
 
-    # Check for the expected dump file
-    try:
-        if not os.path.exists(dump_file_path):
-            colored_print(f"The expected dump file '{expected_file_pattern}' is missing!", "yellow")
-        else:
-            colored_print("Correct database dump file is present!", "green")
-    except PermissionError:
-        colored_print(f"Permission denied when accessing '{dump_file_path}'!", "red")
-        return
-    except Exception as e:
-        colored_print(f"Unexpected error when checking dump file: {e}", "red")
-        return
+    # Vérification du fichier attendu
+    if os.path.exists(dump_file_path):
+        colored_print(f"Correct database dump '{expected_file_name}' is present!", "green")
+    else:
+        colored_print(f"The expected dump file '{expected_file_name}' is missing!", "yellow")
 
-    # List other dump files
+    # Lister les autres dumps pour **la même base**
     try:
         other_dumps = [
             f for f in os.listdir(dump_folder)
-            if re.match(r"database_dump_px_\d{2}_\d{2}_\d{4}\.sql", f)
-            and f != expected_file_pattern
+            if re.match(rf"database_dump_px_{db_name}_\d{{2}}_\d{{2}}_\d{{4}}\.sql", f)
+            and f != expected_file_name
         ]
         if other_dumps:
-            colored_print(f"Other dump files found: {', '.join(other_dumps)}", "yellow")
+            colored_print(f"Other dump files for '{db_name}' found: {', '.join(other_dumps)}", "yellow")
     except Exception as e:
         colored_print(f"Error listing dump files: {e}", "red")

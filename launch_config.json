@@ -1,7 +1,8 @@
+
 {
     "verification_settings": {
         "env_configs": {
-            "backend/" : [
+            "backend/": [
                 "APP_DB_HOST",
                 "APP_DB_USER",
                 "APP_DB_PASSWORD",
@@ -20,13 +21,14 @@
                 "GETIPINTEL_CONTACT",
                 "SECRET_QR_ENCRYPTION_KEY",
                 "CORS_SECRET_KEY",
-                "ENV"
+                "ENV",
+                "FLASK_SECRET_KEY"
             ],
-            "dispenser_frontend/" : [
+            "dispenser_frontend/": [
                 "REACT_APP_CORS_SECRET_KEY",
                 "REACT_APP_ENV"
             ],
-            "pharmaXcess_app/" : [
+            "pharmaXcess_app/": [
                 "EXPO_PUBLIC_CORS_SECRET_KEY",
                 "EXPO_PUBLIC_BACKEND_URL",
                 "EXPO_PUBLIC_NGROK_BACKEND_URL",
@@ -38,14 +40,14 @@
             {
                 "name": "doctors_db",
                 "container_name": "distributeur-backend-db",
-                "db_dump_date": "03_07_2025",
+                "db_dump_date": "06_10_2025",
                 "port": "3307",
                 "env_prefix": "DOCTORS_"
             },
             {
                 "name": "app_db",
                 "container_name": "app-backend-db",
-                "db_dump_date": "26_09_2025",
+                "db_dump_date": "06_10_2025",
                 "port": "3308",
                 "env_prefix": "APP_"
             }

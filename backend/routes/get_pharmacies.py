@@ -19,7 +19,7 @@ def get_pharmacies():
         return jsonify({"error": "Both 'lat' and 'lon' are required"}), 400
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             query = """
             SELECT

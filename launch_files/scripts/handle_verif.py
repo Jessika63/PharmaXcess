@@ -9,20 +9,19 @@ from helpers.verify.verify_db_dump import verify_db_dump
 
 def handle_verif(env_configs, backend_folder, db_configs):
     """
-    Objectif: Performs verification steps before starting backend operations, including environment file validation and database dump file presence check for multiple databases.
+    Objectif: Vérifie les fichiers .env et la présence des dumps pour toutes les bases.
 
     Parameters:
-        - env_file_path: Path to the environment file (.env) to verify. (String)
-        - required_env_keys: List of required environment variable keys that must be present. (List of Strings)
-        - backend_folder: Path to the backend directory containing the database dump file. (String)
-        - db_configs: List of database configuration dictionaries containing db_dump_date. (List)
+        - env_configs: dictionnaire des variables d'environnement nécessaires par dossier
+        - backend_folder: dossier backend
+        - db_configs: liste des configs de bases de données
 
     Return Value:
-        - None: This function does not return a value but may terminate the program if verifications fail. (NoneType)
+        - None
     """
     verify_env_files(env_configs)
 
-    # Verify database dumps for each database configuration
     for db_config in db_configs:
-        db_dump_date = db_config["db_dump_date"]
-        verify_db_dump(backend_folder, db_dump_date)
+        db_name = db_config["name"]
+        db_dump_date = db_config.get("db_dump_date")
+        verify_db_dump(backend_folder, db_name, db_dump_date)

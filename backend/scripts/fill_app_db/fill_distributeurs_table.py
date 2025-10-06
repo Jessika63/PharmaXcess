@@ -112,7 +112,7 @@ def get_pharmacies_bbox(min_lat, min_lon, max_lat, max_lon):
         name = to_latin1_safe(tags.get("name", "").strip())
         address = to_latin1_safe(tags.get("addr:full") or f"{tags.get('addr:street','')} {tags.get('addr:housenumber','')}".strip())
 
-        if not name or not lat or not lon or not address:
+        if not name or not lat or not lon:
             log(f"  ⏭️ Node {i} ignoré (infos manquantes)")
             continue
 
@@ -135,13 +135,21 @@ def is_duplicate(cursor, lat, lon, epsilon=1e-4):
 # -----------------------
 # Insertion DB corrigée
 # -----------------------
-def insert_into_db(pharmacies):
+def insert_into_db(pharmacies, cursor=None, conn=None):
+    """
+    Insère les pharmacies dans la DB.
+    Si cursor et conn sont fournis, réutilise la connexion existante.
+    Retourne le nombre de pharmacies insérées.
+    """
     log("🔹 Connexion DB...")
-    conn = None
+    close_conn = False
+    inserted_count = 0
+
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
-        cursor = conn.cursor()
-        inserted_count = skipped_count = 0
+        if conn is None:
+            conn = mysql.connector.connect(**DB_CONFIG)
+            cursor = conn.cursor()
+            close_conn = True
 
         for ph in pharmacies:
             if not is_duplicate(cursor, ph["lat"], ph["lon"]):
@@ -152,17 +160,17 @@ def insert_into_db(pharmacies):
                 inserted_count += 1
                 log(f"    ✅ {ph['nom']} inséré")
             else:
-                skipped_count += 1
                 log(f"    ⏭️ {ph['nom']} déjà présent (latitude/longitude float)")
 
         conn.commit()
-        log(f"📊 Résumé: {inserted_count} insérés, {skipped_count} déjà présents")
 
     except mysql.connector.Error as e:
         log(f"❌ Erreur DB: {e}")
     finally:
-        if conn:
+        if close_conn and conn:
             conn.close()
+
+    return inserted_count
 
 # -----------------------
 # Main
@@ -174,6 +182,7 @@ def main():
 
     total_bbox = (max_lat - min_lat) * (max_lon - min_lon)
     current_bbox = 0
+    total_inserted = 0  # compteur global
 
     for lat in range(min_lat, max_lat):
         for lon in range(min_lon, max_lon):
@@ -183,7 +192,9 @@ def main():
                 try:
                     pharmacies = get_pharmacies_bbox(lat, lon, lat + step, lon + step)
                     if pharmacies:
-                        insert_into_db(pharmacies)
+                        inserted_count = insert_into_db(pharmacies)
+                        total_inserted += inserted_count
+                        log(f"📊 Pharmacies insérées pour cette bbox: {inserted_count}")
                     else:
                         log("⚠️ Aucune pharmacie trouvée")
                     break
@@ -191,7 +202,7 @@ def main():
                     log(f"❌ Erreur bbox ({lat},{lon}): {e}. Nouvelle tentative dans 60s...")
                     time.sleep(60)
 
-    log("🎉 Traitement terminé")
+    log(f"🎉 Traitement terminé. Total pharmacies insérées dans la DB: {total_inserted}")
 
 if __name__ == "__main__":
     main()
