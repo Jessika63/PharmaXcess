@@ -14,10 +14,33 @@ from helpers.config.update_json_config import update_json_config
 
 
 def _sql_escape_single_quote(s: str) -> str:
+    """
+    Objective:
+    Safely escapes single quotes in a string for SQL queries.
+
+    Parameters:
+    - s (str): The input string that may contain single quotes.
+
+    Return Value:
+    - str: The input string with all single quotes escaped by doubling them.
+        Returns an empty string if the input is None.
+    """
     return s.replace("'", "''") if s is not None else ""
 
 
 def _parse_env_content(content: str) -> Dict[str, str]:
+    """
+    Objective:
+    Parse the content of an environment (.env) file into a dictionary.
+
+    Parameters:
+    - content (str): The raw content of a .env file as a string.
+
+    Return Value:
+    - Dict[str, str]: A dictionary mapping environment variable names to their values.
+                    Lines that are empty, start with '#' or do not contain '=' are ignored.
+                    Surrounding quotes (single or double) around values are removed.
+    """
     out = {}
     for line in content.splitlines():
         line = line.strip()
@@ -33,11 +56,39 @@ def _parse_env_content(content: str) -> Dict[str, str]:
 
 
 def _extract_db_name_from_dumpfile(filename: str, today: str) -> Optional[str]:
+    """
+    Objective:
+    Extract the database name from a dump file name following the pattern:
+    'database_dump_px_<db_name>_<date>.sql'.
+
+    Parameters:
+    - filename (str): The name of the dump file.
+    - today (str): The expected date string in the format used in the filename (e.g., 'DD_MM_YYYY').
+
+    Return Value:
+    - Optional[str]: The extracted database name if the filename matches the pattern; otherwise None.
+    """
     m = re.match(rf"database_dump_px_(?P<name>.+)_{re.escape(today)}\.sql$", filename)
     return m.group("name") if m else None
 
 
 def fix_dump_footer_local(local_path: str, db_name: str, db_user: str, db_password: str) -> bool:
+    """
+    Objective:
+    Ensure that a local SQL dump file has the correct footer with user creation
+    and privilege grants for a specific database. If the footer is missing or
+    incorrect, it appends/fixes it.
+
+    Parameters:
+    - local_path (str): Path to the local SQL dump file.
+    - db_name (str): Name of the database for which the footer should apply.
+    - db_user (str): Database user to be created/granted privileges.
+    - db_password (str): Password for the database user.
+
+    Return Value:
+    - bool: True if the footer was fixed, False if it was already correct or on error.
+    """
+
     db_user_escaped = _sql_escape_single_quote(db_user)
     db_password_escaped = _sql_escape_single_quote(db_password)
     expected_footer = (
@@ -72,6 +123,19 @@ def fix_dump_footer_local(local_path: str, db_name: str, db_user: str, db_passwo
 
 
 def _get_remote_env(remote_user: str, remote_host: str, remote_base_path: str) -> Dict[str, str]:
+    """
+    Objective:
+    Retrieve the .env file from a remote backend server and parse its content into a dictionary.
+
+    Parameters:
+    - remote_user (str): SSH username for the remote server.
+    - remote_host (str): Hostname or IP of the remote server.
+    - remote_base_path (str): Base path on the remote server where the backend folder is located.
+
+    Return Value:
+    - Dict[str, str]: A dictionary containing the environment variables from the remote .env file.
+                    Returns an empty dictionary if retrieval or parsing fails.
+    """
     try:
         cmd = ["ssh", f"{remote_user}@{remote_host}", f"cat {remote_base_path}/backend/.env"]
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
@@ -83,6 +147,20 @@ def _get_remote_env(remote_user: str, remote_host: str, remote_base_path: str) -
 
 
 def _get_remote_container_env(remote_user: str, remote_host: str, container_name: str) -> Dict[str, str]:
+    """
+    Objective:
+    Retrieve environment variables from a running Docker container on a remote host 
+    and parse them into a dictionary.
+
+    Parameters:
+    - remote_user (str): SSH username for the remote server.
+    - remote_host (str): Hostname or IP of the remote server.
+    - container_name (str): Name of the Docker container to query.
+
+    Return Value:
+    - Dict[str, str]: A dictionary containing the environment variables from the container.
+                    Returns an empty dictionary if retrieval or parsing fails.
+    """
     try:
         cmd = ["ssh", f"{remote_user}@{remote_host}", "docker", "exec", container_name, "printenv"]
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
@@ -103,6 +181,26 @@ def handle_dump(
     remote_host="57.128.57.96",
     remote_base_path="/home/ubuntu/PharmaXcess"
 ):
+    """
+    Objective:
+    Handles the creation of database dumps either locally or on a remote server, 
+    fixes their footers with correct user privileges, and updates related configuration files.
+
+    Parameters:
+    - backend_folder (str): Path to the backend directory containing the database containers and .env file.
+    - db_configs (List[Dict]): List of dictionaries with database configuration (container_name, name, env_prefix, etc.).
+    - back_app_container_name (str): Name of the backend application Docker container used to verify readiness.
+    - target_db_name (str, optional): Name of a specific database to dump. If None, all databases are dumped. Defaults to None.
+    - remote (bool, optional): If True, executes the dump on a remote server via SSH. Defaults to False.
+    - remote_user (str, optional): SSH username for remote operations. Defaults to "ubuntu".
+    - remote_host (str, optional): Hostname or IP of the remote server. Defaults to "57.128.57.96".
+    - remote_base_path (str, optional): Base path on the remote server where the backend is located. Defaults to "/home/ubuntu/PharmaXcess".
+
+    Return Value:
+    - None: This function performs dumping operations, fixes dump files, copies remote dumps if needed,
+            updates configuration files, and prints detailed status messages.
+    """
+
     colored_print("🔹 Starting handle_dump...", "blue")
     today = datetime.now().strftime("%d_%m_%Y")
     dumped_files = []

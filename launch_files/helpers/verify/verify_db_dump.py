@@ -5,16 +5,23 @@ from helpers.colored_print import colored_print
 
 def verify_db_dump(dump_folder, db_name, expected_date):
     """
-    Objectif: Vérifie la présence du fichier dump pour une base donnée et liste les autres dumps existants.
+    Objective:
+    Verify the presence of a database dump file for a given database and list other existing dumps for the same database.
 
     Parameters:
-        - dump_folder: dossier contenant les dumps (str)
-        - db_name: nom de la base pour laquelle vérifier le dump (str)
-        - expected_date: date attendue du dump au format 'DD_MM_YYYY' (str)
+    - dump_folder (str): Path to the folder containing database dumps.
+    - db_name (str): Name of the database to check.
+    - expected_date (str): Expected date of the dump in 'DD_MM_YYYY' format.
+
+    Behavior:
+    - Checks if the dump folder exists and is a directory.
+    - Verifies if the expected dump file for the given database and date exists.
+    - Lists other dump files for the same database in the folder.
 
     Return Value:
-        - None
+    - None: The function prints status messages and does not return a value.
     """
+
     colored_print(f"Verifying database dump for '{db_name}'...", "blue")
 
     if not expected_date or expected_date.strip() == "":

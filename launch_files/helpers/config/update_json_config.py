@@ -6,12 +6,26 @@ from helpers.colored_print import colored_print
 
 def update_json_config(config_relative_path, key_path, value, mode="change", db_name=None):
     """
-    Met à jour un fichier JSON de configuration.
+    Objective:
+    Update a JSON configuration file safely by changing values or updating lists.
 
-    - mode="change" : remplace la valeur à la clé donnée.
-    - mode="update" : pour les listes (ex: ignore_files), supprime les anciens dumps puis ajoute les nouveaux.
-    - db_name : utilisé pour mettre à jour la date de dump d'une base dans launch_config.json.
+    Parameters:
+    - config_relative_path (str): Relative path to the JSON configuration file.
+    - key_path (List[str]): Sequence of nested keys leading to the target value.
+    - value (Any): The new value to set or append depending on the mode.
+    - mode (str, optional): Either "change" to replace a value, or "update" to modify lists. Defaults to "change".
+    - db_name (str, optional): Specific database name when updating dumps in `launch_config.json`.
+
+    Behavior:
+    - mode="change": Replaces the value at the specified key path.
+    - mode="update": For lists, removes old database dumps (optionally filtered by db_name) and appends new ones.
+    - If the key path or file does not exist, prints an error and exits safely.
+    - Writes back the updated JSON with indentation for readability.
+
+    Return Value:
+    - None: The function performs in-place updates and prints status messages.
     """
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, config_relative_path)
 
