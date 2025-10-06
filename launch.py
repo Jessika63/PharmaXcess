@@ -91,7 +91,18 @@ if __name__ == "__main__":
 
     # Database Operations
     database_group.add_argument("--update", type=str, help="Function to update the database.")
-    database_group.add_argument("--dump", action="store_true", help="Function to export the database dump.")
+    database_group.add_argument(
+        "--dump",
+        nargs="?",         # permet 0 ou 1 argument (nom de la DB)
+        const="all",       # si aucun argument, on met "all"
+        help="Export database dump locally. Optionally provide a database name."
+    )
+    database_group.add_argument(
+        "--remote-dump",
+        nargs="?",         # permet 0 ou 1 argument (nom de la DB)
+        const="all",
+        help="Export database dump on remote server and retrieve via SCP."
+    )
 
     # Docker Images Management
     docker_group.add_argument("--down", action="store_true", help="Stop containers, remove images and volumes.")
@@ -218,9 +229,23 @@ if __name__ == "__main__":
                 app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
                 handle_update(update_function, app_db_config["container_name"], backend_folder)
             if args.dump:
-                # Use the app database configuration for dumps
-                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
-                handle_dump(backend_folder, app_db_config["container_name"], back_app_container_name)
+                target_db = None if args.dump == "all" else args.dump
+                handle_dump(
+                    backend_folder,
+                    db_configs,
+                    back_app_container_name,
+                    target_db_name=target_db,
+                    remote=False
+                )
+            if args.remote_dump:
+                target_db = None if args.remote_dump == "all" else args.remote_dump
+                handle_dump(
+                    backend_folder,
+                    db_configs,
+                    back_app_container_name,
+                    target_db_name=target_db,
+                    remote=True
+                )
             if args.export_images:
                 handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
             if args.import_images:

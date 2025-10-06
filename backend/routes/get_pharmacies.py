@@ -8,9 +8,24 @@ get_pharmacies_bp = Blueprint('get_pharmacies', __name__)
 @get_pharmacies_bp.route('/get_pharmacies', methods=['GET'])
 def get_pharmacies():
     """
-    Objectif: Récupérer les 10 distributeurs les plus proches
-              en fonction d'une latitude et d'une longitude.
+    Objective:
+    Retrieve the 10 closest pharmacy distributors based on a given latitude and longitude.
+
+    Parameters:
+    - lat: Latitude of the reference point. (Float, required)
+    - lon: Longitude of the reference point. (Float, required)
+
+    Process:
+    - Validates that both latitude and longitude are provided.
+    - Queries the database to calculate the distance (in km) from each distributor to the given coordinates using the Haversine formula.
+    - Orders the distributors by ascending distance and limits the result to 10 closest.
+    - Renames the "nom" field to "name" in the response for consistency.
+
+    Return Value:
+    - Success: Returns a JSON object with a list of the 10 closest distributors and a success message, HTTP status code 200. (Response)
+    - Failure: Returns a JSON error message with HTTP status code 400 if coordinates are missing or 500 in case of database errors. (Response)
     """
+
 
     lat = request.args.get("lat", type=float)
     lon = request.args.get("lon", type=float)
@@ -19,7 +34,7 @@ def get_pharmacies():
         return jsonify({"error": "Both 'lat' and 'lon' are required"}), 400
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             query = """
             SELECT

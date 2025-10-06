@@ -15,17 +15,33 @@ from .handle_down import remove_volume
 
 def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False):
     """
-    Objectif: Orchestrates backend operations including environment verification, Docker container management, and database import for multiple databases.
+    Objective:
+    Orchestrates backend operations including environment verification, Docker container management, database import for multiple databases, and backend readiness verification.
 
     Parameters:
-        - backend_folder: Path to the backend directory containing the database dump file. (String)
-        - db_configs: List of database configuration dictionaries containing container_name, db_dump_date, and env_prefix. (List)
-        - back_app_container_name: Name of the backend application Docker container. (String)
-        - no_cache: If True, builds Docker images without cache. Defaults to False. (Boolean)
+    - backend_folder (str): Path to the backend directory containing the database dump files.
+    - db_configs (List[Dict]): List of database configuration dictionaries containing:
+        - container_name (str): Docker container name for the database.
+        - db_dump_date (str): Date of the database dump to import.
+        - env_prefix (str): Optional environment variable prefix for this database.
+        - name (str): Database name.
+    - back_app_container_name (str): Name of the backend application Docker container.
+    - volumes (List[str]): List of Docker volumes to optionally remove when no_cache=True.
+    - no_cache (bool): If True, rebuild Docker images without cache and remove volumes. Defaults to False.
+
+    Behavior:
+    - Changes the working directory to the backend folder.
+    - Optionally removes Docker volumes if no_cache is True.
+    - Starts Docker containers using docker-compose.
+    - Waits for all database containers to be ready.
+    - Imports database dumps into their respective containers.
+    - Verifies that the backend application is running and responsive.
+    - Optionally checks and removes previously registered origins in the backend API.
 
     Return Value:
-        - None: This function does not return a value but performs operations and prints status messages. (NoneType)
+    - None: This function performs operations, prints status messages, and does not return a value.
     """
+
     colored_print("Starting backend operations...", "blue")
 
     # Step 0: Change working directory to backend/
@@ -50,7 +66,8 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     for db_config in db_configs:
         db_container_name = db_config["container_name"]
         db_dump_date = db_config["db_dump_date"]
-        env_prefix = db_config.get("env_prefix", "")
+        env_prefix = db_config["env_prefix"]
+        db_name = db_config["name"]
 
         if not db_dump_date or db_dump_date.strip() == "":
             continue  # Skip databases without a dump date
@@ -63,7 +80,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
         if os.environ.get("CI", "false").lower() == "true":
             dump_file_name = "temp_fake_database_dump_px.sql"
         else:
-            dump_file_name = f"database_dump_px_{db_dump_date}.sql"
+            dump_file_name = f"database_dump_px_{db_name}_{db_dump_date}.sql"
 
         if not os.path.exists(dump_file_name):
             if os.environ.get("CI", "false").lower() == "true":
