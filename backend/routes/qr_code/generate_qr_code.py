@@ -97,7 +97,7 @@ def generate_direction_qr():
     conn = None
 
     try:
-        conn = get_connection()
+        conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO qrcodes_maps (code_unique, data) VALUES (%s, %s)",
