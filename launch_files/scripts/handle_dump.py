@@ -306,7 +306,8 @@ def handle_dump(
                      "--databases", db_name,
                      "--routines",
                      "--triggers",
-                     "--single-transaction"],
+                     "--single-transaction",
+                     "--skip-add-drop-table"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True
@@ -319,12 +320,15 @@ def handle_dump(
                 if not dump_proc.stdout.strip():
                     colored_print(f"⚠️ Dump for '{db_name}' is empty!", "yellow")
 
+                # 🩵 Ajout : modification du contenu du dump
+                dump_output = dump_proc.stdout.replace("CREATE TABLE `", "CREATE TABLE IF NOT EXISTS `")
+
                 with open(dump_file_name, "w", encoding="utf-8") as f:
                     f.write(header)
-                    f.write(dump_proc.stdout)
+                    f.write(dump_output)
                     f.write("\n" + footer)
 
-                colored_print(f"✅ Full dump created for '{db_name}'", "green")
+                colored_print(f"✅ Full dump created for '{db_name}' (with IF NOT EXISTS)", "green")
                 dumped_files.append(dump_file_name)
 
             except Exception as ex:
