@@ -1,9 +1,9 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
 import com.pharmaxcess_server.pharmaxcess_server.dto.IDDto;
-import com.pharmaxcess_server.pharmaxcess_server.model.Ordonnance;
-import com.pharmaxcess_server.pharmaxcess_server.dto.OrdonnanceCreationRequest;
-import com.pharmaxcess_server.pharmaxcess_server.service.OrdonnanceService;
+import com.pharmaxcess_server.pharmaxcess_server.model.Treatment;
+import com.pharmaxcess_server.pharmaxcess_server.dto.TreatmentCreationRequest;
+import com.pharmaxcess_server.pharmaxcess_server.service.TreatmentService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,24 +22,24 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * REST controller for handling operations related to ordonnances.
- * Provides endpoints for retrieving the ordonnances.
+ * REST controller for handling operations related to treatments.
+ * Provides endpoints for retrieving the treatments.
  */
 @RestController
-@RequestMapping("/api/ordonnance")
-@Tag(name = "Ordonnances routes", description = "Operations related to ordonnances")
-public class OrdonnanceController {
+@RequestMapping("/api/treatment")
+@Tag(name = "Treatments routes", description = "Operations related to treatments")
+public class TreatmentController {
 
-    private final OrdonnanceService ordonnanceService;
+    private final TreatmentService treatmentService;
 
     /**
-     * Constructs a OrdonnanceController.
+     * Constructs a TreatmentController.
      *
-     * @param ordonnanceService the service for handling ordonnance operations
+     * @param treatmentService the service for handling treatment operations
      */
     @Autowired
-    public OrdonnanceController(OrdonnanceService ordonnanceService) {
-        this.ordonnanceService = ordonnanceService;
+    public TreatmentController(TreatmentService treatmentService) {
+        this.treatmentService = treatmentService;
     }
 
     /**
@@ -50,65 +50,65 @@ public class OrdonnanceController {
     @GetMapping("/get")
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     @Operation(
-        summary = "Get user's ordonnance",
-        description = "Retrieves user's ordonnances. Requires at least 'ROLE_USER' authority.",
+        summary = "Get user's treatment",
+        description = "Retrieves user's treatments. Requires at least 'ROLE_USER' authority.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "List of user's ordonnances retrieved successfully."),
+        @ApiResponse(responseCode = "200", description = "List of user's treatments retrieved successfully."),
         @ApiResponse(responseCode = "400", description = "Invalid request body."),
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public List<Ordonnance> getUserOrdonnance() {
+    public List<Treatment> getUserTreatment() {
         //String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
 
-        return ordonnanceService.getUserOrdonnance(1);
+        return treatmentService.getUserTreatment(1);
     }
 
     /**
-     * Creates a new ordonnance with the specified details.
+     * Creates a new treatment with the specified details.
      *
-     * @param body the request body containing the ordonnance details
-     * @return the created ordonnance
+     * @param body the request body containing the treatment details
+     * @return the created treatment
      */
     @PostMapping("/create")
     @Operation(
-        summary = "Create an Ordonnance",
-        description = "Creates a new ordonnance based on the provided details.",
+        summary = "Create an Treatment",
+        description = "Creates a new treatment based on the provided details.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Ordonnance created successfully."),
+        @ApiResponse(responseCode = "201", description = "Treatment created successfully."),
         @ApiResponse(responseCode = "400", description = "Invalid request body."),
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public int createOrdonnance(@RequestBody OrdonnanceCreationRequest body) {
-        return ordonnanceService.createOrdonnance(body);
+    public int createTreatment(@RequestBody TreatmentCreationRequest body) {
+        return treatmentService.createTreatment(body);
     }
 
         /**
-     * Deletes an ordonnance with the specified details.
+     * Deletes an treatment with the specified details.
      *
-     * @param body the request body containing the ordonnance details
-     * @return the created ordonnance
+     * @param body the request body containing the treatment details
+     * @return the created treatment
      */
     @PostMapping("/delete")
     @Operation(
-        summary = "Delete an Ordonnance",
-        description = "Deletes a new ordonnance based on the provided details.",
+        summary = "Delete an Treatment",
+        description = "Deletes a new treatment based on the provided details.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Ordonnance created successfully."),
+        @ApiResponse(responseCode = "201", description = "Treatment created successfully."),
         @ApiResponse(responseCode = "400", description = "Invalid request body."),
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public int deleteOrdonnance(@RequestBody IDDto body) {
-        return ordonnanceService.deleteOrdonnance(body);
+    public int deleteTreatment(@RequestBody IDDto body) {
+        return treatmentService.deleteTreatment(body);
     }
 }
