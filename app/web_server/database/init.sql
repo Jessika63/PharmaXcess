@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS familyDisability (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     name TEXT NOT NULL,
-    familyMember TEXT NOT NULL,
+    familymember TEXT NOT NULL,
     severity TEXT NOT NULL,
     treatement TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
