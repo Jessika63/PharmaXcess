@@ -15,42 +15,51 @@ def create_family_history():
         return jsonify({"error": "Missing required fields"}), 400
 
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            INSERT INTO antecedents (utilisateur_id, maladie, membre, severite, traitement)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            user_id,
-            disease,
-            data.get("membre"),
-            data.get("severite"),
-            data.get("traitement")
-        ))
-        conn.commit()
-        family_history_id = cursor.lastrowid
-    return jsonify({"message": "Family history added successfully", "id": family_history_id}), 201
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO antecedents (utilisateur_id, maladie, membre, severite, traitement)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                user_id,
+                disease,
+                data.get("membre"),
+                data.get("severite"),
+                data.get("traitement")
+            ))
+            conn.commit()
+            family_history_id = cursor.lastrowid
+        return jsonify({"message": "Family history added successfully", "id": family_history_id}), 201
+    finally:
+        conn.close()
 
 
 # GET ALL (by user)
 @family_history_bp.route("/family-history/<int:user_id>", methods=["GET"])
 def get_all_family_history(user_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM antecedents WHERE utilisateur_id=%s", (user_id,))
-        family_history = cursor.fetchall()
-    return jsonify(family_history), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM antecedents WHERE utilisateur_id=%s", (user_id,))
+            family_history = cursor.fetchall()
+        return jsonify(family_history), 200
+    finally:
+        conn.close()
 
 
 # GET ONE
 @family_history_bp.route("/family-history/entry/<int:entry_id>", methods=["GET"])
 def get_family_history(entry_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM antecedents WHERE id=%s", (entry_id,))
-        entry = cursor.fetchone()
-    if not entry:
-        return jsonify({"error": "Family history entry not found"}), 404
-    return jsonify(entry), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM antecedents WHERE id=%s", (entry_id,))
+            entry = cursor.fetchone()
+        if not entry:
+            return jsonify({"error": "Family history entry not found"}), 404
+        return jsonify(entry), 200
+    finally:
+        conn.close()
 
 
 # UPDATE
@@ -58,27 +67,33 @@ def get_family_history(entry_id):
 def update_family_history(entry_id):
     data = request.get_json()
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            UPDATE antecedents
-            SET maladie=%s, membre=%s, severite=%s, traitement=%s
-            WHERE id=%s
-        """, (
-            data.get("maladie"),
-            data.get("membre"),
-            data.get("severite"),
-            data.get("traitement"),
-            entry_id
-        ))
-        conn.commit()
-    return jsonify({"message": "Family history updated successfully"}), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE antecedents
+                SET maladie=%s, membre=%s, severite=%s, traitement=%s
+                WHERE id=%s
+            """, (
+                data.get("maladie"),
+                data.get("membre"),
+                data.get("severite"),
+                data.get("traitement"),
+                entry_id
+            ))
+            conn.commit()
+        return jsonify({"message": "Family history updated successfully"}), 200
+    finally:
+        conn.close()
 
 
 # DELETE
 @family_history_bp.route("/family-history/entry/<int:entry_id>", methods=["DELETE"])
 def delete_family_history(entry_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("DELETE FROM antecedents WHERE id=%s", (entry_id,))
-        conn.commit()
-    return jsonify({"message": "Family history deleted successfully"}), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM antecedents WHERE id=%s", (entry_id,))
+            conn.commit()
+        return jsonify({"message": "Family history deleted successfully"}), 200
+    finally:
+        conn.close()

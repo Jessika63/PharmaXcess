@@ -16,75 +16,89 @@ def create_hospitalization():
         return jsonify({"error": "Missing required fields"}), 400
 
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            INSERT INTO hospitalisations (utilisateur_id, type, description, dates, service, hopital, medecin)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
-            user_id,
-            hospitalization_type,
-            description,
-            data.get("dates"),
-            data.get("service"),
-            data.get("hopital"),
-            data.get("medecin")
-        ))
-        conn.commit()
-        hospitalization_id = cursor.lastrowid
-
-    return jsonify({"message": "Hospitalization added successfully", "id": hospitalization_id}), 201
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO hospitalisations (utilisateur_id, type, description, dates, service, hopital, medecin)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                user_id,
+                hospitalization_type,
+                description,
+                data.get("dates"),
+                data.get("service"),
+                data.get("hopital"),
+                data.get("medecin")
+            ))
+            conn.commit()
+            hospitalization_id = cursor.lastrowid
+        return jsonify({"message": "Hospitalization added successfully", "id": hospitalization_id}), 201
+    finally:
+        conn.close()
 
 
 # GET ALL (by user)
 @hospitalizations_bp.route("/hospitalizations/<int:user_id>", methods=["GET"])
 def get_all_hospitalizations(user_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM hospitalisations WHERE utilisateur_id=%s", (user_id,))
-        hospitalizations = cursor.fetchall()
-    return jsonify(hospitalizations), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM hospitalisations WHERE utilisateur_id=%s", (user_id,))
+            hospitalizations = cursor.fetchall()
+        return jsonify(hospitalizations), 200
+    finally:
+        conn.close()
 
 
 # GET UNIQUE
-@hospitalizations_bp.route("/hospitalization/<int:hospitalization_id>", methods=["GET"])
+@hospitalizations_bp.route("/hospitalization/entry/<int:hospitalization_id>", methods=["GET"])
 def get_hospitalization(hospitalization_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM hospitalisations WHERE id=%s", (hospitalization_id,))
-        hospitalization = cursor.fetchone()
-    if not hospitalization:
-        return jsonify({"error": "Hospitalization not found"}), 404
-    return jsonify(hospitalization), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM hospitalisations WHERE id=%s", (hospitalization_id,))
+            hospitalization = cursor.fetchone()
+        if not hospitalization:
+            return jsonify({"error": "Hospitalization not found"}), 404
+        return jsonify(hospitalization), 200
+    finally:
+        conn.close()
 
 
 # UPDATE
-@hospitalizations_bp.route("/hospitalization/<int:hospitalization_id>", methods=["PUT"])
+@hospitalizations_bp.route("/hospitalization/entry/<int:hospitalization_id>", methods=["PUT"])
 def update_hospitalization(hospitalization_id):
     data = request.get_json()
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            UPDATE hospitalisations
-            SET type=%s, description=%s, dates=%s, service=%s, hopital=%s, medecin=%s
-            WHERE id=%s
-        """, (
-            data.get("type"),
-            data.get("description"),
-            data.get("dates"),
-            data.get("service"),
-            data.get("hopital"),
-            data.get("medecin"),
-            hospitalization_id
-        ))
-        conn.commit()
-    return jsonify({"message": "Hospitalization updated successfully"}), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE hospitalisations
+                SET type=%s, description=%s, dates=%s, service=%s, hopital=%s, medecin=%s
+                WHERE id=%s
+            """, (
+                data.get("type"),
+                data.get("description"),
+                data.get("dates"),
+                data.get("service"),
+                data.get("hopital"),
+                data.get("medecin"),
+                hospitalization_id
+            ))
+            conn.commit()
+        return jsonify({"message": "Hospitalization updated successfully"}), 200
+    finally:
+        conn.close()
 
 
 # DELETE
-@hospitalizations_bp.route("/hospitalization/<int:hospitalization_id>", methods=["DELETE"])
+@hospitalizations_bp.route("/hospitalization/entry/<int:hospitalization_id>", methods=["DELETE"])
 def delete_hospitalization(hospitalization_id):
     conn = get_app_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("DELETE FROM hospitalisations WHERE id=%s", (hospitalization_id,))
-        conn.commit()
-    return jsonify({"message": "Hospitalization deleted successfully"}), 200
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM hospitalisations WHERE id=%s", (hospitalization_id,))
+            conn.commit()
+        return jsonify({"message": "Hospitalization deleted successfully"}), 200
+    finally:
+        conn.close()
