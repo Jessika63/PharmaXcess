@@ -56,13 +56,13 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     # Step 2: Start containers with docker-compose in detached mode
     start_containers(no_cache=no_cache)
 
-    # Step 2: Wait for all database containers to be ready
+    # Step 3: Wait for all database containers to be ready
     verify_databases_are_up(db_configs, nb_of_retry=10)
 
-    # Step 3: Get .env variables
+    # Step 4: Load .env file
     env_data = load_env_file(".env")
 
-    # Step 4: Execute database dumps for each database
+    # Step 5: Import DBs
     for db_config in db_configs:
         db_container_name = db_config["container_name"]
         db_dump_date = db_config["db_dump_date"]
@@ -70,13 +70,14 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
         db_name = db_config["name"]
 
         if not db_dump_date or db_dump_date.strip() == "":
+            colored_print(f"⏭ No dump date provided for {db_name}, skipping...", "yellow")
             continue  # Skip databases without a dump date
 
         # Use prefixed environment variables if available
         root_password_key = f"{env_prefix}MYSQL_ROOT_PASSWORD"
         root_password = env_data.get(root_password_key, env_data.get("MYSQL_ROOT_PASSWORD"))
 
-        # Use the fake dump in CI, otherwise use the real one
+        # Choose dump file (CI fallback)
         if os.environ.get("CI", "false").lower() == "true":
             dump_file_name = "temp_fake_database_dump_px.sql"
         else:
@@ -90,50 +91,129 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
             continue  # Skip this database dump import
 
         try:
-            colored_print(f"Importing database dump '{dump_file_name}' into container '{db_container_name}'...", "blue")
-            with open(dump_file_name, "r", encoding="utf-8") as dump_file:
-                dump_content = dump_file.read()  # Read the SQL dump as a string
+            # --- CHECK INTELLIGENT : détecter si la DB est déjà remplie
+            colored_print(f"🔍 Vérification du contenu existant dans la base `{db_name}`...", "blue")
 
-            # Debug: print environment variables and dump file name
-            colored_print(f"CI: {os.environ.get('CI')}", "violet")
-            colored_print(f"DB_NAME: {env_data.get('DB_NAME')}", "violet")
-            colored_print(f"DB_USER: {env_data.get('DB_USER')}", "violet")
-            colored_print(f"DB_PASSWORD: {env_data.get('DB_PASSWORD')}", "violet")
-            colored_print(f"MYSQL_ROOT_PASSWORD: {root_password}", "violet")
-            colored_print(f"Using dump file: {dump_file_name}", "violet")
+            # Étape 1 : récupérer la liste des tables
+            show_tables_cmd = [
+                "docker", "exec", db_container_name,
+                "mysql", "-uroot", f"-p{root_password}", "-D", db_name, "-sN",
+                "-e", "SHOW TABLES;"
+            ]
+            tables_proc = subprocess.run(show_tables_cmd, capture_output=True, text=True)
+            tables_stdout = (tables_proc.stdout or "").strip()
+            tables_stderr = (tables_proc.stderr or "").strip()
 
-            if os.path.exists(dump_file_name):
-                with open(dump_file_name, 'r', encoding='utf-8') as f:
-                    dump_preview = f.read(1000)
-                    colored_print(f"First 1000 chars of dump file:\n{dump_preview}", "violet")
+            if tables_stderr:
+                colored_print(f"⚠️ Erreur lors du SHOW TABLES : {tables_stderr}", "yellow")
+
+            if tables_proc.returncode != 0 or not tables_stdout:
+                # Aucune table -> première import
+                colored_print(f"ℹ️  Aucune table trouvée dans `{db_name}` → première import.", "yellow")
+                first_time = True
             else:
-                colored_print(f"Dump file {dump_file_name} does not exist!", "violet")
+                # Étape 2 : analyser les tables
+                tables = [t.strip() for t in tables_stdout.splitlines() if t.strip()]
+                colored_print(f"ℹ️  Tables trouvées : {tables}", "violet")
+
+                first_time = True  # par défaut, on suppose vide
+
+                # Si table 'utilisateurs' présente → priorité
+                if "utilisateurs" in tables:
+                    tables_to_check = ["utilisateurs"]
+                else:
+                    # Sinon, on vérifie la première table existante
+                    tables_to_check = [tables[0]]
+
+                for table_name in tables_to_check:
+                    count_cmd = [
+                        "docker", "exec", db_container_name,
+                        "mysql", "-uroot", f"-p{root_password}", "-D", db_name, "-sN",
+                        "-e", f"SELECT COUNT(*) FROM `{table_name}`;"
+                    ]
+                    count_proc = subprocess.run(count_cmd, capture_output=True, text=True)
+                    count_stdout = (count_proc.stdout or "").strip()
+
+                    if count_proc.returncode != 0:
+                        colored_print(f"⚠️  Impossible de compter les lignes de `{table_name}` (probable table vide).", "yellow")
+                        continue
+
+                    try:
+                        row_count = int(count_stdout.split()[0]) if count_stdout else 0
+                        colored_print(f"📊 Table `{table_name}` contient {row_count} ligne(s).", "violet")
+                        if row_count > 0:
+                            first_time = False
+                            break  # inutile de continuer, on sait que la DB est déjà remplie
+                    except Exception as e:
+                        colored_print(f"⚠️  Erreur lors du parsing du COUNT(*) pour `{table_name}`: {e}", "yellow")
+
+            # --- ACTION selon first_time
+            if first_time:
+                colored_print(f"📦 Importing database dump '{dump_file_name}' into container '{db_container_name}' (first import)...", "blue")
+            else:
+                # Reset database before reimport
+                colored_print(f"🧹 Resetting existing database '{db_name}' inside container '{db_container_name}'...", "blue")
+                drop_cmd = f"DROP DATABASE IF EXISTS `{db_name}`; CREATE DATABASE `{db_name}`;"
+                subprocess.run(
+                    ["docker", "exec", "-i", db_container_name, "mysql", "-uroot", f"-p{root_password}", "-e", drop_cmd],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                colored_print(f"✅ Database '{db_name}' dropped and recreated successfully.", "green")
+
+            # --- READ dump and import
+            if os.path.exists(dump_file_name):
+                with open(dump_file_name, "r", encoding="utf-8") as dump_file:
+                    dump_content = dump_file.read()
+            else:
+                colored_print(f"Dump file {dump_file_name} does not exist!", "red")
+
+            # debug preview (violet)
+            colored_print(f"First 1000 chars of dump:\n{dump_content[:1000]}", "violet")
 
             colored_print(f"Running command: docker exec -i {db_container_name} mysql -uroot -p<hidden>", "violet")
 
-            result = subprocess.run(
-                [
-                    "docker", "exec", "-i", db_container_name, "mysql", "-uroot",
-                    "-p" + root_password
-                ],
+            # --- Cleanup optional existing MySQL user (to avoid CREATE USER conflicts)
+            colored_print("🧩 Checking if user 'px_user' exists before import...", "blue")
+            try:
+                drop_user_cmd = (
+                    "DROP USER IF EXISTS 'px_user'@'%'; FLUSH PRIVILEGES;"
+                )
+                subprocess.run(
+                    ["docker", "exec", "-i", db_container_name,
+                     "mysql", "-uroot", f"-p{root_password}", "-e", drop_user_cmd],
+                    capture_output=True,
+                    text=True,
+                    check=False  # pas grave si user n'existe pas
+                )
+                colored_print("✅ Existing 'px_user' (if any) removed successfully.", "green")
+            except Exception as e:
+                colored_print(f"⚠️ Unable to check/remove existing 'px_user': {e}", "yellow")
+
+            colored_print(f"➡️ Executing import into '{db_container_name}/{db_name}'...", "blue")
+            subprocess.run(
+                ["docker", "exec", "-i", db_container_name, "mysql", "-uroot", f"-p{root_password}", db_name],
                 input=dump_content,
                 text=True,
                 capture_output=True,
                 check=True
             )
-            colored_print(f"Database dump imported successfully into '{db_container_name}'!", "green")
-        except subprocess.CalledProcessError as e:
-            error_message = e.stderr
-            if "Operation CREATE USER failed" in error_message:
-                colored_print(f"User already exists in '{db_container_name}'. Skipping user creation.", "yellow")
-            else:
-                colored_print(f"Failed to import the database dump into '{db_container_name}'!\nDetails: {error_message}", "red")
+            colored_print(f"✅ Database dump imported successfully into '{db_container_name}'!", "green")
 
-    # # Final check: verify backend is up after all operations
+        except subprocess.CalledProcessError as e:
+            # capture stderr for specifics (duplicate key, permissions, etc.)
+            err = e.stderr or e.stdout or str(e)
+            colored_print(f"❌ Failed to import the database dump into '{db_container_name}'!\nDetails: {err}", "red")
+        except Exception as e:
+            colored_print(f"❌ Unexpected error while importing dump for '{db_name}': {e}", "red")
+
+    # Step 6: Verify backend is up
     verify_backend_is_up(back_app_container_name, backend_folder, nb_of_retry=10)
 
+    # Step 7: Optionally clear origins
     if no_cache:
-        colored_print("verifcation that origins is empty", "blue")
+        colored_print("🧭 Verifying that allowed origins list is empty...", "blue")
 
         try:
             try:
@@ -172,7 +252,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                     data = response.json()
                     origins = data.get("allowed_origins", [])
                     if origins:
-                        colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
+                        colored_print(f"🧹 Found {len(origins)} origins → removing them...", "yellow")
                         for origin in origins:
                             remove_resp = requests.post(
                                 f"{base_url}/remove-origin",
@@ -182,22 +262,18 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                                 },
                                 json={"origin": origin}
                             )
-
                             if remove_resp.status_code == 200:
-                                colored_print(f"Origin '{origin}' removed successfully", "green")
+                                colored_print(f"✅ Origin '{origin}' removed successfully.", "green")
                             else:
                                 colored_print(
                                     f"Failed to remove origin '{origin}' → {remove_resp.text}",
                                     "red"
                                 )
                     else:
-                        colored_print("No origins found, nothing to delete.", "green")
-            else:
-                colored_print(
-                    f"Could not list origins, status={response.status_code}, body={response.text}",
-                    "red"
-                )
-
+                        colored_print("✅ No origins found, nothing to delete.", "green")
+                else:
+                    colored_print(f"❌ Could not list origins. Status={response.status_code}, body={response.text}", "red")
         except Exception as e:
-            colored_print(f"Exception while checking/removing origins: {e}", "red")
+            colored_print(f"❌ Exception while checking/removing origins: {e}", "red")
 
+    colored_print("🎯 Backend startup sequence complete!", "green")
