@@ -7,6 +7,27 @@ traitements_bp = Blueprint('traitements', __name__)
 # CREATE
 @traitements_bp.route('/treatments', methods=['POST'])
 def create_traitement():
+    """
+    Objective:
+    Create a new treatment entry associated with a specific disease in the database.
+
+    Endpoint: POST /treatments
+
+    Parameters:
+    - maladie_id (int): The ID of the disease the treatment is associated with.
+    - nom (str): The name of the treatment.
+    - debut (str, optional): Start date of the treatment.
+    - fin (str, optional): End date of the treatment.
+    - dosage (str, optional): Dosage information.
+    - duree (str, optional): Duration of the treatment.
+    - effets_secondaires (str, optional): Possible side effects.
+
+    Response:
+    - 201 Created: Confirmation message with the ID of the newly created treatment.
+    - 400 Bad Request: If required fields (maladie_id or nom) are missing.
+    - 500 Internal Server Error: If a database error occurs during insertion.
+    """
+
     data = request.get_json()
     maladie_id = data.get("maladie_id")
     nom = data.get("nom")
@@ -34,6 +55,21 @@ def create_traitement():
 # GET ALL
 @traitements_bp.route('/treatments/<int:maladie_id>', methods=['GET'])
 def get_all_traitements(maladie_id):
+    """
+    Objective:
+    Retrieve all treatment entries associated with a specific disease.
+
+    Endpoint: GET /treatments/<maladie_id>
+
+    Parameters:
+    - maladie_id (int): The ID of the disease for which to fetch treatments.
+
+    Response:
+    - 200 OK: Returns a JSON array of treatment records for the specified disease.
+    - 404 Not Found: If no treatments are found for the given disease ID.
+    - 500 Internal Server Error: If a database error occurs during the query.
+    """
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
@@ -47,6 +83,21 @@ def get_all_traitements(maladie_id):
 # GET UNIQUE
 @traitements_bp.route('/treatments/entry/<int:traitement_id>', methods=['GET'])
 def get_traitement(traitement_id):
+    """
+    Objective:
+    Retrieve a specific treatment entry by its ID.
+
+    Endpoint: GET /treatments/entry/<traitement_id>
+
+    Parameters:
+    - traitement_id (int): The ID of the treatment to retrieve.
+
+    Response:
+    - 200 OK: Returns a JSON object containing the treatment details.
+    - 404 Not Found: If no treatment exists with the given ID.
+    - 500 Internal Server Error: If a database error occurs during the query.
+    """
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
@@ -62,6 +113,28 @@ def get_traitement(traitement_id):
 # UPDATE
 @traitements_bp.route('/treatments/entry/<int:traitement_id>', methods=['PUT'])
 def update_traitement(traitement_id):
+    """
+    Objective:
+    Update an existing treatment entry in the database by its ID.
+
+    Endpoint: PUT /treatments/entry/<traitement_id>
+
+    Parameters:
+    - traitement_id (int): The ID of the treatment to update.
+    - JSON body: Contains any of the following fields to update:
+        - nom (str): Name of the treatment.
+        - debut (str): Start date of the treatment.
+        - fin (str): End date of the treatment.
+        - dosage (str): Dosage information.
+        - duree (str): Duration of the treatment.
+        - effets_secondaires (str): Side effects of the treatment.
+
+    Response:
+    - 200 OK: Returns a message confirming the update.
+    - 400 Bad Request: If required fields are missing or invalid.
+    - 500 Internal Server Error: If a database error occurs during the update.
+    """
+
     data = request.get_json()
     conn = get_app_connection()
     try:
@@ -84,6 +157,21 @@ def update_traitement(traitement_id):
 # DELETE
 @traitements_bp.route('/treatments/entry/<int:traitement_id>', methods=['DELETE'])
 def delete_traitement(traitement_id):
+    """
+    Objective:
+    Delete an existing treatment entry from the database by its ID.
+
+    Endpoint: DELETE /treatments/entry/<traitement_id>
+
+    Parameters:
+    - traitement_id (int): The ID of the treatment to delete.
+
+    Response:
+    - 200 OK: Returns a message confirming successful deletion.
+    - 404 Not Found: If the treatment ID does not exist.
+    - 500 Internal Server Error: If a database error occurs during deletion.
+    """
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
