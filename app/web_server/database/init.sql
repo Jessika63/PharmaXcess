@@ -59,17 +59,17 @@ CREATE TABLE IF NOT EXISTS ordonnances (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     medications TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS doctors (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     speciality TEXT NOT NULL,
-    phoneNumber TEXT NOT NULL,
+    phonenumber TEXT NOT NULL,
     email TEXT NOT NULL,
     address TEXT NOT NULL,
-    hospital TEXT NOT NULL,
-)
+    hospital TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS familyDisability (
     id SERIAL PRIMARY KEY,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS familyDisability (
     severity TEXT NOT NULL,
     treatement TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS allergies (
     id SERIAL PRIMARY KEY,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS allergies (
     medications TEXT NOT NULL,
     comments TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS medicalHistory (
     id SERIAL PRIMARY KEY,
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS medicalHistory (
     doctor TEXT NOT NULL,
     medications TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS treatements (
     id SERIAL PRIMARY KEY,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS treatements (
     sideEffects TEXT NOT NULL,
     disease TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE IF NOT EXISTS diseases (
     id SERIAL PRIMARY KEY,
@@ -126,9 +126,9 @@ CREATE TABLE IF NOT EXISTS diseases (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     beginDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    medications name TEXT NOT NULL,
-    examens name TEXT NOT NULL,
+    medications TEXT NOT NULL,
+    examens TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)
+);
 
 CREATE INDEX IF NOT EXISTS idx_location ON machines USING GIST (location);
