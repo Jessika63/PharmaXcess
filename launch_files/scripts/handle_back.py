@@ -2,6 +2,7 @@ from calendar import c
 import os
 import subprocess
 import re
+import requests
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
@@ -14,17 +15,33 @@ from .handle_down import remove_volume
 
 def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False):
     """
-    Objectif: Orchestrates backend operations including environment verification, Docker container management, and database import for multiple databases.
+    Objective:
+    Orchestrates backend operations including environment verification, Docker container management, database import for multiple databases, and backend readiness verification.
 
     Parameters:
-        - backend_folder: Path to the backend directory containing the database dump file. (String)
-        - db_configs: List of database configuration dictionaries containing container_name, db_dump_date, and env_prefix. (List)
-        - back_app_container_name: Name of the backend application Docker container. (String)
-        - no_cache: If True, builds Docker images without cache. Defaults to False. (Boolean)
+    - backend_folder (str): Path to the backend directory containing the database dump files.
+    - db_configs (List[Dict]): List of database configuration dictionaries containing:
+        - container_name (str): Docker container name for the database.
+        - db_dump_date (str): Date of the database dump to import.
+        - env_prefix (str): Optional environment variable prefix for this database.
+        - name (str): Database name.
+    - back_app_container_name (str): Name of the backend application Docker container.
+    - volumes (List[str]): List of Docker volumes to optionally remove when no_cache=True.
+    - no_cache (bool): If True, rebuild Docker images without cache and remove volumes. Defaults to False.
+
+    Behavior:
+    - Changes the working directory to the backend folder.
+    - Optionally removes Docker volumes if no_cache is True.
+    - Starts Docker containers using docker-compose.
+    - Waits for all database containers to be ready.
+    - Imports database dumps into their respective containers.
+    - Verifies that the backend application is running and responsive.
+    - Optionally checks and removes previously registered origins in the backend API.
 
     Return Value:
-        - None: This function does not return a value but performs operations and prints status messages. (NoneType)
+    - None: This function performs operations, prints status messages, and does not return a value.
     """
+
     colored_print("Starting backend operations...", "blue")
 
     # Step 0: Change working directory to backend/
@@ -49,7 +66,8 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     for db_config in db_configs:
         db_container_name = db_config["container_name"]
         db_dump_date = db_config["db_dump_date"]
-        env_prefix = db_config.get("env_prefix", "")
+        env_prefix = db_config["env_prefix"]
+        db_name = db_config["name"]
 
         if not db_dump_date or db_dump_date.strip() == "":
             continue  # Skip databases without a dump date
@@ -62,7 +80,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
         if os.environ.get("CI", "false").lower() == "true":
             dump_file_name = "temp_fake_database_dump_px.sql"
         else:
-            dump_file_name = f"database_dump_px_{db_dump_date}.sql"
+            dump_file_name = f"database_dump_px_{db_name}_{db_dump_date}.sql"
 
         if not os.path.exists(dump_file_name):
             if os.environ.get("CI", "false").lower() == "true":
@@ -112,13 +130,12 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                 colored_print(f"Failed to import the database dump into '{db_container_name}'!\nDetails: {error_message}", "red")
 
     # # Final check: verify backend is up after all operations
-    verify_backend_is_up(back_app_container_name, nb_of_retry=10)
+    verify_backend_is_up(back_app_container_name, backend_folder, nb_of_retry=10)
 
     if no_cache:
         colored_print("verifcation that origins is empty", "blue")
 
         try:
-            import requests
             try:
                 secret_key = env_data['CORS_SECRET_KEY']
             except (ImportError, FileNotFoundError, KeyError):
@@ -135,37 +152,46 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
                                     break
             secret_key = re.sub(r"^['\"]|['\"]$", '', secret_key)
 
-            # Appel à l'API /list-origins avec la clé secrète
-            response = requests.get(
-                "http://57.128.57.96:5000/list-origins",
-                headers={"X-Secret-Key": secret_key}
-            )
+            env = env_data['ENV']
+            if env == 'production':
+                base_url = "http://57.128.57.96:5000"
+            elif env == 'development':
+                base_url = "http://localhost:5000"
+            else:
+                print("Erreur : la variable ENV n'est pas définie correctement")
+                base_url = None
 
-            if response.status_code == 200:
-                data = response.json()
-                origins = data.get("allowed_origins", [])
-                if origins:
-                    colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
-                    for origin in origins:
+            if base_url:
+                # Appel à l'API /list-origins avec la clé secrète
+                response = requests.get(
+                    f"{base_url}/list-origins",
+                    headers={"X-Secret-Key": secret_key}
+                )
 
-                        remove_resp = requests.post(
-                            "http://57.128.57.96:5000/remove-origin",
-                            headers={
-                                "X-Secret-Key": secret_key,
-                                "Content-Type": "application/json"
-                            },
-                            json={"origin": origin}
-                        )
-
-                        if remove_resp.status_code == 200:
-                            colored_print(f"Origin '{origin}' removed successfully", "green")
-                        else:
-                            colored_print(
-                                f"Failed to remove origin '{origin}' → {remove_resp.text}",
-                                "red"
+                if response.status_code == 200:
+                    data = response.json()
+                    origins = data.get("allowed_origins", [])
+                    if origins:
+                        colored_print(f"Found {len(origins)} origins → removing them...", "yellow")
+                        for origin in origins:
+                            remove_resp = requests.post(
+                                f"{base_url}/remove-origin",
+                                headers={
+                                    "X-Secret-Key": secret_key,
+                                    "Content-Type": "application/json"
+                                },
+                                json={"origin": origin}
                             )
-                else:
-                    colored_print("No origins found, nothing to delete.", "green")
+
+                            if remove_resp.status_code == 200:
+                                colored_print(f"Origin '{origin}' removed successfully", "green")
+                            else:
+                                colored_print(
+                                    f"Failed to remove origin '{origin}' → {remove_resp.text}",
+                                    "red"
+                                )
+                    else:
+                        colored_print("No origins found, nothing to delete.", "green")
             else:
                 colored_print(
                     f"Could not list origins, status={response.status_code}, body={response.text}",

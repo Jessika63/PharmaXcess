@@ -1,4 +1,4 @@
-# db_app.py
+
 import pymysql
 from dotenv import load_dotenv
 import os
@@ -13,7 +13,7 @@ APP_DB_PASSWORD = os.getenv('APP_DB_PASSWORD')
 APP_DB_NAME = os.getenv('APP_DB_NAME')
 
 # Function to establish a connection to the database
-def get_connection():
+def get_app_connection():
     """
     Objectif: Establish and return a connection to the MySQL database using predefined credentials.
 

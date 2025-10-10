@@ -28,6 +28,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Root password for MySQL (from .env)
       MYSQL_DATABASE: ${APP_DB_NAME}               # Database to initialize for app
+      MYSQL_EVENT_SCHEDULER: 'ON'
     ports:
       - "3308:3306"  # Map container port 3306 to host port 3308 to avoid conflict
     container_name: "app-backend-db"  # Container name for app DB
