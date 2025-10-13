@@ -52,9 +52,12 @@ def get_prescription_reminders(user_id):
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
                 WHERE pr.utilisateur_id = %s
+                    OR pr.utilisateur_id IN (
+                        SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
+                    )
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id,))
+            cursor.execute(sql, (user_id, user_id))
             reminders = cursor.fetchall()
 
             for reminder in reminders:
@@ -379,12 +382,13 @@ def get_upcoming_prescription_reminders(user_id):
                     o.statut AS ordonnance_statut
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
-                WHERE pr.utilisateur_id = %s
+                WHERE (pr.utilisateur_id = %s
+                    OR pr.utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s))
                 AND pr.is_completed = FALSE
                 AND pr.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id,))
+            cursor.execute(sql, (user_id, user_id))
             reminders = cursor.fetchall()
 
             for reminder in reminders:
@@ -488,19 +492,20 @@ def get_prescription_for_reminders(user_id):
                     date_expiration,
                     statut
                 FROM ordonnances
-                WHERE utilisateur_id = %s
+                WHERE (utilisateur_id = %s
+                    OR utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s))
                 AND statut = 'active'
                 ORDER BY date_expiration DESC
             """
-            cursor.execute(sql, (user_id,))
-            prescription = cursor.fetchall()
+            cursor.execute(sql, (user_id, user_id))
+            ordonnances = cursor.fetchall()
 
-            for ordonnance in prescription:
+            for ordonnance in ordonnances:
                 for key in ['date_prescription', 'date_expiration']:
                     if ordonnance.get(key):
                         ordonnance[key] = ordonnance[key].isoformat()
 
-            return jsonify(prescription), 200
+            return jsonify(ordonnances), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

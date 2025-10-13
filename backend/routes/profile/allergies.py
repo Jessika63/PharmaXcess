@@ -1,5 +1,5 @@
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
 
 allergies_bp = Blueprint("allergies", __name__)
@@ -74,7 +74,7 @@ def get_all_allergies(user_id):
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM allergies WHERE utilisateur_id=%s", (user_id,))
+            cursor.execute("SELECT * FROM allergies WHERE utilisateur_id = %s OR utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s) ", (user_id, user_id))
             allergies = cursor.fetchall()
         return jsonify(allergies), 200
     finally:
@@ -98,11 +98,21 @@ def get_allergy(allergy_id):
     - 404 Not Found: Returns an error message if no allergy with the given ID exists.
     - The allergy record contains fields: id, utilisateur_id, nom, debut, gravite, symptomes, commentaires, created_at, updated_at.
     """
+    current_user_id = session.get("user_id")
+    if not current_user_id:
+        return jsonify({"error": "No active session"}), 401
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM allergies WHERE id=%s", (allergy_id,))
+            cursor.execute("""
+                SELECT * FROM allergies
+                WHERE id=%s
+                  AND (utilisateur_id = %s
+                       OR utilisateur_id IN (
+                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
+                       ))
+            """, (allergy_id, current_user_id, current_user_id))
             allergy = cursor.fetchone()
         if not allergy:
             return jsonify({"error": "Allergy not found"}), 404
@@ -136,6 +146,10 @@ def update_allergy(allergy_id):
     - 404 Not Found: If the allergy with the given ID does not exist.
     """
 
+    current_user_id = session.get("user_id")
+    if not current_user_id:
+        return jsonify({"error": "No active session"}), 401
+
     data = request.get_json()
     conn = get_app_connection()
     try:
@@ -144,14 +158,22 @@ def update_allergy(allergy_id):
                 UPDATE allergies
                 SET nom=%s, debut=%s, gravite=%s, symptomes=%s, commentaires=%s
                 WHERE id=%s
+                  AND (utilisateur_id = %s
+                       OR utilisateur_id IN (
+                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
+                       ))
             """, (
                 data.get("nom"),
                 data.get("debut"),
                 data.get("gravite"),
                 data.get("symptomes"),
                 data.get("commentaires"),
-                allergy_id
+                allergy_id,
+                current_user_id,
+                current_user_id
             ))
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Allergy not found or no permission"}), 404
             conn.commit()
         return jsonify({"message": "Allergy updated successfully"}), 200
     finally:
@@ -176,10 +198,23 @@ def delete_allergy(allergy_id):
     - 500 Internal Server Error: If there is a database error during deletion.
     """
 
+    current_user_id = session.get("user_id")
+    if not current_user_id:
+        return jsonify({"error": "No active session"}), 401
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM allergies WHERE id=%s", (allergy_id,))
+            cursor.execute("""
+                DELETE FROM allergies
+                WHERE id=%s
+                  AND (utilisateur_id = %s
+                       OR utilisateur_id IN (
+                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
+                       ))
+            """, (allergy_id, current_user_id, current_user_id))
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Allergy not found or no permission"}), 404
             conn.commit()
         return jsonify({"message": "Allergy deleted successfully"}), 200
     finally:
