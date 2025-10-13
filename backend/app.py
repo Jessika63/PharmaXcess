@@ -189,6 +189,13 @@ def register_blueprints():
     from routes.tickets.messages.add_message import add_message_bp
     from routes.tickets.messages.get_messages import get_messages_bp
     from routes.tickets.messages.delete_message import delete_message_bp
+    from routes.profile.diseases import diseases_bp
+    from routes.profile.infos import infos_bp
+    from routes.profile.treatments import traitements_bp
+    from routes.profile.hospitalizations import hospitalizations_bp
+    from routes.profile.allergies import allergies_bp
+    from routes.profile.family_history import family_history_bp
+    from routes.profile.doctors import doctors_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -226,7 +233,13 @@ def register_blueprints():
     app.register_blueprint(read_code_qr_bp)
     app.register_blueprint(alarms_bp)
     app.register_blueprint(prescription_reminders_bp)
-
+    app.register_blueprint(diseases_bp)
+    app.register_blueprint(infos_bp)
+    app.register_blueprint(traitements_bp)
+    app.register_blueprint(hospitalizations_bp)
+    app.register_blueprint(allergies_bp)
+    app.register_blueprint(family_history_bp)
+    app.register_blueprint(doctors_bp)
 
 register_blueprints()
 

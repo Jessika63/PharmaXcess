@@ -13,19 +13,19 @@ prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_pr
 def get_prescription_reminders(user_id):
     """
     Objective:
-    Retrieves all prescription reminders for a specific user, including details from the associated ordonnance.
+    Retrieves all prescription reminders for a specific user, including details from the associated prescription.
 
     Parameters:
     - user_id: The unique identifier of the user whose prescription reminders are requested. (Integer)
 
     Process:
     - Queries the 'prescription_reminders' table for all reminders linked to the given user.
-    - Performs a LEFT JOIN with the 'ordonnances' table to include ordonnance details such as description, prescribing doctor, prescription date, expiration date, and status.
+    - Performs a LEFT JOIN with the 'prescription' table to include prescription details such as description, prescribing doctor, prescription date, expiration date, and status.
     - Converts all relevant date fields to ISO 8601 string format.
     - Calculates the number of days until each reminder is due, but only if the reminder is not completed.
 
     Return Value:
-    - Success: Returns a JSON list of prescription reminders with associated ordonnance details and computed 'days_until_due', along with HTTP status code 200. (Response)
+    - Success: Returns a JSON list of prescription reminders with associated prescription details and computed 'days_until_due', along with HTTP status code 200. (Response)
     - Failure: Returns a JSON error message with HTTP status code 500 in case of a database or processing error. (Response)
     """
 
@@ -85,11 +85,11 @@ def get_prescription_reminders(user_id):
 def create_prescription_reminder():
     """
     Objective:
-    Creates a new prescription reminder linked to an existing ordonnance for a specific user.
+    Creates a new prescription reminder linked to an existing prescription for a specific user.
 
     Expected JSON Body:
     - utilisateur_id: ID of the user to whom the reminder belongs. (Integer)
-    - ordonnance_id: ID of the ordonnance the reminder is associated with. (Integer)
+    - prescription_id: ID of the prescription the reminder is associated with. (Integer)
     - name: Name or title of the reminder. (String)
     - due_date: Date when the reminder is due, in 'YYYY-MM-DD' format. (String)
     - sound (optional): Sound to play when the reminder triggers. Defaults to 'Son 1'. (String)
@@ -98,32 +98,32 @@ def create_prescription_reminder():
 
     Process:
     - Validates that all required fields are provided.
-    - Confirms that the given ordonnance exists and belongs to the specified user.
+    - Confirms that the given prescription exists and belongs to the specified user.
     - Converts the 'due_date' field to a Python date object.
     - Inserts the new reminder into the 'prescription_reminders' table.
     - Commits the transaction to persist the new record.
 
     Return Value:
     - Success: Returns a JSON message with the new reminder's ID and HTTP status code 201. (Response)
-    - Failure: Returns a JSON error message with HTTP status code 400 (missing/invalid fields), 404 (ordonnance not found), or 500 (database error). (Response)
+    - Failure: Returns a JSON error message with HTTP status code 400 (missing/invalid fields), 404 (prescription not found), or 500 (database error). (Response)
     """
 
     try:
         data = request.get_json()
-        required_fields = ['utilisateur_id', 'ordonnance_id', 'name', 'due_date']
+        required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check ordonnance ownership
+            # Check ordonnaprescriptionnce ownership
             cursor.execute(
                 "SELECT id FROM ordonnances WHERE id = %s AND utilisateur_id = %s",
-                (data['ordonnance_id'], data['utilisateur_id'])
+                (data['prescription_id'], data['utilisateur_id'])
             )
             if not cursor.fetchone():
-                return jsonify({'error': 'Ordonnance not found or does not belong to user'}), 404
+                return jsonify({'error': 'prescription not found or does not belong to user'}), 404
 
             sql = """
                 INSERT INTO prescription_reminders
@@ -135,7 +135,7 @@ def create_prescription_reminder():
 
             cursor.execute(sql, (
                 data['utilisateur_id'],
-                data['ordonnance_id'],
+                data['prescription_id'],
                 data['name'],
                 due_date,
                 data.get('sound', 'Son 1'),
@@ -349,11 +349,11 @@ def get_upcoming_prescription_reminders(user_id):
     Process:
     - Queries the database for reminders linked to the user where `is_completed` is False.
     - Filters reminders with `due_date` between today and 30 days from today.
-    - Joins each reminder with its related ordonnance to include additional details.
+    - Joins each reminder with its related prescription to include additional details.
     - Converts date fields to ISO 8601 format for consistency.
 
     Return Value:
-    - Success: Returns a JSON list of upcoming prescription reminders with ordonnance details and HTTP status code 200. (Response)
+    - Success: Returns a JSON list of upcoming prescription reminders with prescription details and HTTP status code 200. (Response)
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
@@ -400,24 +400,24 @@ def get_upcoming_prescription_reminders(user_id):
         connection.close()
 
 # ===========================
-# Get reminders by ordonnance
+# Get reminders by prescription
 # ===========================
-@prescription_reminders_bp.route('/ordonnance/<int:ordonnance_id>', methods=['GET'])
-def get_reminders_by_ordonnance(ordonnance_id):
+@prescription_reminders_bp.route('/prescription/<int:prescription_id>', methods=['GET'])
+def get_reminders_by_prescription(prescription_id):
     """
     Objective:
-    Retrieve all prescription reminders associated with a specific ordonnance.
+    Retrieve all prescription reminders associated with a specific prescription.
 
     Parameters:
-    - ordonnance_id: ID of the ordonnance for which reminders are requested. (Integer)
+    - prescription_id: ID of the prescription for which reminders are requested. (Integer)
 
     Process:
-    - Queries the database for all reminders linked to the given ordonnance.
+    - Queries the database for all reminders linked to the given prescription.
     - Orders the results by due_date in descending order.
     - Converts the `due_date` field to ISO 8601 format for consistency.
 
     Return Value:
-    - Success: Returns a JSON list of reminders for the specified ordonnance with HTTP status code 200. (Response)
+    - Success: Returns a JSON list of reminders for the specified prescription with HTTP status code 200. (Response)
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
@@ -440,7 +440,7 @@ def get_reminders_by_ordonnance(ordonnance_id):
                 WHERE ordonnance_id = %s
                 ORDER BY due_date DESC
             """
-            cursor.execute(sql, (ordonnance_id,))
+            cursor.execute(sql, (prescription_id,))
             reminders = cursor.fetchall()
 
             for reminder in reminders:
@@ -455,24 +455,24 @@ def get_reminders_by_ordonnance(ordonnance_id):
         connection.close()
 
 # ===========================
-# Get user ordonnances (for reminder creation)
+# Get user prescription (for reminder creation)
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>/ordonnances', methods=['GET'])
-def get_ordonnances_for_reminders(user_id):
+@prescription_reminders_bp.route('/<int:user_id>/prescription', methods=['GET'])
+def get_prescription_for_reminders(user_id):
     """
     Objective:
-    Retrieve all active ordonnances for a specific user that are eligible for creating prescription reminders.
+    Retrieve all active prescription for a specific user that are eligible for creating prescription reminders.
 
     Parameters:
-    - user_id: ID of the user whose active ordonnances are requested. (Integer)
+    - user_id: ID of the user whose active prescription are requested. (Integer)
 
     Process:
-    - Queries the database for ordonnances linked to the given user with status 'active'.
+    - Queries the database for prescription linked to the given user with status 'active'.
     - Orders the results by expiration date in descending order.
     - Converts date fields (`date_prescription` and `date_expiration`) to ISO 8601 format.
 
     Return Value:
-    - Success: Returns a JSON list of active ordonnances with HTTP status code 200. (Response)
+    - Success: Returns a JSON list of active prescription with HTTP status code 200. (Response)
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
@@ -493,14 +493,14 @@ def get_ordonnances_for_reminders(user_id):
                 ORDER BY date_expiration DESC
             """
             cursor.execute(sql, (user_id,))
-            ordonnances = cursor.fetchall()
+            prescription = cursor.fetchall()
 
-            for ordonnance in ordonnances:
+            for ordonnance in prescription:
                 for key in ['date_prescription', 'date_expiration']:
                     if ordonnance.get(key):
                         ordonnance[key] = ordonnance[key].isoformat()
 
-            return jsonify(ordonnances), 200
+            return jsonify(prescription), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
