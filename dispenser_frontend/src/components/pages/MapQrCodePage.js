@@ -13,7 +13,7 @@ function DirectionQRPage() {
     // State for QR code display
     const [qrCodeUrl, setQrCodeUrl] = useState(null);
     const [uniqueCode, setUniqueCode] = useState(null);
-    const [loading, setLoading] = useState(generating);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // Keep track of all generated QR IDs for cleanup
@@ -107,19 +107,25 @@ function DirectionQRPage() {
      * Generate QR code once on component mount
      */
     useEffect(() => {
-        if (!hasGenerated.current && generating && qrData) {
-            hasGenerated.current = true;
-            generateQRCodeOnce();
-        } else {
-            setLoading(false);
-        }
+        const generate = async () => {
+            if (hasGenerated.current) {
+                return;
+            }
+
+            if (generating && qrData) {
+                hasGenerated.current = true;
+
+                setLoading(true);
+                await new Promise(res => setTimeout(res, 100));
+
+                await generateQRCodeOnce();
+            }
+        };
+
+        generate();
     }, [generating, qrData]);
 
-    /**
-     * Fetch QR code from backend
-     */
     const generateQRCodeOnce = async () => {
-        setLoading(true);
         try {
             const response = await fetch(`${config.backendUrl}/generate_direction_qr`, {
                 method: 'POST',
@@ -129,13 +135,15 @@ function DirectionQRPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                qrIds.current.push(data.id); // Store real DB ID
-                const url = `data:image/png;base64,${data.image}`;
-                setQrCodeUrl(url);
+
+                qrIds.current.push(data.id);
+                setQrCodeUrl(`data:image/png;base64,${data.image}`);
                 setUniqueCode(data.code_unique);
+
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                setError(errorData.error || 'Erreur lors de la génération du QR code');
+                const errMsg = errorData.error || 'Erreur lors de la génération du QR code';
+                setError(errMsg);
             }
         } catch (err) {
             setError('Erreur réseau: ' + err.message);
@@ -220,13 +228,22 @@ function DirectionQRPage() {
                     <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>
                         Itinéraire vers {pharmacyName}
                     </h2>
-                    Scannez ce QR code via l'application mobile PharmaXcess
 
-                    {loading && <div>Génération du QR code...</div>}
-                    {error && <div>{error}</div>}
+                    {/* ✅ Affiche toujours le message tant que QR pas dispo */}
+                    {(!qrCodeUrl && !error) && (
+                        <div className="text-lg font-medium animate-pulse">
+                            Génération du QR code...
+                        </div>
+                    )}
+
+                    {error && <div className="text-red-500">{error}</div>}
+
                     {qrCodeUrl && (
                         <>
-                            <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64 mb-4" />
+                            <div>
+                                Scannez ce QR code via l'application mobile PharmaXcess
+                            </div>
+                            <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64 mb-4 mt-4" />
                             {uniqueCode && (
                                 <div className="mt-2 font-mono text-lg">
                                     Code unique : <span className="font-bold">{uniqueCode}</span>
