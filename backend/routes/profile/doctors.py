@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
+from profile_access import get_current_user_id, profile_access_condition
 
 doctors_bp = Blueprint("doctors", __name__)
 
@@ -28,22 +29,36 @@ def create_doctor():
     - 500 Internal Server Error: If a database error occurs during insertion.
     """
 
-    data = request.get_json()
-    user_id = data.get("utilisateur_id")
-    name = data.get("nom")
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
-    if not user_id or not name:
+    data = request.get_json()
+    utilisateur_id = data.get("utilisateur_id")
+    nom = data.get("nom")
+
+    if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE id = %s AND {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+            if not accessible:
+                return jsonify({"error": "You don't have permission to add a doctor for this user"}), 403
+
             cursor.execute("""
                 INSERT INTO medecins (utilisateur_id, nom, specialite, hopital, telephone, email, adresse)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                user_id,
-                name,
+                utilisateur_id,
+                nom,
                 data.get("specialite"),
                 data.get("hopital"),
                 data.get("telephone"),
@@ -58,8 +73,8 @@ def create_doctor():
 
 
 # GET ALL
-@doctors_bp.route("/doctors/<int:user_id>", methods=["GET"])
-def get_all_doctors(user_id):
+@doctors_bp.route("/doctors", methods=["GET"])
+def get_all_doctors():
     """
     Objective:
     Retrieve all doctor records associated with a specific user.
@@ -74,11 +89,22 @@ def get_all_doctors(user_id):
     - 404 Not Found: If no doctors are found (optional depending on implementation).
     - 500 Internal Server Error: If a database error occurs during retrieval.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM medecins WHERE utilisateur_id=%s", (user_id,))
+            query = f"""
+                SELECT m.*
+                FROM medecins m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE {condition}
+            """
+            cursor.execute(query, (current_user_id, current_user_id))
             doctors = cursor.fetchall()
         return jsonify(doctors), 200
     finally:
@@ -102,12 +128,24 @@ def get_doctor(doctor_id):
     - 404 Not Found: If no doctor exists with the given ID.
     - 500 Internal Server Error: If a database error occurs during retrieval.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM medecins WHERE id=%s", (doctor_id,))
+            query = f"""
+                SELECT m.*
+                FROM medecins m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE m.id = %s AND {condition}
+            """
+            cursor.execute(query, (doctor_id, current_user_id, current_user_id))
             doctor = cursor.fetchone()
+
         if not doctor:
             return jsonify({"error": "Doctor not found"}), 404
         return jsonify(doctor), 200
@@ -140,24 +178,37 @@ def update_doctor(doctor_id):
     - 400 Bad Request: If required fields are missing or invalid.
     - 500 Internal Server Error: If a database error occurs during the update.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE medecins
-                SET nom=%s, specialite=%s, hopital=%s, telephone=%s, email=%s, adresse=%s
-                WHERE id=%s
-            """, (
+            query = f"""
+                UPDATE medecins m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                SET m.nom=%s, m.specialite=%s, m.hopital=%s, m.telephone=%s, m.email=%s, m.adresse=%s
+                WHERE m.id=%s AND {condition}
+            """
+            cursor.execute(query, (
                 data.get("nom"),
                 data.get("specialite"),
                 data.get("hopital"),
                 data.get("telephone"),
                 data.get("email"),
                 data.get("adresse"),
-                doctor_id
+                doctor_id,
+                current_user_id,
+                current_user_id
             ))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Doctor not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Doctor updated successfully"}), 200
     finally:
@@ -181,11 +232,25 @@ def delete_doctor(doctor_id):
     - 404 Not Found: If no doctor exists with the given ID.
     - 500 Internal Server Error: If a database error occurs during deletion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM medecins WHERE id=%s", (doctor_id,))
+            query = f"""
+                DELETE m FROM medecins m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE m.id = %s AND {condition}
+            """
+            cursor.execute(query, (doctor_id, current_user_id, current_user_id))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Doctor not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Doctor deleted successfully"}), 200
     finally:

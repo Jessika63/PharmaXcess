@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
+from profile_access import get_current_user_id, profile_access_condition
 
 traitements_bp = Blueprint('traitements', __name__)
 
@@ -27,6 +28,9 @@ def create_traitement():
     - 400 Bad Request: If required fields (maladie_id or nom) are missing.
     - 500 Internal Server Error: If a database error occurs during insertion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
     maladie_id = data.get("maladie_id")
@@ -35,9 +39,20 @@ def create_traitement():
     if not maladie_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Vérifier que l'utilisateur a accès à la maladie
+            cursor.execute(f"""
+                SELECT id FROM maladies
+                WHERE id=%s AND {condition}
+            """, (maladie_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+            if not accessible:
+                return jsonify({"error": "No permission to add treatment for this disease"}), 403
+
             cursor.execute("""
                 INSERT INTO traitements (maladie_id, nom, debut, fin, dosage, duree, effets_secondaires)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -69,11 +84,21 @@ def get_all_traitements(maladie_id):
     - 404 Not Found: If no treatments are found for the given disease ID.
     - 500 Internal Server Error: If a database error occurs during the query.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM traitements WHERE maladie_id=%s", (maladie_id,))
+            cursor.execute(f"""
+                SELECT t.*
+                FROM traitements t
+                JOIN maladies m ON t.maladie_id = m.id
+                WHERE t.maladie_id=%s AND {condition}
+            """, (maladie_id, current_user_id, current_user_id))
             traitements = cursor.fetchall()
         return jsonify(traitements), 200
     finally:
@@ -97,11 +122,21 @@ def get_traitement(traitement_id):
     - 404 Not Found: If no treatment exists with the given ID.
     - 500 Internal Server Error: If a database error occurs during the query.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM traitements WHERE id=%s", (traitement_id,))
+            cursor.execute(f"""
+                SELECT t.*
+                FROM traitements t
+                JOIN maladies m ON t.maladie_id = m.id
+                WHERE t.id=%s AND {condition}
+            """, (traitement_id, current_user_id, current_user_id))
             traitement = cursor.fetchone()
         if not traitement:
             return jsonify({"error": "Traitement non trouvé"}), 404
@@ -134,20 +169,30 @@ def update_traitement(traitement_id):
     - 400 Bad Request: If required fields are missing or invalid.
     - 500 Internal Server Error: If a database error occurs during the update.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE traitements
-                SET nom=%s, debut=%s, fin=%s, dosage=%s, duree=%s, effets_secondaires=%s
-                WHERE id=%s
+            cursor.execute(f"""
+                UPDATE traitements t
+                JOIN maladies m ON t.maladie_id = m.id
+                SET t.nom=%s, t.debut=%s, t.fin=%s, t.dosage=%s, t.duree=%s, t.effets_secondaires=%s
+                WHERE t.id=%s AND {condition}
             """, (
                 data.get("nom"), data.get("debut"), data.get("fin"),
                 data.get("dosage"), data.get("duree"), data.get("effets_secondaires"),
-                traitement_id
+                traitement_id,
+                current_user_id,
+                current_user_id
             ))
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Traitement non trouvé ou pas d'autorisation"}), 404
             conn.commit()
         return jsonify({"message": "Traitement mis à jour"}), 200
     finally:
@@ -171,11 +216,22 @@ def delete_traitement(traitement_id):
     - 404 Not Found: If the treatment ID does not exist.
     - 500 Internal Server Error: If a database error occurs during deletion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM traitements WHERE id=%s", (traitement_id,))
+            cursor.execute(f"""
+                DELETE t FROM traitements t
+                JOIN maladies m ON t.maladie_id = m.id
+                WHERE t.id=%s AND {condition}
+            """, (traitement_id, current_user_id, current_user_id))
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Traitement non trouvé ou pas d'autorisation"}), 404
             conn.commit()
         return jsonify({"message": "Traitement supprimé"}), 200
     finally:

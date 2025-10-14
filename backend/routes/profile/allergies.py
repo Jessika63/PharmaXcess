@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
+from profile_access import get_current_user_id, profile_access_condition
 
 allergies_bp = Blueprint("allergies", __name__)
 
@@ -26,37 +27,54 @@ def create_allergy():
     - 400 Bad Request: Returned if required fields are missing.
     """
 
-    data = request.get_json()
-    user_id = data.get("utilisateur_id")
-    name = data.get("nom")
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
-    if not user_id or not name:
+    data = request.get_json()
+    utilisateur_id = data.get("utilisateur_id")
+    nom = data.get("nom")
+
+    if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Vérifie que l’utilisateur_id ciblé est bien accessible
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE id = %s AND {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+
+            if not accessible:
+                return jsonify({"error": "You don't have permission to add allergy for this user"}), 403
+
             cursor.execute("""
                 INSERT INTO allergies (utilisateur_id, nom, debut, gravite, symptomes, commentaires)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (
-                user_id,
-                name,
+                utilisateur_id,
+                nom,
                 data.get("debut"),
                 data.get("gravite"),
                 data.get("symptomes"),
-                data.get("commentaires")
+                data.get("commentaires"),
             ))
             conn.commit()
             allergy_id = cursor.lastrowid
+
         return jsonify({"message": "Allergy added successfully", "id": allergy_id}), 201
     finally:
         conn.close()
 
 
 # GET ALL (by user)
-@allergies_bp.route("/allergy/<int:user_id>", methods=["GET"])
-def get_all_allergies(user_id):
+@allergies_bp.route("/allergy", methods=["GET"])
+def get_all_allergies():
     """
     Objective:
     Retrieve all allergy records associated with a specific user.
@@ -71,11 +89,24 @@ def get_all_allergies(user_id):
     - Each record contains fields: id, utilisateur_id, nom, debut, gravite, symptomes, commentaires, created_at, updated_at.
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM allergies WHERE utilisateur_id = %s OR utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s) ", (user_id, user_id))
+            query = f"""
+                SELECT a.*
+                FROM allergies a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE {condition}
+            """
+            cursor.execute(query, (current_user_id, current_user_id))
             allergies = cursor.fetchall()
+
         return jsonify(allergies), 200
     finally:
         conn.close()
@@ -98,22 +129,24 @@ def get_allergy(allergy_id):
     - 404 Not Found: Returns an error message if no allergy with the given ID exists.
     - The allergy record contains fields: id, utilisateur_id, nom, debut, gravite, symptomes, commentaires, created_at, updated_at.
     """
-    current_user_id = session.get("user_id")
-    if not current_user_id:
-        return jsonify({"error": "No active session"}), 401
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT * FROM allergies
-                WHERE id=%s
-                  AND (utilisateur_id = %s
-                       OR utilisateur_id IN (
-                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
-                       ))
-            """, (allergy_id, current_user_id, current_user_id))
+            query = f"""
+                SELECT a.*
+                FROM allergies a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE a.id = %s AND {condition}
+            """
+            cursor.execute(query, (allergy_id, current_user_id, current_user_id))
             allergy = cursor.fetchone()
+
         if not allergy:
             return jsonify({"error": "Allergy not found"}), 404
         return jsonify(allergy), 200
@@ -146,23 +179,23 @@ def update_allergy(allergy_id):
     - 404 Not Found: If the allergy with the given ID does not exist.
     """
 
-    current_user_id = session.get("user_id")
-    if not current_user_id:
-        return jsonify({"error": "No active session"}), 401
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE allergies
-                SET nom=%s, debut=%s, gravite=%s, symptomes=%s, commentaires=%s
-                WHERE id=%s
-                  AND (utilisateur_id = %s
-                       OR utilisateur_id IN (
-                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
-                       ))
-            """, (
+            query = f"""
+                UPDATE allergies a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                SET a.nom=%s, a.debut=%s, a.gravite=%s, a.symptomes=%s, a.commentaires=%s
+                WHERE a.id=%s AND {condition}
+            """
+            cursor.execute(query, (
                 data.get("nom"),
                 data.get("debut"),
                 data.get("gravite"),
@@ -172,9 +205,12 @@ def update_allergy(allergy_id):
                 current_user_id,
                 current_user_id
             ))
+
             if cursor.rowcount == 0:
                 return jsonify({"error": "Allergy not found or no permission"}), 404
+
             conn.commit()
+
         return jsonify({"message": "Allergy updated successfully"}), 200
     finally:
         conn.close()
@@ -198,24 +234,27 @@ def delete_allergy(allergy_id):
     - 500 Internal Server Error: If there is a database error during deletion.
     """
 
-    current_user_id = session.get("user_id")
-    if not current_user_id:
-        return jsonify({"error": "No active session"}), 401
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                DELETE FROM allergies
-                WHERE id=%s
-                  AND (utilisateur_id = %s
-                       OR utilisateur_id IN (
-                           SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
-                       ))
-            """, (allergy_id, current_user_id, current_user_id))
+            query = f"""
+                DELETE a FROM allergies a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE a.id=%s AND {condition}
+            """
+            cursor.execute(query, (allergy_id, current_user_id, current_user_id))
+
             if cursor.rowcount == 0:
                 return jsonify({"error": "Allergy not found or no permission"}), 404
+
             conn.commit()
+
         return jsonify({"message": "Allergy deleted successfully"}), 200
     finally:
         conn.close()

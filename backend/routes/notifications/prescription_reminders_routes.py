@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
+from profile.profile_access import get_current_user_id, profile_access_condition
 
 from db_app import get_app_connection
 
@@ -9,8 +10,8 @@ prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_pr
 # ===========================
 # Get all reminders for user
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>', methods=['GET'])
-def get_prescription_reminders(user_id):
+@prescription_reminders_bp.route('', methods=['GET'])
+def get_prescription_reminders():
     """
     Objective:
     Retrieves all prescription reminders for a specific user, including details from the associated prescription.
@@ -29,10 +30,16 @@ def get_prescription_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of a database or processing error. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     pr.id,
                     pr.utilisateur_id,
@@ -51,26 +58,20 @@ def get_prescription_reminders(user_id):
                     o.statut AS ordonnance_statut
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
-                WHERE pr.utilisateur_id = %s
-                    OR pr.utilisateur_id IN (
-                        SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s
-                    )
+                WHERE {condition}
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id, user_id))
+            cursor.execute(query, (current_user_id, current_user_id))
             reminders = cursor.fetchall()
 
             for reminder in reminders:
-                # Convert date fields to ISO format
                 for key in ['due_date', 'date_prescription', 'date_expiration']:
                     if reminder.get(key):
                         reminder[key] = reminder[key].isoformat()
 
-                # Calculate days until due (only if not completed)
                 if reminder['due_date'] and not reminder['is_completed']:
                     due_date = datetime.strptime(reminder['due_date'], '%Y-%m-%d').date()
-                    today = date.today()
-                    reminder['days_until_due'] = (due_date - today).days
+                    reminder['days_until_due'] = (due_date - date.today()).days
                 else:
                     reminder['days_until_due'] = None
 
@@ -80,6 +81,7 @@ def get_prescription_reminders(user_id):
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
+
 
 # ===========================
 # Create new reminder
@@ -111,22 +113,29 @@ def create_prescription_reminder():
     - Failure: Returns a JSON error message with HTTP status code 400 (missing/invalid fields), 404 (prescription not found), or 500 (database error). (Response)
     """
 
-    try:
-        data = request.get_json()
-        required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
+    condition = profile_access_condition()
+    data = request.get_json()
+    required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+    try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check ordonnaprescriptionnce ownership
-            cursor.execute(
-                "SELECT id FROM ordonnances WHERE id = %s AND utilisateur_id = %s",
-                (data['prescription_id'], data['utilisateur_id'])
-            )
+            # Vérifier que la prescription appartient à un profil accessible
+            query = f"""
+                SELECT id FROM ordonnances
+                WHERE id = %s AND {condition}
+            """
+            cursor.execute(query, (data['prescription_id'], current_user_id, current_user_id))
             if not cursor.fetchone():
-                return jsonify({'error': 'prescription not found or does not belong to user'}), 404
+                return jsonify({'error': 'Prescription not found or not accessible'}), 404
 
             sql = """
                 INSERT INTO prescription_reminders
@@ -135,8 +144,11 @@ def create_prescription_reminder():
             """
 
             due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
-
-            cursor.execute(sql, (
+            cursor.execute("""
+                INSERT INTO prescription_reminders
+                (utilisateur_id, ordonnance_id, name, due_date, sound, is_completed, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
                 data['utilisateur_id'],
                 data['prescription_id'],
                 data['name'],
@@ -147,9 +159,7 @@ def create_prescription_reminder():
             ))
 
             connection.commit()
-            reminder_id = cursor.lastrowid
-
-            return jsonify({'message': 'Prescription reminder created successfully', 'id': reminder_id}), 201
+            return jsonify({'message': 'Reminder created successfully', 'id': cursor.lastrowid}), 201
 
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
@@ -340,8 +350,8 @@ def toggle_prescription_reminder(reminder_id):
 # ===========================
 # Upcoming reminders (30 days)
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>/upcoming', methods=['GET'])
-def get_upcoming_prescription_reminders(user_id):
+@prescription_reminders_bp.route('/upcoming', methods=['GET'])
+def get_upcoming_prescription_reminders():
     """
     Objective:
     Retrieve upcoming prescription reminders for a specific user within the next 30 days that are not yet completed.
@@ -360,10 +370,16 @@ def get_upcoming_prescription_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     pr.id,
                     pr.utilisateur_id,
@@ -382,19 +398,18 @@ def get_upcoming_prescription_reminders(user_id):
                     o.statut AS ordonnance_statut
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
-                WHERE (pr.utilisateur_id = %s
-                    OR pr.utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s))
+                WHERE {condition}
                 AND pr.is_completed = FALSE
                 AND pr.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id, user_id))
+            cursor.execute(query, (current_user_id, current_user_id))
             reminders = cursor.fetchall()
 
-            for reminder in reminders:
+            for r in reminders:
                 for key in ['due_date', 'date_prescription', 'date_expiration']:
-                    if reminder.get(key):
-                        reminder[key] = reminder[key].isoformat()
+                    if r.get(key):
+                        r[key] = r[key].isoformat()
 
             return jsonify(reminders), 200
 
@@ -406,8 +421,8 @@ def get_upcoming_prescription_reminders(user_id):
 # ===========================
 # Get reminders by prescription
 # ===========================
-@prescription_reminders_bp.route('/prescription/<int:prescription_id>', methods=['GET'])
-def get_reminders_by_prescription(prescription_id):
+@prescription_reminders_bp.route('/prescriptions', methods=['GET'])
+def get_prescription_for_reminders():
     """
     Objective:
     Retrieve all prescription reminders associated with a specific prescription.
@@ -480,10 +495,16 @@ def get_prescription_for_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     id,
                     description,
@@ -492,18 +513,16 @@ def get_prescription_for_reminders(user_id):
                     date_expiration,
                     statut
                 FROM ordonnances
-                WHERE (utilisateur_id = %s
-                    OR utilisateur_id IN (SELECT sub_profile_id FROM profile_relations WHERE main_profile_id = %s))
-                AND statut = 'active'
+                WHERE {condition} AND statut = 'active'
                 ORDER BY date_expiration DESC
             """
-            cursor.execute(sql, (user_id, user_id))
+            cursor.execute(query, (current_user_id, current_user_id))
             ordonnances = cursor.fetchall()
 
-            for ordonnance in ordonnances:
+            for o in ordonnances:
                 for key in ['date_prescription', 'date_expiration']:
-                    if ordonnance.get(key):
-                        ordonnance[key] = ordonnance[key].isoformat()
+                    if o.get(key):
+                        o[key] = o[key].isoformat()
 
             return jsonify(ordonnances), 200
 

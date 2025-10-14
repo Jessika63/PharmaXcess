@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
+from profile_access import get_current_user_id, profile_access_condition
 
 hospitalizations_bp = Blueprint("hospitalizations", __name__)
 
@@ -27,25 +28,38 @@ def create_hospitalization():
     - 400 Bad Request: If required fields are missing.
     - 500 Internal Server Error: If a database error occurs during insertion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
-    user_id = data.get("utilisateur_id")
+    utilisateur_id = data.get("utilisateur_id")
     hospitalization_type = data.get("type")
-    description = data.get("description")
 
-    if not user_id or not hospitalization_type:
+    if not utilisateur_id or not hospitalization_type:
         return jsonify({"error": "Missing required fields"}), 400
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Check access
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE id=%s AND {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+            if not accessible:
+                return jsonify({"error": "You don't have permission to add a hospitalization for this user"}), 403
+
             cursor.execute("""
                 INSERT INTO hospitalisations (utilisateur_id, type, description, dates, service, hopital, medecin)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                user_id,
+                utilisateur_id,
                 hospitalization_type,
-                description,
+                data.get("description"),
                 data.get("dates"),
                 data.get("service"),
                 data.get("hopital"),
@@ -58,9 +72,9 @@ def create_hospitalization():
         conn.close()
 
 
-# GET ALL (by user)
-@hospitalizations_bp.route("/hospitalizations/<int:user_id>", methods=["GET"])
-def get_all_hospitalizations(user_id):
+# GET ALL
+@hospitalizations_bp.route("/hospitalizations", methods=["GET"])
+def get_all_hospitalizations():
     """
     Objective:
     Retrieve all hospitalization records for a specific user.
@@ -75,18 +89,29 @@ def get_all_hospitalizations(user_id):
     - 404 Not Found: If the user has no hospitalizations (optional handling).
     - 500 Internal Server Error: If a database error occurs during the query.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM hospitalisations WHERE utilisateur_id=%s", (user_id,))
+            query = f"""
+                SELECT h.*
+                FROM hospitalisations h
+                JOIN utilisateurs u ON h.utilisateur_id = u.id
+                WHERE {condition}
+            """
+            cursor.execute(query, (current_user_id, current_user_id))
             hospitalizations = cursor.fetchall()
         return jsonify(hospitalizations), 200
     finally:
         conn.close()
 
 
-# GET UNIQUE
+# GET ONE
 @hospitalizations_bp.route("/hospitalization/entry/<int:hospitalization_id>", methods=["GET"])
 def get_hospitalization(hospitalization_id):
     """
@@ -103,11 +128,22 @@ def get_hospitalization(hospitalization_id):
     - 404 Not Found: If no hospitalization with the given ID exists.
     - 500 Internal Server Error: If a database error occurs during the query.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM hospitalisations WHERE id=%s", (hospitalization_id,))
+            query = f"""
+                SELECT h.*
+                FROM hospitalisations h
+                JOIN utilisateurs u ON h.utilisateur_id = u.id
+                WHERE h.id=%s AND {condition}
+            """
+            cursor.execute(query, (hospitalization_id, current_user_id, current_user_id))
             hospitalization = cursor.fetchone()
         if not hospitalization:
             return jsonify({"error": "Hospitalization not found"}), 404
@@ -140,24 +176,37 @@ def update_hospitalization(hospitalization_id):
     - 400 Bad Request: If required fields are missing or invalid.
     - 500 Internal Server Error: If a database error occurs during the update.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
+    condition = profile_access_condition()
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE hospitalisations
-                SET type=%s, description=%s, dates=%s, service=%s, hopital=%s, medecin=%s
-                WHERE id=%s
-            """, (
+            query = f"""
+                UPDATE hospitalisations h
+                JOIN utilisateurs u ON h.utilisateur_id = u.id
+                SET h.type=%s, h.description=%s, h.dates=%s, h.service=%s, h.hopital=%s, h.medecin=%s
+                WHERE h.id=%s AND {condition}
+            """
+            cursor.execute(query, (
                 data.get("type"),
                 data.get("description"),
                 data.get("dates"),
                 data.get("service"),
                 data.get("hopital"),
                 data.get("medecin"),
-                hospitalization_id
+                hospitalization_id,
+                current_user_id,
+                current_user_id
             ))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Hospitalization not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Hospitalization updated successfully"}), 200
     finally:
@@ -181,11 +230,25 @@ def delete_hospitalization(hospitalization_id):
     - 404 Not Found: If no record exists with the given ID.
     - 500 Internal Server Error: If a database error occurs during deletion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition()
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM hospitalisations WHERE id=%s", (hospitalization_id,))
+            query = f"""
+                DELETE h FROM hospitalisations h
+                JOIN utilisateurs u ON h.utilisateur_id = u.id
+                WHERE h.id=%s AND {condition}
+            """
+            cursor.execute(query, (hospitalization_id, current_user_id, current_user_id))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Hospitalization not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Hospitalization deleted successfully"}), 200
     finally:
