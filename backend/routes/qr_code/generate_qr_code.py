@@ -7,13 +7,15 @@ import os
 import json
 import base64
 from io import BytesIO
-from profile.profile_access import get_current_user_id, profile_access_condition
-
 from db_app import get_app_connection
 
 # Add scripts path to import QR code generation
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from scripts.qrcode.qrCodeGen import generate_rounded_qr_code
+from routes.profile.profile_access import get_current_user_id, profile_access_condition
+
 
 # Blueprint for QR code generation
 generate_qr_bp = Blueprint('generate_qr', __name__)

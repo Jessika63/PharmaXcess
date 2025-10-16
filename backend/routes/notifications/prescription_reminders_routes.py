@@ -1,9 +1,12 @@
 
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
-from profile.profile_access import get_current_user_id, profile_access_condition
-
+import sys
+import os
 from db_app import get_app_connection
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from routes.profile.profile_access import get_current_user_id, profile_access_condition
 
 prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_prefix='/prescription-reminders')
 
@@ -421,8 +424,8 @@ def get_upcoming_prescription_reminders():
 # ===========================
 # Get reminders by prescription
 # ===========================
-@prescription_reminders_bp.route('/prescriptions', methods=['GET'])
-def get_prescription_for_reminders():
+@prescription_reminders_bp.route('/prescription/<int:prescription_id>', methods=['GET'])
+def get_reminders_by_prescription(prescription_id):
     """
     Objective:
     Retrieve all prescription reminders associated with a specific prescription.

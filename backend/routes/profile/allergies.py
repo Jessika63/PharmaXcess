@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
-from profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition
 
 allergies_bp = Blueprint("allergies", __name__)
 
