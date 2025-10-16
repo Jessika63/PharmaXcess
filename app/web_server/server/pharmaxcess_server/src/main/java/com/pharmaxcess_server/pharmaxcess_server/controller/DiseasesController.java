@@ -1,9 +1,9 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
 import com.pharmaxcess_server.pharmaxcess_server.dto.IDDto;
-import com.pharmaxcess_server.pharmaxcess_server.model.Diseases;
-import com.pharmaxcess_server.pharmaxcess_server.dto.DiseasesCreationRequest;
-import com.pharmaxcess_server.pharmaxcess_server.service.DiseasesService;
+import com.pharmaxcess_server.pharmaxcess_server.model.Disease;
+import com.pharmaxcess_server.pharmaxcess_server.dto.DiseaseCreationRequest;
+import com.pharmaxcess_server.pharmaxcess_server.service.DiseaseService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,16 +30,16 @@ import java.util.List;
 @Tag(name = "Diseasess routes", description = "Operations related to diseasess")
 public class DiseasesController {
 
-    private final DiseasesService diseasesService;
+    private final DiseaseService diseaseService;
 
     /**
      * Constructs a DiseasesController.
      *
-     * @param diseasesService the service for handling diseases operations
+     * @param diseaseService the service for handling diseases operations
      */
     @Autowired
-    public DiseasesController(DiseasesService diseasesService) {
-        this.diseasesService = diseasesService;
+    public DiseasesController(DiseaseService diseaseService) {
+        this.diseaseService = diseaseService;
     }
 
     /**
@@ -60,10 +60,10 @@ public class DiseasesController {
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public List<Diseases> getUserDiseases() {
+    public List<Disease> getUserDiseases() {
         //String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
 
-        return diseasesService.getUserDiseases(1);
+        return diseaseService.getUserDisease(1);
     }
 
     /**
@@ -85,8 +85,8 @@ public class DiseasesController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public int createDiseases(@RequestBody DiseasesCreationRequest body) {
-        return diseasesService.createDiseases(body);
+    public int createDiseases(@RequestBody DiseaseCreationRequest body) {
+        return diseaseService.createDisease(body);
     }
 
         /**
@@ -109,6 +109,6 @@ public class DiseasesController {
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     public int deleteDiseases(@RequestBody IDDto body) {
-        return diseasesService.deleteDiseases(body);
+        return diseaseService.deleteDisease(body);
     }
 }
