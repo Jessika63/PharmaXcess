@@ -1,9 +1,9 @@
 package com.pharmaxcess_server.pharmaxcess_server.controller;
 
 import com.pharmaxcess_server.pharmaxcess_server.dto.IDDto;
-import com.pharmaxcess_server.pharmaxcess_server.model.Allergies;
-import com.pharmaxcess_server.pharmaxcess_server.dto.AllergiesCreationRequest;
-import com.pharmaxcess_server.pharmaxcess_server.service.AllergiesService;
+import com.pharmaxcess_server.pharmaxcess_server.model.Allergy;
+import com.pharmaxcess_server.pharmaxcess_server.dto.AllergyCreationRequest;
+import com.pharmaxcess_server.pharmaxcess_server.service.AllergyService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +30,7 @@ import java.util.List;
 @Tag(name = "Allergiess routes", description = "Operations related to allergiess")
 public class AllergiesController {
 
-    private final AllergiesService allergiesService;
+    private final AllergyService allergiesService;
 
     /**
      * Constructs a AllergiesController.
@@ -38,7 +38,7 @@ public class AllergiesController {
      * @param allergiesService the service for handling allergies operations
      */
     @Autowired
-    public AllergiesController(AllergiesService allergiesService) {
+    public AllergiesController(AllergyService allergiesService) {
         this.allergiesService = allergiesService;
     }
 
@@ -60,10 +60,10 @@ public class AllergiesController {
         @ApiResponse(responseCode = "403", description = "Insufficient permissions."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public List<Allergies> getUserAllergies() {
-        String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+    public List<Allergy> getUserAllergies() {
+        //String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
 
-        return allergiesService.getUserAllergies(1);
+        return allergiesService.getUserAllergy(1);
     }
 
     /**
@@ -85,8 +85,8 @@ public class AllergiesController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
-    public int createAllergies(@RequestBody AllergiesCreationRequest body) {
-        return allergiesService.createAllergies(body);
+    public int createAllergies(@RequestBody AllergyCreationRequest body) {
+        return allergiesService.createAllergy(body);
     }
 
         /**
@@ -109,6 +109,6 @@ public class AllergiesController {
     })
     @PreAuthorize("@roleHierarchyUtil.hasSufficientRole(authentication.authorities.iterator().next().authority, 'ROLE_USER')")
     public int deleteAllergies(@RequestBody IDDto body) {
-        return allergiesService.deleteAllergies(body);
+        return allergiesService.deleteAllergy(body);
     }
 }
