@@ -14,8 +14,6 @@ public class DiseaseCreationRequest {
     private String medication;
     private String examens;
     private LocalDateTime date;
-    private String medications;
-
 
     /**
      * Default constructor for DiseaseCreationRequest.
@@ -75,24 +73,6 @@ public class DiseaseCreationRequest {
      */
     public void setDate(LocalDateTime date) {
         this.date = date;
-    }
-
-    /**
-     * Returns the médications associated with this DiseaseCreationRequest.
-     *
-     * @return the médications as an String
-     */
-    public String getMedications() {
-        return medications;
-    }
-
-    /**
-     * Sets the medications associated with this DiseaseCreationRequest.
-     *
-     * @param medications as a String
-     */
-    public void setMedications(String medications) {
-        this.medications = medications;
     }
 
     /**
