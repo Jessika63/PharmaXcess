@@ -38,7 +38,7 @@ public class DiseaseService {
      * @return the created {@link Disease}
      */
     public int createDisease(DiseaseCreationRequest diseaseCreationRequest) {
-        return diseaseRepository.createDisease(1, diseaseCreationRequest.getName(), diseaseCreationRequest.getDate(), diseaseCreationRequest.getMedications());
+        return diseaseRepository.createDisease(1, diseaseCreationRequest.getName(), diseaseCreationRequest.getDescription(), diseaseCreationRequest.getDate(), diseaseCreationRequest.getMedication(), diseaseCreationRequest.getExamens());
     }
 
     /**
