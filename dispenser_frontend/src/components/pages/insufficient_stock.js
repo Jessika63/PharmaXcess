@@ -68,6 +68,9 @@ function InsufficientStock() {
               }
             );
           });
+        } else {
+          lat = config.Default_Location.lat;
+          lon = config.Default_Location.lon;
         }
       } catch (geoError) {
         setError('Impossible d\'obtenir votre position.');
@@ -246,12 +249,12 @@ function InsufficientStock() {
       setSelectedPharmacy(pharmacy);
       setPharmaciesModalOpen(false);
 
-      // Reset le focusedTransportIndex et ajouter un léger délai
+      // Reset the focusedTransportIndex and add a slight delay
       setFocusedTransportIndex(0);
 
       setTimeout(() => {
         setTransportModalOpen(true);
-      }, 50); // Petit délai pour laisser le temps à l'événement Enter de se terminer
+      }, 50); // Small delay to allow time for the Enter event to complete
     };
 
     // Close modal handler
@@ -308,6 +311,9 @@ function InsufficientStock() {
               }
             );
           });
+        } else {
+          lat = config.Default_Location.lat;
+          lon = config.Default_Location.lon;
         }
       } catch (geoError) {
         setError('Impossible d\'obtenir votre position.');

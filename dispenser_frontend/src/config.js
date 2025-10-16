@@ -41,6 +41,24 @@ if (env === 'production') {
     console.error("⚠️ La variable ENV n'est pas définie correctement");
 }
 
+// Define the constants separately first
+const Epitech_Paris = {
+  lat: 48.815273,
+  lon: 2.363006,
+  name: "Epitech Kremlin-Bicêtre",
+};
+
+const Epitech_Lyon = {
+  lat: 45.746288,
+  lon: 4.835127,
+  name: "Epitech Lyon",
+};
+
+const getDefaultLocation = () => {
+  const location = process.env.REACT_APP_DEFAULT_LOCATION || 'paris';
+  return location === 'lyon' ? Epitech_Lyon : Epitech_Paris;
+};
+
 const config = {
   // Backend configuration
   backendUrl: backendUrl,
@@ -261,6 +279,11 @@ const config = {
     bottomMedium: 'mb-8',
     bottomLarge: 'mb-12',
   },
+  // Default position if no geolocation
+  Epitech_Paris: Epitech_Paris,
+  Epitech_Lyon: Epitech_Lyon,
+  Default_Location: getDefaultLocation(),
+
 };
 
 export default config;

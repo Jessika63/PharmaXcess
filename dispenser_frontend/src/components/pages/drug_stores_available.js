@@ -147,7 +147,10 @@ function DrugStoresAvailable() {
         }
       );
     } else {
-      alert("Postion not supported by browser.");
+      alert(`Position not supported by browser. Using default location (${config.Default_Location.name}).`);
+      const defaultLat = config.Default_Location.lat;
+      const defaultLon = config.Default_Location.lon;
+      fetchPharmacies(defaultLat, defaultLon);
       setLoading(false);
     }
   }, [navigate, location.pathname]);
