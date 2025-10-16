@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition, profile_switch_condition
 
 sub_profile_bp = Blueprint('sub_profile', __name__)
 
@@ -19,6 +19,7 @@ def register_subprofile():
     prenom = data.get("prenom")
     profile_type = data.get("profile_type")
     main_profile_id = data.get("main_profile_id")
+    email = data.get("email")  # facultatif
 
     # ✅ Validation
     if not nom or not prenom or not profile_type or not main_profile_id:
@@ -28,22 +29,22 @@ def register_subprofile():
 
     conn = get_app_connection()
     try:
-        with conn.cursor(dictionary=True) as cursor:
+        with conn.cursor() as cursor:
             # ✅ Vérifie que l'utilisateur courant a bien accès au profil principal
             condition = profile_access_condition()
             cursor.execute(
-                f"SELECT id, email FROM utilisateurs WHERE id = %s AND {condition}",
-                (main_profile_id, current_user_id, current_user_id)
+                f"SELECT id FROM utilisateurs WHERE {condition}",
+                (main_profile_id, current_user_id)
             )
             main_profile = cursor.fetchone()
             if not main_profile:
                 return jsonify({"error": "You are not allowed to create a sub-profile for this user"}), 403
 
-            # 🔹 Crée le sous-profil
+            # 🔹 Crée le sous-profil avec email facultatif
             cursor.execute("""
                 INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, profile_type)
                 VALUES (%s, %s, %s, '', %s)
-            """, (nom, prenom, main_profile["email"], profile_type))
+            """, (nom, prenom, email, profile_type))
             sub_profile_id = cursor.lastrowid
 
             # 🔹 Enregistre la relation
@@ -58,7 +59,7 @@ def register_subprofile():
             "sub_profile_id": sub_profile_id,
             "profile_type": profile_type,
             "main_profile_id": main_profile_id,
-            "email_used": main_profile["email"]
+            "email_used": email
         }), 201
 
     except Exception as e:
@@ -85,18 +86,16 @@ def switch_profile():
 
     conn = get_app_connection()
     try:
-        with conn.cursor(dictionary=True) as cursor:
-            # ✅ Vérifie que le profil cible est accessible
-            condition = profile_access_condition()
+        with conn.cursor() as cursor:
+            condition = profile_switch_condition()
             cursor.execute(
-                f"SELECT * FROM utilisateurs WHERE id = %s AND {condition}",
+                f"SELECT * FROM utilisateurs WHERE {condition}",
                 (new_profile_id, current_user_id, current_user_id)
             )
             target_profile = cursor.fetchone()
             if not target_profile:
                 return jsonify({"error": "You don't have permission to access this profile"}), 403
 
-        # 🔹 Met à jour la session
         session["user_id"] = target_profile["id"]
 
         return jsonify({
@@ -125,14 +124,14 @@ def get_accessible_profiles():
 
     conn = get_app_connection()
     try:
-        with conn.cursor(dictionary=True) as cursor:
+        with conn.cursor() as cursor:
             # ✅ Récupère tous les utilisateurs accessibles
-            condition = profile_access_condition()
+            condition = profile_switch_condition()
             cursor.execute(f"""
                 SELECT u.id, u.nom, u.prenom, u.profile_type, u.role
                 FROM utilisateurs u
                 WHERE {condition}
-            """, (current_user_id, current_user_id))
+            """, (current_user_id, current_user_id, current_user_id))
             profiles = cursor.fetchall()
 
         return jsonify({

@@ -479,8 +479,8 @@ def get_reminders_by_prescription(prescription_id):
 # ===========================
 # Get user prescription (for reminder creation)
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>/prescription', methods=['GET'])
-def get_prescription_for_reminders(user_id):
+@prescription_reminders_bp.route('/prescription', methods=['GET'])
+def get_prescription_for_reminders():
     """
     Objective:
     Retrieve all active prescription for a specific user that are eligible for creating prescription reminders.

@@ -15,9 +15,27 @@ def profile_access_condition():
     autoriser l'accès à un profil principal ou à ses sous-profils.
     """
     return """
-        (utilisateur_id = %s
-         OR utilisateur_id IN (
+        (id = %s
+         OR id IN (
              SELECT sub_profile_id FROM profile_relations
              WHERE main_profile_id = %s
+         ))
+    """
+
+def profile_switch_condition():
+    """
+    Condition SQL pour permettre à un profil principal
+    et à ses sous-profils de s'accéder mutuellement.
+    Utilisée uniquement pour switch_profile et accessible_profiles.
+    """
+    return """
+        (id = %s
+         OR id IN (
+             SELECT sub_profile_id FROM profile_relations
+             WHERE main_profile_id = %s
+         )
+         OR id IN (
+             SELECT main_profile_id FROM profile_relations
+             WHERE sub_profile_id = %s
          ))
     """
