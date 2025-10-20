@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { CustomPicker } from '../../components';
 import createStyles from '../../styles/SignUp.style';
 
 type SignUpProps = {
@@ -23,6 +24,7 @@ type SignUpProps = {
 };
 
 interface FormData {
+    userType: 'patient' | 'professional';
     email: string;
     password: string;
     confirmPassword: string;
@@ -30,6 +32,7 @@ interface FormData {
 }
 
 interface FormErrors {
+    userType?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
@@ -62,6 +65,7 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
 
     // Form state
     const [formData, setFormData] = useState<FormData>({
+        userType: 'patient',
         email: '',
         password: '',
         confirmPassword: '',
@@ -125,6 +129,11 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
     const validateForm = useCallback((): boolean => {
         const newErrors: FormErrors = {};
 
+        // User type validation 
+        if (!formData.userType) { 
+            newErrors.userType = 'Le type de compte est requis';
+        }
+
         // Email validation
         if (!formData.email.trim()) {
             newErrors.email = 'L\'email est requis';
@@ -177,7 +186,7 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
         setErrors({});
 
         try {
-            const success = await register(formData.email, formData.password, formData.email.split('@')[0]);
+            const success = await register(formData.email, formData.password, formData.userType, formData.email.split('@')[0]);
             
             if (success) {
                 AccessibilityInfo.announceForAccessibility('Inscription réussie');
@@ -267,6 +276,24 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
                         {errors.general}
                     </Text>
                 )}
+
+{/* 
+                {/* User Type Selection */}
+                <View style={styles.inputContainer}>
+                    <CustomPicker
+                        label="Type de compte *"
+                        selectedValue={formData.userType}
+                        onValueChange={(value) => updateFormData('userType', value as string)}
+                        options={[
+                            { label: 'Patient', value: 'patient' },
+                            { label: 'Professionnel de santé', value: 'professional' }
+                        ]}
+                        placeholder="Sélectionnez votre type de compte"
+                        accessibilityLabel="Type de compte"
+                        accessibilityHint="Choisissez entre Patient ou Professionnel de santé"
+                        error={errors.userType}
+                    />
+                </View>
 
                 {/* Email input */}
                 <View style={styles.inputContainer}>

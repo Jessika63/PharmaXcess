@@ -12,7 +12,6 @@ import Chat from '../screens/communication/Chat.native';
 
 // Health screens 
 // Importing various health-related screens for managing user health records
-import Diseases from '../screens/health/Diseases.native';
 import DiseasesProfile from '../screens/health/DiseasesProfile.native';
 import Allergies from '../screens/health/Allergies.native';
 import FamilyHistory from '../screens/health/FamilyHistory.native';
