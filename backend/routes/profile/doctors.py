@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 doctors_bp = Blueprint("doctors", __name__)
 
@@ -40,7 +40,8 @@ def create_doctor():
     if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
-    condition = profile_access_condition()
+    # Verify access to the target utilisateur (create doctor for this user)
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
@@ -93,7 +94,8 @@ def get_all_doctors():
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For listing doctors, filter by owner column
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -132,7 +134,8 @@ def get_doctor(doctor_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For retrieving a doctor record, ensure owner matches
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -183,7 +186,7 @@ def update_doctor(doctor_id):
         return error_response, status
 
     data = request.get_json()
-    condition = profile_access_condition()
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -236,7 +239,7 @@ def delete_doctor(doctor_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:

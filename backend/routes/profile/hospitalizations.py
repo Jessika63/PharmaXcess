@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 hospitalizations_bp = Blueprint("hospitalizations", __name__)
 
@@ -39,7 +39,8 @@ def create_hospitalization():
     if not utilisateur_id or not hospitalization_type:
         return jsonify({"error": "Missing required fields"}), 400
 
-    condition = profile_access_condition()
+    # Verify access to the provided utilisateur_id (target check)
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
@@ -47,7 +48,7 @@ def create_hospitalization():
             # Check access
             cursor.execute(f"""
                 SELECT id FROM utilisateurs
-                WHERE id=%s AND {condition}
+                WHERE {condition}
             """, (utilisateur_id, current_user_id, current_user_id))
             accessible = cursor.fetchone()
             if not accessible:
@@ -93,7 +94,8 @@ def get_all_hospitalizations():
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For queries on hospitalisations, filter by owner column
+    condition = profile_access_condition('h.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -132,7 +134,8 @@ def get_hospitalization(hospitalization_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For single hospitalization retrieval/update/delete, ensure owner matches
+    condition = profile_access_condition('h.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -181,7 +184,7 @@ def update_hospitalization(hospitalization_id):
         return error_response, status
 
     data = request.get_json()
-    condition = profile_access_condition()
+    condition = profile_access_condition('h.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -234,7 +237,7 @@ def delete_hospitalization(hospitalization_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('h.utilisateur_id')
 
     conn = get_app_connection()
     try:

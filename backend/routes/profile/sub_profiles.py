@@ -31,10 +31,12 @@ def register_subprofile():
     try:
         with conn.cursor() as cursor:
             # ✅ Vérifie que l'utilisateur courant a bien accès au profil principal
-            condition = profile_access_condition()
+            # Use target access check: ensure main_profile_id is accessible by current_user
+            from .profile_access import profile_target_access_condition
+            condition = profile_target_access_condition('id')
             cursor.execute(
                 f"SELECT id FROM utilisateurs WHERE {condition}",
-                (main_profile_id, current_user_id)
+                (main_profile_id, current_user_id, current_user_id)
             )
             main_profile = cursor.fetchone()
             if not main_profile:
@@ -83,6 +85,15 @@ def switch_profile():
     new_profile_id = data.get("new_profile_id")
     if not new_profile_id:
         return jsonify({"error": "Missing new_profile_id"}), 400
+
+    # Normalize and check if user already switched
+    try:
+        new_profile_id = int(new_profile_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid new_profile_id"}), 400
+
+    if new_profile_id == current_user_id:
+        return jsonify({"message": f"Already using profile {new_profile_id}"}), 200
 
     conn = get_app_connection()
     try:

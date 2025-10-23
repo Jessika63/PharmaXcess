@@ -39,7 +39,8 @@ def create_traitement():
     if not maladie_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
-    condition = profile_access_condition()
+    # Ensure the maladie owner is accessible (maladies table has utilisateur_id)
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -88,7 +89,8 @@ def get_all_traitements(maladie_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For listing traitements linked to a maladie, check the maladie owner
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -126,7 +128,8 @@ def get_traitement(traitement_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For single traitement retrieval, ensure the linked maladie owner is accessible
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -174,7 +177,7 @@ def update_traitement(traitement_id):
         return error_response, status
 
     data = request.get_json()
-    condition = profile_access_condition()
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -220,7 +223,7 @@ def delete_traitement(traitement_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
     try:

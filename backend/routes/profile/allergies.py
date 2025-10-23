@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 allergies_bp = Blueprint("allergies", __name__)
 
@@ -38,7 +38,8 @@ def create_allergy():
     if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
-    condition = profile_access_condition()
+    # Verify target utilisateur is accessible by current user
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
@@ -46,7 +47,7 @@ def create_allergy():
             # Vérifie que l’utilisateur_id ciblé est bien accessible
             cursor.execute(f"""
                 SELECT id FROM utilisateurs
-                WHERE id = %s AND {condition}
+                WHERE {condition}
             """, (utilisateur_id, current_user_id, current_user_id))
             accessible = cursor.fetchone()
 
@@ -93,7 +94,7 @@ def get_all_allergies():
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -133,7 +134,7 @@ def get_allergy(allergy_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -184,7 +185,7 @@ def update_allergy(allergy_id):
         return error_response, status
 
     data = request.get_json()
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -238,7 +239,7 @@ def delete_allergy(allergy_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:

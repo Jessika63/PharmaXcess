@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 family_history_bp = Blueprint("family_history", __name__)
 
@@ -38,14 +38,15 @@ def create_family_history():
     if not utilisateur_id or not maladie:
         return jsonify({"error": "Missing required fields"}), 400
 
-    condition = profile_access_condition()
+    # Verify access to the provided utilisateur_id (target check)
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute(f"""
                 SELECT id FROM utilisateurs
-                WHERE id=%s AND {condition}
+                WHERE {condition}
             """, (utilisateur_id, current_user_id, current_user_id))
             accessible = cursor.fetchone()
             if not accessible:
@@ -89,7 +90,8 @@ def get_all_family_history():
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For listing antecedents, filter by owner column
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -128,7 +130,8 @@ def get_family_history(entry_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    # For single entry retrieval/update/delete, filter by owner column
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -176,7 +179,7 @@ def update_family_history(entry_id):
         return error_response, status
 
     data = request.get_json()
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
@@ -227,7 +230,7 @@ def delete_family_history(entry_id):
     if error_response:
         return error_response, status
 
-    condition = profile_access_condition()
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:

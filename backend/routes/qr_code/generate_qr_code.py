@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from scripts.qrcode.qrCodeGen import generate_rounded_qr_code
-from routes.profile.profile_access import get_current_user_id, profile_access_condition
+from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 
 # Blueprint for QR code generation
@@ -113,15 +113,15 @@ def generate_prescription_qr():
     if not utilisateur_id or not ordonnance_id:
         return jsonify({"error": "utilisateur_id and ordonnance_id are required"}), 400
 
-    # Check access to the user/profile
-    condition = profile_access_condition()
+    # Check access to the user/profile (target check)
+    condition = profile_target_access_condition('id')
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(f"""
                 SELECT id FROM utilisateurs
-                WHERE id=%s AND {condition}
+                WHERE {condition}
             """, (utilisateur_id, current_user_id, current_user_id))
             if not cursor.fetchone():
                 return jsonify({"error": "No permission for this user"}), 403
@@ -224,15 +224,15 @@ def generate_profile_qr():
     if not utilisateur_id:
         return jsonify({"error": "utilisateur_id is required"}), 400
 
-    # Check access to the user/profile
-    condition = profile_access_condition()
+    # Check access to the user/profile (target check)
+    condition = profile_target_access_condition('id')
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute(f"""
                 SELECT id FROM utilisateurs
-                WHERE id=%s AND {condition}
+                WHERE {condition}
             """, (utilisateur_id, current_user_id, current_user_id))
             if not cursor.fetchone():
                 return jsonify({"error": "No permission for this user"}), 403

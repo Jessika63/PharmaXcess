@@ -9,33 +9,64 @@ def get_current_user_id():
     return user_id, None, None
 
 
-def profile_access_condition():
+def profile_access_condition(column: str = 'id'):
     """
-    Retourne une condition SQL et les paramètres associés pour
-    autoriser l'accès à un profil principal ou à ses sous-profils.
+    Retourne une condition SQL (string) qui compare la colonne donnée
+    au profil courant et à ses sous-profils.
+
+    column: column name or aliased column (for example 'utilisateur_id',
+            'o.utilisateur_id' or 'pr.utilisateur_id').
+    The returned SQL still expects two parameters when executed: (current_user_id, current_user_id)
     """
-    return """
-        (id = %s
-         OR id IN (
+    return f"""
+        ({column} = %s
+         OR {column} IN (
              SELECT sub_profile_id FROM profile_relations
              WHERE main_profile_id = %s
          ))
     """
 
-def profile_switch_condition():
+def profile_switch_condition(column: str = 'id'):
     """
     Condition SQL pour permettre à un profil principal
     et à ses sous-profils de s'accéder mutuellement.
-    Utilisée uniquement pour switch_profile et accessible_profiles.
+
+    column: column name or aliased column to compare. The returned SQL
+    expects three parameters when executed: (current_user_id, current_user_id, current_user_id)
     """
-    return """
-        (id = %s
-         OR id IN (
+    return f"""
+        ({column} = %s
+         OR {column} IN (
              SELECT sub_profile_id FROM profile_relations
              WHERE main_profile_id = %s
          )
-         OR id IN (
+         OR {column} IN (
              SELECT main_profile_id FROM profile_relations
              WHERE sub_profile_id = %s
          ))
+    """
+
+
+def profile_target_access_condition(column: str = 'id'):
+    """
+    SQL condition to verify a specific target id is accessible by the current user.
+
+    This returns a condition that expects three parameters when executed:
+      (target_id, current_user_id, current_user_id)
+
+    It evaluates to true when the target equals the current user or is a sub-profile
+    of the current user.
+    Example usage:
+      condition = profile_target_access_condition('id')
+      cursor.execute(f"SELECT id FROM utilisateurs WHERE {condition}", (target_id, current_user_id, current_user_id))
+    """
+    return f"""
+        ({column} = %s
+         AND ({column} = %s
+              OR {column} IN (
+                  SELECT sub_profile_id FROM profile_relations
+                  WHERE main_profile_id = %s
+              )
+         )
+        )
     """
