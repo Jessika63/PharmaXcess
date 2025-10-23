@@ -26,7 +26,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
      * @throws IllegalArgumentException if id is {@code null}
      */
     @Query("SELECT o FROM Doctor o WHERE o.id = :id")
-    Optional<Doctor> findDoctorById(@Param("id") Long id);
+    Optional<Doctor> findDoctorById(@Param("id") Integer id);
 
     /**
      * Retrieves all doctors.

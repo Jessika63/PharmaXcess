@@ -10,7 +10,7 @@ import jakarta.persistence.*;
 public class Doctor {
 
     /**
-     * Unique identifier for the ticket.
+     * Unique identifier for the Doctor.
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
