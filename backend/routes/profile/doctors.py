@@ -1,7 +1,12 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
+from .profile_access import (
+    get_current_user_id,
+    profile_access_condition,
+    profile_target_access_condition,
+    is_target_accessible,
+)
 
 doctors_bp = Blueprint("doctors", __name__)
 
@@ -46,12 +51,8 @@ def create_doctor():
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute(f"""
-                SELECT id FROM utilisateurs
-                WHERE id = %s AND {condition}
-            """, (utilisateur_id, current_user_id, current_user_id))
-            accessible = cursor.fetchone()
-            if not accessible:
+            # Verify the target utilisateur is accessible by current user
+            if not is_target_accessible(cursor, utilisateur_id, 'id'):
                 return jsonify({"error": "You don't have permission to add a doctor for this user"}), 403
 
             cursor.execute("""
