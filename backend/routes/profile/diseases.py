@@ -1,7 +1,12 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
+from .profile_access import (
+    get_current_user_id,
+    profile_access_condition,
+    profile_target_access_condition,
+    is_target_accessible,
+)
 
 diseases_bp = Blueprint("diseases", __name__)
 
@@ -188,11 +193,21 @@ def update_disease(disease_id):
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            query = f"""
-                UPDATE maladies m
-                JOIN utilisateurs u ON m.utilisateur_id = u.id
-                SET m.nom=%s, m.description=%s, m.symptomes=%s, m.date_debut=%s
-                WHERE m.id=%s AND {condition}
+            # Fetch owner and verify permission: main can access subprofiles, sub only self
+            cursor.execute("SELECT utilisateur_id FROM maladies WHERE id = %s", (disease_id,))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "Disease not found"}), 404
+
+            owner_id = row['utilisateur_id']
+            if not is_target_accessible(cursor, owner_id, 'id'):
+                return jsonify({"error": "No permission to update this disease"}), 403
+
+            # Perform update now that permission is confirmed
+            query = """
+                UPDATE maladies
+                SET nom=%s, description=%s, symptomes=%s, date_debut=%s
+                WHERE id=%s
             """
             cursor.execute(query, (
                 data.get("nom"),
@@ -200,12 +215,10 @@ def update_disease(disease_id):
                 data.get("symptomes"),
                 data.get("date_debut"),
                 disease_id,
-                current_user_id,
-                current_user_id
             ))
 
             if cursor.rowcount == 0:
-                return jsonify({"error": "Disease not found or no permission"}), 404
+                return jsonify({"error": "Disease not found or not updated"}), 404
 
             conn.commit()
 
