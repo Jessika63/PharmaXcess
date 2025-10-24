@@ -1,15 +1,28 @@
-FROM openjdk:17-jdk-alpine AS build
-
+# ============================================================
+# Build with Maven (production)
+# ============================================================
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY ./pharmaxcess_server/pom.xml .
+RUN mvn dependency:go-offline
 
-ENV JWT_SECRET=this-is-a-dev-key-which-must-be-long-enough
+COPY ./pharmaxcess_server .
+RUN mvn clean package -DskipTests
 
-RUN apk add --no-cache maven
-
-COPY entrypoint.sh /app/entrypoint.sh
-
-RUN chmod +x /app/entrypoint.sh
-
+# ============================================================
+# Runtime (production)
+# ============================================================
+FROM openjdk:17-jdk-slim AS prod
+WORKDIR /app
+COPY --from=build /app/target/pharmaxcess_server-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
+# ============================================================
+# Dev environment (Maven + entrypoint)
+# ============================================================
+FROM maven:3.9.6-eclipse-temurin-17 AS dev
+WORKDIR /app
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]

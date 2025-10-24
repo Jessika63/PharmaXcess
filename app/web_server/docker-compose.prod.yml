@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:13-3.1-alpine
+    container_name: pharmaxcess-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - pharmaxcess-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: dockerfile
+      target: prod
+    container_name: pharmaxcess-server
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: prod
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${SERVER_PORT_EXTERNAL}:${SERVER_PORT_INTERNAL}"
+    depends_on:
+      - db
+    networks:
+      - pharmaxcess-network
+
+  
+volumes:
+  db_data:
+
+networks:
+  pharmaxcess-network:
+    driver: bridge
+
