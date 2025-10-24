@@ -1,7 +1,12 @@
 
 from flask import Blueprint, request, jsonify, session
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
+from .profile_access import (
+    get_current_user_id,
+    profile_access_condition,
+    profile_target_access_condition,
+    is_target_accessible,
+)
 
 allergies_bp = Blueprint("allergies", __name__)
 
@@ -44,14 +49,8 @@ def create_allergy():
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            # Vérifie que l’utilisateur_id ciblé est bien accessible
-            cursor.execute(f"""
-                SELECT id FROM utilisateurs
-                WHERE {condition}
-            """, (utilisateur_id, current_user_id, current_user_id))
-            accessible = cursor.fetchone()
-
-            if not accessible:
+            # Verify the target utilisateur is accessible by current user
+            if not is_target_accessible(cursor, utilisateur_id, 'id'):
                 return jsonify({"error": "You don't have permission to add allergy for this user"}), 403
 
             cursor.execute("""
@@ -190,11 +189,22 @@ def update_allergy(allergy_id):
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            query = f"""
-                UPDATE allergies a
-                JOIN utilisateurs u ON a.utilisateur_id = u.id
-                SET a.nom=%s, a.debut=%s, a.gravite=%s, a.symptomes=%s, a.commentaires=%s
-                WHERE a.id=%s AND {condition}
+            # Fetch the allergy owner and verify the current user has access
+            cursor.execute("SELECT utilisateur_id FROM allergies WHERE id = %s", (allergy_id,))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "Allergy not found"}), 404
+
+            owner_id = row['utilisateur_id']
+            # owner must be accessible by current user (main can access sub; sub only self)
+            if not is_target_accessible(cursor, owner_id, 'id'):
+                return jsonify({"error": "No permission to update this allergy"}), 403
+
+            # Perform the update (we already checked permissions)
+            query = """
+                UPDATE allergies
+                SET nom=%s, debut=%s, gravite=%s, symptomes=%s, commentaires=%s
+                WHERE id=%s
             """
             cursor.execute(query, (
                 data.get("nom"),
@@ -203,12 +213,10 @@ def update_allergy(allergy_id):
                 data.get("symptomes"),
                 data.get("commentaires"),
                 allergy_id,
-                current_user_id,
-                current_user_id
             ))
 
             if cursor.rowcount == 0:
-                return jsonify({"error": "Allergy not found or no permission"}), 404
+                return jsonify({"error": "Allergy not found or not updated"}), 404
 
             conn.commit()
 

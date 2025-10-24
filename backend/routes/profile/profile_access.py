@@ -70,3 +70,27 @@ def profile_target_access_condition(column: str = 'id'):
          )
         )
     """
+
+
+def is_target_accessible(cursor, target_id, column: str = 'id') -> bool:
+    """
+    Helper that checks (using the provided DB cursor) whether a given target id
+    (for example a utilisateur id) is accessible by the current session user.
+
+    Parameters:
+    - cursor: a DB cursor with which to execute the check
+    - target_id: the id to check (int)
+    - column: the column name to compare (defaults to 'id')
+
+    Returns True if accessible, False otherwise. It assumes the caller has an
+    active session (get_current_user_id() returns a user id) — if not, this
+    returns False.
+    """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return False
+
+    condition = profile_target_access_condition(column)
+    cursor.execute(f"SELECT {column} FROM utilisateurs WHERE {condition}",
+                   (target_id, current_user_id, current_user_id))
+    return cursor.fetchone() is not None
