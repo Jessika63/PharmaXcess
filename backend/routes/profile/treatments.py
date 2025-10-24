@@ -1,7 +1,11 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
-from .profile_access import get_current_user_id, profile_access_condition
+from .profile_access import (
+    get_current_user_id,
+    profile_access_condition,
+    is_target_accessible,
+)
 
 traitements_bp = Blueprint('traitements', __name__)
 
@@ -39,19 +43,18 @@ def create_traitement():
     if not maladie_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Ensure the maladie owner is accessible (maladies table has utilisateur_id)
-    condition = profile_access_condition('m.utilisateur_id')
-
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            # Vérifier que l'utilisateur a accès à la maladie
-            cursor.execute(f"""
-                SELECT id FROM maladies
-                WHERE id=%s AND {condition}
-            """, (maladie_id, current_user_id, current_user_id))
-            accessible = cursor.fetchone()
-            if not accessible:
+            # Fetch the maladie owner and verify accessibility
+            cursor.execute("SELECT utilisateur_id FROM maladies WHERE id = %s", (maladie_id,))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "Maladie not found"}), 404
+
+            owner_id = row['utilisateur_id']
+            # owner must be accessible by current user (main can access subs; sub only self)
+            if not is_target_accessible(cursor, owner_id, 'id'):
                 return jsonify({"error": "No permission to add treatment for this disease"}), 403
 
             cursor.execute("""
