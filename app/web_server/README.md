@@ -1,69 +1,131 @@
 # PharmaXcess Web Server
 
-This folder contains the **backend (server)** of the PharmaXcess application.  
+This folder contains the **backend (server)** of the PharmaXcess application.
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Environment Variables](#environment-variables)
-- [Running the Server](#running-the-server)
+- [Development Setup](#development-setup)
+- [Production Setup](#production-setup)
 - [Useful Commands](#useful-commands)
-- [Notes](#notes)
+- [Directory Structure](#directory-structure)
+
+## Overview
+
+The backend is containerized into two services:
+- `db` → PostgreSQL + PostGIS (database)
+- `server` → Spring Boot application
+
+Two Docker Compose configurations are provided:
+- `docker-compose.dev.yml` → for local development
+- `docker-compose.prod.yml` → for production-like environments
 
 ## Prerequisites
 
-- Docker >= 20.10 (tested with 20.10.17)
-- Docker Compose CLI v2 (integrated with Docker, tested with v2.6.0)
-- Basic knowledge of Docker commands is recommended
-- Ensure Docker is running before starting the containers
+- **Docker** >= 20.10 (tested with 20.10.17)
+- **Docker Compose CLI v2** (integrated with Docker, tested with v2.6.0)
+- **Java 17** (optional, if you want to run the app locally outside Docker)
+- Basic understanding of Docker commands
+
+> Make sure Docker is running before starting the containers.
 
 ## Environment Variables
 
-> **Important**: Before running the server, you must create a `.env` file.
+Before running the server, you need to create a `.env` file in the same directory as the `.env.example` file (at the root of `web_server/`).
 
-Create a `.env` file in the `web_server/` directory and follow the structure indicated in `.env.example`.
-
-> ⚠️ Do not commit your `.env` file to version control.
-
-## Running the Server
-
-After creating the `.env` file, run the following command from the `web_server/` directory to start both the database and the server:
+Use the `.env.example` file as a reference - it documents all the required environment variables and their purpose.
+You can simply copy it and update the values to match your local setup:
 
 ```sh
-docker compose up
+cp .env.example .env
+```
+
+Then open `.env` and fill in your configuration (database credentials, ports, JWT secret, etc.).
+
+> ⚠️ Note:
+> - The `.env` file must not be committed to version control.
+> - Update your containers or restart them after modifying environment variables.
+
+## Development Setup
+
+Use the **development compose file** to build and run the app locally with hot reload and Maven cache.
+
+```sh
+docker compose -f docker-compose.dev.yml up
 ```
 
 This will:
-- Pull the latest PostgreSQL image if it’s not already available
-- Build the Spring Boot server image if not already built
-- Start both containers: the database and the server
+- Start the **PostgreSQL/PostGIS** database
+- Start the **Spring Boot server** using the `entrypoint.sh` script
+- Mount your source code for live recompilation
 
-To run only a specific container (e.g., only the database):
+> ⚠️ **Important for Windows users**
+>
+> The `entrypoint.sh` script **must be executed in a Linux-compatible environment** (e.g., WSL2, Docker Desktop with Linux engine).
+>
+> Also, make sure the file uses **LF (Unix)** line endings - not **CRLF (Windows)**. If you edited it with Windows tools (e.g., VS Code, Notepad++), convert it.
+
+### Rebuild images (if you change Dockerfile or dependencies)
+```sh
+docker compose -f docker-compose.dev.yml up --build
+```
+### Stop services
+```sh
+docker compose -f docker-compose.dev.yml down
+```
+
+## Production Setup
+
+Use the **production compose file** to simulate a real deployment:
 
 ```sh
-docker compose up <container_name>
+docker compose -f docker-compose.prod.yml up -d
 ```
-Replace <container_name> with either `db` or `server`.
+
+This will:
+- Build a clean Spring Boot JAR using the `prod` stage of the Dockerfile
+- Run both containers (no live mount, no Maven cache)
+- Start the app with `SPRING_PROFILES_ACTIVE=prod`
+
+### Stop and remove containers
+
+```sh
+docker compose -f docker-compose.prod.yml down
+```
 
 ## Useful Commands
 
-- Stop all services:
-```sh
-docker compose down
-```
-
-- Rebuild containers:
-```sh
-docker compose up --build
-```
-
-- View logs:
-```sh
-docker compose logs -f <container_name>
-```
+| Action                  | Command                                                                 |
+| ----------------------- | ----------------------------------------------------------------------- |
+| View logs (live)        | `docker compose logs -f <service>`                                      |
+| Rebuild & restart       | `docker compose up --build`                                             |
+| Stop all services       | `docker compose down`                                                   |
+| Connect to DB shell     | `docker exec -it pharmaxcess-db psql -U $POSTGRES_USER -d $POSTGRES_DB` |
+| List running containers | `docker ps`                                                             |
 
 ## Notes
 
-- Restart the containers if you make changes to the **.env** file
-- Ensure the `.env` file is created before starting the containers
-- This README focuses only on running the server, not code structure and API documentation.
+- Always **restart** containers after changing the `.env` file
+- The `dev` environment uses `entrypoint.sh` to auto-compile and run with Maven
+- The `prod` environment runs directly from the built JAR file
+- Use strong and long JWT secrets (≥ 32 bytes for HS256)
+- For monitoring in production, `/actuator/health` endpoint is exposed internally for health checks
+
+## Directory Structure
+
+```pgsql
+web_server/
+├── database/
+│   └── init.sql
+├── server/
+│   ├── Dockerfile
+│   ├── entrypoint.sh
+│   ├── pharmaxcess_server/
+│   └── pom.xml
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
+├── .env.example
+└── README.md
+```
