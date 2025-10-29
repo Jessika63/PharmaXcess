@@ -48,7 +48,7 @@
             {
                 "name": "app_db",
                 "container_name": "app-backend-db",
-                "db_dump_date": "07_10_2025",
+                "db_dump_date": "16_10_2025",
                 "port": "3308",
                 "env_prefix": "APP_",
                 "nbr_of_tables": 18

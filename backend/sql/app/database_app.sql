@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    mot_de_passe VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NULL,
+    mot_de_passe VARCHAR(255) NULL,
     date_naissance DATE,
     poids FLOAT,
     taille FLOAT,
@@ -25,13 +25,14 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     reset_token_expiration DATETIME NULL
 );
 
--- Table relations parent-enfant
-CREATE TABLE IF NOT EXISTS relations_parent_enfant (
+-- Table relations entre profiles
+CREATE TABLE IF NOT EXISTS profile_relations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    parent_id INT NOT NULL,
-    enfant_id INT NOT NULL,
-    FOREIGN KEY (parent_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
-    FOREIGN KEY (enfant_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+    main_profile_id INT NOT NULL,
+    sub_profile_id INT NOT NULL,
+    FOREIGN KEY (main_profile_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (sub_profile_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    UNIQUE (main_profile_id, sub_profile_id)
 );
 
 -- Maladies

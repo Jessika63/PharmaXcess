@@ -34,4 +34,3 @@ def register():
     finally:
         if conn:
             conn.close()
-

@@ -173,6 +173,7 @@ def register_blueprints():
     from routes.authentication.login import login_bp
     from routes.authentication.logout import logout_bp
     from routes.authentication.register import register_bp
+    from routes.profile.sub_profiles import sub_profile_bp
     from routes.authentication.forgot_password import forgot_password_bp
     from routes.authentication.reset_password import reset_password_bp
     from routes.notifications.alarms_routes import alarms_bp
@@ -196,6 +197,7 @@ def register_blueprints():
     from routes.profile.allergies import allergies_bp
     from routes.profile.family_history import family_history_bp
     from routes.profile.doctors import doctors_bp
+    from routes.profile.sub_profiles import sub_profile_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -225,6 +227,7 @@ def register_blueprints():
     app.register_blueprint(get_messages_bp)
     app.register_blueprint(delete_message_bp)
     app.register_blueprint(login_bp)
+    app.register_blueprint(sub_profile_bp)
     app.register_blueprint(logout_bp)
     app.register_blueprint(register_bp)
     app.register_blueprint(forgot_password_bp)

@@ -1,6 +1,12 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
+from .profile_access import (
+    get_current_user_id,
+    profile_access_condition,
+    profile_target_access_condition,
+    is_target_accessible,
+)
 
 diseases_bp = Blueprint("diseases", __name__)
 
@@ -26,33 +32,51 @@ def create_disease():
     - 500 Internal Server Error: If there is a database error during insertion.
     """
 
-    data = request.get_json()
-    user_id = data.get("utilisateur_id")
-    name = data.get("nom")
-    description = data.get("description")
-    symptoms = data.get("symptomes")
-    start_date = data.get("date_debut")
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
-    if not user_id or not name:
+    data = request.get_json()
+    utilisateur_id = data.get("utilisateur_id")
+    nom = data.get("nom")
+    description = data.get("description")
+    symptomes = data.get("symptomes")
+    date_debut = data.get("date_debut")
+
+    if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
+
+    # Verify the target utilisateur is accessible by current user
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Vérifie que l’utilisateur_id ciblé est accessible par le profil courant
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+
+            if not accessible:
+                return jsonify({"error": "You don't have permission to add disease for this user"}), 403
+
             cursor.execute("""
                 INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (user_id, name, description, symptoms, start_date))
+            """, (utilisateur_id, nom, description, symptomes, date_debut))
             conn.commit()
             disease_id = cursor.lastrowid
+
         return jsonify({"message": "Disease added successfully", "id": disease_id}), 201
     finally:
         conn.close()
 
 
 # GET ALL
-@diseases_bp.route("/diseases/<int:user_id>", methods=["GET"])
-def get_all_diseases(user_id):
+@diseases_bp.route("/diseases", methods=["GET"])
+def get_all_diseases():
     """
     Objective:
     Retrieve all disease records associated with a specific user.
@@ -68,11 +92,25 @@ def get_all_diseases(user_id):
     - 500 Internal Server Error: If there is a database error during retrieval.
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # For listing maladies, filter by owner column
+    condition = profile_access_condition('m.utilisateur_id')
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM maladies WHERE utilisateur_id=%s", (user_id,))
+            query = f"""
+                SELECT m.*
+                FROM maladies m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE {condition}
+            """
+            cursor.execute(query, (current_user_id, current_user_id))
             diseases = cursor.fetchall()
+
         return jsonify(diseases), 200
     finally:
         conn.close()
@@ -96,11 +134,24 @@ def get_disease(disease_id):
     - 500 Internal Server Error: If there is a database error during retrieval.
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition('m.utilisateur_id')
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM maladies WHERE id=%s", (disease_id,))
+            query = f"""
+                SELECT m.*
+                FROM maladies m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE m.id = %s AND {condition}
+            """
+            cursor.execute(query, (disease_id, current_user_id, current_user_id))
             disease = cursor.fetchone()
+
         if not disease:
             return jsonify({"error": "Disease not found"}), 404
         return jsonify(disease), 200
@@ -132,22 +183,45 @@ def update_disease(disease_id):
     - 500 Internal Server Error: If there is a database error during the update.
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     data = request.get_json()
+    condition = profile_access_condition('m.utilisateur_id')
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
+            # Fetch owner and verify permission: main can access subprofiles, sub only self
+            cursor.execute("SELECT utilisateur_id FROM maladies WHERE id = %s", (disease_id,))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "Disease not found"}), 404
+
+            owner_id = row['utilisateur_id']
+            if not is_target_accessible(cursor, owner_id, 'id'):
+                return jsonify({"error": "No permission to update this disease"}), 403
+
+            # Perform update now that permission is confirmed
+            query = """
                 UPDATE maladies
                 SET nom=%s, description=%s, symptomes=%s, date_debut=%s
                 WHERE id=%s
-            """, (
+            """
+            cursor.execute(query, (
                 data.get("nom"),
                 data.get("description"),
                 data.get("symptomes"),
                 data.get("date_debut"),
-                disease_id
+                disease_id,
             ))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Disease not found or not updated"}), 404
+
             conn.commit()
+
         return jsonify({"message": "Disease updated successfully"}), 200
     finally:
         conn.close()
@@ -171,11 +245,27 @@ def delete_disease(disease_id):
     - 500 Internal Server Error: If there is a database error during deletion.
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition('m.utilisateur_id')
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM maladies WHERE id=%s", (disease_id,))
+            query = f"""
+                DELETE m FROM maladies m
+                JOIN utilisateurs u ON m.utilisateur_id = u.id
+                WHERE m.id = %s AND {condition}
+            """
+            cursor.execute(query, (disease_id, current_user_id, current_user_id))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Disease not found or no permission"}), 404
+
             conn.commit()
+
         return jsonify({"message": "Disease deleted successfully"}), 200
     finally:
         conn.close()

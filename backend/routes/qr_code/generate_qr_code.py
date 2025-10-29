@@ -7,12 +7,15 @@ import os
 import json
 import base64
 from io import BytesIO
-
 from db_app import get_app_connection
 
 # Add scripts path to import QR code generation
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from scripts.qrcode.qrCodeGen import generate_rounded_qr_code
+from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
+
 
 # Blueprint for QR code generation
 generate_qr_bp = Blueprint('generate_qr', __name__)
@@ -99,25 +102,39 @@ def generate_prescription_qr():
         - 400: Missing required fields
         - 500: Internal error
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     data = request.get_json() or {}
-    if not data.get('utilisateur_id') or not data.get('ordonnance_id'):
+    utilisateur_id = data.get('utilisateur_id')
+    ordonnance_id = data.get('ordonnance_id')
+
+    if not utilisateur_id or not ordonnance_id:
         return jsonify({"error": "utilisateur_id and ordonnance_id are required"}), 400
 
-    qr_data = {"id": None, "code_unique": None}
+    # Check access to the user/profile (target check)
+    condition = profile_target_access_condition('id')
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({"error": "No permission for this user"}), 403
+
             code_unique = get_unique_code(cursor, "qrcodes_ordonnances")
             cursor.execute(
                 "INSERT INTO qrcodes_ordonnances (utilisateur_id, ordonnance_id, code_unique) VALUES (%s,%s,%s)",
-                (data['utilisateur_id'], data['ordonnance_id'], code_unique)
+                (utilisateur_id, ordonnance_id, code_unique)
             )
             qr_id = cursor.lastrowid
             conn.commit()
 
-        qr_data['id'] = qr_id
-        qr_data['code_unique'] = code_unique
+        qr_data = {"id": qr_id, "code_unique": code_unique}
         return jsonify(qr_response(qr_data, base_filename="prescription"))
 
     except Exception as e:
@@ -198,16 +215,28 @@ def generate_profile_qr():
         - 400: Missing utilisateur_id
         - 500: Internal error
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     data = request.get_json() or {}
     utilisateur_id = data.get('utilisateur_id')
     if not utilisateur_id:
         return jsonify({"error": "utilisateur_id is required"}), 400
 
-    qr_data = {"id": None, "code_unique": None}
+    # Check access to the user/profile (target check)
+    condition = profile_target_access_condition('id')
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({"error": "No permission for this user"}), 403
+
             code_unique = get_unique_code(cursor, "qrcodes_profiles")
             cursor.execute(
                 "INSERT INTO qrcodes_profiles (utilisateur_id, code_unique) VALUES (%s, %s)",
@@ -216,8 +245,7 @@ def generate_profile_qr():
             qr_id = cursor.lastrowid
             conn.commit()
 
-        qr_data['id'] = qr_id
-        qr_data['code_unique'] = code_unique
+        qr_data = {"id": qr_id, "code_unique": code_unique}
         return jsonify(qr_response(qr_data, base_filename="profile"))
 
     except Exception as e:
