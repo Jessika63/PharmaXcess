@@ -174,7 +174,7 @@ def read_profile_qr():
         - 404: JSON error response if no matching QR code entry is found
         - 500: JSON error response in case of database or server error
     """
-
+    # Vérifier la présence du fichier
     if 'image' not in request.files:
         return jsonify({"error": "Aucun fichier fourni"}), 400
 
@@ -184,12 +184,17 @@ def read_profile_qr():
 
     file = request.files['image']
 
+    # Sauvegarder temporairement le fichier pour le traitement
     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
         file.save(tmp.name)
         tmp_path = tmp.name
 
-    success, content = read_qr_code(tmp_path)
-    os.unlink(tmp_path)
+    try:
+        # Lire le QR code
+        success, content = read_qr_code(tmp_path)
+    finally:
+        os.unlink(tmp_path)  # Nettoyage du fichier temporaire
+
     if not success:
         return jsonify({"error": content}), 400
 
@@ -202,15 +207,19 @@ def read_profile_qr():
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
+            # Récupérer le QR code dans la DB
             cursor.execute("SELECT * FROM qrcodes_profiles WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
             if not qr_entry:
                 return jsonify({"error": "QR code introuvable"}), 404
 
+            # Récupérer l'utilisateur
             cursor.execute("SELECT * FROM utilisateurs WHERE id=%s", (qr_entry['utilisateur_id'],))
             user = cursor.fetchone()
+            if not user:
+                return jsonify({"error": "Utilisateur introuvable"}), 404
 
-        # filtrer les infos selon le rôle
+        # Filtrer les infos selon le rôle
         if scan_role == "distributeur":
             filtered = {
                 "nom": user['nom'],

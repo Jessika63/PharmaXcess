@@ -117,6 +117,7 @@ if __name__ == "__main__":
     build_group.add_argument("--install-front", action="store_true", help="Install frontend dependencies with npm.")
     build_group.add_argument("--install-app", action="store_true", help="Install mobile app dependencies with npm.")
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
+    build_group.add_argument("--location", type=str, choices=['paris', 'lyon'], default='paris', help="Set the default location for the frontend (paris or lyon).")
 
     # Logging & Debugging
     log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")
@@ -187,7 +188,7 @@ if __name__ == "__main__":
             handle_back(
                 backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
             )
-            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
+            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
             mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
             if mobile_app_process:
                 active_processes.append(mobile_app_process)
@@ -206,7 +207,7 @@ if __name__ == "__main__":
                 handle_back(
                     backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:
                     active_processes.append(mobile_app_process)
@@ -215,7 +216,7 @@ if __name__ == "__main__":
                     backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
                 )
             if args.front:
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
             if args.app:
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:

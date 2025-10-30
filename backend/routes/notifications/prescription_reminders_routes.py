@@ -1,16 +1,20 @@
 
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
-
+import sys
+import os
 from db_app import get_app_connection
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from routes.profile.profile_access import get_current_user_id, profile_access_condition
 
 prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_prefix='/prescription-reminders')
 
 # ===========================
 # Get all reminders for user
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>', methods=['GET'])
-def get_prescription_reminders(user_id):
+@prescription_reminders_bp.route('', methods=['GET'])
+def get_prescription_reminders():
     """
     Objective:
     Retrieves all prescription reminders for a specific user, including details from the associated prescription.
@@ -29,10 +33,17 @@ def get_prescription_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of a database or processing error. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # Filter by the owner column on prescription_reminders (pr.utilisateur_id)
+    condition = profile_access_condition('pr.utilisateur_id')
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     pr.id,
                     pr.utilisateur_id,
@@ -51,23 +62,20 @@ def get_prescription_reminders(user_id):
                     o.statut AS ordonnance_statut
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
-                WHERE pr.utilisateur_id = %s
+                WHERE {condition}
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id,))
+            cursor.execute(query, (current_user_id, current_user_id))
             reminders = cursor.fetchall()
 
             for reminder in reminders:
-                # Convert date fields to ISO format
                 for key in ['due_date', 'date_prescription', 'date_expiration']:
                     if reminder.get(key):
                         reminder[key] = reminder[key].isoformat()
 
-                # Calculate days until due (only if not completed)
                 if reminder['due_date'] and not reminder['is_completed']:
                     due_date = datetime.strptime(reminder['due_date'], '%Y-%m-%d').date()
-                    today = date.today()
-                    reminder['days_until_due'] = (due_date - today).days
+                    reminder['days_until_due'] = (due_date - date.today()).days
                 else:
                     reminder['days_until_due'] = None
 
@@ -77,6 +85,7 @@ def get_prescription_reminders(user_id):
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
+
 
 # ===========================
 # Create new reminder
@@ -108,33 +117,44 @@ def create_prescription_reminder():
     - Failure: Returns a JSON error message with HTTP status code 400 (missing/invalid fields), 404 (prescription not found), or 500 (database error). (Response)
     """
 
-    try:
-        data = request.get_json()
-        required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
+    # When creating we need to ensure the ordonnance belongs to an accessible profile.
+    # This query references the `ordonnances` table directly (no alias), so use the plain column name.
+    condition = profile_access_condition('utilisateur_id')
+    data = request.get_json()
+    required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+    try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check ordonnaprescriptionnce ownership
-            cursor.execute(
-                "SELECT id FROM ordonnances WHERE id = %s AND utilisateur_id = %s",
-                (data['prescription_id'], data['utilisateur_id'])
-            )
-            if not cursor.fetchone():
-                return jsonify({'error': 'prescription not found or does not belong to user'}), 404
 
-            sql = """
+            # Vérifier que la prescription appartient à un profil accessible
+            # and fetch the prescription owner so we insert the reminder for that owner
+            query = f"""
+                SELECT id, utilisateur_id FROM ordonnances
+                WHERE id = %s AND {condition}
+            """
+            cursor.execute(query, (data['prescription_id'], current_user_id, current_user_id))
+            ord_row = cursor.fetchone()
+            if not ord_row:
+                return jsonify({'error': 'Prescription not found or not accessible'}), 404
+
+            ordonnance_owner_id = ord_row['utilisateur_id']
+
+            due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            cursor.execute("""
                 INSERT INTO prescription_reminders
                 (utilisateur_id, ordonnance_id, name, due_date, sound, is_completed, notes)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-
-            due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
-
-            cursor.execute(sql, (
-                data['utilisateur_id'],
+            """, (
+                ordonnance_owner_id,
                 data['prescription_id'],
                 data['name'],
                 due_date,
@@ -144,9 +164,7 @@ def create_prescription_reminder():
             ))
 
             connection.commit()
-            reminder_id = cursor.lastrowid
-
-            return jsonify({'message': 'Prescription reminder created successfully', 'id': reminder_id}), 201
+            return jsonify({'message': 'Reminder created successfully', 'id': cursor.lastrowid}), 201
 
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
@@ -187,16 +205,23 @@ def update_prescription_reminder(reminder_id):
     - Failure: Returns a JSON error message with HTTP status code 400 (invalid fields or date format), 404 (reminder not found), or 500 (database error). (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     try:
         data = request.get_json()
         connection = get_app_connection()
 
+        # Ensure the current user has access to this reminder (owner check)
+        condition = profile_access_condition('utilisateur_id')
         with connection.cursor() as cursor:
-            # Vérifier l'existence
-            cursor.execute("SELECT * FROM prescription_reminders WHERE id = %s", (reminder_id,))
+            # Vérifier l'existence et l'autorisation
+            cursor.execute(f"SELECT * FROM prescription_reminders WHERE id = %s AND {condition}",
+                           (reminder_id, current_user_id, current_user_id))
             existing = cursor.fetchone()
             if not existing:
-                return jsonify({'error': 'Prescription reminder not found'}), 404
+                return jsonify({'error': 'Prescription reminder not found or no permission'}), 404
 
             # Préparer les champs à mettre à jour dynamiquement
             update_fields = []
@@ -233,10 +258,13 @@ def update_prescription_reminder(reminder_id):
             sql = f"""
                 UPDATE prescription_reminders
                 SET {', '.join(update_fields)}
-                WHERE id = %s
+                WHERE id = %s AND {condition}
             """
 
+            # Execute with values + reminder id + params for {condition}
             values.append(reminder_id)
+            values.append(current_user_id)
+            values.append(current_user_id)
             cursor.execute(sql, tuple(values))
             connection.commit()
 
@@ -272,14 +300,22 @@ def delete_prescription_reminder(reminder_id):
     - Failure: Returns a JSON error message with HTTP status code 404 (reminder not found) or 500 (database error). (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     try:
         connection = get_app_connection()
+        # Enforce access: only owner (or main profile for subprofiles) can delete
+        condition = profile_access_condition('utilisateur_id')
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id FROM prescription_reminders WHERE id = %s", (reminder_id,))
+            cursor.execute(f"SELECT id FROM prescription_reminders WHERE id = %s AND {condition}",
+                           (reminder_id, current_user_id, current_user_id))
             if not cursor.fetchone():
-                return jsonify({'error': 'Prescription reminder not found'}), 404
+                return jsonify({'error': 'Prescription reminder not found or no permission'}), 404
 
-            cursor.execute("DELETE FROM prescription_reminders WHERE id = %s", (reminder_id,))
+            cursor.execute(f"DELETE FROM prescription_reminders WHERE id = %s AND {condition}",
+                           (reminder_id, current_user_id, current_user_id))
             connection.commit()
             return jsonify({'message': 'Prescription reminder deleted successfully'}), 200
 
@@ -311,18 +347,25 @@ def toggle_prescription_reminder(reminder_id):
     - Failure: Returns a JSON error message with HTTP status code 404 (reminder not found) or 500 (database error). (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     try:
         connection = get_app_connection()
+        # Enforce access: only owner/main profile can toggle
+        condition = profile_access_condition('utilisateur_id')
         with connection.cursor() as cursor:
-            cursor.execute("SELECT is_completed FROM prescription_reminders WHERE id = %s", (reminder_id,))
+            cursor.execute(f"SELECT is_completed FROM prescription_reminders WHERE id = %s AND {condition}",
+                           (reminder_id, current_user_id, current_user_id))
             result = cursor.fetchone()
             if not result:
-                return jsonify({'error': 'Prescription reminder not found'}), 404
+                return jsonify({'error': 'Prescription reminder not found or no permission'}), 404
 
             new_status = not result['is_completed']
             cursor.execute(
-                "UPDATE prescription_reminders SET is_completed = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-                (new_status, reminder_id)
+                f"UPDATE prescription_reminders SET is_completed = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s AND {condition}",
+                (new_status, reminder_id, current_user_id, current_user_id)
             )
             connection.commit()
 
@@ -337,8 +380,8 @@ def toggle_prescription_reminder(reminder_id):
 # ===========================
 # Upcoming reminders (30 days)
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>/upcoming', methods=['GET'])
-def get_upcoming_prescription_reminders(user_id):
+@prescription_reminders_bp.route('/upcoming', methods=['GET'])
+def get_upcoming_prescription_reminders():
     """
     Objective:
     Retrieve upcoming prescription reminders for a specific user within the next 30 days that are not yet completed.
@@ -357,10 +400,17 @@ def get_upcoming_prescription_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # For upcoming reminders, check the owner of the reminder (pr.utilisateur_id)
+    condition = profile_access_condition('pr.utilisateur_id')
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     pr.id,
                     pr.utilisateur_id,
@@ -379,18 +429,18 @@ def get_upcoming_prescription_reminders(user_id):
                     o.statut AS ordonnance_statut
                 FROM prescription_reminders pr
                 LEFT JOIN ordonnances o ON pr.ordonnance_id = o.id
-                WHERE pr.utilisateur_id = %s
+                WHERE {condition}
                 AND pr.is_completed = FALSE
                 AND pr.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                 ORDER BY pr.due_date ASC
             """
-            cursor.execute(sql, (user_id,))
+            cursor.execute(query, (current_user_id, current_user_id))
             reminders = cursor.fetchall()
 
-            for reminder in reminders:
+            for r in reminders:
                 for key in ['due_date', 'date_prescription', 'date_expiration']:
-                    if reminder.get(key):
-                        reminder[key] = reminder[key].isoformat()
+                    if r.get(key):
+                        r[key] = r[key].isoformat()
 
             return jsonify(reminders), 200
 
@@ -421,9 +471,22 @@ def get_reminders_by_prescription(prescription_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # Ensure the requester has access to the prescription's owner
+    condition = profile_access_condition('utilisateur_id')
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
+            # verify prescription exists and belongs to an accessible profile
+            cursor.execute(f"SELECT id FROM ordonnances WHERE id = %s AND {condition}",
+                           (prescription_id, current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Prescription not found or not accessible'}), 404
+
             sql = """
                 SELECT
                     id,
@@ -457,8 +520,8 @@ def get_reminders_by_prescription(prescription_id):
 # ===========================
 # Get user prescription (for reminder creation)
 # ===========================
-@prescription_reminders_bp.route('/<int:user_id>/prescription', methods=['GET'])
-def get_prescription_for_reminders(user_id):
+@prescription_reminders_bp.route('/prescription', methods=['GET'])
+def get_prescription_for_reminders():
     """
     Objective:
     Retrieve all active prescription for a specific user that are eligible for creating prescription reminders.
@@ -476,31 +539,38 @@ def get_prescription_for_reminders(user_id):
     - Failure: Returns a JSON error message with HTTP status code 500 in case of database or server errors. (Response)
     """
 
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # For listing ordonnances available for reminder creation, filter by ordonnance owner
+    condition = profile_access_condition('utilisateur_id')
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            sql = """
+            query = f"""
                 SELECT
                     id,
+                    utilisateur_id,
                     description,
                     medecin_nom,
                     date_prescription,
                     date_expiration,
                     statut
                 FROM ordonnances
-                WHERE utilisateur_id = %s
-                AND statut = 'active'
+                WHERE {condition} AND statut = 'active'
                 ORDER BY date_expiration DESC
             """
-            cursor.execute(sql, (user_id,))
-            prescription = cursor.fetchall()
+            cursor.execute(query, (current_user_id, current_user_id))
+            ordonnances = cursor.fetchall()
 
-            for ordonnance in prescription:
+            for o in ordonnances:
                 for key in ['date_prescription', 'date_expiration']:
-                    if ordonnance.get(key):
-                        ordonnance[key] = ordonnance[key].isoformat()
+                    if o.get(key):
+                        o[key] = o[key].isoformat()
 
-            return jsonify(prescription), 200
+            return jsonify(ordonnances), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
