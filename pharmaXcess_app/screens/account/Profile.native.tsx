@@ -16,7 +16,7 @@ type ProfileProps = {
 type Item = {
     title: string;
     route: string;
-    icon: "person-outline" | "medkit-outline" | "bandage-outline" | "bed-outline" | "alert-circle-outline" | "people-outline" | "person-add-outline";
+    icon: "person-outline" | "medkit-outline" | "bandage-outline" | "bed-outline" | "alert-circle-outline" | "people-outline" | "person-add-outline" | "document-text-outline";
 };
 
 // The Profile component displays the user's profile information and allows navigation to various health-related sections of the app.
@@ -87,6 +87,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
         { title: 'Mes allergies', route: 'Allergies', icon: 'alert-circle-outline' },
         { title: 'Mes antécédents familiaux', route: 'FamilyHistory', icon: 'people-outline' },
         { title: 'Mes médecins', route: 'Doctors', icon: 'person-add-outline' },
+        { title: 'Mes documents', route: 'Documents', icon: 'document-text-outline'},
     ];
 
     return (

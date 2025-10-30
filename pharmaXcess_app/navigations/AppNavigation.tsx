@@ -66,6 +66,7 @@ import CookieManagement from '../screens/privacy/CookieManagement.native';
 // Account screens
 import Profile from '../screens/account/Profile.native';
 import PersonalInfo from '../screens/account/PersonalInfo.native';
+import Documents from '../screens/account/Documents.native';
 import PersonalDataOptions from '../screens/account/PersonalDataOptions.native';
 import AccountProfile from '../screens/account/AccountProfile.native';
 import AccountPrivacyFAQ from '../screens/account/AccountPrivacyFAQ.native';
@@ -148,6 +149,7 @@ const ProfileStackScreen = (): React.JSX.Element => {
     { name: 'ProfileManagement', component: ProfileManagement, title: 'Gestion des profils' },
     { name: 'Settings', component: Settings, title: 'Paramètres' },
     { name: 'PersonalInfo', component: PersonalInfo, title: 'Mes informations' },
+    { name: 'Documents', component: Documents, title: 'Mes documents' },
     { name: 'Diseases', component: DiseasesProfile, title: 'Maladies' },
     { name: 'Treatments', component: Treatments, title: 'Traitements' },
     { name: 'Hospitalizations', component: Hospitalizations, title: 'Hospitalisations' },
