@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Dimensions, Animated, Vibration, Modal } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Dimensions, Animated, Vibration, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -52,6 +52,8 @@ export default function Localisation(): React.ReactElement {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
+  // Unique code (entered by user or provided by QR)
+  const [uniqueCode, setUniqueCode] = useState<string>('');
   
   // Ref to control the map
   const mapRef = useRef<MapView>(null); 
@@ -62,6 +64,17 @@ export default function Localisation(): React.ReactElement {
     { mode: 'cycling', icon: '🚴', label: 'Vélo', color: '#F57196' },
     { mode: 'walking', icon: '🚶', label: 'À pied', color: '#F57196' },
   ];
+
+  // Helper to map backend transport strings to our TransportMode
+  const mapTransportMode = (transport?: string): TransportMode => {
+    if (!transport) return 'walking';
+    const t = transport.toLowerCase();
+    if (t === 'bicycle' || t === 'bike' || t === 'bicycling') return 'cycling';
+    if (t === 'car' || t === 'driving' || t === 'vehicle') return 'driving';
+    if (t === 'walk' || t === 'walking' || t === 'pedestrian') return 'walking';
+    // default
+    return 'walking';
+  };
 
   // States for the sliding panel 
   const screenHeight = Dimensions.get('window').height;
@@ -131,61 +144,187 @@ export default function Localisation(): React.ReactElement {
     setScanned(false);
   };
 
+  // Allow user to manually use the unique code as alternative to scanning
+  const handleManualCodeUse = async () => {
+    if (!uniqueCode || uniqueCode.trim() === '') {
+      Alert.alert('Code manquant', 'Entrez le code unique.');
+      return;
+    }
+
+    // Call backend to resolve the direction QR by code and process the returned data
+    try {
+      const data = await callReadDirectionByCode(uniqueCode);
+      if (data && data.success && data.qrcode) {
+        await processQRCodePayload(data.qrcode);
+        // Close modal after processing
+        closeQRScanner();
+        return;
+      }
+
+      // If backend response indicates error, show it
+      Alert.alert('Erreur', data?.error || 'Impossible de récupérer les données du code');
+    } catch (err) {
+      console.error('Erreur lors de l\'appel read_direction_qr_by_code:', err);
+      Alert.alert('Erreur', 'Impossible d\'appeler le serveur');
+    }
+  };
+
+  // Helper to call backend endpoint read_direction_qr_by_code and log response
+  const callReadDirectionByCode = async (code: string) => {
+    try {
+      const resp = await fetch(`${BACKEND_URL}/read_direction_qr_by_code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code_unique: code }),
+      });
+      const data = await resp.json();
+      console.log('read_direction_qr_by_code response:', data);
+      return data;
+    } catch (err) {
+      console.error('Erreur read_direction_qr_by_code:', err);
+      return null;
+    }
+  };
+
+  // Process the payload returned by the backend (either object or JSON string)
+  const processQRCodePayload = async (qrcodePayload: any) => {
+    try {
+      const payload = typeof qrcodePayload === 'string' ? JSON.parse(qrcodePayload) : qrcodePayload;
+
+      if (!payload || !payload.pharmacy) {
+        console.warn('Payload QR invalid or missing pharmacy:', payload);
+        return;
+      }
+
+      const distributorFromQR: Distributor = {
+        id: payload.pharmacy.id || Date.now(),
+        name: payload.pharmacy.name,
+        latitude: payload.pharmacy.latitude,
+        longitude: payload.pharmacy.longitude,
+        distance: payload.pharmacy.distance,
+      };
+
+      setSelectedDistributor(distributorFromQR);
+
+      // Map transport
+      if (payload.transport) {
+        setSelectedTransportMode(mapTransportMode(payload.transport));
+      }
+
+      // If route coordinates are present in payload, use them
+      if (payload.route && payload.route.coordinates) {
+        setRouteCoordinates(payload.route.coordinates);
+
+        if (payload.route.legs && payload.route.legs[0] && payload.route.legs[0].steps) {
+          setRouteSteps(payload.route.legs[0].steps);
+          if (payload.route.legs[0].steps.length > 0) {
+            setNextInstruction(payload.route.legs[0].steps[0].html_instructions || payload.route.legs[0].steps[0].maneuver?.instruction || 'Suivez la route');
+          }
+        }
+      } else {
+        // Otherwise, request directions from backend using provided userCoords or current location
+        try {
+          // Always prefer the device's real location as origin; fallback to payload.userCoords only if location is not available
+          const origin = location
+            ? `${location.coords.latitude},${location.coords.longitude}`
+            : (payload.userCoords && Array.isArray(payload.userCoords) && payload.userCoords.length >= 2
+              ? `${payload.userCoords[0]},${payload.userCoords[1]}`
+              : null);
+
+          const destination = `${distributorFromQR.latitude},${distributorFromQR.longitude}`;
+
+          if (origin) {
+            const resp = await fetch(
+              `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=${mapTransportMode(payload.transport)}`
+            );
+            const directionData = await resp.json();
+
+            if (resp.ok && directionData.routes && directionData.routes.length > 0) {
+              const route = directionData.routes[0];
+              const geom = route.geometry;
+
+              let coords: { latitude: number; longitude: number }[] = [];
+              if (typeof geom === 'string') {
+                coords = polyline.decode(geom).map(([lat, lon]: [number, number]) => ({ latitude: lat, longitude: lon }));
+              } else if (geom && geom.coordinates) {
+                coords = geom.coordinates.map(([lon, lat]: [number, number]) => ({ latitude: lat, longitude: lon }));
+              }
+
+              setRouteCoordinates(coords);
+
+              // Extract steps/instructions if present
+              if (route.legs && route.legs[0] && route.legs[0].steps) {
+                const steps = route.legs[0].steps;
+                setRouteSteps(steps);
+                if (steps.length > 0) {
+                  setNextInstruction(steps[0].html_instructions || steps[0].maneuver?.instruction || 'Suivez la route');
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Erreur fetch direction (processQRCodePayload):', err);
+        }
+      }
+
+      // Center map and open panel
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: distributorFromQR.latitude,
+          longitude: distributorFromQR.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      }
+
+      setIsPanelOpen(true);
+    } catch (err) {
+      console.error('Erreur processQRCodePayload:', err);
+    }
+  };
+
   // Function to handle the scanned QR code
   const handleQRCodeScanned = async ({ data }: { data: string }) => {
     if (scanned) return;
     setScanned(true);
 
     try {
-      // Le QR code devrait contenir un JSON avec les informations de la pharmacie et de l'itinéraire
-      // Format attendu:
-      // {
-      //   "type": "pharmacy_route",
-      //   "pharmacy": {
-      //     "id": 123,
-      //     "name": "Pharmacie des Lilas",
-      //     "latitude": 48.8566,
-      //     "longitude": 2.3522,
-      //     "distance": 1.2
-      //   },
-      //   "route": {
-      //     "transportMode": "walking",
-      //     "coordinates": [
-      //       {"latitude": 48.8566, "longitude": 2.3522},
-      //       {"latitude": 48.8567, "longitude": 2.3523}
-      //     ]
-      //   }
-      // }
-      
       const qrData = JSON.parse(data);
-      
-      if (qrData.type === 'pharmacy_route' && qrData.pharmacy && qrData.route) {
-        // Close the scanner
+
+      // Case A: old format with explicit type and route
+      if (qrData.type === 'pharmacy_route' && qrData.pharmacy) {
         closeQRScanner();
-        
-        // Create a distributor object from the QR data
+
         const distributorFromQR: Distributor = {
           id: qrData.pharmacy.id || Date.now(),
           name: qrData.pharmacy.name,
           latitude: qrData.pharmacy.latitude,
           longitude: qrData.pharmacy.longitude,
-          distance: qrData.pharmacy.distance
+          distance: qrData.pharmacy.distance,
         };
 
-        // Select the distributor from the QR code
         setSelectedDistributor(distributorFromQR);
 
-        // Set the route if provided
-        if (qrData.route.coordinates) {
+        // Accept a code if present
+        if (qrData.code) {
+          setUniqueCode(qrData.code);
+          // resolve/read the QR by code and process backend response
+          const codeResp = await callReadDirectionByCode(qrData.code);
+          if (codeResp && codeResp.success && codeResp.qrcode) {
+            await processQRCodePayload(codeResp.qrcode);
+          }
+        }
+
+        // Set route coordinates if provided
+        if (qrData.route && qrData.route.coordinates) {
           setRouteCoordinates(qrData.route.coordinates);
         }
 
-        // Set the transport mode if specified
-        if (qrData.route.transportMode) {
-          setSelectedTransportMode(qrData.route.transportMode);
+        // Set transport mode if specified
+        if (qrData.route && qrData.route.transportMode) {
+          setSelectedTransportMode(mapTransportMode(qrData.route.transportMode));
         }
 
-        // Center the map on the pharmacy
         if (mapRef.current) {
           mapRef.current.animateToRegion({
             latitude: distributorFromQR.latitude,
@@ -195,23 +334,108 @@ export default function Localisation(): React.ReactElement {
           }, 1000);
         }
 
-        // Open the panel to display the details
         setIsPanelOpen(true);
-
-        Alert.alert(
-          'QR Code scanné!', 
-          `Itinéraire vers ${distributorFromQR.name} chargé avec succès`,
-          [{ text: 'OK' }]
-        );
-
-      } else {
-        Alert.alert('QR Code invalide', 'Ce QR code ne contient pas d\'informations d\'itinéraire valides');
+        Alert.alert('QR Code scanné!', `Itinéraire vers ${distributorFromQR.name} chargé avec succès`, [{ text: 'OK' }]);
+        return;
       }
+
+      // Case B: backend format (no "type"), example: { pharmacy: {...}, transport: 'bicycle', userCoords: [lat, lon], code?: '...' }
+      if (qrData.pharmacy) {
+        // Close the scanner
+        closeQRScanner();
+
+        const distributorFromQR: Distributor = {
+          id: qrData.pharmacy.id || Date.now(),
+          name: qrData.pharmacy.name,
+          latitude: qrData.pharmacy.latitude,
+          longitude: qrData.pharmacy.longitude,
+          distance: qrData.pharmacy.distance,
+        };
+
+        setSelectedDistributor(distributorFromQR);
+
+        // If a unique code is provided by the payload, store it and call backend
+        if (qrData.code) {
+          setUniqueCode(qrData.code);
+          const codeResp = await callReadDirectionByCode(qrData.code);
+          if (codeResp && codeResp.success && codeResp.qrcode) {
+            await processQRCodePayload(codeResp.qrcode);
+          }
+        }
+
+        // Map transport strings
+        const mappedMode = mapTransportMode(qrData.transport);
+        setSelectedTransportMode(mappedMode);
+
+        // If the payload provided route coordinates, use them
+        if (qrData.route && qrData.route.coordinates) {
+          setRouteCoordinates(qrData.route.coordinates);
+        } else {
+          // Otherwise, request directions from backend using provided userCoords or current location
+          try {
+            // Prefer the device's real location as origin; fallback to qrData.userCoords only if location is not available
+            const origin = location
+              ? `${location.coords.latitude},${location.coords.longitude}`
+              : (qrData.userCoords && Array.isArray(qrData.userCoords) && qrData.userCoords.length >= 2
+                ? `${qrData.userCoords[0]},${qrData.userCoords[1]}`
+                : null);
+
+            const destination = `${distributorFromQR.latitude},${distributorFromQR.longitude}`;
+
+            if (origin) {
+              const resp = await fetch(
+                `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=${mappedMode}`
+              );
+              const directionData = await resp.json();
+
+              if (resp.ok && directionData.routes && directionData.routes.length > 0) {
+                const route = directionData.routes[0];
+                const geom = route.geometry;
+
+                let coords: { latitude: number; longitude: number }[] = [];
+                if (typeof geom === 'string') {
+                  coords = polyline.decode(geom).map(([lat, lon]: [number, number]) => ({ latitude: lat, longitude: lon }));
+                } else if (geom && geom.coordinates) {
+                  coords = geom.coordinates.map(([lon, lat]: [number, number]) => ({ latitude: lat, longitude: lon }));
+                }
+
+                setRouteCoordinates(coords);
+
+                // Extract steps/instructions if present
+                if (route.legs && route.legs[0] && route.legs[0].steps) {
+                  const steps = route.legs[0].steps;
+                  setRouteSteps(steps);
+                  if (steps.length > 0) {
+                    setNextInstruction(steps[0].html_instructions || steps[0].maneuver?.instruction || 'Suivez la route');
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Erreur fetch direction (QR backend format):', err);
+          }
+        }
+
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            latitude: distributorFromQR.latitude,
+            longitude: distributorFromQR.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }, 1000);
+        }
+
+        setIsPanelOpen(true);
+        Alert.alert('QR Code scanné!', `Itinéraire vers ${distributorFromQR.name} chargé avec succès`, [{ text: 'OK' }]);
+        return;
+      }
+
+      Alert.alert('QR Code invalide', 'Ce QR code ne contient pas d\'informations d\'itinéraire valides');
     } catch (error) {
       console.error('Erreur parsing QR code:', error);
       Alert.alert('Erreur', 'Impossible de lire les données du QR code');
     }
-    
+
     // Reactivate scanning after a short delay to prevent multiple scans
     setTimeout(() => setScanned(false), 2000);
   };
@@ -875,6 +1099,8 @@ export default function Localisation(): React.ReactElement {
                   📍 Départ depuis votre position actuelle
                 </Text>
 
+                {/* Previously the unique code input was here; moved to the scanner modal per UX request. */}
+
                 
                 {/* Transportation mode selector */}
                 <Text style={[styles.text, { fontSize: 16, fontWeight: 'bold', marginTop: 15, marginBottom: 10 }]}>
@@ -969,6 +1195,29 @@ export default function Localisation(): React.ReactElement {
             <Text style={{ color: 'white', fontSize: 14, marginTop: 5 }}>
               Scannez un QR code de pharmacie pour charger l'itinéraire
             </Text>
+            {/* Manual code entry as alternative to scanning */}
+            <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput
+                value={uniqueCode}
+                onChangeText={setUniqueCode}
+                placeholder="Entrez le code unique"
+                placeholderTextColor="#ddd"
+                style={{
+                  flex: 1,
+                  backgroundColor: 'white',
+                  color: '#000',
+                  paddingHorizontal: 10,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                }}
+              />
+              <TouchableOpacity
+                onPress={handleManualCodeUse}
+                style={{ marginLeft: 8, backgroundColor: '#4CAF50', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 }}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Utiliser</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Camera scanner */}
