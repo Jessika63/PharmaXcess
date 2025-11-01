@@ -178,7 +178,6 @@ export default function Localisation(): React.ReactElement {
         body: JSON.stringify({ code_unique: code }),
       });
       const data = await resp.json();
-      console.log('read_direction_qr_by_code response:', data);
       return data;
     } catch (err) {
       console.error('Erreur read_direction_qr_by_code:', err);
@@ -283,161 +282,51 @@ export default function Localisation(): React.ReactElement {
     }
   };
 
-  // Function to handle the scanned QR code
+  // Simplified and robust handler for scanned QR code
   const handleQRCodeScanned = async ({ data }: { data: string }) => {
     if (scanned) return;
     setScanned(true);
 
     try {
-      const qrData = JSON.parse(data);
 
-      // Case A: old format with explicit type and route
-      if (qrData.type === 'pharmacy_route' && qrData.pharmacy) {
-        closeQRScanner();
+      // Call backend to decode/decrypt the content
+      try {
+        const resp = await fetch(`${BACKEND_URL}/read_direction_qr_content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: data }),
+        });
 
-        const distributorFromQR: Distributor = {
-          id: qrData.pharmacy.id || Date.now(),
-          name: qrData.pharmacy.name,
-          latitude: qrData.pharmacy.latitude,
-          longitude: qrData.pharmacy.longitude,
-          distance: qrData.pharmacy.distance,
-        };
+        const result = await resp.json();
 
-        setSelectedDistributor(distributorFromQR);
-
-        // Accept a code if present
-        if (qrData.code) {
-          setUniqueCode(qrData.code);
-          // resolve/read the QR by code and process backend response
-          const codeResp = await callReadDirectionByCode(qrData.code);
-          if (codeResp && codeResp.success && codeResp.qrcode) {
-            await processQRCodePayload(codeResp.qrcode);
-          }
-        }
-
-        // Set route coordinates if provided
-        if (qrData.route && qrData.route.coordinates) {
-          setRouteCoordinates(qrData.route.coordinates);
-        }
-
-        // Set transport mode if specified
-        if (qrData.route && qrData.route.transportMode) {
-          setSelectedTransportMode(mapTransportMode(qrData.route.transportMode));
-        }
-
-        if (mapRef.current) {
-          mapRef.current.animateToRegion({
-            latitude: distributorFromQR.latitude,
-            longitude: distributorFromQR.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }, 1000);
-        }
-
-        setIsPanelOpen(true);
-        Alert.alert('QR Code scanné!', `Itinéraire vers ${distributorFromQR.name} chargé avec succès`, [{ text: 'OK' }]);
-        return;
-      }
-
-      // Case B: backend format (no "type"), example: { pharmacy: {...}, transport: 'bicycle', userCoords: [lat, lon], code?: '...' }
-      if (qrData.pharmacy) {
-        // Close the scanner
-        closeQRScanner();
-
-        const distributorFromQR: Distributor = {
-          id: qrData.pharmacy.id || Date.now(),
-          name: qrData.pharmacy.name,
-          latitude: qrData.pharmacy.latitude,
-          longitude: qrData.pharmacy.longitude,
-          distance: qrData.pharmacy.distance,
-        };
-
-        setSelectedDistributor(distributorFromQR);
-
-        // If a unique code is provided by the payload, store it and call backend
-        if (qrData.code) {
-          setUniqueCode(qrData.code);
-          const codeResp = await callReadDirectionByCode(qrData.code);
-          if (codeResp && codeResp.success && codeResp.qrcode) {
-            await processQRCodePayload(codeResp.qrcode);
-          }
-        }
-
-        // Map transport strings
-        const mappedMode = mapTransportMode(qrData.transport);
-        setSelectedTransportMode(mappedMode);
-
-        // If the payload provided route coordinates, use them
-        if (qrData.route && qrData.route.coordinates) {
-          setRouteCoordinates(qrData.route.coordinates);
-        } else {
-          // Otherwise, request directions from backend using provided userCoords or current location
+        if (resp.ok && result && result.success && result.qrcode) {
+          // If backend returned decoded qrcode content, process it to draw itinerary
           try {
-            // Prefer the device's real location as origin; fallback to qrData.userCoords only if location is not available
-            const origin = location
-              ? `${location.coords.latitude},${location.coords.longitude}`
-              : (qrData.userCoords && Array.isArray(qrData.userCoords) && qrData.userCoords.length >= 2
-                ? `${qrData.userCoords[0]},${qrData.userCoords[1]}`
-                : null);
-
-            const destination = `${distributorFromQR.latitude},${distributorFromQR.longitude}`;
-
-            if (origin) {
-              const resp = await fetch(
-                `${BACKEND_URL}/get_direction?origin=${origin}&destination=${destination}&mode=${mappedMode}`
-              );
-              const directionData = await resp.json();
-
-              if (resp.ok && directionData.routes && directionData.routes.length > 0) {
-                const route = directionData.routes[0];
-                const geom = route.geometry;
-
-                let coords: { latitude: number; longitude: number }[] = [];
-                if (typeof geom === 'string') {
-                  coords = polyline.decode(geom).map(([lat, lon]: [number, number]) => ({ latitude: lat, longitude: lon }));
-                } else if (geom && geom.coordinates) {
-                  coords = geom.coordinates.map(([lon, lat]: [number, number]) => ({ latitude: lat, longitude: lon }));
-                }
-
-                setRouteCoordinates(coords);
-
-                // Extract steps/instructions if present
-                if (route.legs && route.legs[0] && route.legs[0].steps) {
-                  const steps = route.legs[0].steps;
-                  setRouteSteps(steps);
-                  if (steps.length > 0) {
-                    setNextInstruction(steps[0].html_instructions || steps[0].maneuver?.instruction || 'Suivez la route');
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            console.error('Erreur fetch direction (QR backend format):', err);
+            await processQRCodePayload(result.qrcode);
+          } catch (e) {
+            console.error('Erreur processing decoded qrcode payload:', e);
+          }
+        } else {
+          // log server error details; show a minimal alert so user knows
+          console.warn('read_direction_qr_content did not return success:', result);
+          if (result && result.error) {
+            Alert.alert('Erreur serveur', result.error);
           }
         }
-
-        if (mapRef.current) {
-          mapRef.current.animateToRegion({
-            latitude: distributorFromQR.latitude,
-            longitude: distributorFromQR.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }, 1000);
-        }
-
-        setIsPanelOpen(true);
-        Alert.alert('QR Code scanné!', `Itinéraire vers ${distributorFromQR.name} chargé avec succès`, [{ text: 'OK' }]);
-        return;
+      } catch (err) {
+        console.error('Erreur appel read_direction_qr_content:', err);
+        Alert.alert('Erreur', 'Impossible de contacter le serveur pour décoder le QR');
       }
 
-      Alert.alert('QR Code invalide', 'Ce QR code ne contient pas d\'informations d\'itinéraire valides');
-    } catch (error) {
-      console.error('Erreur parsing QR code:', error);
+      // Close the scanner and reset scanned flag after a short delay
+      closeQRScanner();
+      setTimeout(() => setScanned(false), 500);
+    } catch (err) {
+      console.error('Error handling scanned QR code:', err);
       Alert.alert('Erreur', 'Impossible de lire les données du QR code');
+      closeQRScanner();
+      setTimeout(() => setScanned(false), 500);
     }
-
-    // Reactivate scanning after a short delay to prevent multiple scans
-    setTimeout(() => setScanned(false), 2000);
   };
 
   // Recalculate the itinerary if we change the transport mode
