@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
-import QRCodeModal from '../../components/qr/QRCodeModal';
+import QRCodeModal from '../../components/QRCodeModal';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;

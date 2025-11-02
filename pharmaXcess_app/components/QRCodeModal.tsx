@@ -11,10 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../context/ThemeContext';
-import { useFontScale } from '../../context/FontScaleContext';
-import { Profile } from '../../context/ProfileContext';
-import { generateQRData } from '../../utils/qrCodeUtils';
+import { useTheme } from '../context/ThemeContext';
+import { useFontScale } from '../context/FontScaleContext';
+import { Profile } from '../context/ProfileContext';
+import { generateQRData } from '../utils/qrCodeUtils';
 
 interface QRCodeModalProps {
   visible: boolean;
