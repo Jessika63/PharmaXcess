@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
+import QRCodeModal from '../../components/qr/QRCodeModal';
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -26,6 +27,9 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
     const { user, logout } = useAuth();
     const { currentProfile, profiles } = useProfile();
     const styles = createStyles(colors, fontScale);
+
+    // State for QR code modal 
+    const [isQRModalVisible, setIsQRModalVisible] = useState(false);
 
     // Function to handle logout
     const handleLogout = () => {
@@ -70,6 +74,12 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={handleLogout} style={[styles.headerButton, { marginRight: 10 }]}>
                         <Ionicons name="log-out-outline" size={24} color={colors.profileText} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => setIsQRModalVisible(true)}
+                        style={[styles.headerButton, { marginRight: 10 }]} 
+                    >
+                        <Ionicons name="qr-code-outline" size={24} color={colors.profileText} /> 
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.headerButton}>
                         <Ionicons name="settings-outline" size={24} color={colors.profileText} />
@@ -150,6 +160,13 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                     <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
                 </LinearGradient>
             </TouchableOpacity>
+
+            {/* QR Code Modal */} 
+            <QRCodeModal
+                visible={isQRModalVisible} 
+                onClose={() => setIsQRModalVisible(false)} 
+                profile={currentProfile} 
+            /> 
         </ScrollView>
     );
 }
