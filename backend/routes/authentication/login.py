@@ -7,9 +7,12 @@ login_bp = Blueprint('login', __name__)
 
 @login_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("email")
     password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email et mot de passe requis"}), 400
 
     conn = None
     try:
@@ -28,9 +31,11 @@ def login():
             conn.commit()
 
             session["user_id"] = user["id"]
-            return jsonify({"message": "Login successful", "user_id": user["id"]}), 200
+            # Optionally return some basic user info (avoid sensitive data)
+            return jsonify({"message": "Connexion réussie", "user_id": user["id"]}), 200
         else:
-            return jsonify({"error": "Invalid credentials"}), 401
+            # Friendly French message for wrong credentials
+            return jsonify({"error": "Email ou mot de passe incorrect"}), 401
     finally:
         if conn:
             conn.close()
