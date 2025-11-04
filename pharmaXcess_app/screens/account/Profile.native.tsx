@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,9 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
 import QRCodeModal from '../../components/QRCodeModal';
+
+const { width } = Dimensions.get('window'); 
+
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -100,6 +103,44 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
         { title: 'Mes documents', route: 'Documents', icon: 'document-text-outline'},
     ];
 
+    // Styles for the grid of square cards 
+    const gridStyles = StyleSheet.create({
+        gridContainer: {
+            flexDirection: 'row', 
+            flexWrap: 'wrap', 
+            justifyContent: 'space-between',
+            paddingHorizontal: 0, 
+        },
+        gridCard: { 
+            width: (width - 60) / 2, // 2 columns with spacing 
+            aspectRatio: 1, // Square 
+            marginBottom: 15, 
+            borderRadius: 15, 
+            overflow: 'hidden',
+            shadowColor: colors.shadow, 
+            shadowOffset: { width: 0, height: 4}, 
+            shadowOpacity: 0.2, 
+            shadowRadius: 6, 
+            elevation: 5, 
+        },
+        gridCardGradient: {
+            flex: 1, 
+            padding: 15, 
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        gridCardIcon: { 
+            marginBottom: 10, 
+        },
+        gridCardText: { 
+            fontSize: 14 * fontScale, 
+            color: '#fff', 
+            fontWeight: 'bold', 
+            textAlign: 'center',
+        },
+    }); 
+
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {/* Section to select the profile */} 
@@ -137,21 +178,36 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
             </TouchableOpacity>
 
             {/* Current profile information */}
-            <View style={styles.profileContainer}>
+            <View style={[styles.profileContainer, { marginBottom: 50 }]}>
                 <Image source={{ uri: getAvatarUrl() }} style={styles.profileImage} />
                 <Text style={styles.profileName}>
                     {currentProfile?.name || user?.name || 'Utilisateur'}
                 </Text>
             </View>
-            {/* Map through the items array to create a card for each profile item */}
-            {items.map((item, index) => (
-                <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
-                        <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
-                    </LinearGradient>
-                </TouchableOpacity>
-            ))}
+            
+            {/* Grid of square cards for profile sections */}
+            <View style={gridStyles.gridContainer}>
+                {items.map((item, index) => (
+                    <TouchableOpacity 
+                        key={index} 
+                        style={gridStyles.gridCard} 
+                        onPress={() => navigation.navigate(item.route)}
+                    >
+                        <LinearGradient 
+                            colors={[colors.primary, colors.secondary]} 
+                            style={gridStyles.gridCardGradient}
+                        >
+                            <Ionicons 
+                                name={item.icon} 
+                                size={40} 
+                                color="#fff" 
+                                style={gridStyles.gridCardIcon} 
+                            />
+                            <Text style={gridStyles.gridCardText}>{item.title}</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                ))}
+            </View>
             
             {/* Logout button */}
             <TouchableOpacity style={[styles.card, { marginTop: 20 }]} onPress={handleLogout}>

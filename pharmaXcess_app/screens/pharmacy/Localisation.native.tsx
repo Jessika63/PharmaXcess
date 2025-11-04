@@ -703,7 +703,7 @@ export default function Localisation(): React.ReactElement {
               {transportOptions.find(opt => opt.mode === selectedTransportMode)?.icon}
             </Text>
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.profileText }}>
                 {remainingDistance} • {estimatedTime}
               </Text>
               <Text style={{ fontSize: 14, color: colors.infoTextSecondary }}>
@@ -845,7 +845,7 @@ export default function Localisation(): React.ReactElement {
           <Text style={{
             fontSize: 18,
             fontWeight: 'bold',
-            color: colors.text,
+            color: colors.profileText,
             textAlign: 'center',
           }}>
             📍 {distributors.length} pharmacies trouvées
@@ -906,7 +906,7 @@ export default function Localisation(): React.ReactElement {
                       <Text style={{
                         fontSize: 12,
                         fontWeight: selectedTransportMode === option.mode ? 'bold' : 'normal',
-                        color: selectedTransportMode === option.mode ? 'white' : colors.text,
+                        color: selectedTransportMode === option.mode ? 'white' : colors.profileText,
                       }}>
                         {option.label}
                       </Text>

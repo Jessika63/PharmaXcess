@@ -1,12 +1,11 @@
 import React from 'react';
 import {
   Modal,
-  View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  SafeAreaView,
+  View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
@@ -77,7 +76,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     headerTitle: {
       fontSize: 20 * fontScale,
       fontWeight: 'bold',
-      color: colors.text,
+      color: colors.profileText,
       flex: 1,
       textAlign: 'center',
     },
@@ -93,7 +92,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     profileName: {
       fontSize: 18 * fontScale,
       fontWeight: '600',
-      color: colors.text,
+      color: colors.profileText,
       marginBottom: 5,
     },
     profileDetails: {
@@ -164,7 +163,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.overlay}>
+      <View style={styles.overlay}>
         <TouchableOpacity 
           style={StyleSheet.absoluteFill} 
           onPress={onClose}
@@ -214,7 +213,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };

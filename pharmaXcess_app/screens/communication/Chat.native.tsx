@@ -415,7 +415,7 @@ export default function Chat(): React.JSX.Element {
                     style={styles.backButton} 
                     onPress={() => setSelectedChat(null)}
                 >
-                    <Ionicons name="arrow-back" size={24} color={colors.iconPrimary} />
+                    <Ionicons name="arrow-back" size={24} color={colors.profileText} />
                 </TouchableOpacity>
                 <View style={styles.conversationInfo}>
                     <Text style={styles.conversationTitle}>{selectedChat?.title}</Text>
