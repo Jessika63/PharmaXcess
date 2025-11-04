@@ -2,7 +2,9 @@
 from flask import Blueprint, request, jsonify
 import tempfile, os, json
 from db_app import get_app_connection
-from scripts.qrcode.qrCodeLect import read_qr_code
+from scripts.qrcode.qrCodeLect import read_qr_code, decrypt_and_parse_raw_content
+import os
+
 
 read_qr_bp = Blueprint('read_qr', __name__)
 
@@ -37,7 +39,7 @@ def read_prescription_qr():
     """
 
     if 'image' not in request.files:
-        return jsonify({"error": "Aucun fichier fourni"}), 400
+        return jsonify({"error": "No file provided"}), 400
     file = request.files['image']
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
@@ -59,7 +61,7 @@ def read_prescription_qr():
             cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             cursor.execute("SELECT * FROM ordonnances WHERE id=%s", (qr_entry['ordonnance_id'],))
             ordonnance = cursor.fetchone()
@@ -102,7 +104,7 @@ def read_direction_qr():
     """
 
     if 'image' not in request.files:
-        return jsonify({"error": "Aucun fichier fourni"}), 400
+        return jsonify({"error": "No file provided"}), 400
     file = request.files['image']
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
@@ -119,14 +121,14 @@ def read_direction_qr():
         data = json.loads(content)
         qr_id = data.get("id")
         if not qr_id:
-            return jsonify({"error": "QR code invalide"}), 400
+            return jsonify({"error": "Invalid QR code"}), 400
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM qrcodes_maps WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             cursor.execute("DELETE FROM qrcodes_maps WHERE id=%s", (qr_entry['id'],))
             conn.commit()
@@ -155,7 +157,7 @@ def read_profile_qr():
 
     Request Body (multipart/form-data):
         - image: Image file of the QR code to read (File, Required)
-        - scan_role: Role of the scanner determining which information to return 
+        - scan_role: Role of the scanner determining which information to return
                     (String, Required, must be one of 'distributeur', 'medecin', 'pharmacien')
 
     Process:
@@ -176,11 +178,11 @@ def read_profile_qr():
     """
     # Vérifier la présence du fichier
     if 'image' not in request.files:
-        return jsonify({"error": "Aucun fichier fourni"}), 400
+        return jsonify({"error": "No file provided"}), 400
 
     scan_role = request.form.get('scan_role')
     if not scan_role or scan_role not in VALID_SCAN_ROLES:
-        return jsonify({"error": f"scan_role requis et doit être l'un de {list(VALID_SCAN_ROLES)}"}), 400
+        return jsonify({"error": f"scan_role is required and must be one of {list(VALID_SCAN_ROLES)}"}), 400
 
     file = request.files['image']
 
@@ -193,7 +195,7 @@ def read_profile_qr():
         # Lire le QR code
         success, content = read_qr_code(tmp_path)
     finally:
-        os.unlink(tmp_path)  # Nettoyage du fichier temporaire
+        os.unlink(tmp_path)  # Clean up the temporary file
 
     if not success:
         return jsonify({"error": content}), 400
@@ -203,7 +205,7 @@ def read_profile_qr():
         data = json.loads(content)
         qr_id = data.get("id")
         if not qr_id:
-            return jsonify({"error": "QR code invalide"}), 400
+            return jsonify({"error": "Invalid QR code"}), 400
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
@@ -211,13 +213,13 @@ def read_profile_qr():
             cursor.execute("SELECT * FROM qrcodes_profiles WHERE id=%s", (qr_id,))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             # Récupérer l'utilisateur
             cursor.execute("SELECT * FROM utilisateurs WHERE id=%s", (qr_entry['utilisateur_id'],))
             user = cursor.fetchone()
             if not user:
-                return jsonify({"error": "Utilisateur introuvable"}), 404
+                return jsonify({"error": "User not found"}), 404
 
         # Filtrer les infos selon le rôle
         if scan_role == "distributeur":
@@ -242,28 +244,35 @@ def read_profile_qr():
 @read_qr_bp.route('/read_prescription_qr_content', methods=['POST'])
 def read_prescription_qr_content():
     """
-    Version qui prend directement le contenu JSON du QR code de prescription.
-    Request JSON body: { "content": "<contenu du QR code JSON>" }
+    Objective: Reads and processes the JSON content directly extracted from a prescription QR code. Decrypts and parses the QR code content, then retrieves the corresponding prescription record from the database.
+
+    Request JSON Body:
+    - content (str): The raw JSON content extracted from the QR code.
+
+    Return Value:
+    - JSON response (Flask jsonify):
+        - On success: {"success": True, "ordonnance": <prescription_record>}
+        - On failure: {"error": <error_message>} with appropriate HTTP status codes (400, 404, 500)
     """
     data = request.get_json()
     if not data or "content" not in data:
-        return jsonify({"error": "Champ 'content' requis"}), 400
+        return jsonify({"error": "content is required"}), 400
 
     content = data["content"]
-    # on réutilise la logique existante
     conn = None
+
     try:
-        qr_data = json.loads(content)
-        qr_id = qr_data.get("id")
-        if not qr_id:
-            return jsonify({"error": "QR code invalide"}), 400
+        success, result = decrypt_and_parse_raw_content(content)
+
+        if not success:
+            return jsonify({"error": result}), 400
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE id=%s", (qr_id,))
+            cursor.execute("SELECT * FROM qrcodes_ordonnances WHERE id=%s", (result['id'],))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             cursor.execute("SELECT * FROM ordonnances WHERE id=%s", (qr_entry['ordonnance_id'],))
             ordonnance = cursor.fetchone()
@@ -279,27 +288,36 @@ def read_prescription_qr_content():
 @read_qr_bp.route('/read_direction_qr_content', methods=['POST'])
 def read_direction_qr_content():
     """
-    Version qui prend directement le contenu JSON du QR code de direction.
-    Request JSON body: { "content": "<contenu du QR code JSON>" }
+    Objective: Reads and processes the JSON content directly extracted from a direction QR code. Decrypts and parses the QR code content, retrieves the corresponding map QR code entry from the database, and deletes it after reading.
+
+    Request JSON Body:
+    - content (str): The raw JSON content extracted from the QR code.
+
+    Return Value:
+    - JSON response (Flask jsonify):
+        - On success: {"success": True, "qrcode": <map_qr_data>}
+        - On failure: {"error": <error_message>} with appropriate HTTP status codes (400, 404, 500)
     """
+
     data = request.get_json()
     if not data or "content" not in data:
-        return jsonify({"error": "Champ 'content' requis"}), 400
+        return jsonify({"error": "content is required"}), 400
 
     content = data["content"]
     conn = None
     try:
-        qr_data = json.loads(content)
-        qr_id = qr_data.get("id")
-        if not qr_id:
-            return jsonify({"error": "QR code invalide"}), 400
+
+        success, result = decrypt_and_parse_raw_content(content)
+
+        if not success:
+            return jsonify({"error": result}), 400
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM qrcodes_maps WHERE id=%s", (qr_id,))
+            cursor.execute("SELECT * FROM qrcodes_maps WHERE id=%s", (result['id'],))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             cursor.execute("DELETE FROM qrcodes_maps WHERE id=%s", (qr_entry['id'],))
             conn.commit()
@@ -315,32 +333,40 @@ def read_direction_qr_content():
 @read_qr_bp.route('/read_profile_qr_content', methods=['POST'])
 def read_profile_qr_content():
     """
-    Version qui prend directement le contenu JSON du QR code de profil.
-    Request JSON body: 
-        { "content": "<contenu du QR code JSON>", "scan_role": "distributeur|medecin|pharmacien" }
+    Objective: Reads and processes the JSON content directly extracted from a profile QR code. Decrypts and parses the QR code content, retrieves the corresponding user profile from the database, and filters the information based on the scanning role.
+
+    Request JSON Body:
+    - content (str): The raw JSON content extracted from the QR code.
+    - scan_role (str): The role of the scanner; must be one of "distributeur", "medecin", or "pharmacien".
+
+    Return Value:
+    - JSON response (Flask jsonify):
+        - On success: {"success": True, "profile": <filtered_user_data>}
+        - On failure: {"error": <error_message>} with appropriate HTTP status codes (400, 404, 500)
     """
+
     data = request.get_json()
     if not data or "content" not in data or "scan_role" not in data:
-        return jsonify({"error": "Champ 'content' et 'scan_role' requis"}), 400
+        return jsonify({"error": "content and scan_role are required"}), 400
 
     scan_role = data["scan_role"]
     if scan_role not in VALID_SCAN_ROLES:
-        return jsonify({"error": f"scan_role doit être l'un de {list(VALID_SCAN_ROLES)}"}), 400
+        return jsonify({"error": f"scan_role must be one of {list(VALID_SCAN_ROLES)}"}), 400
 
     content = data["content"]
     conn = None
     try:
-        qr_data = json.loads(content)
-        qr_id = qr_data.get("id")
-        if not qr_id:
-            return jsonify({"error": "QR code invalide"}), 400
+        success, result = decrypt_and_parse_raw_content(content)
+
+        if not success:
+            return jsonify({"error": result}), 400
 
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM qrcodes_profiles WHERE id=%s", (qr_id,))
+            cursor.execute("SELECT * FROM qrcodes_profiles WHERE id=%s", (result['id'],))
             qr_entry = cursor.fetchone()
             if not qr_entry:
-                return jsonify({"error": "QR code introuvable"}), 404
+                return jsonify({"error": "QR code not found"}), 404
 
             cursor.execute("SELECT * FROM utilisateurs WHERE id=%s", (qr_entry['utilisateur_id'],))
             user = cursor.fetchone()

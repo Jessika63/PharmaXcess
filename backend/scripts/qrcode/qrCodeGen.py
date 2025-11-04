@@ -11,6 +11,13 @@ from io import BytesIO
 import zlib
 
 def get_qr_color():
+    """
+    Objective:
+    Return the RGB color tuple corresponding to a predefined hex color for QR code generation.
+
+    Returns:
+    - tuple (int, int, int): RGB values representing the color #F57196.
+    """
     # Convertir le code hexadécimal en valeurs RGB
     hex_color = "#F57196"
     hex_color = hex_color.lstrip('#')
@@ -52,10 +59,19 @@ def load_env_file(env_file_path):
     return env_data
 
 def encrypt_data(data, key):
-    """Chiffre les données avec AES"""
+    """
+    Objective:
+    Encrypt the given data using AES encryption in ECB mode and return it as a base64-encoded string.
+
+    Parameters:
+    - data (str or bytes): The plaintext data to encrypt.
+    - key (bytes): The AES encryption key. Must be 16, 24, or 32 bytes long.
+
+    Returns:
+    - str: The base64-encoded ciphertext.
+    """
     cipher = AES.new(key, AES.MODE_ECB)
 
-    # Si les données sont une string, les encoder en bytes
     if isinstance(data, str):
         data = data.encode('utf-8')
 
@@ -65,11 +81,15 @@ def encrypt_data(data, key):
 
 def find_unique_filename(base_name, extension=".png"):
     """
-    Finds a unique filename by incrementing a counter if necessary.
+    Objective:
+    Generate a unique filename by appending an incrementing counter to the base name until a non-existing file is found.
 
-    :param base_name: The base name of the file (without number or extension).
-    :param extension: The file extension.
-    :return: A unique filename in the format base_name_num.extension.
+    Parameters:
+    - base_name (str): The base name of the file (without number or extension).
+    - extension (str, optional): The file extension. Defaults to ".png".
+
+    Returns:
+    - str: A unique filename in the format 'base_name_<counter>.<extension>'.
     """
     counter = 1
     while True:
@@ -80,27 +100,37 @@ def find_unique_filename(base_name, extension=".png"):
 
 def generate_rounded_qr_code(info, base_filename="prescription", return_buffer=False):
     """
-    Generates a QR code containing information, with rounded modules.
+    Objective:
+    Generates a visually styled QR code containing encrypted and compressed information. The QR code features rounded modules and customizable colors.
 
-    :param info: Dictionary containing the information.
-    :param base_filename: The base name used to save the final QR code.
-    :param return_buffer: Si True, retourne un buffer mémoire au lieu de sauvegarder dans un fichier.
+    Parameters:
+    - info (dict): The information to encode in the QR code.
+    - base_filename (str, optional): Base name used to save the generated QR code file. Defaults to "prescription".
+    - return_buffer (bool, optional): If True, returns an in-memory buffer (BytesIO) instead of saving the QR code to a file.
+
+    Returns:
+    - str or BytesIO: The filename of the saved QR code if return_buffer is False, otherwise a BytesIO buffer containing the QR code image.
+
+    Notes:
+    - The function compresses the data using zlib and encrypts it using AES before embedding it in the QR code.
+    - The QR code is generated with automatic sizing and rounded modules for visual appeal.
+    - The color of the QR code modules is determined by the get_qr_color() function.
     """
     try:
         # Convert the information into formatted JSON
         json_content = json.dumps(info, ensure_ascii=False, separators=(',', ':'))
 
-        # Compresser les données pour réduire la taille
+        # Compress the data to reduce the size
         compressed_data = zlib.compress(json_content.encode('utf-8'))
 
-        # Charger la clé de chiffrement
+        # Load the encryption key
         env_data = load_env_file(".env")
         secret_key_str = env_data["SECRET_QR_ENCRYPTION_KEY"]
 
-        # Convertir la clé string en bytes et s'assurer qu'elle a la bonne longueur
+        # Convert the key string to bytes and ensure it has the correct length
         secret_key = secret_key_str.encode('utf-8')
 
-        # AES nécessite des clés de 16, 24 ou 32 octets
+        # AES requires keys of 16, 24, or 32 bytes
         if len(secret_key) < 16:
             secret_key = secret_key.ljust(16, b'\0')
         elif len(secret_key) < 24:
@@ -110,10 +140,10 @@ def generate_rounded_qr_code(info, base_filename="prescription", return_buffer=F
         else:
             secret_key = secret_key[:32]
 
-        # Chiffrer les données compressées
+        # Encrypt the compressed data
         encrypted_content = encrypt_data(compressed_data, secret_key)
 
-        # Utiliser une version automatique du QR code qui s'adapte à la taille des données
+        # Use an automatic version of the QR code that adapts to the size of the data
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_Q,
@@ -136,13 +166,13 @@ def generate_rounded_qr_code(info, base_filename="prescription", return_buffer=F
         )
 
         if return_buffer:
-            # Retourner un buffer mémoire
+            # Return an in-memory buffer
             img_buffer = BytesIO()
             img.save(img_buffer, format='PNG')
             img_buffer.seek(0)
             return img_buffer
         else:
-            # Sauvegarder dans un fichier (comportement original)
+            # Save to a file (original behavior)
             unique_filename = find_unique_filename(base_filename)
             img.save(unique_filename)
             print(f"QR Code saved as: {unique_filename}")
