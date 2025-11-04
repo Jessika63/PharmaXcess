@@ -558,16 +558,14 @@ export default function Localisation(): React.ReactElement {
 
       setRouteCoordinates(coords);
       
-      // Close the panel smoothly to better see the route
-      if (isPanelOpen) {
-        setIsPanelOpen(false);
-        Animated.spring(translateY, {
-          toValue: panelHeight - peekHeight,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }).start();
-      }
+      // Close the panel smoothly to better see the route and navigation button
+      setIsPanelOpen(false);
+      Animated.spring(translateY, {
+        toValue: panelHeight - peekHeight,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }).start();
     } catch (err) {
       console.error('Erreur fetch direction:', err);
       Alert.alert('Erreur', "Impossible de recuperer l'itineraire");
