@@ -737,29 +737,6 @@ export default function Localisation(): React.ReactElement {
         </View>
       )}
 
-      {/* Button to open QR scanner */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          top: 60,
-          right: 16,
-          backgroundColor: colors.background,
-          borderRadius: 25,
-          width: 50,
-          height: 50,
-          justifyContent: 'center',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        }}
-        onPress={openQRScanner}
-      >
-        <Text style={{ fontSize: 15 }}>📷</Text>
-      </TouchableOpacity>
-
       {/* Button to recenter the map */}
       {location && (
         <TouchableOpacity
@@ -793,6 +770,29 @@ export default function Localisation(): React.ReactElement {
           <Text style={{ fontSize: 20 }}>📍</Text>
         </TouchableOpacity>
       )}
+
+      {/* Button to open QR scanner - positioned above the location button */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: isNavigating ? 200 : (isPanelOpen ? 460 : 260),
+          right: 16,
+          backgroundColor: colors.background,
+          borderRadius: 25,
+          width: 50,
+          height: 50,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }}
+        onPress={openQRScanner}
+      >
+        <Text style={{ fontSize: 15 }}>📷</Text>
+      </TouchableOpacity>
 
       {/* Sliding panel at the bottom */}
       <Animated.View
