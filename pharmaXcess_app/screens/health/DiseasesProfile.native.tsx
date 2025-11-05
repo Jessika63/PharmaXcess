@@ -276,55 +276,56 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
     // Modal styles matching PersonalInfo
     const modalStyles = StyleSheet.create({
-        modalContainer: {
-            flex: 1,
+        modalContainer: { 
+            flex: 1, 
             backgroundColor: colors.background,
         },
-        modalTitle: {
-            fontSize: 24 * fontScale,
-            fontWeight: 'bold',
-            marginBottom: 20,
+        modalTitle: { 
+            fontSize: 24 * fontScale, 
+            fontWeight: 'bold', 
+            marginBottom: 20, 
             color: colors.settingsTitle,
             textAlign: 'center',
         },
-        input: {
-            width: '100%',
-            padding: 15,
-            borderWidth: 2,
+        input: { 
+            width: '100%', 
+            padding: 15, 
+            borderWidth: 2, 
             borderColor: colors.inputBorder,
-            borderRadius: 10,
-            marginBottom: 15,
+            borderRadius: 10, 
+            marginBottom: 15, 
             backgroundColor: colors.inputBackground,
-            fontSize: 16 * fontScale,
+            fontSize: 16 * fontScale, 
             color: colors.infoText,
         },
-        inputMultiline: {
-            width: '100%',
-            padding: 15,
-            borderWidth: 2,
+        inputMultiline: { 
+            width: '100%', 
+            padding: 15, 
+            borderWidth: 2, 
             borderColor: colors.inputBorder,
-            borderRadius: 10,
-            marginBottom: 15,
+            borderRadius: 10, 
+            marginBottom: 15, 
             backgroundColor: colors.inputBackground,
-            fontSize: 16 * fontScale,
+            fontSize: 16 * fontScale, 
             color: colors.infoText,
-            minHeight: 80,
-            textAlignVertical: 'top',
+            minHeight: 80, 
+            textAlignVertical: 'top', 
         },
-        label: {
-            fontSize: 16 * fontScale,
-            fontWeight: '600',
-            marginBottom: 8,
+        label: { 
+            fontSize: 16 * fontScale, 
+            fontWeight: '600', 
+            marginBottom: 8, 
             color: colors.settingsTitle,
         },
-        scrollContainer: {
+        scrollContainer: { 
             backgroundColor: colors.background,
         },
-        scrollContent: {
-            padding: 20,
-            paddingBottom: 30,
+        scrollContent: { 
+            padding: 20, 
+            paddingBottom: 30, 
         },
-    });
+    }); 
+
 
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
