@@ -363,27 +363,31 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                         style={styles.input}
                     />
                     
-                    <CustomPicker
-                        label="Membre de la famille"
-                        selectedValue={newFamilyHistory.familyMember || familyMembers[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
-                        options={familyMembers.map(member => ({ 
-                            label: member, 
-                            value: member 
-                        }))}
-                        placeholder="Sélectionner un membre"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Membre de la famille"
+                            selectedValue={newFamilyHistory.familyMember || familyMembers[0]}
+                            onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
+                            options={familyMembers.map(member => ({ 
+                                label: member, 
+                                value: member 
+                            }))}
+                            placeholder="Sélectionner un membre"
+                        />
+                    </View>
                     
-                    <CustomPicker
-                        label="Sévérité"
-                        selectedValue={newFamilyHistory.severity || severityLevels[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
-                        options={severityLevels.map(level => ({ 
-                            label: level, 
-                            value: level 
-                        }))}
-                        placeholder="Sélectionner la sévérité"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Sévérité"
+                            selectedValue={newFamilyHistory.severity || severityLevels[0]}
+                            onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
+                            options={severityLevels.map(level => ({ 
+                                label: level, 
+                                value: level 
+                            }))}
+                            placeholder="Sélectionner la sévérité"
+                        />
+                    </View>
                     
                     <TextInput
                         placeholder="Traitement"
@@ -432,27 +436,31 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                         style={styles.input}
                     />
                     
-                    <CustomPicker
-                        label="Membre de la famille"
-                        selectedValue={editedFamilyHistory.familyMember}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
-                        options={familyMembers.map(member => ({ 
-                            label: member, 
-                            value: member 
-                        }))}
-                        placeholder="Sélectionner un membre"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Membre de la famille"
+                            selectedValue={editedFamilyHistory.familyMember}
+                            onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
+                            options={familyMembers.map(member => ({ 
+                                label: member, 
+                                value: member 
+                            }))}
+                            placeholder="Sélectionner un membre"
+                        />
+                    </View>
                     
-                    <CustomPicker
-                        label="Sévérité"
-                        selectedValue={editedFamilyHistory.severity}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
-                        options={severityLevels.map(level => ({ 
-                            label: level, 
-                            value: level 
-                        }))}
-                        placeholder="Sélectionner la sévérité"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Sévérité"
+                            selectedValue={editedFamilyHistory.severity}
+                            onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
+                            options={severityLevels.map(level => ({ 
+                                label: level, 
+                                value: level 
+                            }))}
+                            placeholder="Sélectionner la sévérité"
+                        />
+                    </View>
                     
                     <TextInput
                         placeholder="Traitement"
