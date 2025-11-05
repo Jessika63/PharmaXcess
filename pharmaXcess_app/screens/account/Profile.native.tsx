@@ -153,7 +153,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}> 
                             <Image 
                                 source={{ uri: getAvatarUrl() }} 
-                                style={[styles.profileImage, { width: 40, height: 40, marginRight: 15 }]} 
+                                style={[styles.profileImage, { width: 40, height: 40, marginLeft: 15 }]} 
                             />
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.cardText, { color: '#fff', fontSize: 16, fontWeight: 'bold' }]}>
@@ -170,7 +170,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                             </View>
                         </View>
                         <View style={{ alignItems: 'center'}}> 
-                            <Ionicons name="people" size={24} color="#fff" /> 
+                            <Ionicons name="people" size={24} color="#fff" style={{ marginRight: 15 }} /> 
                             <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginTop: 2 }} />
                         </View>
                     </View>
