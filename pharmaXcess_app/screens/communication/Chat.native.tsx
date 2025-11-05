@@ -351,29 +351,32 @@ export default function Chat(): React.JSX.Element {
                             style={styles.chatCard} 
                             onPress={() => handleChatPress(item)}
                         >
-                            <View style={styles.chatHeader}>
-                                <View style={styles.chatInfo}>
-                                    <Text style={styles.chatTitle}>{item.title}</Text>
-                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                                        <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                            {/* Title and status on the top */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={[styles.chatTitle, { flex: 1, marginRight: 8 }]}>{item.title}</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                                    <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                                </View>
+                                {unreadCount > 0 && (
+                                    <View style={[styles.unreadBadge, { marginLeft: 8 }]}>
+                                        <Text style={styles.unreadText}>{unreadCount}</Text>
                                     </View>
-                                </View>
-                                <View style={styles.chatMeta}>
-                                    <Text style={styles.chatDate}>{item.lastActivity}</Text>
-                                    {unreadCount > 0 && (
-                                        <View style={styles.unreadBadge}>
-                                            <Text style={styles.unreadText}>{unreadCount}</Text>
-                                        </View>
-                                    )}
-                                </View>
+                                )}
                             </View>
+                            {/* Preview message and details */} 
+
                             <Text style={styles.chatPreview} numberOfLines={2}>
                                 {item.messages.length > 0 
                                     ? item.messages[item.messages.length - 1].text 
                                     : item.question
                                 }
                             </Text>
-                            <Text style={styles.chatName}>Par {item.name}</Text>
+                            
+                            {/* Date and name on the bottom  */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                <Text style={styles.chatName}>Par {item.name}</Text>
+                                <Text style={styles.chatDate}>{item.lastActivity}</Text>
+                            </View>
                         </TouchableOpacity>
                     );
                 }}
