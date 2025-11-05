@@ -395,16 +395,18 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
             style={styles.input}
           />
           
-          <CustomPicker
-            label="Spécialité"
-            selectedValue={newDoctor.specialty}
-            onValueChange={(value) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
-            options={specialties.map(specialty => ({ 
-              label: specialty, 
-              value: specialty 
-            }))}
-            placeholder="Sélectionner une spécialité"
-          />
+          <View style={{ width: '100%' }}>
+            <CustomPicker
+              label="Spécialité"
+              selectedValue={newDoctor.specialty}
+              onValueChange={(value) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
+              options={specialties.map(specialty => ({ 
+                label: specialty, 
+                value: specialty 
+              }))}
+              placeholder="Sélectionner une spécialité"
+            />
+          </View>
           
           <TextInput
             placeholder="Téléphone"
@@ -477,16 +479,18 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
             style={styles.input}
           />
           
-          <CustomPicker
-            label="Spécialité"
-            selectedValue={editedDoctor.specialty}
-            onValueChange={(value) => setEditedDoctor({ ...editedDoctor, specialty: String(value) })}
-            options={specialties.map(specialty => ({ 
-              label: specialty, 
-              value: specialty 
-            }))}
-            placeholder="Sélectionner une spécialité"
-          />
+          <View style={{ width: '100%' }}>
+            <CustomPicker
+              label="Spécialité"
+              selectedValue={editedDoctor.specialty}
+              onValueChange={(value) => setEditedDoctor({ ...editedDoctor, specialty: String(value) })}
+              options={specialties.map(specialty => ({ 
+                label: specialty, 
+                value: specialty 
+              }))}
+              placeholder="Sélectionner une spécialité"
+            />
+          </View>
           
           <TextInput
             placeholder="Téléphone"
