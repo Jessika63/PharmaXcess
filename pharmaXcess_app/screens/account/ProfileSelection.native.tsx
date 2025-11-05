@@ -114,7 +114,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                                 <Image 
                                     source={{ uri: getAvatarUrl(profile) }} 
-                                    style={[styles.profileImage, { width: 50, height: 50, marginRight: 15 }]} 
+                                    style={[styles.profileImage, { width: 50, height: 50, marginLeft: 15 }]} 
                                 />
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold' }, currentProfile?.id === profile.id && { color: '#fff' }]}>
@@ -134,7 +134,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                     style={{ marginRight: 10 }} 
                                 />
                                 {currentProfile?.id === profile.id && (
-                                    <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                                    <Ionicons name="checkmark-circle" size={24} color="#fff" style={{ marginRight: 10 }} />
                                 )}
                             </View>
                         </LinearGradient>
