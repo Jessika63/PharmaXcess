@@ -1,22 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator   } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Camera, CameraView } from 'expo-camera';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/MyPrescriptions.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useProfileData } from '../../hooks/useProfileData';
-
-type Prescription = {
-    name: string;
-    date: string;
-    doctor: string;
-    medications: string;
-};
+import { getPrescriptions, createPrescription } from '../../services/prescriptions/prescriptionsService';
+import { Prescription } from '../../services/prescriptions/types';
 
 // The MyPrescriptions component allows users to view, add, and manage their prescriptions, including taking photos of new prescriptions using the camera.
 type MyPrescriptionsProps = {
@@ -25,25 +17,11 @@ type MyPrescriptionsProps = {
 
 export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): React.JSX.Element {
   const { colors } = useTheme();
-    const { fontScale } = useFontScale();
+  const { fontScale } = useFontScale();
   const { currentProfile } = useProfile();
   const styles = createStyles(colors, fontScale);
 
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-    {
-      name: 'Ordonnance 1',
-      date: '01/01/2021',
-      doctor: 'Dr. Dupont',
-      medications: 'Paracétamol, Ibuprofène',
-    },
-    {
-      name: 'Ordonnance 2',
-      date: '01/01/2020',
-      doctor: 'Dr. Martin',
-      medications: 'Amoxicilline, Azithromycine',
-    },
-  ]);
-
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   // State to manage camera permissions, visibility, and photo capture
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraVisible, setCameraVisible] = useState<boolean>(false);
@@ -51,49 +29,24 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   // Reference to the camera view for taking pictures
   const cameraRef = useRef<CameraView | null>(null);
 
-  // For profile-based prescription management (simulated) 
-  const [profilePrescriptionsData, setProfilePrescriptionsData] = useState<string[]>([]); 
-
-  // Simple prescription management by profile (simulated functions) 
-  const handleAddPrescriptionToProfile = async (prescriptionData: string): Promise<boolean> => { 
-    // Simulate adding prescription to profile 
-    if (!profilePrescriptionsData.includes(prescriptionData)) { 
-      setProfilePrescriptionsData([...profilePrescriptionsData, prescriptionData]); 
-      return true; 
-    }
-    return false; 
-  }; 
-
-  const handleRemovePrescriptionFromProfile = async (prescription: string): Promise<boolean> => { 
-    // Simulate removing prescription from profile 
-    setProfilePrescriptionsData(profilePrescriptionsData.filter(p => p !== prescription)); 
-    return true; 
-  };
-
-  const getRelationshipText = (relationship?: string) => {
-    switch (relationship) {
-      case 'self': return 'Mon profil';
-      case 'child': return 'Profil enfant';
-      case 'parent': return 'Profil parent';
-      case 'spouse': return 'Profil conjoint(e)';
-      case 'other': return 'Autre profil';
-      default: return 'Mon profil';
-    }
-  };
+  const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Mes ordonnances',
     });
   }, [navigation]);
-
-  // Determine if it's the main profile
-  const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
-
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
+
+      try {
+        const data = await getPrescriptions();
+        setPrescriptions(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des ordonnances :', error);
+      }
     })();
   }, []);
 
@@ -112,27 +65,18 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   const handleValidatePhoto = async (): Promise<void> => {
     if (isMainProfile) {
       // For main profile: add to local state
-      const newPrescription: Prescription = {
+      const newPrescription: Omit<Prescription, 'id'> = {
         name: `Ordonnance ${prescriptions.length + 1}`,
         date: new Date().toLocaleDateString(),
         doctor: `Dr. ${['Dupont', 'Martin'][Math.floor(Math.random() * 2)]}`,
         medications: ['Paracétamol', 'Ibuprofène'][Math.floor(Math.random() * 2)],
       };
-      setPrescriptions([...prescriptions, newPrescription]);
-    } else {
-      // For other profiles: add to profile data
-      const prescriptionData = {
-        name: `Ordonnance ${profilePrescriptionsData.length + 1}`,
-        date: new Date().toLocaleDateString(),
-        doctor: `Dr. ${['Dupont', 'Martin'][Math.floor(Math.random() * 2)]}`,
-        medications: ['Paracétamol', 'Ibuprofène'][Math.floor(Math.random() * 2)],
-      };
-      
-      const success = await handleAddPrescriptionToProfile(JSON.stringify(prescriptionData));
-      if (success) {
-        Alert.alert('Succès', 'Ordonnance ajoutée avec succès.');
-      } else {
-        Alert.alert('Erreur', 'Cette ordonnance est déjà enregistrée ou une erreur est survenue.');
+
+      try {
+        const created = await createPrescription(newPrescription);
+        setPrescriptions([...prescriptions, created]);
+      } catch (error) {
+        Alert.alert('Erreur', 'Impossible d\'ajouter l\'ordonnance.');
       }
     }
     setPhoto(null);
@@ -143,42 +87,12 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   };
 
   if (hasPermission === null) {
-    return <Text>Demande de permission de la caméra...</Text>
+    return <Text>Demande de permission de la caméra...</Text>;
   }
 
   if (hasPermission === false) {
-    return <Text>Accès à la caméra refusé</Text>
+    return <Text>Accès à la caméra refusé</Text>;
   }
-
-  // Get the prescriptions to display based on profile
-  const getCurrentPrescriptions = () => {
-    if (isMainProfile) {
-      return prescriptions;
-    } else {
-      // Parse profile-specific prescriptions from JSON strings
-      return profilePrescriptionsData.map(prescriptionStr => {
-        try {
-          return JSON.parse(prescriptionStr);
-        } catch {
-          return null;
-        }
-      }).filter(Boolean);
-    }
-  };
-
-  const handleRemovePrescription = async (index: number) => {
-    if (isMainProfile) {
-      // For main profile: remove from local state
-      const updatedPrescriptions = prescriptions.filter((_, i) => i !== index);
-      setPrescriptions(updatedPrescriptions);
-    } else {
-      // For other profiles: remove from profile data
-      const prescriptionToRemove = profilePrescriptionsData[index];
-      await handleRemovePrescriptionFromProfile(prescriptionToRemove);
-    }
-  };
-
-  const currentPrescriptions = getCurrentPrescriptions();
 
   return (
     <View style={styles.container}>
@@ -194,52 +108,22 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
       ) : (
         <>
           <ScrollView contentContainerStyle={styles.prescriptionList}>
-            {/* Header for current profile */}
-            {currentProfile && (
-              <View style={[styles.prescriptionCard, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <Text style={[styles.prescriptionTitle, { color: colors.primary, fontWeight: 'bold' }]}>
-                      {getRelationshipText(currentProfile.relationship)}
-                    </Text>
-                    <Text style={[styles.prescriptionText, { color: colors.primary, opacity: 0.8 }]}>
-                      {currentProfile.name}
-                    </Text>
-                  </View>
-                  <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
-                </View>
-              </View>
-            )}
-
             {/* Display prescriptions based on profile */}
-            {currentPrescriptions.length > 0 ? (
-              currentPrescriptions.map((prescription, index) => (
+            {prescriptions.length > 0 ? (
+              prescriptions.map((prescription, index) => (
                 <View key={index} style={styles.prescriptionCard}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
-                      <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
-                      <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
-                      <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
-                    </View>
-                    {!isMainProfile && (
-                      <TouchableOpacity onPress={() => handleRemovePrescription(index)} style={{ padding: 8 }}>
-                        <Ionicons name="trash-outline" size={24} color="#FF4444" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
+                  <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
+                  <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
+                  <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
                 </View>
               ))
             ) : (
               <View style={styles.prescriptionCard}>
-                <Text style={[styles.prescriptionText, { textAlign: 'center', fontStyle: 'italic', opacity: 0.6 }]}>
-                  {isMainProfile 
-                    ? "Aucune ordonnance trouvée" 
-                    : "Aucune ordonnance ajoutée pour ce profil"}
-                </Text>
+                <Text style={styles.prescriptionText}>Aucune ordonnance trouvée</Text>
               </View>
             )}
-            
+
             {photo && (
               // Display the photo preview when a photo is taken
               <View style={styles.photoPreview}>
@@ -274,7 +158,7 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
           </View>
         </>
       )}
-      </View>
+    </View>
 
   );
 }

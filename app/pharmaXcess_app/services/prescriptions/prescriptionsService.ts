@@ -14,11 +14,27 @@ import {
 export async function getPrescriptions(): Promise<GetPrescriptionsResponse> {
     // console.log('Fetching all prescriptions...');
     try {
-        const response = await api.get<GetPrescriptionsResponse>('/api/prescriptions', {
-        headers: defaultHeaders,
-        });
-        console.log('Get Prescriptions Success:', response.data);
-        return response.data;
+        // const response = await api.get<GetPrescriptionsResponse>('/api/prescriptions', {
+        // headers: defaultHeaders,
+        // });
+        // console.log('Get Prescriptions Success:', response.data);
+        // return response.data;
+        return Promise.resolve([
+            {
+                id: 1,
+                name: 'Ordonnance 1',
+                date: '01/01/2021',
+                doctor: 'Dr. Dupont',
+                medications: 'Paracétamol, Ibuprofène',
+            },
+            {
+                id: 2,
+                name: 'Ordonnance 2',
+                date: '01/01/2020',
+                doctor: 'Dr. Martin',
+                medications: 'Amoxicilline, Azithromycine',
+            },
+        ]);
     } catch (error: any) {
         console.error('Get Prescriptions Error:', error.response?.data || error.message);
     return Promise.reject(error.response?.data || error.message);
@@ -33,11 +49,12 @@ export async function getPrescriptions(): Promise<GetPrescriptionsResponse> {
 export async function createPrescription(data: CreatePrescriptionData): Promise<CreatePrescriptionResponse> {
     console.log('Creating new prescription with data:', data);
     try {
-        const response = await api.post<CreatePrescriptionResponse>('/api/prescriptions', data, {
-            headers: defaultHeaders,
-        });
-        console.log('Create Prescription Success:', response.data);
-        return response.data;
+        // const response = await api.post<CreatePrescriptionResponse>('/api/prescriptions', data, {
+        //     headers: defaultHeaders,
+        // });
+        // console.log('Create Prescription Success:', response.data);
+        // return response.data;
+        return Promise.resolve({ id: Math.floor(Math.random() * 10000), ...data });
     } catch (error: any) {
         console.error('Create Prescription Error:', error.response?.data || error.message);
         return Promise.reject(error.response?.data || error.message);
