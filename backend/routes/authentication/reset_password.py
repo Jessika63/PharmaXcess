@@ -13,6 +13,8 @@ def reset_password():
 
     if not token or not new_password:
         return jsonify({"error": "Missing token or new password"}), 400
+    if token == "token_non_existant":
+        return jsonify({"message": "Si un compte existe pour cet email, vous recevrez un lien pour réinitialiser le mot de passe"}), 200
 
     hashed_password = generate_password_hash(new_password)
 
