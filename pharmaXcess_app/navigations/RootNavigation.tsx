@@ -5,9 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AuthNavigation from './AuthNavigation';
 import AppNavigation from './AppNavigation';
+import ProfessionalNavigation from './ProfessionalNavigation';
 
 export default function RootNavigation(): React.JSX.Element {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, userType } = useAuth();
     const { colors } = useTheme();
 
     if (isLoading) {
@@ -25,7 +26,13 @@ export default function RootNavigation(): React.JSX.Element {
 
     return (
         <NavigationContainer>
-            {isAuthenticated ? <AppNavigation /> : <AuthNavigation />}
+            {!isAuthenticated ? (
+                <AuthNavigation />
+            ) : userType === 'professional' ? (
+                <ProfessionalNavigation />
+            ) : (
+                <AppNavigation />
+            )}
         </NavigationContainer>
     );
 }

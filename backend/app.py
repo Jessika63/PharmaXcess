@@ -173,6 +173,7 @@ def register_blueprints():
     from routes.authentication.login import login_bp
     from routes.authentication.logout import logout_bp
     from routes.authentication.register import register_bp
+    from routes.profile.sub_profiles import sub_profile_bp
     from routes.authentication.forgot_password import forgot_password_bp
     from routes.authentication.reset_password import reset_password_bp
     from routes.notifications.alarms_routes import alarms_bp
@@ -205,11 +206,7 @@ def register_blueprints():
     from routes.clickAndCollect.click_collect_status import clickcollect_status_bp
     from routes.clickAndCollect.click_collect_temp_images import clickcollect_temp_images_bp
 
-    app.register_blueprint(clickcollect_command_bp)
-    app.register_blueprint(clickcollect_validate_bp)
-    app.register_blueprint(clickcollect_refuse_bp)
-    app.register_blueprint(clickcollect_status_bp)
-    app.register_blueprint(clickcollect_temp_images_bp)
+    from routes.profile.sub_profiles import sub_profile_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -239,6 +236,7 @@ def register_blueprints():
     app.register_blueprint(get_messages_bp)
     app.register_blueprint(delete_message_bp)
     app.register_blueprint(login_bp)
+    app.register_blueprint(sub_profile_bp)
     app.register_blueprint(logout_bp)
     app.register_blueprint(register_bp)
     app.register_blueprint(forgot_password_bp)
@@ -256,6 +254,11 @@ def register_blueprints():
     app.register_blueprint(doctors_bp)
     app.register_blueprint(clickcollect_send_bp)
     app.register_blueprint(clickcollect_request_bp)
+    app.register_blueprint(clickcollect_command_bp)
+    app.register_blueprint(clickcollect_validate_bp)
+    app.register_blueprint(clickcollect_refuse_bp)
+    app.register_blueprint(clickcollect_status_bp)
+    app.register_blueprint(clickcollect_temp_images_bp)
 
 register_blueprints()
 

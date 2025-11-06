@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
+from .profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 family_history_bp = Blueprint("family_history", __name__)
 
@@ -26,22 +27,37 @@ def create_family_history():
     - 500 Internal Server Error: If a database error occurs during insertion.
     """
 
-    data = request.get_json()
-    user_id = data.get("utilisateur_id")
-    disease = data.get("maladie")
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
-    if not user_id or not disease:
+    data = request.get_json()
+    utilisateur_id = data.get("utilisateur_id")
+    maladie = data.get("maladie")
+
+    if not utilisateur_id or not maladie:
         return jsonify({"error": "Missing required fields"}), 400
+
+    # Verify access to the provided utilisateur_id (target check)
+    condition = profile_target_access_condition('id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT id FROM utilisateurs
+                WHERE {condition}
+            """, (utilisateur_id, current_user_id, current_user_id))
+            accessible = cursor.fetchone()
+            if not accessible:
+                return jsonify({"error": "You don't have permission to add a family history for this user"}), 403
+
             cursor.execute("""
                 INSERT INTO antecedents (utilisateur_id, maladie, membre, severite, traitement)
                 VALUES (%s, %s, %s, %s, %s)
             """, (
-                user_id,
-                disease,
+                utilisateur_id,
+                maladie,
                 data.get("membre"),
                 data.get("severite"),
                 data.get("traitement")
@@ -54,8 +70,8 @@ def create_family_history():
 
 
 # GET ALL (by user)
-@family_history_bp.route("/family-history/<int:user_id>", methods=["GET"])
-def get_all_family_history(user_id):
+@family_history_bp.route("/family-history", methods=["GET"])
+def get_all_family_history():
     """
     Objective:
     Retrieve all family medical history records associated with a specific user.
@@ -70,13 +86,25 @@ def get_all_family_history(user_id):
     - 404 Not Found: If no records exist for the given user (optional behavior depending on implementation).
     - 500 Internal Server Error: If a database error occurs during retrieval.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # For listing antecedents, filter by owner column
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM antecedents WHERE utilisateur_id=%s", (user_id,))
-            family_history = cursor.fetchall()
-        return jsonify(family_history), 200
+            query = f"""
+                SELECT a.*
+                FROM antecedents a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE {condition}
+            """
+            cursor.execute(query, (current_user_id, current_user_id))
+            entries = cursor.fetchall()
+        return jsonify(entries), 200
     finally:
         conn.close()
 
@@ -98,11 +126,23 @@ def get_family_history(entry_id):
     - 404 Not Found: If no entry exists for the given ID.
     - 500 Internal Server Error: If a database error occurs during retrieval.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    # For single entry retrieval/update/delete, filter by owner column
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM antecedents WHERE id=%s", (entry_id,))
+            query = f"""
+                SELECT a.*
+                FROM antecedents a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE a.id = %s AND {condition}
+            """
+            cursor.execute(query, (entry_id, current_user_id, current_user_id))
             entry = cursor.fetchone()
         if not entry:
             return jsonify({"error": "Family history entry not found"}), 404
@@ -134,22 +174,35 @@ def update_family_history(entry_id):
     - 400 Bad Request: If required fields are missing or invalid.
     - 500 Internal Server Error: If a database error occurs during update.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
 
     data = request.get_json()
+    condition = profile_access_condition('a.utilisateur_id')
+
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE antecedents
-                SET maladie=%s, membre=%s, severite=%s, traitement=%s
-                WHERE id=%s
-            """, (
+            query = f"""
+                UPDATE antecedents a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                SET a.maladie=%s, a.membre=%s, a.severite=%s, a.traitement=%s
+                WHERE a.id=%s AND {condition}
+            """
+            cursor.execute(query, (
                 data.get("maladie"),
                 data.get("membre"),
                 data.get("severite"),
                 data.get("traitement"),
-                entry_id
+                entry_id,
+                current_user_id,
+                current_user_id
             ))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Family history entry not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Family history updated successfully"}), 200
     finally:
@@ -173,11 +226,25 @@ def delete_family_history(entry_id):
     - 404 Not Found: If the entry does not exist.
     - 500 Internal Server Error: If a database error occurs during deletion.
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
+    condition = profile_access_condition('a.utilisateur_id')
 
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM antecedents WHERE id=%s", (entry_id,))
+            query = f"""
+                DELETE a FROM antecedents a
+                JOIN utilisateurs u ON a.utilisateur_id = u.id
+                WHERE a.id = %s AND {condition}
+            """
+            cursor.execute(query, (entry_id, current_user_id, current_user_id))
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Family history entry not found or no permission"}), 404
+
             conn.commit()
         return jsonify({"message": "Family history deleted successfully"}), 200
     finally:

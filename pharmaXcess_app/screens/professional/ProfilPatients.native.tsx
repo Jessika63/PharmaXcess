@@ -1,0 +1,1340 @@
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Modal,
+  TextInput,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Camera, CameraView } from 'expo-camera';
+import { useTheme } from '../../context/ThemeContext';
+import { useFontScale } from '../../context/FontScaleContext';
+import createStyles from '../../styles/ProfilPatients.style';
+import createProfileInfoStyles from '../../styles/ProfileInfos.style'; 
+import createMyPrescriptionsStyles from '../../styles/MyPrescriptions.style'; 
+
+
+type Hospitalization = { 
+  id: string; 
+  reason: string; 
+  hospital: string; 
+  service: string; 
+  doctor: string; 
+  date: string; 
+  duration?: string; 
+};
+
+type Doctor = { 
+  id: string; 
+  name: string; 
+  specialty: string; 
+  phone: string; 
+  email: string; 
+  address: string; 
+}; 
+
+type Patient = { 
+  id: string; 
+  firstName: string; 
+  lastName: string; 
+  age: number; 
+  dateOfBirth: string; 
+  phone: string; 
+  email: string; 
+  address: string; 
+  weight: string; 
+  height: string; 
+  bloodType: string; 
+  socialSecurityNumber: string; 
+  medicalHistory: string[]; 
+  allergies: string[]; 
+  currentMedications: string[];
+  hospitalizations: Hospitalization[]; 
+  doctors: Doctor[]; 
+  emergencyContact: { 
+    name: string; 
+    phone: string; 
+    relationship: string; 
+  }; 
+}; 
+
+type ProfileItem = { 
+  title: string;
+  icon: "person-outline" | "medkit-outline" | "bandage-outline" | "bed-outline" | "alert-circle-outline" | "people-outline" | "person-add-outline" | "document-text-outline" | "clipboard-outline";
+  data: string[]; 
+}; 
+
+type SectionType = 'info' | 'maladies' | 'traitements' | 'hospitalisations' | 'allergies' | 'antecedents' | 'medecins' | 'documents' | 'notes';
+
+type DetailedItem = {
+  id: string; 
+  title: string;
+  description: string;
+  date?: string; 
+  severity?: string; 
+  notes?: string; 
+}; 
+
+type ProfessionalDocument = {
+  id: string; 
+  name: string; 
+  type: string; 
+  dateAdded: string;
+  size: string; 
+  uri: string;
+  doctorId: string; // ID of the doctor who added the document
+  patientId: string; 
+}; 
+
+type ConsultationNote = { 
+  id: string; 
+  patientId: string; 
+  doctorId: string; 
+  consultationDate: string;
+  content: string;
+  createdAt: string; 
+};
+
+
+export default function ProfilPatients(): React.JSX.Element {
+  const { colors } = useTheme();
+  const { fontScale } = useFontScale();
+  const styles = createStyles(colors, fontScale);
+  const profileInfoStyles = createProfileInfoStyles(colors, fontScale);
+  const prescriptionStyles = createMyPrescriptionsStyles(colors, fontScale); 
+
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedSection, setSelectedSection] = useState<SectionType | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false); 
+  const [showNotesModal, setShowNotesModal] = useState(false); 
+  const [showAddDocumentModal, setShowAddDocumentModal] = useState(false); 
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false); 
+  const [previewDocument, setPreviewDocument] = useState<ProfessionalDocument | null>(null); 
+  const [newNoteContent, setNewNoteContent] = useState(''); 
+  const [newNoteDate, setNewNoteDate] = useState(''); 
+
+  const cameraRef = useRef<CameraView | null>(null);
+
+  // Mock currentDoctorId - in real app, this would come from auth context
+  const currentDoctorId = 'DR001';
+
+  // Mock data for professional documents
+  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([
+    {
+      id: 'PDOC001',
+      name: 'Résultats analyses sanguines - Jean Dupont',
+      type: 'Analyses biologiques',
+      dateAdded: '28/10/2023',
+      size: '1.8 MB',
+      uri: 'documents/analyses_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC002',
+      name: 'Ordonnance Metformine - Jean Dupont',
+      type: 'Prescription',
+      dateAdded: '15/10/2023',
+      size: '0.5 MB',
+      uri: 'documents/ordonnance_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC003',
+      name: 'Compte-rendu consultation - Marie Curie',
+      type: 'Compte-rendu médical',
+      dateAdded: '20/10/2023',
+      size: '1.2 MB',
+      uri: 'documents/consultation_marie_curie.pdf',
+      doctorId: 'DR001',
+      patientId: 'P002'
+    }
+  ]);
+
+  // Mock data for consultation notes
+  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([
+    {
+      id: 'NOTE001',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '28/10/2023',
+      content: 'Patient présente une amélioration de sa glycémie. Poids stable. Recommandation de poursuivre le traitement actuel et surveiller la tension artérielle.',
+      createdAt: '28/10/2023 14:30'
+    },
+    {
+      id: 'NOTE002',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '15/10/2023',
+      content: 'Consultation de contrôle diabète. HbA1c à 7.2%. Ajustement posologie Metformine. Patient motivé pour changements alimentaires.',
+      createdAt: '15/10/2023 10:15'
+    },
+    {
+      id: 'NOTE003',
+      patientId: 'P002',
+      doctorId: 'DR001',
+      consultationDate: '20/10/2023',
+      content: 'Première consultation pour migraines. Fréquence: 3-4 épisodes/mois. Prescrit Sumatriptan. RDV de suivi dans 1 mois.',
+      createdAt: '20/10/2023 16:45'
+    }
+  ]);
+
+  // Mock data - patients
+  const [patients, setPatients] = useState<Patient[]>([
+    {
+      id: 'P001',
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      age: 45,
+      dateOfBirth: '15/03/1979',
+      phone: '06 12 34 56 78',
+      email: 'jean.dupont@email.com',
+      address: '123 Rue de la Paix, 75001 Paris',
+      weight: '75 kg',
+      height: '1m78',
+      bloodType: 'A+',
+      socialSecurityNumber: '1 79 03 75 001 234 56',
+      medicalHistory: ['Hypertension artérielle', 'Diabète type 2'],
+      allergies: ['Pénicilline', 'Arachides'],
+      currentMedications: ['Metformine 850mg', 'Ramipril 5mg'],
+      hospitalizations: [
+        {
+          id: 'H001',
+          reason: 'Chirurgie cardiaque',
+          hospital: 'Hôpital Pitié-Salpêtrière',
+          service: 'Cardiologie',
+          doctor: 'Dr. Martin',
+          date: '15/06/2022',
+          duration: '5 jours'
+        },
+        {
+          id: 'H002',
+          reason: 'Contrôle diabète',
+          hospital: 'Clinique Saint-Louis',
+          service: 'Endocrinologie',
+          doctor: 'Dr. Dubois',
+          date: '12/03/2023',
+          duration: '2 jours'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D001',
+          name: 'Dr. Martin Dubois',
+          specialty: 'Médecine générale',
+          phone: '01 45 67 89 12',
+          email: 'martin.dubois@medical.fr',
+          address: 'Cabinet médical Saint-Antoine, 15 rue de la Santé, 75014 Paris'
+        },
+        {
+          id: 'D002',
+          name: 'Dr. Sophie Lemaire',
+          specialty: 'Cardiologie',
+          phone: '01 56 09 20 00',
+          email: 'sophie.lemaire@hopital-pompidou.fr',
+          address: 'Hôpital Européen Georges Pompidou, 20 rue Leblanc, 75015 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Marie Dupont',
+        phone: '06 98 76 54 32',
+        relationship: 'Épouse'
+      }
+    },
+    {
+      id: 'P002',
+      firstName: 'Marie',
+      lastName: 'Curie',
+      age: 38,
+      dateOfBirth: '22/08/1986',
+      phone: '06 87 65 43 21',
+      email: 'marie.curie@email.com',
+      address: '456 Avenue de la Science, 75005 Paris',
+      weight: '62 kg',
+      height: '1m65',
+      bloodType: 'O-',
+      socialSecurityNumber: '2 86 08 75 005 678 90',
+      medicalHistory: ['Migraine chronique', 'Anémie'],
+      allergies: ['Aspirine'],
+      currentMedications: ['Sumatriptan 50mg', 'Fer sulfate'],
+      hospitalizations: [
+        {
+          id: 'H003',
+          reason: 'Traitement de l\'anémie',
+          hospital: 'Hôpital Cochin',
+          service: 'Hématologie',
+          doctor: 'Dr. Laurent',
+          date: '08/09/2023',
+          duration: '3 jours'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D003',
+          name: 'Dr. Claire Laurent',
+          specialty: 'Hématologie',
+          phone: '01 58 41 25 00',
+          email: 'claire.laurent@hopital-cochin.fr',
+          address: 'Hôpital Cochin, 27 rue du Faubourg Saint-Jacques, 75014 Paris'
+        },
+        {
+          id: 'D004',
+          name: 'Dr. Michel Petit',
+          specialty: 'Neurologie',
+          phone: '01 42 16 00 00',
+          email: 'michel.petit@pitie-salpetriere.fr',
+          address: 'Hôpital Pitié-Salpêtrière, 47-83 Boulevard de l\'Hôpital, 75013 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Pierre Curie',
+        phone: '06 11 22 33 44',
+        relationship: 'Époux'
+      }
+    },
+    {
+      id: 'P003',
+      firstName: 'Pierre',
+      lastName: 'Martin',
+      age: 62,
+      dateOfBirth: '10/12/1962',
+      phone: '06 55 44 33 22',
+      email: 'pierre.martin@email.com',
+      address: '789 Boulevard Saint-Germain, 75006 Paris',
+      weight: '82 kg',
+      height: '1m75',
+      bloodType: 'B+',
+      socialSecurityNumber: '1 62 12 75 006 789 01',
+      medicalHistory: ['Arthrose', 'Cholestérol élevé'],
+      allergies: ['Aucune allergie connue'],
+      currentMedications: ['Atorvastatine 20mg', 'Glucosamine'],
+      hospitalizations: [
+        {
+          id: 'H004',
+          reason: 'Prothèse de hanche',
+          hospital: 'Hôpital Saint-Antoine',
+          service: 'Orthopédie',
+          doctor: 'Dr. Rousseau',
+          date: '20/01/2023',
+          duration: '7 jours'
+        },
+        {
+          id: 'H005',
+          reason: 'Bilan cardiologique',
+          hospital: 'Clinique du Faubourg',
+          service: 'Cardiologie',
+          doctor: 'Dr. Moreau',
+          date: '05/11/2023',
+          duration: '1 jour'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D005',
+          name: 'Dr. Jean Rousseau',
+          specialty: 'Orthopédie',
+          phone: '01 49 28 20 00',
+          email: 'jean.rousseau@st-antoine.fr',
+          address: 'Hôpital Saint-Antoine, 184 rue du Faubourg Saint-Antoine, 75012 Paris'
+        },
+        {
+          id: 'D006',
+          name: 'Dr. Anne Moreau',
+          specialty: 'Cardiologie',
+          phone: '01 45 75 43 21',
+          email: 'anne.moreau@clinique-faubourg.fr',
+          address: 'Clinique du Faubourg, 8 rue de la Roquette, 75011 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Sophie Martin',
+        phone: '06 77 88 99 00',
+        relationship: 'Fille'
+      }
+    }
+  ]);
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasCameraPermission(status === 'granted');
+    return status === 'granted';
+  };
+
+  const handleScanPress = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (hasPermission) {
+      setShowScanner(true);
+    } else {
+      Alert.alert('Permission refusée', 'L\'accès à la caméra est nécessaire pour scanner les QR codes.');
+    }
+  };
+
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
+    setShowScanner(false);
+    
+    try {
+      // Try to parse QR code data as JSON
+      const patientData = JSON.parse(data);
+      
+      // Check if it's a valid patient QR code
+      if (patientData.type === 'patient_profile' && patientData.patientId) {
+        // Find existing patient or create new one
+        const existingPatient = patients.find(p => p.id === patientData.patientId);
+        
+        if (existingPatient) {
+          setSelectedPatient(existingPatient);
+        } else {
+          // Create new patient from QR data
+        const newPatient: Patient = {
+          id: patientData.id,
+          firstName: patientData.firstName,
+          lastName: patientData.lastName,
+          age: patientData.age,
+          dateOfBirth: patientData.dateOfBirth,
+          phone: patientData.phone,
+          email: patientData.email,
+          address: patientData.address,
+          weight: patientData.weight || 'Non renseigné',
+          height: patientData.height || 'Non renseigné',
+          bloodType: patientData.bloodType || 'Non renseigné',
+          socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+          medicalHistory: patientData.medicalHistory || [],
+          allergies: patientData.allergies || [],
+          currentMedications: patientData.currentMedications || [],
+          hospitalizations: patientData.hospitalizations || [],
+          doctors: patientData.doctors || [],
+          emergencyContact: patientData.emergencyContact || {
+            name: '',
+            phone: '',
+            relationship: ''
+          }
+        };          setPatients(prev => [newPatient, ...prev]);
+          setSelectedPatient(newPatient);
+        }
+      } else {
+        Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
+    }
+  };
+
+  const filteredPatients = patients.filter(patient => 
+    `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getDetailedData = (patient: Patient, section: SectionType): DetailedItem[] => {
+    switch (section) {
+      case 'maladies':
+        return [
+          {
+            id: '1',
+            title: 'Hypertension artérielle',
+            description: 'Pression artérielle élevée de manière chronique.',
+            date: '01/01/2020',
+            severity: 'Modérée',
+            notes: 'Contrôlée par médicaments. Surveillance régulière nécessaire.'
+          },
+          {
+            id: '2',
+            title: 'Diabète type 2',
+            description: 'Trouble métabolique caractérisé par une hyperglycémie.',
+            date: '15/06/2018',
+            severity: 'Sévère',
+            notes: 'Nécessite un suivi strict du régime alimentaire et de la glycémie.'
+          }
+        ];
+      case 'traitements':
+        return [
+          {
+            id: '1',
+            title: 'Metformine 850mg',
+            description: 'Antidiabétique oral pour le contrôle de la glycémie.',
+            date: 'Depuis le 15/06/2018',
+            notes: 'À prendre 2 fois par jour avec les repas.'
+          },
+          {
+            id: '2',
+            title: 'Ramipril 5mg',
+            description: 'Inhibiteur de l\'enzyme de conversion pour l\'hypertension.',
+            date: 'Depuis le 01/01/2020',
+            notes: 'À prendre le matin à jeun.'
+          }
+        ];
+      case 'hospitalisations':
+        return patient.hospitalizations.map((hospitalization) => ({
+          id: hospitalization.id,
+          title: hospitalization.reason,
+          description: `Hôpital: ${hospitalization.hospital}\nService: ${hospitalization.service}\nMédecin: ${hospitalization.doctor}`,
+          date: hospitalization.date,
+          notes: hospitalization.duration ? `Durée: ${hospitalization.duration}` : undefined
+        }));
+      case 'allergies':
+        return [
+          {
+            id: '1',
+            title: 'Pénicilline',
+            description: 'Réaction allergique aux antibiotiques à base de pénicilline.',
+            severity: 'Sévère',
+            notes: 'Éviter tous les dérivés de la pénicilline. Porter un bracelet d\'allergie.'
+          },
+          {
+            id: '2',
+            title: 'Arachides',
+            description: 'Allergie alimentaire aux cacahuètes et dérivés.',
+            severity: 'Modérée',
+            notes: 'Lire attentivement les étiquettes alimentaires.'
+          }
+        ];
+      case 'antecedents':
+        return [
+          {
+            id: '1',
+            title: 'Diabète familial',
+            description: 'Antécédents de diabète type 2 dans la famille.',
+            notes: 'Père et grand-père paternel diabétiques. Surveillance glycémique recommandée.'
+          },
+          {
+            id: '2',
+            title: 'Maladies cardiovasculaires',
+            description: 'Antécédents familiaux de problèmes cardiaques.',
+            notes: 'Mère décédée d\'un infarctus à 65 ans. Oncle maternel avec AVC à 58 ans.'
+          }
+        ];
+      case 'medecins':
+        return patient.doctors.map((doctor) => ({
+          id: doctor.id,
+          title: doctor.name,
+          description: `Spécialité: ${doctor.specialty}\nEmail: ${doctor.email}\nTéléphone: ${doctor.phone}`,
+          notes: `Adresse: ${doctor.address}`
+        }));
+      default:
+        return [];
+    }
+  };
+
+  const handleSectionPress = (section: SectionType) => {
+    if (section === 'documents') {
+      setShowDocumentsModal(true);
+    } else if (section === 'notes') {
+      setShowNotesModal(true);
+    } else {
+      setSelectedSection(section);
+    }
+  };
+
+  const getSectionTitle = (section: SectionType): string => {
+    switch (section) {
+      case 'info': return 'Informations';
+      case 'maladies': return 'Maladies';
+      case 'traitements': return 'Traitements';
+      case 'hospitalisations': return 'Hospitalisations';
+      case 'allergies': return 'Allergies';
+      case 'antecedents': return 'Antécédents familiaux';
+      case 'medecins': return 'Médecins';
+      case 'documents': return 'Documents'; 
+      case 'notes': return 'Notes de consultation';
+      // case 'documents': return 'Documents';
+      // case 'notes': return 'Notes de consultation';
+      default: return '';
+    }
+  };
+
+  // Function to get patient info entries
+  const getPatientInfoEntries = (patient: Patient) => {
+    const labels: { [key: string]: string } = {
+      email: 'Email',
+      lastName: 'Nom',
+      firstName: 'Prénom',
+      dateOfBirth: 'Date de naissance',
+      age: 'Âge',
+      weight: 'Poids',
+      height: 'Taille',
+      bloodType: 'Groupe sanguin',
+      phone: 'Numéro de téléphone',
+      socialSecurityNumber: 'Numéro de sécurité sociale',
+      address: 'Adresse',
+      emergencyContactName: 'Contact d\'urgence (nom)',
+      emergencyContactPhone: 'Contact d\'urgence (téléphone)',
+    };
+
+    return [
+      { key: 'email', label: labels.email, value: patient.email },
+      { key: 'lastName', label: labels.lastName, value: patient.lastName },
+      { key: 'firstName', label: labels.firstName, value: patient.firstName },
+      { key: 'dateOfBirth', label: labels.dateOfBirth, value: patient.dateOfBirth },
+      { key: 'age', label: labels.age, value: `${patient.age} ans` },
+      { key: 'weight', label: labels.weight, value: patient.weight },
+      { key: 'height', label: labels.height, value: patient.height },
+      { key: 'bloodType', label: labels.bloodType, value: patient.bloodType },
+      { key: 'phone', label: labels.phone, value: patient.phone },
+      { key: 'socialSecurityNumber', label: labels.socialSecurityNumber, value: patient.socialSecurityNumber },
+      { key: 'address', label: labels.address, value: patient.address },
+      { key: 'emergencyContactName', label: labels.emergencyContactName, value: patient.emergencyContact.name },
+      { key: 'emergencyContactPhone', label: labels.emergencyContactPhone, value: patient.emergencyContact.phone },
+    ];
+  };
+
+  const getProfileItems = (patient: Patient): (ProfileItem & { section: SectionType })[] => [
+    {
+      title: 'Maladies',
+      icon: 'medkit-outline',
+      section: 'maladies',
+      data: patient.medicalHistory.length > 0 ? patient.medicalHistory : ['Aucune maladie renseignée']
+    },
+    {
+      title: 'Traitements',
+      icon: 'bandage-outline',
+      section: 'traitements',
+      data: patient.currentMedications.length > 0 ? patient.currentMedications : ['Aucun traitement actuel']
+    },
+    {
+      title: 'Hospitalisations',
+      icon: 'bed-outline',
+      section: 'hospitalisations',
+      data: patient.hospitalizations.length > 0 
+        ? patient.hospitalizations.map(h => `${h.reason} - ${h.hospital} (${h.date})`)
+        : ['Aucune hospitalisation enregistrée']
+    },
+    {
+      title: 'Allergies',
+      icon: 'alert-circle-outline',
+      section: 'allergies',
+      data: patient.allergies.length > 0 ? patient.allergies : ['Aucune allergie connue']
+    },
+    {
+      title: 'Antécédents familiaux',
+      icon: 'people-outline',
+      section: 'antecedents',
+      data: ['Diabète familial', 'Maladies cardiovasculaires']
+    },
+    {
+      title: 'Médecins',
+      icon: 'person-add-outline',
+      section: 'medecins',
+      data: patient.doctors.length > 0 
+        ? patient.doctors.map(d => `${d.name} (${d.specialty})`)
+        : ['Aucun médecin enregistré']
+    }, 
+    {
+      title: 'Documents', 
+      icon: 'document-text-outline',
+      section: 'documents', 
+      data: professionalDocuments.filter(doc => doc.patientId === patient.id && doc.doctorId === currentDoctorId).length > 0 
+        ? [`${professionalDocuments.filter(doc => doc.patientId === patient.id && doc.doctorId === currentDoctorId).length} document(s)`]
+        : ['Aucun document ajouté'] 
+    }, 
+    { 
+      title: 'Notes', 
+      icon: 'clipboard-outline',
+      section: 'notes', 
+      data: consultationNotes.filter(note => note.patientId === patient.id && note.doctorId === currentDoctorId).length > 0
+        ? [`${consultationNotes.filter(note => note.patientId === patient.id && note.doctorId === currentDoctorId).length} note(s) de consultation`]
+        : ['Aucune note de consultation'] 
+
+    },
+  ];
+
+  const renderPatientCard = ({ item }: { item: Patient }) => (
+    <TouchableOpacity
+      style={styles.patientCard}
+      onPress={() => setSelectedPatient(item)}
+    >
+      <View style={styles.patientInfo}>
+        <Text style={styles.patientName}>
+          {item.firstName} {item.lastName}
+        </Text>
+        <Text style={styles.patientAge}>
+          {item.age} ans • Né(e) le {item.dateOfBirth}
+        </Text>
+        <Text style={styles.patientId}>
+          ID: {item.id}
+        </Text>
+      </View>
+      <Ionicons 
+        name="chevron-forward" 
+        size={24} 
+        color={colors.infoTitle} 
+        style={styles.arrow}
+      />
+    </TouchableOpacity>
+  );
+
+  const getSeverityColor = (severity?: string): string => {
+    switch (severity?.toLowerCase()) {
+      case 'sévère': return colors.error;
+      case 'modérée': return colors.warning;
+      case 'légère': return colors.success;
+      default: return colors.infoTextSecondary;
+    }
+  };
+
+  // Functions for document management 
+  const handleAddDocument = () => { 
+    setShowAddDocumentModal(true); 
+  };
+
+  const handleSimulateDocumentSelection = () => {
+    const newDocument: ProfessionalDocument = { 
+      id: `PDOC${Date.now()}`,
+      name: `Nouveau document - ${selectedPatient?.firstName} ${selectedPatient?.lastName}`,
+      type: 'Compte-rendu médical',
+      dateAdded: new Date().toLocaleDateString('fr-FR'),
+      size: '1.5 MB', 
+      uri: `documents/nouveau_document_${Date.now()}.pdf`,
+      doctorId: currentDoctorId,
+      patientId: selectedPatient?.id || '' 
+    };
+
+    setPreviewDocument(newDocument); 
+  }; 
+
+  const handleAddDocumentSubmit = () => { 
+    if (previewDocument) {
+      setProfessionalDocuments(prev => [previewDocument, ...prev]);
+      setPreviewDocument(null); 
+      setShowAddDocumentModal(false); 
+      Alert.alert('Succès', 'Document ajouté avec succès !');
+    }
+  };
+
+  const handleCancelAddDocument = () => { 
+    setPreviewDocument(null); 
+    setShowAddDocumentModal(false); 
+  };
+
+  const handleViewDocument= (document: ProfessionalDocument) => { 
+    Alert.alert( 
+      document.name,
+      `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
+      [
+        { text: 'Fermer', style: 'cancel'},
+        {
+          text: 'Télécharger', 
+          onPress: () => handleDownloadDocument(document) 
+        }
+      ]
+    );
+  };
+
+  const handleDownloadDocument = (document: ProfessionalDocument) => { 
+    Alert.alert( 
+      'Téléchargement', 
+      `Le document "${document.name}" sera téléchargé prochainement.`, 
+      [{ text: 'OK' }] 
+    );
+  };
+
+  // Functions for note management 
+  const handleAddNote = () => { 
+    setShowAddNoteModal(true); 
+    setNewNoteDate(new Date().toLocaleDateString('fr-FR'));
+  };
+
+  const handleSaveNote = () => { 
+    if (newNoteContent.trim() && newNoteDate.trim() && selectedPatient) {
+      const newNote: ConsultationNote = { 
+        id: `NOTE${Date.now()}`, 
+        patientId: selectedPatient.id, 
+        doctorId: currentDoctorId,
+        consultationDate: newNoteDate, 
+        content: newNoteContent, 
+        createdAt: new Date().toLocaleString('fr-FR')
+      };
+
+      setConsultationNotes(prev => [newNote, ...prev]);
+      setNewNoteContent(''); 
+      setNewNoteDate(''); 
+      setShowAddNoteModal(false); 
+      Alert.alert('Succès', 'Note de consultation ajoutée avec succès !'); 
+    } else { 
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');  
+    }
+  };
+
+  const handleCancelNote = () => {
+    setNewNoteContent(''); 
+    setNewNoteDate(''); 
+    setShowAddNoteModal(false); 
+  };
+
+  const getPatientDocuments = (patientId: string) => { 
+    return professionalDocuments.filter(doc => 
+      doc.patientId === patientId && doc.doctorId === currentDoctorId
+    );
+  };
+
+  const getPatientNotes = (patientId: string) => { 
+    return consultationNotes.filter(note => 
+      note.patientId === patientId && note.doctorId === currentDoctorId
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); 
+  };
+
+  const renderSectionDetail = () => (
+    <Modal
+      visible={selectedSection !== null}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.sectionModal}>
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setSelectedSection(null)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            {selectedSection && getSectionTitle(selectedSection)}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.sectionContent}>
+          {selectedPatient && selectedSection && selectedSection !== 'info' && 
+            getDetailedData(selectedPatient, selectedSection).map((item) => (
+              <View key={item.id} style={styles.itemCard}>
+                <View style={styles.itemCardHeader}>
+                  <Text style={styles.itemCardTitle}>{item.title}</Text>
+                  {item.severity && (
+                    <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
+                      <Text style={styles.severityText}>{item.severity}</Text>
+                    </View>
+                  )}
+                </View>
+                
+                <Text style={styles.itemDescription}>{item.description}</Text>
+                
+                {item.date && (
+                  <Text style={styles.itemDate}>📅 {item.date}</Text>
+                )}
+                
+                {item.notes && (
+                  <Text style={styles.itemNotes}>💡 {item.notes}</Text>
+                )}
+              </View>
+            ))
+          }
+
+          {/* For info section, show detailed cards like PersonalInfo */}
+          {selectedPatient && selectedSection && selectedSection === 'info' && (
+            <View style={{ padding: 16 }}>
+              {getPatientInfoEntries(selectedPatient).map((info, index) => (
+                <View 
+                  key={info.key} 
+                  style={[
+                    profileInfoStyles.card,
+                    { marginVertical: 8 },
+                    index === 0 && { marginTop: 10 },
+                    index === getPatientInfoEntries(selectedPatient).length - 1 && { marginBottom: 20 }
+                  ]}
+                >
+                  <Text style={profileInfoStyles.title}>{info.label}</Text>
+                  <Text style={profileInfoStyles.content}>{info.value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
+  // Documents Modal
+  const renderDocumentsModal = () => (
+    <Modal
+      visible={showDocumentsModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.sectionModal}>
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setShowDocumentsModal(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            Documents - {selectedPatient?.firstName} {selectedPatient?.lastName}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.sectionContent}>
+          {selectedPatient && getPatientDocuments(selectedPatient.id).length > 0 ? (
+            getPatientDocuments(selectedPatient.id).map((document) => (
+              <TouchableOpacity 
+                key={document.id}
+                style={styles.itemCard}
+                onPress={() => handleViewDocument(document)}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.itemCardTitle}>{document.name}</Text>
+                    <Text style={styles.itemDescription}>Type: {document.type}</Text>
+                    <Text style={styles.itemDate}>📅 Ajouté le: {document.dateAdded}</Text>
+                    <Text style={styles.itemNotes}>📄 Taille: {document.size}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: colors.editButtonBackground,
+                      padding: 8,
+                      borderRadius: 50
+                    }}
+                    onPress={() => handleViewDocument(document)}
+                  >
+                    <Ionicons name="eye" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.itemCard, { alignItems: 'center', padding: 40 }]}>
+              <Ionicons name="folder-open-outline" size={60} color={colors.primary} />
+              <Text style={[styles.itemCardTitle, { marginTop: 20, textAlign: 'center' }]}>
+                Aucun document
+              </Text>
+              <Text style={[styles.itemDescription, { textAlign: 'center', marginTop: 10 }]}>
+                Vous n'avez encore ajouté aucun document pour ce patient
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={handleAddDocument}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Ajouter</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={() => setShowDocumentsModal(false)}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Fermer</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Notes Modal
+  const renderNotesModal = () => (
+    <Modal
+      visible={showNotesModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.sectionModal}>
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setShowNotesModal(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            Notes - {selectedPatient?.firstName} {selectedPatient?.lastName}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.sectionContent}>
+          {selectedPatient && getPatientNotes(selectedPatient.id).length > 0 ? (
+            getPatientNotes(selectedPatient.id).map((note) => (
+              <View key={note.id} style={styles.itemCard}>
+                <View style={styles.itemCardHeader}>
+                  <Text style={styles.itemCardTitle}>Consultation du {note.consultationDate}</Text>
+                  <View style={[styles.severityBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.severityText}>Note</Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.itemDescription}>{note.content}</Text>
+                
+                <Text style={styles.itemDate}>📝 Rédigé le: {note.createdAt}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={[styles.itemCard, { alignItems: 'center', padding: 40 }]}>
+              <Ionicons name="clipboard-outline" size={60} color={colors.primary} />
+              <Text style={[styles.itemCardTitle, { marginTop: 20, textAlign: 'center' }]}>
+                Aucune note
+              </Text>
+              <Text style={[styles.itemDescription, { textAlign: 'center', marginTop: 10 }]}>
+                Vous n'avez encore pris aucune note pour ce patient
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={handleAddNote}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Ajouter</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={() => setShowNotesModal(false)}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Fermer</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Add Document Modal
+  const renderAddDocumentModal = () => (
+    <Modal
+      visible={showAddDocumentModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={prescriptionStyles.container}>
+        <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
+          <View style={prescriptionStyles.prescriptionCard}>
+            <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
+              Ajouter un document - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            </Text>
+            
+            {!previewDocument ? (
+              // File selection area
+              <TouchableOpacity 
+                style={[prescriptionStyles.prescriptionCard, { 
+                  alignItems: 'center',
+                  borderStyle: 'dashed',
+                  borderWidth: 2,
+                  borderColor: '#000000',
+                  backgroundColor: 'transparent'
+                }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Sélectionner un fichier',
+                    'Cette fonctionnalité nécessite l\'installation du package expo-document-picker pour permettre la sélection de fichiers.',
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      { text: 'Simuler la sélection', onPress: handleSimulateDocumentSelection }
+                    ]
+                  );
+                }}
+              >
+                <Ionicons name="cloud-upload" size={50} color="#000000" />
+                <Text style={[prescriptionStyles.prescriptionTitle, { marginTop: 15, color: '#000000' }]}>
+                  Parcourir les fichiers
+                </Text>
+                <Text style={[prescriptionStyles.prescriptionText, { textAlign: 'center', marginTop: 10 }]}>
+                  Formats acceptés: PDF, JPG, PNG
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              // Document preview
+              <View style={prescriptionStyles.prescriptionCard}>
+                <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 15, color: colors.infoText }]}>
+                  Document sélectionné
+                </Text>
+                <View style={{ marginBottom: 15 }}>
+                  <Text style={prescriptionStyles.prescriptionTitle}>{previewDocument.name}</Text>
+                  <Text style={prescriptionStyles.prescriptionText}>Type: {previewDocument.type}</Text>
+                  <Text style={prescriptionStyles.prescriptionText}>Taille: {previewDocument.size}</Text>
+                </View>
+                <Text style={[prescriptionStyles.prescriptionText, { textAlign: 'center', fontStyle: 'italic', color: colors.infoText }]}>
+                  Appuyez sur "Ajouter" pour confirmer l'ajout de ce document
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleCancelAddDocument}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Annuler</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleAddDocumentSubmit}
+            disabled={!previewDocument}
+          >
+            <LinearGradient 
+              colors={previewDocument ? [colors.primary, colors.secondary] : [colors.primary + '50', colors.secondary + '50']} 
+              style={prescriptionStyles.gradient}
+            >
+              <Text style={[prescriptionStyles.buttonText, { opacity: previewDocument ? 1 : 0.5 }]}>
+                Ajouter
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Add Note Modal
+  const renderAddNoteModal = () => (
+    <Modal
+      visible={showAddNoteModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={prescriptionStyles.container}>
+        <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
+          <View style={prescriptionStyles.prescriptionCard}>
+            <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
+              Ajouter une note - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            </Text>
+            
+            <Text style={[prescriptionStyles.prescriptionText, { marginBottom: 10 }]}>
+              Date de consultation *
+            </Text>
+            <TextInput
+              style={[prescriptionStyles.prescriptionCard, { 
+                marginBottom: 15,
+                padding: 15,
+                borderWidth: 1,
+                borderRadius: 8
+              }]}
+              placeholder="JJ/MM/AAAA"
+              value={newNoteDate}
+              onChangeText={setNewNoteDate}
+            />
+            
+            <Text style={[prescriptionStyles.prescriptionText, { marginBottom: 10 }]}>
+              Contenu de la note *
+            </Text>
+            <TextInput
+              style={[prescriptionStyles.prescriptionCard, { 
+                marginBottom: 15,
+                padding: 15,
+                borderWidth: 1,
+                borderRadius: 8,
+                height: 120,
+                textAlignVertical: 'top'
+              }]}
+              placeholder="Décrivez la consultation, les observations, recommandations..."
+              value={newNoteContent}
+              onChangeText={setNewNoteContent}
+              multiline
+              numberOfLines={5}
+            />
+          </View>
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleCancelNote}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Annuler</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleSaveNote}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Sauvegarder</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderPatientDetail = () => (
+    <Modal
+      visible={selectedPatient !== null}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.detailModal}>
+        <View style={styles.detailHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setSelectedPatient(null)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.detailTitle}>
+            Profil de {selectedPatient?.firstName} {selectedPatient?.lastName}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.detailContent}>
+          {/* Profile Header */}
+          <View style={styles.profileSection}>
+            <TouchableOpacity 
+              style={styles.profileHeader}
+              onPress={() => handleSectionPress('info')}
+            >
+              <View style={styles.profileImage}>
+                <Text style={styles.profileImageText}>
+                  {selectedPatient?.firstName?.[0]}{selectedPatient?.lastName?.[0]}
+                </Text>
+              </View>
+              <View style={styles.profileHeaderInfo}>
+                <Text style={styles.profileName}>
+                  {selectedPatient?.firstName} {selectedPatient?.lastName}
+                </Text>
+                <Text style={styles.profileAge}>
+                  {selectedPatient?.age} ans • ID: {selectedPatient?.id}
+                </Text>
+              </View>
+              <Ionicons 
+                name="chevron-forward" 
+                size={24} 
+                color={colors.infoTitle} 
+                style={{ marginLeft: 10 }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Profile Grid */}
+          <View style={styles.gridContainer}>
+            {selectedPatient && getProfileItems(selectedPatient).map((item, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.gridItem}
+                onPress={() => handleSectionPress(item.section)}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.secondary]}
+                  style={styles.gradientBackground}
+                >
+                  <Ionicons 
+                    name={item.icon} 
+                    size={40} 
+                    color="#FFFFFF" 
+                    style={styles.itemIcon}
+                  />
+                  <Text style={styles.itemTitle}>{item.title}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
+  const renderScanner = () => (
+    <Modal
+      visible={showScanner}
+      animationType="slide"
+      presentationStyle="fullScreen"
+    >
+      <View style={styles.scannerModal}>
+        {hasCameraPermission ? (
+          <CameraView
+            style={styles.camera}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr'],
+            }}
+            onBarcodeScanned={handleBarCodeScanned}
+            ref={cameraRef}
+          >
+            <View style={styles.scannerOverlay}>
+              <View style={styles.scannerFrame} />
+              <Text style={styles.scannerText}>
+                Pointez la caméra vers le QR code du profil patient
+              </Text>
+            </View>
+            
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowScanner(false)}
+            >
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </CameraView>
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Permission caméra requise</Text>
+            <Text style={styles.emptySubtitle}>
+              Veuillez autoriser l'accès à la caméra pour scanner les QR codes.
+            </Text>
+          </View>
+        )}
+      </View>
+    </Modal>
+  );
+
+  return (
+    <View style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher un patient..."
+              placeholderTextColor={colors.infoText}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={handleScanPress}
+            >
+              <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.content}>
+          {filteredPatients.length > 0 ? (
+            <FlatList
+              data={filteredPatients}
+              renderItem={renderPatientCard}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons 
+                name="people-outline" 
+                size={60} 
+                color={colors.infoTextSecondary} 
+                style={styles.emptyIcon}
+              />
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? 'Aucun patient trouvé' : 'Aucun patient enregistré'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery 
+                  ? 'Essayez avec un autre terme de recherche.'
+                  : 'Scannez un QR code de profil patient pour commencer.'}
+              </Text>
+            </View>
+          )}
+        </View>
+        {renderScanner()} 
+        {renderPatientDetail()} 
+        {renderSectionDetail()}
+        {renderDocumentsModal()}
+        {renderNotesModal()}
+        {renderAddDocumentModal()}
+        {renderAddNoteModal()} 
+
+{/* 
+        {renderScanner()}
+        {renderPatientDetail()}
+        {renderSectionDetail()} */}
+      </View>
+    </View>
+  );
+}

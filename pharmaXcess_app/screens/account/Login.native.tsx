@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { CustomPicker } from '../../components';
 import createStyles from '../../styles/Login.style';
 
 type LoginProps = {
@@ -24,11 +25,13 @@ type LoginProps = {
 };
 
 interface FormData {
+    userType: 'patient' | 'professional';
     email: string;
     password: string;
 }
 
 interface FormErrors {
+    userType?: string;
     email?: string;
     password?: string;
     general?: string;
@@ -43,6 +46,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
     // Form state
     const [formData, setFormData] = useState<FormData>({
+        userType: 'patient',
         email: '',
         password: '',
     });
@@ -62,6 +66,12 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     // Form validation
     const validateForm = useCallback((): boolean => {
         const newErrors: FormErrors = {};
+
+        // User type validation 
+        if (!formData.userType) { 
+            newErrors.userType = 'Le type de compte est requis'; 
+        }
+
 
         // Email validation
         if (!formData.email.trim()) {
@@ -103,7 +113,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
         setErrors({});
 
         try {
-            const success = await login(formData.email, formData.password);
+            const success = await login(formData.email, formData.password, formData.userType);
             
             // Mock authentication logic
             if (formData.email === 'test@example.com' && formData.password === 'password') {
@@ -173,6 +183,24 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                         {errors.general}
                     </Text>
                 )}
+
+{/* 
+                {/* User Type Selection */}
+                <View style={styles.inputContainer}>
+                    <CustomPicker
+                        label="Type de compte"
+                        selectedValue={formData.userType}
+                        onValueChange={(value) => updateFormData('userType', value as string)}
+                        options={[
+                            { label: 'Patient', value: 'patient' },
+                            { label: 'Professionnel de santé', value: 'professional' }
+                        ]}
+                        placeholder="Sélectionnez votre type de compte"
+                        accessibilityLabel="Type de compte"
+                        accessibilityHint="Choisissez entre Patient ou Professionnel de santé"
+                        error={errors.userType}
+                    />
+                </View>
 
                 {/* Email input */}
                 <View style={styles.inputContainer}>

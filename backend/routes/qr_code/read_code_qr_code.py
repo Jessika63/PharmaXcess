@@ -148,7 +148,7 @@ def read_profile_qr_by_code():
         - 500: JSON error response in case of database or server error
     """
 
-    data = request.get_json()
+    data = request.get_json() or {}
     code = data.get('code_unique')
     scan_role = data.get('scan_role')
 
@@ -170,6 +170,8 @@ def read_profile_qr_by_code():
             # Récupérer les infos de l'utilisateur
             cursor.execute("SELECT * FROM utilisateurs WHERE id=%s", (qr_entry['utilisateur_id'],))
             user = cursor.fetchone()
+            if not user:
+                return jsonify({"error": "Utilisateur introuvable"}), 404
 
             # Supprimer le QR code (one-time use)
             cursor.execute("DELETE FROM qrcodes_profiles WHERE id=%s", (qr_entry['id'],))

@@ -68,8 +68,7 @@ jobs:
       - name: Create fake database dump for CI
         if: env.CI == 'true'
         run: |
-<<<<<<< HEAD
-          cat <<EOF > distributeur/backend/temp_fake_database_dump_px.sql
+          cat <<EOF > backend/temp_fake_database_dump_px.sql
           -- App DB
           CREATE DATABASE IF NOT EXISTS \`${{ secrets.APP_DB_NAME }}\`;
           USE \`${{ secrets.APP_DB_NAME }}\`;
@@ -83,26 +82,12 @@ jobs:
           GRANT ALL PRIVILEGES ON \`${{ secrets.DOCTORS_DB_NAME }}\`.* TO '${{ secrets.DOCTORS_DB_USER }}'@'%';
           FLUSH PRIVILEGES;
           EOF
-          cat distributeur/backend/db/database_doctors.sql >> distributeur/backend/temp_fake_database_dump_px.sql
-=======
-          cat <<EOF > backend/temp_fake_database_dump_px.sql
-          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
-          USE \`${{ secrets.DB_NAME }}\`;
-          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'%' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON \`${{ secrets.DB_NAME }}\`.* TO '${{ secrets.DB_USER }}'@'%';
-          FLUSH PRIVILEGES;
-          EOF
           cat backend/db/database.sql >> backend/temp_fake_database_dump_px.sql
->>>>>>> acc9edb5dea07da473ef5da339fb6a15d027dd42
 
       - name: Replace DB_NAME placeholder in SQL
         if: env.CI == 'true'
         run: |
-<<<<<<< HEAD
-          sed -i "s/__DB_NAME__/${{ secrets.DOCTORS_DB_NAME }}/g" distributeur/backend/temp_fake_database_dump_px.sql
-=======
-          sed -i "s/__DB_NAME__/${{ secrets.DB_NAME }}/g" backend/temp_fake_database_dump_px.sql
->>>>>>> acc9edb5dea07da473ef5da339fb6a15d027dd42
+          sed -i "s/__DB_NAME__/${{ secrets.DOCTORS_DB_NAME }}/g" backend/temp_fake_database_dump_px.sql
 
       - name: Run backend tests
         working-directory: .
