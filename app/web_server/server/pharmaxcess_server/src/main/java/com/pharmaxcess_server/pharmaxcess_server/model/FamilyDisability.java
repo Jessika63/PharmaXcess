@@ -11,7 +11,7 @@ import jakarta.persistence.*;
 public class FamilyDisability {
 
     /**
-     * Unique identifier for the ticket.
+     * Unique identifier for the FamilyDisability.
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
