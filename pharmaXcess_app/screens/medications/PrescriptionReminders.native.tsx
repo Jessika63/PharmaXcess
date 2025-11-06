@@ -11,6 +11,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 import { NotificationService } from '../../utils/notificationService';
+import config from '../../config';
 
 type Reminder = {
     id: string;
@@ -34,28 +35,13 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
 
-    const [reminders, setReminders] = useState<Reminder[]>([
-        {
-            id: '1',
-            name: 'Renouvellement Paracétamol',
-            date: '15/07/2025',
-            dueDate: new Date('2025-07-15'),
-            sound: 'Son 1',
-            isCompleted: false,
-            priority: 'high',
-            notes: 'Ordonnance expire bientôt',
-        },
-        {
-            id: '2',
-            name: 'Consultation cardiologue',
-            date: '20/07/2025',
-            dueDate: new Date('2025-07-20'),
-            sound: 'Son 2',
-            isCompleted: true,
-            priority: 'medium',
-            notes: 'RDV pris, confirmation reçue',
-        },
-    ]);
+    const [reminders, setReminders] = useState<Reminder[]>([]);
+    const [isLoadingReminders, setIsLoadingReminders] = useState<boolean>(false);
+    const [apiError, setApiError] = useState<string | null>(null);
+
+    // Prescriptions available to link a reminder to
+    const [prescriptions, setPrescriptions] = useState<Array<{ label: string; value: string }>>([]);
+    const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<string | null>(null);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
@@ -94,6 +80,61 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     useEffect(() => {
         initializeNotifications();
     }, []);
+
+    // Load reminders + prescriptions on mount (or when profile changes)
+    useEffect(() => {
+        fetchRemindersFromBackend();
+        fetchPrescriptionsForReminders();
+    }, [currentProfile?.id]);
+
+    const apiBase = config?.backendUrl || '';
+
+    const fetchRemindersFromBackend = async () => {
+        if (!apiBase) return;
+        setIsLoadingReminders(true);
+        setApiError(null);
+        try {
+            const res = await fetch(`${apiBase}/prescription-reminders`, { credentials: 'include' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            // Map server reminders to local Reminder type
+            const mapped: Reminder[] = (data || []).map((r: any) => {
+                const due = r.due_date ? new Date(r.due_date) : new Date();
+                const dateStr = r.due_date ? `${due.getDate().toString().padStart(2, '0')}/${(due.getMonth()+1).toString().padStart(2,'0')}/${due.getFullYear()}` : '';
+                return {
+                    id: String(r.id),
+                    name: r.name || (r.ordonnance_description || 'Rappel'),
+                    date: dateStr,
+                    dueDate: due,
+                    sound: r.sound || 'Son 1',
+                    isCompleted: !!r.is_completed,
+                    priority: r.priority || 'medium',
+                    notes: r.notes || '',
+                };
+            });
+            setReminders(mapped);
+        } catch (error: any) {
+            console.error('Erreur fetching reminders:', error);
+            setApiError(String(error?.message || error));
+        } finally {
+            setIsLoadingReminders(false);
+        }
+    };
+
+    const fetchPrescriptionsForReminders = async () => {
+        if (!apiBase) return;
+        try {
+            const res = await fetch(`${apiBase}/prescription-reminders/prescription`, { credentials: 'include' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const opts = (data || []).map((o: any) => ({ label: `${o.description || 'Ordonnance'} — ${o.date_expiration ? new Date(o.date_expiration).toLocaleDateString() : ''}`, value: String(o.id) }));
+            setPrescriptions(opts);
+            if (opts.length > 0 && !selectedPrescriptionId) setSelectedPrescriptionId(opts[0].value);
+        } catch (error) {
+            // Non-blocking
+            console.warn('Impossible de charger les ordonnances:', error);
+        }
+    };
 
     const initializeNotifications = async () => {
         const isEnabled = await NotificationService.requestPermissions();
@@ -285,34 +326,48 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
     };
 
     // Toggle completion status
-    const toggleCompletion = (id: string) => {
+    const toggleCompletion = async (id: string) => {
         if (isMainProfile) {
-            setReminders(prevReminders =>
-                prevReminders.map(reminder => {
-                    if (reminder.id === id) {
-                        const updatedReminder = { ...reminder, isCompleted: !reminder.isCompleted };
+            // Call backend toggle endpoint
+            try {
+                if (apiBase) {
+                    const res = await fetch(`${apiBase}/prescription-reminders/${id}/toggle`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const body = await res.json();
+                    const newStatus = !!body.is_completed;
 
-                        // Handle notification based on completion status
-                        if (updatedReminder.isCompleted) {
-                            console.log(`✅ Rappel ${reminder.name} terminé - Annulation notification`);
-                            setTimeout(() => cancelNotification(id), 100);
-                        } else {
-                            console.log(`🔄 Rappel ${reminder.name} réactivé - Programmation notification`);
-                            setTimeout(async () => {
-                                const notificationIds = await scheduleNotification(updatedReminder);
-                                if (notificationIds.length > 0) {
-                                    setNotificationIds(prev => new Map(prev.set(id, notificationIds[0])));
+                    setReminders(prevReminders =>
+                        prevReminders.map(reminder => {
+                            if (reminder.id === id) {
+                                const updatedReminder = { ...reminder, isCompleted: newStatus };
+
+                                if (updatedReminder.isCompleted) {
+                                    setTimeout(() => cancelNotification(id), 100);
+                                } else {
+                                    setTimeout(async () => {
+                                        const notificationIds = await scheduleNotification(updatedReminder);
+                                        if (notificationIds.length > 0) {
+                                            setNotificationIds(prev => new Map(prev.set(id, notificationIds[0])));
+                                        }
+                                    }, 100);
                                 }
-                            }, 100);
-                        }
 
-                        return updatedReminder;
-                    }
-                    return reminder;
-                })
-            );
+                                return updatedReminder;
+                            }
+                            return reminder;
+                        })
+                    );
+                }
+            } catch (error) {
+                console.error('Erreur toggle reminder:', error);
+                Alert.alert('Erreur', 'Impossible de mettre à jour le statut du rappel.');
+            }
         } else {
-            // For other profiles: update profile data
+            // For other profiles: update profile data locally
             const currentReminders = getCurrentReminders();
             const reminderIndex = currentReminders.findIndex(reminder => reminder.id === id);
             if (reminderIndex !== -1) {
@@ -324,12 +379,9 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                 updatedProfileReminders[reminderIndex] = JSON.stringify(updatedReminder);
                 setProfileRemindersData(updatedProfileReminders);
 
-                // Handle notification based on completion status
                 if (updatedReminder.isCompleted) {
-                    console.log(`✅ Rappel ${updatedReminder.name} terminé (profil) - Annulation notification`);
                     setTimeout(() => cancelNotification(id), 100);
                 } else {
-                    console.log(`🔄 Rappel ${updatedReminder.name} réactivé (profil) - Programmation notification`);
                     setTimeout(async () => {
                         const notificationIds = await scheduleNotification(updatedReminder);
                         if (notificationIds.length > 0) {
@@ -354,7 +406,19 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                     onPress: async () => {
                         // Cancel the notification before deleting
                         await cancelNotification(id);
-                        setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== id));
+                        if (isMainProfile && apiBase) {
+                            try {
+                                const res = await fetch(`${apiBase}/prescription-reminders/${id}`, { method: 'DELETE', credentials: 'include' });
+                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== id));
+                            } catch (error) {
+                                console.error('Erreur suppression rappel:', error);
+                                Alert.alert('Erreur', 'Impossible de supprimer le rappel sur le serveur.');
+                            }
+                        } else {
+                            // local profile case
+                            setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== id));
+                        }
                     }
                 }
             ]
@@ -380,32 +444,88 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
         };
 
         if (isMainProfile) {
-            // For main profile: use existing logic
-            if (editingReminder) {
-                // Cancel existing notifications before updating
-                await cancelNotification(editingReminder.id);
-
-                // Edit existing reminder
-                setReminders(prevReminders =>
-                    prevReminders.map(reminder =>
-                        reminder.id === editingReminder.id ? reminderData : reminder
-                    )
-                );
-
-                console.log(`🔄 Rappel modifié: ${reminderData.name}`);
-            } else {
-                // Add new reminder
-                setReminders(prevReminders => [...prevReminders, reminderData]);
-                console.log(`🆕 Nouveau rappel créé: ${reminderData.name}`);
-            }
-
-            // Schedule notification only once after state update
-            if (!reminderData.isCompleted && notificationsEnabled) {
-                console.log(`📅 Programmation notification pour: ${reminderData.name}`);
-                const notificationIds = await scheduleNotification(reminderData);
-                if (notificationIds.length > 0) {
-                    setNotificationIds(prev => new Map(prev.set(reminderData.id, notificationIds[0])));
+            // For main profile: call backend to create or update
+            try {
+                if (!selectedPrescriptionId) {
+                    Alert.alert('Erreur', 'Veuillez sélectionner une ordonnance liée.');
+                    return;
                 }
+
+                if (editingReminder) {
+                    // Cancel existing notifications before updating
+                    await cancelNotification(editingReminder.id);
+
+                    const payload = {
+                        name: reminderData.name,
+                        due_date: `${selectedYear}-${String(selectedMonth).padStart(2,'0')}-${String(selectedDay).padStart(2,'0')}`,
+                        sound: reminderData.sound,
+                        is_completed: reminderData.isCompleted,
+                        notes: reminderData.notes,
+                    } as any;
+
+                    const res = await fetch(`${apiBase}/prescription-reminders/${editingReminder.id}`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                    // Refresh list
+                    await fetchRemindersFromBackend();
+                    console.log(`🔄 Rappel modifié: ${reminderData.name}`);
+                } else {
+                    const payload = {
+                        utilisateur_id: currentProfile?.id,
+                        prescription_id: selectedPrescriptionId,
+                        name: reminderData.name,
+                        due_date: `${selectedYear}-${String(selectedMonth).padStart(2,'0')}-${String(selectedDay).padStart(2,'0')}`,
+                        sound: reminderData.sound,
+                        is_completed: reminderData.isCompleted,
+                        notes: reminderData.notes,
+                    } as any;
+
+                    const res = await fetch(`${apiBase}/prescription-reminders`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        const txt = await res.text();
+                        throw new Error(`HTTP ${res.status} - ${txt}`);
+                    }
+
+                    const created = await res.json();
+                    const newId = String(created.id || Date.now());
+
+                    // Schedule notification using server id
+                    if (!reminderData.isCompleted && notificationsEnabled) {
+                        const serverReminder: Reminder = {
+                            ...reminderData,
+                            id: newId,
+                        };
+                        const notificationIds = await scheduleNotification(serverReminder);
+                        if (notificationIds.length > 0) {
+                            setNotificationIds(prev => new Map(prev.set(newId, notificationIds[0])));
+                        }
+                    }
+
+                    await fetchRemindersFromBackend();
+                    console.log(`🆕 Nouveau rappel créé: ${reminderData.name}`);
+                }
+
+                // Schedule notification only once after server update
+                if (!reminderData.isCompleted && notificationsEnabled) {
+                    console.log(`📅 Programmation notification pour: ${reminderData.name}`);
+                    const notificationIds = await scheduleNotification(reminderData);
+                    if (notificationIds.length > 0) {
+                        setNotificationIds(prev => new Map(prev.set(reminderData.id, notificationIds[0])));
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde du rappel:', error);
+                Alert.alert('Erreur', 'Impossible de sauvegarder le rappel sur le serveur.');
             }
         } else {
             // For other profiles: add to profile data
@@ -834,6 +954,14 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                             onValueChange={(value) => setSelectedSound(String(value))}
                             options={sounds.map(sound => ({ label: sound, value: sound }))}
                             placeholder="Choisir un son"
+                        />
+
+                        <CustomPicker
+                            label="Ordonnance liée"
+                            selectedValue={selectedPrescriptionId ?? ''}
+                            onValueChange={(value) => setSelectedPrescriptionId(String(value))}
+                            options={prescriptions}
+                            placeholder={prescriptions.length > 0 ? 'Choisir une ordonnance' : 'Aucune ordonnance disponible'}
                         />
 
                         <View style={styles.buttonContainer}>
