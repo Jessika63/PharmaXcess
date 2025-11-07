@@ -185,8 +185,8 @@ CREATE TABLE IF NOT EXISTS ordonnance_images_temp (
     id INT AUTO_INCREMENT PRIMARY KEY,
     utilisateur_id INT NOT NULL,
     ordonnance_id INT NULL,
-    filename VARCHAR(255) NULL,      -- facultatif : si tu veux stocker un nom de fichier
-    image_data LONGBLOB NOT NULL,    -- binaire de l'image (ou stocke chemin si tu préfères)
+    filename VARCHAR(255),
+    image_data LONGBLOB,
     mime_type VARCHAR(100) DEFAULT 'image/png',
     date_upload DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
