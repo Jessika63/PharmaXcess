@@ -60,6 +60,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // translate known backend English errors to French for the UI
+  const translateBackendError = (errMsg?: string | null) => {
+    if (!errMsg) return 'Email ou mot de passe incorrect';
+    const map: Record<string, string> = {
+      'Email and password required': 'Email et mot de passe requis',
+      'Incorrect email or password': 'Email ou mot de passe incorrect',
+      'Missing fields': 'Champs manquants',
+      'An account already exists with this email': 'Un compte existe déjà avec cet email',
+      'Database constraint error': 'Erreur de contrainte en base de données',
+      'Email required': 'Email requis',
+      'Missing token or new password': 'Token ou nouveau mot de passe manquant',
+      'Invalid or expired token': 'Token invalide ou expiré',
+    };
+    return map[errMsg] || `Erreur: ${errMsg}`;
+  };
+
   const login = async (email: string, password: string, userType?: UserType): Promise<boolean> => {
     try {
       // Clear any previous auth error so UI doesn't show stale messages while attempting login
@@ -89,7 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return true;
       }
 
-  const err = result.error || 'Email ou mot de passe incorrect';
+  const err = translateBackendError(result.error);
   // Create an Error object and attach HTTP status so UI can react specifically (e.g., 401 -> offer signup)
   const e: any = new Error(err);
   e.status = result.status;
@@ -119,9 +135,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return logged;
       }
 
-      const err = result.error || 'Registration failed';
-      // Throw so calling screen can display backend message
-      throw new Error(err);
+  const err = result.error || 'Registration failed';
+  // Throw so calling screen can display backend message (translated to French)
+  throw new Error(translateBackendError(err));
     } catch (error) {
       // propagate the error up to the screen
       throw error;
@@ -160,7 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // backend in dev returns the token in the response body
         return (result.data.token as string) || null;
       }
-      throw new Error(result.error || 'Impossible de générer le token');
+  throw new Error(translateBackendError(result.error) || 'Impossible de générer le token');
     } catch (e) {
       throw e;
     }

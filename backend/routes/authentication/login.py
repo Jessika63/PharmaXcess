@@ -12,7 +12,7 @@ def login():
     password = data.get("password")
 
     if not email or not password:
-        return jsonify({"error": "Email et mot de passe requis"}), 400
+        return jsonify({"error": "Email and password required"}), 400
 
     conn = None
     try:
@@ -34,8 +34,8 @@ def login():
             # Optionally return some basic user info (avoid sensitive data)
             return jsonify({"message": "Connexion réussie", "user_id": user["id"]}), 200
         else:
-            # Friendly French message for wrong credentials
-            return jsonify({"error": "Email ou mot de passe incorrect"}), 401
+            # Wrong credentials - return English error for backend
+            return jsonify({"error": "Incorrect email or password"}), 401
     finally:
         if conn:
             conn.close()

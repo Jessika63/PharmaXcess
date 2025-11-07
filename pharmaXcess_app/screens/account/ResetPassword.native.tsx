@@ -86,6 +86,15 @@ export default function ResetPassword({ navigation, route }: Props): React.JSX.E
     setErrors(pwErrors);
     if (Object.keys(pwErrors).length > 0) return;
 
+    // Ensure confirmation matches the new password
+    if (confirmPassword !== newPassword) {
+      const msg = 'La confirmation du mot de passe ne correspond pas';
+      setMessage(msg);
+      AccessibilityInfo.announceForAccessibility(msg);
+      setErrors({ password: msg });
+      return;
+    }
+
     try {
       const ok = await (resetPassword ? resetPassword(token, newPassword) : Promise.resolve(false));
       if (ok) {
