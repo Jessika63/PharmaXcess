@@ -1,24 +1,38 @@
-export interface Ticket {
-    id: number;
+export type Message = {
+    id: string;
+    text: string;
+    sender: 'user' | 'support';
+    timestamp: string;
+    isRead: boolean;
+};
+
+export type ChatItem = {
+    id: string;
     title: string;
-    userId: number;
-    assignedTo: number;
-    createdAt: string;
-    updatedAt: string;
-    status: string;
-}
+    name: string;
+    question: string;
+    date: string;
+    messages: Message[];
+    status: 'open' | 'closed' | 'pending';
+    lastActivity: string;
+};
 
-export interface CreateTicketData {
+export type TicketsListResponse = ChatItem[];
+
+export type TicketResponse = ChatItem;
+
+export type CreateTicketData = {
     title: string;
-}
+    name: string;
+    question: string;
+    status?: 'open' | 'closed' | 'pending';
+};
 
-export interface AcceptTicketData {
-    userID: number;
-    ticketID: number;
-}
-
-export interface TicketPageData {
-    x: number;
-    y: number;
-}
-export type TicketPageResponse = Ticket[];
+export type UpdateTicketData = Partial<{
+    title: string;
+    name: string;
+    question: string;
+    status: 'open' | 'closed' | 'pending';
+    lastActivity: string;
+    messages: Message[];
+}>;

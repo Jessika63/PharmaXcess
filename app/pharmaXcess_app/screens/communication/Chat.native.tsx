@@ -8,102 +8,34 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { canUserPerformAction, getDefaultPermissions } from '../../utils/profileValidation';
+import { getTickets, createTicket, updateTicket, deleteTicket } from "../../services/ticket/ticketService"
+import { ChatItem, Message } from '../../services/ticket/types';
 
-type Message = {
-    id: string;
-    text: string;
-    sender: 'user' | 'support';
-    timestamp: string;
-    isRead: boolean;
-};
-
-type ChatItem = {
-    id: string;
-    title: string;
-    name: string;
-    question: string;
-    date: string;
-    messages: Message[];
-    status: 'open' | 'closed' | 'pending';
-    lastActivity: string;
-};
-// Interface to store chats by profile
 interface ProfileChatsData { 
     [profileId: string]: ChatItem[]; 
 }
 
-// The Chat component provides a complete messaging system for support tickets with real-time conversations, message history, and ticket management.
 export default function Chat(): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
-    
-    // Default chats for the main profile
-    const defaultChats: ChatItem[] = [
-        { 
-            id: '1', 
-            title: 'Problème de prescription', 
-            name: 'Jean Dupont', 
-            question: 'Comment renouveler ma prescription ?', 
-            date: '2023-10-01',
-            status: 'open',
-            lastActivity: '2023-10-02 14:30',
-            messages: [
-                {
-                    id: 'm1',
-                    text: 'Comment renouveler ma prescription ?',
-                    sender: 'user',
-                    timestamp: '2023-10-01 10:00',
-                    isRead: true
-                },
-                {
-                    id: 'm2',
-                    text: 'Bonjour ! Pour renouveler votre prescription, vous pouvez prendre rendez-vous avec votre médecin ou demander un renouvellement en ligne.',
-                    sender: 'support',
-                    timestamp: '2023-10-01 10:15',
-                    isRead: true
-                },
-                {
-                    id: 'm3',
-                    text: 'Merci pour votre réponse. Comment puis-je faire une demande en ligne ?',
-                    sender: 'user',
-                    timestamp: '2023-10-02 14:30',
-                    isRead: false
-                }
-            ]
-        },
-        { 
-            id: '2', 
-            title: 'Question sur un médicament', 
-            name: 'Marie Curie', 
-            question: 'Quels sont les effets secondaires ?', 
-            date: '2023-10-02',
-            status: 'closed',
-            lastActivity: '2023-10-03 09:15',
-            messages: [
-                {
-                    id: 'm4',
-                    text: 'Quels sont les effets secondaires du paracétamol ?',
-                    sender: 'user',
-                    timestamp: '2023-10-02 15:00',
-                    isRead: true
-                },
-                {
-                    id: 'm5',
-                    text: 'Les effets secondaires courants du paracétamol incluent : nausées, troubles digestifs, réactions allergiques rares. En cas d\'effets indésirables, consultez votre médecin.',
-                    sender: 'support',
-                    timestamp: '2023-10-03 09:15',
-                    isRead: true
-                }
-            ]
-        },
-    ];
-    
-    // Global state to store chats for all profiles
+
     const [profileChatsData, setProfileChatsData] = useState<ProfileChatsData>({});
-    
-    // Ensure current profile has permissions 
+    const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [newMessage, setNewMessage] = useState('');
+    const [newTicket, setNewTicket] = useState<ChatItem>({
+        id: '',
+        title: '',
+        name: '',
+        question: '',
+        date: '',
+        messages: [],
+        status: 'open',
+        lastActivity: '',
+    });
+
     const ensureProfilePermissions = (profile: typeof currentProfile) => {
         if (!profile) return null;
         if (!profile.permissions) {
@@ -116,89 +48,38 @@ export default function Chat(): React.JSX.Element {
     };
 
     const safeCurrentProfile = ensureProfilePermissions(currentProfile);
-    
+
     // Retrieve chats for the current profile or default to main profile chats 
-    const currentChats = currentProfile 
-        ? (profileChatsData[currentProfile.id] || (currentProfile.isMain ? defaultChats : []))
-        : []; 
-        
-    // Chat interface states
-    const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [newMessage, setNewMessage] = useState('');
-    
-    // New ticket states
-    const [newTicket, setNewTicket] = useState<ChatItem>({
-        id: '',
-        title: '',
-        name: '',
-        question: '',
-        date: '',
-        messages: [],
-        status: 'open',
-        lastActivity: '',
-    });
+    const currentChats = currentProfile ? (profileChatsData[currentProfile.id] || []) : [];
 
-    // Load chats from AsyncStorage
     const loadChats = async () => {
+        if (!currentProfile?.id) return;
         try {
-            if (!currentProfile?.id) return;
-            
-            const storageKey = `chats_${currentProfile.id}`;
-            const storedChats = await AsyncStorage.getItem(storageKey);
-            
-            if (storedChats) {
-                const chats = JSON.parse(storedChats);
-                setProfileChatsData(prev => ({
-                    ...prev,
-                    [currentProfile.id]: chats
-                }));
-            } else if (currentProfile.isMain) {
-                // Initialize with default chats for main profile
-                setProfileChatsData(prev => ({
-                    ...prev,
-                    [currentProfile.id]: defaultChats
-                }));
-                await saveChats(defaultChats, currentProfile.id);
-            }
+            const ticketsData = await getTickets(currentProfile.id);
+            setProfileChatsData(prev => ({
+                ...prev,
+                [currentProfile.id]: ticketsData
+            }));
         } catch (error) {
-            console.error('Error loading chats:', error);
+            console.error('Error loading tickets:', error);
         }
     };
-
-    // Save chats to AsyncStorage
-    const saveChats = async (chats: ChatItem[], profileId: string) => {
-        try {
-            const storageKey = `chats_${profileId}`;
-            await AsyncStorage.setItem(storageKey, JSON.stringify(chats));
-        } catch (error) {
-            console.error('Error saving chats:', error);
-        }
-    };
-    // Effect to initialize chats for the current profile 
-    useEffect(() => { 
-        if (currentProfile?.id) {
-            loadChats();
-        }
-        // Reset selected chat when switching profiles 
-        setSelectedChat(null); 
-    }, [currentProfile?.id]); 
 
     // Utility function to update chats for the current profile 
     const updateCurrentProfileChats = async (updater: (chats: ChatItem[]) => ChatItem[]) => { 
         if (!currentProfile?.id) return; 
-
         const currentProfileChats = profileChatsData[currentProfile.id] || [];
         const updatedChats = updater(currentProfileChats);
-        
+
         setProfileChatsData(prev => ({ 
             ...prev,
             [currentProfile.id]: updatedChats
         }));
-        
-        // Save to AsyncStorage
-        await saveChats(updatedChats, currentProfile.id);
     }; 
+    useEffect(() => { 
+        loadChats();
+        setSelectedChat(null); 
+    }, [currentProfile?.id]); 
 
     // Function to handle opening a chat conversation
     const handleChatPress = async (chat: ChatItem): Promise<void> => {
@@ -241,8 +122,16 @@ export default function Chat(): React.JSX.Element {
         );
 
         setNewMessage('');
-        
-        // Simulate support response after 2 seconds
+
+        try {
+            await updateTicket(selectedChat.id, {
+                messages: [...selectedChat.messages, message],
+                lastActivity: message.timestamp
+            });
+        } catch (error) {
+            console.error('Send message API error:', error);
+        }
+
         setTimeout(async () => {
             const supportMessage: Message = {
                 id: Math.random().toString(),
@@ -263,32 +152,16 @@ export default function Chat(): React.JSX.Element {
                         : chat
                 )
             );
+
+            try {
+                await updateTicket(selectedChat.id, {
+                    messages: [...selectedChat.messages, supportMessage],
+                    lastActivity: supportMessage.timestamp
+                });
+            } catch (error) {
+                console.error('Support message API error:', error);
+            }
         }, 2000);
-    };
-
-    // Function to get status badge color
-    const getStatusColor = (status: string): string => {
-        switch (status) {
-            case 'open': return '#4CAF50';
-            case 'pending': return '#FF9800';
-            case 'closed': return '#9E9E9E';
-            default: return colors.infoTextSecondary;
-        }
-    };
-
-    // Function to get status label
-    const getStatusLabel = (status: string): string => {
-        switch (status) {
-            case 'open': return 'Ouvert';
-            case 'pending': return 'En attente';
-            case 'closed': return 'Fermé';
-            default: return 'Inconnu';
-        }
-    };
-
-    // Function to get unread messages count
-    const getUnreadCount = (messages: Message[]): number => {
-        return messages.filter(msg => !msg.isRead && msg.sender === 'support').length;
     };
 
     const handleAddTicket = async (): Promise<void> => {
@@ -305,26 +178,36 @@ export default function Chat(): React.JSX.Element {
         }
 
         const currentDateTime = new Date().toLocaleString('fr-FR');
-        const initialMessage: Message = {
-            id: Math.random().toString(),
-            text: newTicket.question,
-            sender: 'user',
-            timestamp: currentDateTime,
-            isRead: true
-        };
-
         // Create a new ticket with a unique ID and current date
         const newTicketData: ChatItem = {
             ...newTicket,
             id: Math.random().toString(),
             date: new Date().toISOString().split('T')[0],
-            messages: [initialMessage],
+            messages: [{
+                id: Math.random().toString(),
+                text: newTicket.question,
+                sender: 'user',
+                timestamp: currentDateTime,
+                isRead: true
+            }],
             status: 'open',
             lastActivity: currentDateTime,
         };
 
         // Add the new ticket to the chat list and reset the form
         await updateCurrentProfileChats(chats => [newTicketData, ...chats]);
+
+        try {
+            await createTicket({
+                title: newTicket.title,
+                name: newTicket.name,
+                question: newTicket.question,
+                status: 'open',
+            });
+        } catch (error) {
+            console.error('Create ticket API error:', error);
+        }
+
         setNewTicket({ 
             id: '', 
             title: '', 
@@ -338,7 +221,28 @@ export default function Chat(): React.JSX.Element {
         setIsModalVisible(false);
     };
 
-    // Render chat list view
+    const getStatusColor = (status: string): string => {
+        switch (status) {
+            case 'open': return '#4CAF50';
+            case 'pending': return '#FF9800';
+            case 'closed': return '#9E9E9E';
+            default: return colors.infoTextSecondary;
+        }
+    };
+
+    const getStatusLabel = (status: string): string => {
+        switch (status) {
+            case 'open': return 'Ouvert';
+            case 'pending': return 'En attente';
+            case 'closed': return 'Fermé';
+            default: return 'Inconnu';
+        }
+    };
+
+    const getUnreadCount = (messages: Message[]): number => {
+        return messages.filter(msg => !msg.isRead && msg.sender === 'support').length;
+    };
+
     const renderChatList = () => (
         <>
             <FlatList
