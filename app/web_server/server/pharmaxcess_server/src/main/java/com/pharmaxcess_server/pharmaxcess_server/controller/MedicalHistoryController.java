@@ -61,7 +61,7 @@ public class MedicalHistoryController {
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     public List<MedicalHistory> getUserMedicalHistory() {
-        String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+        //String token = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
 
         return medicalhistoryService.getUserMedicalHistory(1);
     }
