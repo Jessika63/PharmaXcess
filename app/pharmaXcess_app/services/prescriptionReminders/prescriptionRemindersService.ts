@@ -34,7 +34,9 @@ let reminders: PrescriptionReminder[] = [
 ];
 
 /**
- * Get all prescription reminders
+ * Retrieve all prescription reminders.
+ *
+ * @returns - A list of prescription reminders.
  */
 export async function getPrescriptionReminders(): Promise<GetPrescriptionRemindersResponse> {
     try {
@@ -50,7 +52,10 @@ export async function getPrescriptionReminders(): Promise<GetPrescriptionReminde
 }
 
 /**
- * Create a new reminder
+ * Create a new prescription reminder.
+ *
+ * @param data - The reminder data to be created.
+ * @returns - The newly created reminder.
  */
 export async function createPrescriptionReminder(data: CreatePrescriptionReminderData): Promise<CreatePrescriptionReminderResponse> {
     try {
@@ -72,7 +77,11 @@ export async function createPrescriptionReminder(data: CreatePrescriptionReminde
 }
 
 /**
- * Update a reminder
+ * Update an existing prescription reminder.
+ *
+ * @param id - The unique ID of the reminder to update.
+ * @param data - Updated reminder data.
+ * @returns - The updated reminder.
  */
 export async function updatePrescriptionReminder(id: string, data: UpdatePrescriptionReminderData): Promise<UpdatePrescriptionReminderResponse> {
     try {
@@ -91,7 +100,10 @@ export async function updatePrescriptionReminder(id: string, data: UpdatePrescri
 }
 
 /**
- * Delete a reminder
+ * Delete a prescription reminder by its ID.
+ *
+ * @param id - The unique ID of the reminder to delete.
+ * @returns - Boolean indicating whether deletion was successful.
  */
 export async function deletePrescriptionReminder(id: string): Promise<DeletePrescriptionReminderResponse> {
     try {
