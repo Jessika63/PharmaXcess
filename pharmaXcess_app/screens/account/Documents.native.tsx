@@ -241,15 +241,6 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
                             style={styles.button}
-                            onPress={handleCancelAddDocument}
-                        >
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Annuler</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity
-                            style={styles.button}
                             onPress={handleAddDocumentSubmit}
                             disabled={!previewDocument}
                         >
@@ -260,6 +251,14 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                                 <Text style={[styles.buttonText, { opacity: previewDocument ? 1 : 0.5 }]}>
                                     Ajouter
                                 </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={styles.button}
+                            onPress={handleCancelAddDocument}
+                        >
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                <Text style={styles.buttonText}>Annuler</Text> 
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>

@@ -527,7 +527,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 }} 
                                 style={styles.button}
                             >
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -629,7 +629,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

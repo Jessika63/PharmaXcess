@@ -456,7 +456,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
                 hospital: '',
               });
             }} style={styles.button}>
-              <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+              <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Annuler</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -528,7 +528,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-              <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+              <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Annuler</Text>
               </LinearGradient>
             </TouchableOpacity>

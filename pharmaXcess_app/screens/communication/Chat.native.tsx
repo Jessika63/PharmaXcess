@@ -269,9 +269,9 @@ export default function Chat(): React.JSX.Element {
     // Function to get status badge color
     const getStatusColor = (status: string): string => {
         switch (status) {
-            case 'open': return '#4CAF50';
-            case 'pending': return '#FF9800';
-            case 'closed': return '#9E9E9E';
+            case 'open': return colors.success || colors.primary;
+            case 'pending': return colors.warning || colors.secondary;
+            case 'closed': return colors.textSecondary || colors.infoTextSecondary;
             default: return colors.infoTextSecondary;
         }
     };
@@ -518,7 +518,7 @@ export default function Chat(): React.JSX.Element {
                         </TouchableOpacity>
                         
                         <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.saveButtonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

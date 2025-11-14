@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
+import createGridStyles from '../../styles/ProfileGrid.style'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
-import QRCodeModal from '../../components/QRCodeModal';
-
-const { width } = Dimensions.get('window'); 
+import QRCodeModal from '../../components/QRCodeModal'; 
 
 
 type ProfileProps = {
@@ -30,6 +29,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
     const { user, logout } = useAuth();
     const { currentProfile, profiles } = useProfile();
     const styles = createStyles(colors, fontScale);
+    const gridStyles = createGridStyles(colors, fontScale);
 
     // State for QR code modal 
     const [isQRModalVisible, setIsQRModalVisible] = useState(false);
@@ -103,44 +103,6 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
         { title: 'Mes documents', route: 'Documents', icon: 'document-text-outline'},
     ];
 
-    // Styles for the grid of square cards 
-    const gridStyles = StyleSheet.create({
-        gridContainer: {
-            flexDirection: 'row', 
-            flexWrap: 'wrap', 
-            justifyContent: 'space-between',
-            paddingHorizontal: 0, 
-        },
-        gridCard: { 
-            width: (width - 60) / 2, // 2 columns with spacing 
-            aspectRatio: 1, // Square 
-            marginBottom: 15, 
-            borderRadius: 15, 
-            overflow: 'hidden',
-            shadowColor: colors.shadow, 
-            shadowOffset: { width: 0, height: 4}, 
-            shadowOpacity: 0.2, 
-            shadowRadius: 6, 
-            elevation: 5, 
-        },
-        gridCardGradient: {
-            flex: 1, 
-            padding: 15, 
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        gridCardIcon: { 
-            marginBottom: 10, 
-        },
-        gridCardText: { 
-            fontSize: 14 * fontScale, 
-            color: '#fff', 
-            fontWeight: 'bold', 
-            textAlign: 'center',
-        },
-    }); 
-
-
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {/* Section to select the profile */} 
@@ -156,22 +118,22 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                                 style={[styles.profileImage, { width: 40, height: 40, marginLeft: 15 }]} 
                             />
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.cardText, { color: '#fff', fontSize: 16, fontWeight: 'bold' }]}>
+                                <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 16, fontWeight: 'bold' }]}>
                                     {currentProfile?.name || 'Aucun profil sélectionné'}
                                 </Text>
-                                <Text style={[styles.cardText, { color: '#fff', fontSize: 12, opacity: 0.9 }]}>
+                                <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 12, opacity: 0.9 }]}>
                                     {getRelationshipText(currentProfile?.relationship)}
                                 </Text>
                                 {profiles.length > 1 && (
-                                    <Text style={[styles.cardText, { color: '#fff', fontSize: 11, opacity: 0.8 }]}>
+                                    <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 11, opacity: 0.8 }]}>
                                         {profiles.length - 1} autre(s) profil(s) disponible(s)
                                     </Text>
                                 )}
                             </View>
                         </View>
                         <View style={{ alignItems: 'center'}}> 
-                            <Ionicons name="people" size={24} color="#fff" style={{ marginRight: 15 }} /> 
-                            <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginTop: 2 }} />
+                            <Ionicons name="people" size={24} color={colors.iconPrimary} style={{ marginRight: 15 }} /> 
+                            <Ionicons name="chevron-forward" size={16} color={colors.iconPrimary} style={{ marginTop: 2 }} />
                         </View>
                     </View>
                 </LinearGradient>
@@ -200,7 +162,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                             <Ionicons 
                                 name={item.icon} 
                                 size={40} 
-                                color="#fff" 
+                                color={colors.iconPrimary} 
                                 style={gridStyles.gridCardIcon} 
                             />
                             <Text style={gridStyles.gridCardText}>{item.title}</Text>
@@ -211,9 +173,9 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
             
             {/* Logout button */}
             <TouchableOpacity style={[styles.card, { marginTop: 20 }]} onPress={handleLogout}>
-                <LinearGradient colors={['#ff6b6b', '#ee5a52']} style={styles.cardGradient}>
+                <LinearGradient colors={[colors.error, colors.error]} style={styles.cardGradient}>
                     <Text style={styles.cardText}>Se déconnecter</Text>
-                    <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
+                    <Ionicons name="log-out-outline" size={24} color={colors.iconPrimary} style={styles.icon} />
                 </LinearGradient>
             </TouchableOpacity>
 

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/ProfileInfos.style';
+import createModalStyles from '../../styles/ModalForm.style'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
@@ -31,6 +32,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     const { currentProfile } = useProfile();
     const { hospitalizations: profileHospitalizations, addHospitalization, removeHospitalization } = useProfileData();
     const styles = createStyles(colors, fontScale);
+    const modalStyles = createModalStyles(colors, fontScale);
 
     // Hospitalizations predefined for the main profile 
     const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([
@@ -302,61 +304,9 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     // Determine if it's the main profile 
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
-    // Modal styles matching PersonalInfo
-    const modalStyles = StyleSheet.create({
-        modalContainer: { 
-            flex: 1, 
-            backgroundColor: colors.background,
-        },
-        modalTitle: {
-            fontSize: 24 * fontScale,
-            fontWeight: 'bold',
-            marginBottom: 20,
-            color: colors.settingsTitle,
-            textAlign: 'center',
-        },
-        input: { 
-            width: '100%', 
-            padding: 15, 
-            borderWidth: 2, 
-            borderColor: colors.inputBorder,
-            borderRadius: 10, 
-            marginBottom: 15, 
-            backgroundColor: colors.inputBackground,
-            fontSize: 16 * fontScale, 
-            color: colors.infoText,
-        },
-        inputMultiline: { 
-            width: '100%', 
-            padding: 15, 
-            borderWidth: 2, 
-            borderColor: colors.inputBorder,
-            borderRadius: 10, 
-            marginBottom: 15, 
-            backgroundColor: colors.inputBackground,
-            fontSize: 16 * fontScale, 
-            color: colors.infoText,
-            minHeight: 80, 
-            textAlignVertical: 'top', 
-        },
-        label: { 
-            fontSize: 16 * fontScale, 
-            fontWeight: '600', 
-            marginBottom: 8, 
-            color: colors.settingsTitle,
-        },
-        scrollContainer: { 
-            backgroundColor: colors.background,
-        },
-        scrollContent: { 
-            padding: 20, 
-            paddingBottom: 30, 
-        },
-    });
-
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Header for current profile */}
                 {currentProfile && (
                     <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
@@ -519,21 +469,21 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         )}
                     </> 
                 )}
-
-                {/* Button to add a new hospitalization */} 
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Ajouter</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Retour</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
             </ScrollView>
+
+            {/* Button to add a new hospitalization - Fixed at bottom */} 
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                        <Text style={styles.buttonText}>Ajouter</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                        <Text style={styles.buttonText}>Retour</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
 
             {/* Modal for adding a new hospitalization - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
@@ -706,7 +656,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                     setSelectedEndDay(1); 
                                 }}
                             >
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -856,7 +806,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 </TouchableOpacity>
                                 
                                 <TouchableOpacity style={styles.button} onPress={() => setEditModalVisible(false)}>
-                                    <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                    <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                         <Text style={styles.buttonText}>Annuler</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
