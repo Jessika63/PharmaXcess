@@ -47,12 +47,47 @@ export async function switchProfile(newProfileId: string | number) {
   return postJson(url, { new_profile_id: newProfileId });
 }
 
-export async function registerSubprofile(nom: string, prenom: string, profile_type: string, main_profile_id: string | number, email?: string) {
+export async function registerSubprofile(name: string, profile_type: string, main_profile_id: string | number, email?: string) {
   const url = `${config.backendUrl.replace(/\/$/, '')}/register/subprofile`;
-  const body: any = { nom, prenom, profile_type, main_profile_id };
+  const body: any = { name, profile_type, main_profile_id };
   if (email) body.email = email;
   return postJson(url, body);
 }
 
-const api = { getAccessibleProfiles, switchProfile, registerSubprofile };
+// We'll export default at the end after all helpers are declared
+
+export async function getInfos(userId: string | number) {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/infos/${userId}`;
+  return getJson(url);
+}
+
+export async function getDiseases() {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/diseases`;
+  return getJson(url);
+}
+
+export async function getAllergies() {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/allergy`;
+  return getJson(url);
+}
+
+export async function updateInfos(userId: string | number, body: any) {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/infos/${userId}`;
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    return { ok: false, error: json?.error || json?.message || 'Request failed', status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
+// Export a default object containing all helpers
+const api = { getAccessibleProfiles, switchProfile, registerSubprofile, getInfos, getDiseases, getAllergies, updateInfos };
 export default api;

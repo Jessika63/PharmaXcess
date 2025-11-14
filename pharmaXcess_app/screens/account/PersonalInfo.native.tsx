@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle, Modal, TextInput, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,9 @@ type PatientInfo = {
     email: string;
     socialSecurityNumber: string;
     address: string;
-    emergencyContact: string;
+    // split emergency contact into two fields for clarity
+    emergencyContactName: string;
+    emergencyContactPhone: string;
 };
 
 
@@ -32,7 +35,7 @@ type PatientInfo = {
 export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
-    const { currentProfile } = useProfile();
+    const { currentProfile, updateProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -42,7 +45,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
     
     // Main profile data (pre-filled for main profile, empty for others)
     const [patientInfo, setPatientInfo] = useState<PatientInfo>(
-        isMainProfile ? {
+            isMainProfile ? {
             name: 'John Doe',
             birthDate: '01/01/1980',
             age: 42,
@@ -53,7 +56,8 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             email: 'johndoe@hotmail.com',
             socialSecurityNumber: '123-45-6789',
             address: '1 rue de la paix, 75000 Paris',
-            emergencyContact: 'Jane Doe, 06 12 34 56 79',
+            emergencyContactName: 'Jane Doe',
+            emergencyContactPhone: '06 12 34 56 79',
         } : {
             name: '',
             birthDate: '',
@@ -65,11 +69,13 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             email: '',
             socialSecurityNumber: '',
             address: '',
-            emergencyContact: '',
+            emergencyContactName: '',
+            emergencyContactPhone: '',
         }
     );
 
     const [editedInfo, setEditedInfo] = useState<PatientInfo>(patientInfo);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Define labels for each piece of patient information to be displayed in French
     const labels: { [key in keyof PatientInfo]: string } = {
@@ -83,7 +89,8 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
         email: 'Email',
         socialSecurityNumber: 'Numéro de sécurité sociale',
         address: 'Adresse',
-        emergencyContact: 'Contact d\'urgence',
+        emergencyContactName: 'Contact d\'urgence - Nom',
+        emergencyContactPhone: 'Contact d\'urgence - Téléphone',
     };
 
     const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -111,14 +118,80 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
         setIsModalVisible(true);
     };
 
-    const handleSaveChanges = (): void => {
+    const handleSaveChanges = async (): Promise<void> => {
         if (!editedInfo.name || !editedInfo.email || !editedInfo.phone) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
             return;
         }
-        setPatientInfo({ ...editedInfo });
-        setIsModalVisible(false);
-        Alert.alert('Succès', 'Vos informations ont été mises à jour.');
+
+        // Validate date format (expect DD/MM/YYYY) if provided
+        const isValidDDMMYYYY = (s?: string) => {
+            if (!s) return true; // empty allowed elsewhere
+            const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!m) return false;
+            const day = Number(m[1]);
+            const month = Number(m[2]);
+            const year = Number(m[3]);
+            if (month < 1 || month > 12) return false;
+            const maxDay = new Date(year, month, 0).getDate();
+            if (day < 1 || day > maxDay) return false;
+            return true;
+        };
+
+        if (editedInfo.birthDate && !isValidDDMMYYYY(editedInfo.birthDate)) {
+            Alert.alert('Erreur', "Le format de la date doit être JJ/MM/AAAA (ex: 01/01/1980).");
+            return;
+        }
+
+        // Prepare data to persist via ProfileContext (will call backend when authenticated)
+        try {
+            // Parse weight (e.g. "70 kg") and height (e.g. "180 cm") to numbers where possible
+            const parseNumber = (s: string) => {
+                if (!s) return undefined;
+                const cleaned = String(s).replace(/[a-zA-Z]/g, '').replace(',', '.').trim();
+                const n = Number(cleaned);
+                return Number.isFinite(n) ? n : undefined;
+            };
+
+            const weightNum = parseNumber(editedInfo.weight as string);
+            const heightNum = parseNumber(editedInfo.height as string);
+
+            // Use the two separate emergency contact fields
+            const emergencyName = editedInfo.emergencyContactName ? String(editedInfo.emergencyContactName).trim() : undefined;
+            const emergencyPhone = editedInfo.emergencyContactPhone ? String(editedInfo.emergencyContactPhone).trim() : undefined;
+
+            const payload: any = {
+                // frontend keys expected by updateProfile mapping
+                dateOfBirth: editedInfo.birthDate,
+                // send full name as 'name' so backend can update 'nom' (no split needed)
+                name: editedInfo.name,
+                weight: weightNum !== undefined ? weightNum : editedInfo.weight,
+                height: heightNum !== undefined ? heightNum : editedInfo.height,
+                bloodGroup: editedInfo.bloodType,
+                telephone: editedInfo.phone,
+                socialNumber: editedInfo.socialSecurityNumber,
+                adresse: editedInfo.address,
+            };
+
+            if (emergencyName) payload.contact_urgence_nom = emergencyName;
+            if (emergencyPhone) payload.contact_urgence_tel = emergencyPhone;
+
+            // If we have a current profile, try to persist via context (which will call backend when authenticated)
+            if (currentProfile && updateProfile) {
+                const success = await updateProfile(currentProfile.id, payload as any);
+                if (!success) {
+                    Alert.alert('Erreur', "Impossible d'enregistrer les informations sur le serveur. Elles ont été enregistrées localement.");
+                }
+            }
+
+            // Update local UI state regardless so user sees changes immediately
+            setPatientInfo({ ...editedInfo });
+            setIsModalVisible(false);
+            Alert.alert('Succès', 'Vos informations ont été mises à jour.');
+        } catch (e) {
+            console.warn('Failed to save personal info', e);
+            Alert.alert('Erreur', 'Une erreur est survenue lors de la sauvegarde.');
+        }
     };
 
     const handleInputChange = (field: keyof PatientInfo, value: string | number): void => {
@@ -274,25 +347,50 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="Nom complet"
                             value={editedInfo.name}
-                            onChangeText={(text) => handleInputChange('name', text)}
+                            onChangeText={(text: string) => handleInputChange('name', text)}
                             placeholderTextColor={colors.inputBorder}
                         />
                         
                         <Text style={modalStyles.label}>Date de naissance</Text>
-                        <TextInput
-                            style={modalStyles.input}
-                            placeholder="DD/MM/YYYY"
-                            value={editedInfo.birthDate}
-                            onChangeText={(text) => handleInputChange('birthDate', text)}
-                            placeholderTextColor={colors.inputBorder}
-                        />
+                        <TouchableOpacity
+                            style={[modalStyles.input, { justifyContent: 'center' }]}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <Text style={{ color: editedInfo.birthDate ? colors.infoText : colors.inputBorder }}>
+                                {editedInfo.birthDate || 'Sélectionner une date'}
+                            </Text>
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={(() => {
+                                    if (editedInfo.birthDate) {
+                                        const m = String(editedInfo.birthDate).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                                        if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+                                    }
+                                    return new Date();
+                                })()}
+                                mode="date"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(event: any, selectedDate?: Date) => {
+                                    // keep picker open on iOS until user dismisses
+                                    setShowDatePicker(Platform.OS === 'ios');
+                                    if (selectedDate) {
+                                        const dd = String(selectedDate.getDate()).padStart(2, '0');
+                                        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                                        const yyyy = selectedDate.getFullYear();
+                                        const formatted = `${dd}/${mm}/${yyyy}`;
+                                        handleInputChange('birthDate', formatted);
+                                    }
+                                }}
+                            />
+                        )}
                         
                         <Text style={modalStyles.label}>Âge</Text>
                         <TextInput
                             style={modalStyles.input}
                             placeholder="Âge"
                             value={editedInfo.age.toString()}
-                            onChangeText={(text) => handleInputChange('age', parseInt(text) || 0)}
+                            onChangeText={(text: string) => handleInputChange('age', parseInt(text) || 0)}
                             keyboardType="numeric"
                             placeholderTextColor={colors.inputBorder}
                         />
@@ -302,7 +400,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="ex: 70 kg"
                             value={editedInfo.weight}
-                            onChangeText={(text) => handleInputChange('weight', text)}
+                            onChangeText={(text: string) => handleInputChange('weight', text)}
                             placeholderTextColor={colors.inputBorder}
                         />
                         
@@ -311,14 +409,14 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="ex: 180 cm"
                             value={editedInfo.height}
-                            onChangeText={(text) => handleInputChange('height', text)}
+                            onChangeText={(text: string) => handleInputChange('height', text)}
                             placeholderTextColor={colors.inputBorder}
                         />
                         
                         <CustomPicker
                             label="Groupe sanguin"
                             selectedValue={editedInfo.bloodType}
-                            onValueChange={(value) => handleInputChange('bloodType', String(value))}
+                            onValueChange={(value: string) => handleInputChange('bloodType', String(value))}
                             options={bloodTypes.map(type => ({ label: type, value: type }))}
                             placeholder="Sélectionner un groupe sanguin"
                         />
@@ -328,7 +426,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="06 12 34 56 78"
                             value={editedInfo.phone}
-                            onChangeText={(text) => handleInputChange('phone', text)}
+                            onChangeText={(text: string) => handleInputChange('phone', text)}
                             keyboardType="phone-pad"
                             placeholderTextColor={colors.inputBorder}
                         />
@@ -338,7 +436,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="email@exemple.com"
                             value={editedInfo.email}
-                            onChangeText={(text) => handleInputChange('email', text)}
+                            onChangeText={(text: string) => handleInputChange('email', text)}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             placeholderTextColor={colors.inputBorder}
@@ -349,7 +447,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="123-45-6789"
                             value={editedInfo.socialSecurityNumber}
-                            onChangeText={(text) => handleInputChange('socialSecurityNumber', text)}
+                            onChangeText={(text: string) => handleInputChange('socialSecurityNumber', text)}
                             placeholderTextColor={colors.inputBorder}
                         />
                         
@@ -358,18 +456,28 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             style={modalStyles.input}
                             placeholder="Adresse complète"
                             value={editedInfo.address}
-                            onChangeText={(text) => handleInputChange('address', text)}
+                            onChangeText={(text: string) => handleInputChange('address', text)}
                             multiline
                             numberOfLines={2}
                             placeholderTextColor={colors.inputBorder}
                         />
-                        
-                        <Text style={modalStyles.label}>Contact d'urgence</Text>
+
+                        <Text style={modalStyles.label}>Contact d'urgence - Nom</Text>
                         <TextInput
                             style={modalStyles.input}
-                            placeholder="Nom, numéro de téléphone"
-                            value={editedInfo.emergencyContact}
-                            onChangeText={(text) => handleInputChange('emergencyContact', text)}
+                            placeholder="Nom du contact"
+                            value={editedInfo.emergencyContactName}
+                            onChangeText={(text: string) => handleInputChange('emergencyContactName', text)}
+                            placeholderTextColor={colors.inputBorder}
+                        />
+
+                        <Text style={modalStyles.label}>Contact d'urgence - Téléphone</Text>
+                        <TextInput
+                            style={modalStyles.input}
+                            placeholder="Numéro de téléphone"
+                            value={editedInfo.emergencyContactPhone}
+                            onChangeText={(text: string) => handleInputChange('emergencyContactPhone', text)}
+                            keyboardType="phone-pad"
                             placeholderTextColor={colors.inputBorder}
                         />
                         

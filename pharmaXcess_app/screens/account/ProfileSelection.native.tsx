@@ -141,21 +141,23 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                     </TouchableOpacity>
                 ))}
 
-                {/* Button to create a new profile */}
-                <TouchableOpacity 
-                    style={[styles.card, { marginTop: 20 }]} 
-                    onPress={() => setShowCreateModal(true)}
-                >
-                    <LinearGradient 
-                        colors={[colors.secondary, colors.primary]} 
-                        style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                {/* Button to create a new profile - only shown when currentProfile is the main profile */}
+                {currentProfile?.isMain && (
+                    <TouchableOpacity 
+                        style={[styles.card, { marginTop: 20 }]} 
+                        onPress={() => setShowCreateModal(true)}
                     >
-                        <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
-                        <Text style={[styles.cardText, { color: '#fff', fontWeight: 'bold' }]}>
-                            Créer un nouveau profil
-                        </Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                        <LinearGradient 
+                            colors={[colors.secondary, colors.primary]} 
+                            style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                        >
+                            <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
+                            <Text style={[styles.cardText, { color: '#fff', fontWeight: 'bold' }]}>
+                                Créer un nouveau profil
+                            </Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
 
             {/* Modal for creating a new profile */}
