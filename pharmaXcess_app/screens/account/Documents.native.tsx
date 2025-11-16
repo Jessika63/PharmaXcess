@@ -30,32 +30,24 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
 
     const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
     const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
-    const [documents, setDocuments] = useState<Document[]>([
-        {
-            id: 'DOC001',
-            name: 'Compte-rendu cardiologie - 2023',
-            type: 'Compte-rendu médical',
-            dateAdded: '15/06/2023',
-            size: '2.1 MB',
-            uri: 'documents/cardio_2023.pdf'
-        },
-        {
-            id: 'DOC002',
-            name: 'IRM cérébrale - Février 2023',
-            type: 'Imagerie médicale',
-            dateAdded: '12/02/2023',
-            size: '5.8 MB',
-            uri: 'documents/irm_2023.pdf'
-        },
-        {
-            id: 'DOC003',
-            name: 'Analyses sanguines - Octobre 2023',
-            type: 'Analyses biologiques',
-            dateAdded: '15/10/2023',
-            size: '1.2 MB',
-            uri: 'documents/analyses_2023.pdf'
+    // Use documents from the backend-backed profile when available, otherwise start empty
+    const [documents, setDocuments] = useState<Document[]>(() => {
+        try {
+            if (currentProfile && Array.isArray((currentProfile as any).documents)) {
+                return (currentProfile as any).documents as Document[];
+            }
+        } catch (e) {
+            // ignore and fall back to empty
         }
-    ]);
+        return [] as Document[];
+    });
+
+    // Keep local state in sync when profile changes (e.g., loaded from backend)
+    React.useEffect(() => {
+        if (currentProfile && Array.isArray((currentProfile as any).documents)) {
+            setDocuments((currentProfile as any).documents as Document[]);
+        }
+    }, [currentProfile]);
 
     // Function to handle adding a new document
     const handleAddDocument = () => {

@@ -8,6 +8,7 @@ export interface Profile {
     id: string; 
     name: string; 
     avatar?: string; 
+    email?: string;
     dateOfBirth?: string; 
     age?: number;
     relationship?: 'self' | 'child' | 'parent' | 'spouse' | 'other';
@@ -509,6 +510,8 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
                     setCurrentProfile(prev => prev ? ({
                         ...prev,
                         dateOfBirth: infos.date_naissance || prev.dateOfBirth,
+                        // keep email on the top-level for easier access in other places
+                        email: infos.email || prev.email,
                         // store raw backend infos under `metadata` for other UI usage
                         // (contains poids, taille, groupe_sanguin, telephone, etc.)
                         metadata: infos,

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS maladies (
     description TEXT,
     symptomes TEXT,
     date_debut DATE,
+    examens TEXT,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 

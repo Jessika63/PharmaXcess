@@ -33,20 +33,8 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
     const familyMembers = ['Père', 'Mère', 'Frère', 'Sœur', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Oncle', 'Tante', 'Cousin(e)', 'Autre'];
     const severityLevels = ['Léger', 'Modéré', 'Sévère', 'Critique'];
 
-    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
-        {
-            name: 'Diabète de type 2',
-            familyMember: 'Père',
-            severity: 'Modéré',
-            treatment: 'Insuline, régime alimentaire',
-        },
-        {
-            name: 'Hypertension artérielle',
-            familyMember: 'Mère',
-            severity: 'Sévère',
-            treatment: 'Bêtabloquants, régime alimentaire',
-        },
-    ]);
+    // Start empty: family history should be supplied by backend/profile
+    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -351,7 +339,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Nom de la maladie"
                         value={isMainProfile ? newFamilyHistory.name : newFamilyHistorySimple}
-                        onChangeText={(text) => {
+                        onChangeText={(text: string) => {
                             if (isMainProfile) {
                                 setNewFamilyHistory({ ...newFamilyHistory, name: text })
                             } else {
@@ -366,7 +354,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <CustomPicker
                         label="Membre de la famille"
                         selectedValue={newFamilyHistory.familyMember || familyMembers[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
+                        onValueChange={(value: string | number) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
                         options={familyMembers.map(member => ({ 
                             label: member, 
                             value: member 
@@ -377,7 +365,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <CustomPicker
                         label="Sévérité"
                         selectedValue={newFamilyHistory.severity || severityLevels[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
+                        onValueChange={(value: string | number) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
                         options={severityLevels.map(level => ({ 
                             label: level, 
                             value: level 
@@ -388,7 +376,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Traitement"
                         value={newFamilyHistory.treatment}
-                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
+                        onChangeText={(text: string) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
                         style={styles.input}
                     />
                     
@@ -428,14 +416,14 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Nom de la maladie"
                         value={editedFamilyHistory.name}
-                        onChangeText={(text) => setEditedFamilyHistory({ ...editedFamilyHistory, name: text })}
+                        onChangeText={(text: string) => setEditedFamilyHistory({ ...editedFamilyHistory, name: text })}
                         style={styles.input}
                     />
                     
                     <CustomPicker
                         label="Membre de la famille"
                         selectedValue={editedFamilyHistory.familyMember}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
+                        onValueChange={(value: string | number) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
                         options={familyMembers.map(member => ({ 
                             label: member, 
                             value: member 
@@ -446,7 +434,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <CustomPicker
                         label="Sévérité"
                         selectedValue={editedFamilyHistory.severity}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
+                        onValueChange={(value: string | number) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
                         options={severityLevels.map(level => ({ 
                             label: level, 
                             value: level 
@@ -457,7 +445,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Traitement"
                         value={editedFamilyHistory.treatment}
-                        onChangeText={(text) => setEditedFamilyHistory({ ...editedFamilyHistory, treatment: text })}
+                        onChangeText={(text: string) => setEditedFamilyHistory({ ...editedFamilyHistory, treatment: text })}
                         style={styles.input}
                     />
                     

@@ -31,25 +31,8 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
   const { doctors: profileDoctors, addDoctor, removeDoctor } = useProfileData();
   const styles = createStyles(colors, fontScale);
 
-  const [doctors, setDoctors] = useState<Doctor[]>([
-        {
-            name: 'Dr. Jean Dupont',
-            specialty: 'Cardiologue',
-            phoneNumber: '01 23 45 67 89',
-            email: 'dupont.cardio@hotmail.com',
-            address: '1 rue de la santé, 75000 Paris',
-            hospital: 'Hôpital Cochin',
-        },
-        {
-            name: 'Dr. Marie Curie',
-            specialty: 'Oncologue',
-            phoneNumber: '01 23 45 67 90',
-            email: 'curie.onco@hotmail.com',
-            address: '2 avenue de la médecine, 75000 Paris',
-            hospital: 'Hôpital Pitié-Salpêtrière',
-        },
-
-  ]);
+  // Start empty; doctors should be loaded from backend/profile
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -383,7 +366,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Nom"
             value={isMainProfile ? newDoctor.name : newDoctorSimple}
-            onChangeText={(text) => {
+            onChangeText={(text: string) => {
               if (isMainProfile) {
                 setNewDoctor({ ...newDoctor, name: text })
               } else {
@@ -398,7 +381,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <CustomPicker
             label="Spécialité"
             selectedValue={newDoctor.specialty}
-            onValueChange={(value) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
+            onValueChange={(value: string | number) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
             options={specialties.map(specialty => ({ 
               label: specialty, 
               value: specialty 
@@ -409,7 +392,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Téléphone"
             value={newDoctor.phoneNumber}
-            onChangeText={(text) => setNewDoctor({ ...newDoctor, phoneNumber: text })}
+            onChangeText={(text: string) => setNewDoctor({ ...newDoctor, phoneNumber: text })}
             style={styles.input}
             keyboardType='phone-pad'
           />
@@ -417,21 +400,21 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Email"
             value={newDoctor.email}
-            onChangeText={(text) => setNewDoctor({ ...newDoctor, email: text })}
+            onChangeText={(text: string) => setNewDoctor({ ...newDoctor, email: text })}
             style={styles.input}
           />
           
           <TextInput
             placeholder="Adresse"
             value={newDoctor.address}
-            onChangeText={(text) => setNewDoctor({ ...newDoctor, address: text })}
+            onChangeText={(text: string) => setNewDoctor({ ...newDoctor, address: text })}
             style={styles.input}
           />
           
           <TextInput
             placeholder="Hôpital"
             value={newDoctor.hospital}
-            onChangeText={(text) => setNewDoctor({ ...newDoctor, hospital: text })}
+            onChangeText={(text: string) => setNewDoctor({ ...newDoctor, hospital: text })}
             style={styles.input}
           />
           
@@ -473,14 +456,14 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Nom"
             value={editedDoctor.name}
-            onChangeText={(text) => setEditedDoctor({ ...editedDoctor, name: text })}
+            onChangeText={(text: string) => setEditedDoctor({ ...editedDoctor, name: text })}
             style={styles.input}
           />
           
           <CustomPicker
             label="Spécialité"
             selectedValue={editedDoctor.specialty}
-            onValueChange={(value) => setEditedDoctor({ ...editedDoctor, specialty: String(value) })}
+            onValueChange={(value: string | number) => setEditedDoctor({ ...editedDoctor, specialty: String(value) })}
             options={specialties.map(specialty => ({ 
               label: specialty, 
               value: specialty 
@@ -491,7 +474,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Téléphone"
             value={editedDoctor.phoneNumber}
-            onChangeText={(text) => setEditedDoctor({ ...editedDoctor, phoneNumber: text })}
+            onChangeText={(text: string) => setEditedDoctor({ ...editedDoctor, phoneNumber: text })}
             style={styles.input}
             keyboardType='phone-pad'
           />
@@ -499,21 +482,21 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
           <TextInput
             placeholder="Email"
             value={editedDoctor.email}
-            onChangeText={(text) => setEditedDoctor({ ...editedDoctor, email: text })}
+            onChangeText={(text: string) => setEditedDoctor({ ...editedDoctor, email: text })}
             style={styles.input}
           />
           
           <TextInput
             placeholder="Adresse"
             value={editedDoctor.address}
-            onChangeText={(text) => setEditedDoctor({ ...editedDoctor, address: text })}
+            onChangeText={(text: string) => setEditedDoctor({ ...editedDoctor, address: text })}
             style={styles.input}
           />
           
           <TextInput
             placeholder="Hôpital"
             value={editedDoctor.hospital}
-            onChangeText={(text) => setEditedDoctor({ ...editedDoctor, hospital: text })}
+            onChangeText={(text: string) => setEditedDoctor({ ...editedDoctor, hospital: text })}
             style={styles.input}
           />
           

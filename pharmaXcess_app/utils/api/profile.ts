@@ -71,6 +71,43 @@ export async function getAllergies() {
   return getJson(url);
 }
 
+export async function createDisease(body: any) {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/diseases`;
+  return postJson(url, body);
+}
+
+export async function deleteDisease(diseaseId: string | number) {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/disease/entry/${diseaseId}`;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    return { ok: false, error: json?.error || json?.message || 'Request failed', status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
+export async function updateDisease(diseaseId: string | number, body: any) {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/disease/entry/${diseaseId}`;
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    return { ok: false, error: json?.error || json?.message || 'Request failed', status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
 export async function updateInfos(userId: string | number, body: any) {
   const url = `${config.backendUrl.replace(/\/$/, '')}/infos/${userId}`;
   try {
@@ -89,5 +126,5 @@ export async function updateInfos(userId: string | number, body: any) {
 }
 
 // Export a default object containing all helpers
-const api = { getAccessibleProfiles, switchProfile, registerSubprofile, getInfos, getDiseases, getAllergies, updateInfos };
+const api = { getAccessibleProfiles, switchProfile, registerSubprofile, getInfos, getDiseases, getAllergies, updateInfos, createDisease, deleteDisease, updateDisease };
 export default api;

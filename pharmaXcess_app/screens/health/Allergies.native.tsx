@@ -31,24 +31,8 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const { allergies: profileAllergies, addAllergy, removeAllergy } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    const [allergies, setAllergies] = useState<Allergy[]>([
-        {
-            name: 'Pollen',
-            beginDate: '01/01/2021',
-            severity: 'Modérée',
-            symptoms: 'Éternuements, nez qui coule',
-            medications: 'Antihistaminiques',
-            comments: 'Allergie saisonnière',
-        },
-        {
-            name: 'Pénicilline',
-            beginDate: '01/01/2020',
-            severity: 'Sévère',
-            symptoms: 'Urticaire, œdème de Quincke',
-            medications: 'Éviter les pénicillines',
-            comments: 'Allergie connue',
-        },
-    ]);
+    // Start with an empty list: allergies will be loaded from the backend/profile data
+    const [allergies, setAllergies] = useState<Allergy[]>([]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -421,7 +405,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         <TextInput
                             placeholder="Nom de l'allergie"
                             value={isMainProfile ? newAllergy.name : newAllergySimple}
-                            onChangeText={(text) => {
+                            onChangeText={(text: string) => {
                                 if (isMainProfile) {
                                     setNewAllergy({ ...newAllergy, name: text })
                                 } else {
@@ -437,7 +421,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={selectedBeginDay}
-                                    onValueChange={(value) => setSelectedBeginDay(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -449,7 +433,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={selectedBeginMonth}
-                                    onValueChange={(value) => setSelectedBeginMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -461,7 +445,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={selectedBeginYear}
-                                    onValueChange={(value) => setSelectedBeginYear(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -473,25 +457,25 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         <TextInput
                             placeholder="Gravité"
                             value={newAllergy.severity}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, severity: text })}
                             style={styles.input}
                         />
                         <TextInput
                             placeholder="Symptômes"
                             value={newAllergy.symptoms}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, symptoms: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, symptoms: text })}
                             style={styles.input}
                         />
                         <TextInput
                             placeholder="Médicaments"
                             value={newAllergy.medications}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, medications: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, medications: text })}
                             style={styles.input}
                         />
                         <TextInput
                             placeholder="Commentaires"
                             value={newAllergy.comments}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, comments: text })}
                             style={styles.input}
                         />
                         <View style={styles.buttonContainer}>
@@ -535,19 +519,19 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     contentInsetAdjustmentBehavior="automatic"
                 >
                     <Text style={styles.modalTitle}>Modifier l'allergie</Text>
-                    <TextInput
-                        placeholder="Nom"
-                        value={editedAllergy.name}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, name: text })}
-                        style={styles.input}
-                        placeholderTextColor={colors.inputBorder}
-                    />
+                        <TextInput
+                            placeholder="Nom"
+                            value={editedAllergy.name}
+                            onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, name: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View style={{ flex: 1, marginRight: 5 }}>
                             <CustomPicker
                                 label="Jour"
                                 selectedValue={editSelectedBeginDay}
-                                onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginDay(Number(value))}
                                 options={Array.from({ length: 31 }, (_, i) => ({ 
                                     label: (i + 1).toString().padStart(2, '0'), 
                                     value: i + 1 
@@ -559,7 +543,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             <CustomPicker
                                 label="Mois"
                                 selectedValue={editSelectedBeginMonth}
-                                onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginMonth(Number(value))}
                                 options={Array.from({ length: 12 }, (_, i) => ({ 
                                     label: (i + 1).toString().padStart(2, '0'), 
                                     value: i + 1 
@@ -571,7 +555,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             <CustomPicker
                                 label="Année"
                                 selectedValue={editSelectedBeginYear}
-                                onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginYear(Number(value))}
                                 options={Array.from({ length: 50 }, (_, i) => ({ 
                                     label: (1980 + i).toString(), 
                                     value: 1980 + i 
@@ -583,7 +567,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     <CustomPicker
                         label="Gravité"
                         selectedValue={editedAllergy.severity}
-                        onValueChange={(value) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
+                        onValueChange={(value: string | number) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
                         options={[
                             { label: 'Légère', value: 'Légère' },
                             { label: 'Modérée', value: 'Modérée' },
@@ -594,21 +578,21 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     <TextInput
                         placeholder="Symptômes"
                         value={editedAllergy.symptoms}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, symptoms: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, symptoms: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />
                     <TextInput
                         placeholder="Médicaments"
                         value={editedAllergy.medications}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, medications: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, medications: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />
                     <TextInput
                         placeholder="Commentaires"
                         value={editedAllergy.comments}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, comments: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, comments: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />

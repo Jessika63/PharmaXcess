@@ -1,5 +1,6 @@
 
 from flask import Blueprint, request, jsonify
+import re
 from db_app import get_app_connection
 from .profile_access import (
     get_current_user_id,
@@ -42,6 +43,8 @@ def create_disease():
     description = data.get("description")
     symptomes = data.get("symptomes")
     date_debut = data.get("date_debut")
+    examens = data.get("examens")
+    traitements = data.get("traitements") or data.get("treatments")
 
     if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
@@ -63,11 +66,28 @@ def create_disease():
                 return jsonify({"error": "You don't have permission to add disease for this user"}), 403
 
             cursor.execute("""
-                INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (utilisateur_id, nom, description, symptomes, date_debut))
+                INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut, examens)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (utilisateur_id, nom, description, symptomes, date_debut, examens))
             conn.commit()
             disease_id = cursor.lastrowid
+
+            # If traitements provided as a string, create a traitement entry linked to this maladie
+            if traitements:
+                # Allow multiple treatments separated by newlines or semicolons
+                if isinstance(traitements, str):
+                    parts = [t.strip() for t in re.split(r"[\n;]+", traitements) if t.strip()]
+                elif isinstance(traitements, list):
+                    parts = [str(t).strip() for t in traitements if str(t).strip()]
+                else:
+                    parts = [str(traitements)]
+
+                for t in parts:
+                    cursor.execute("""
+                        INSERT INTO traitements (maladie_id, nom)
+                        VALUES (%s, %s)
+                    """, (disease_id, t))
+                conn.commit()
 
         return jsonify({"message": "Disease added successfully", "id": disease_id}), 201
     finally:
@@ -102,11 +122,14 @@ def get_all_diseases():
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Aggregate traitements (t.nom) into a single string separated by '||'
             query = f"""
-                SELECT m.*
+                SELECT m.*, GROUP_CONCAT(t.nom SEPARATOR '||') AS traitements
                 FROM maladies m
+                LEFT JOIN traitements t ON t.maladie_id = m.id
                 JOIN utilisateurs u ON m.utilisateur_id = u.id
                 WHERE {condition}
+                GROUP BY m.id
             """
             cursor.execute(query, (current_user_id, current_user_id))
             diseases = cursor.fetchall()
@@ -143,11 +166,14 @@ def get_disease(disease_id):
     conn = get_app_connection()
     try:
         with conn.cursor() as cursor:
+            # Include traitements aggregated for the single disease
             query = f"""
-                SELECT m.*
+                SELECT m.*, GROUP_CONCAT(t.nom SEPARATOR '||') AS traitements
                 FROM maladies m
+                LEFT JOIN traitements t ON t.maladie_id = m.id
                 JOIN utilisateurs u ON m.utilisateur_id = u.id
                 WHERE m.id = %s AND {condition}
+                GROUP BY m.id
             """
             cursor.execute(query, (disease_id, current_user_id, current_user_id))
             disease = cursor.fetchone()
@@ -188,6 +214,8 @@ def update_disease(disease_id):
         return error_response, status
 
     data = request.get_json()
+    examens = data.get("examens")
+    traitements = data.get("traitements") or data.get("treatments")
     condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
@@ -206,7 +234,7 @@ def update_disease(disease_id):
             # Perform update now that permission is confirmed
             query = """
                 UPDATE maladies
-                SET nom=%s, description=%s, symptomes=%s, date_debut=%s
+                SET nom=%s, description=%s, symptomes=%s, date_debut=%s, examens=%s
                 WHERE id=%s
             """
             cursor.execute(query, (
@@ -214,11 +242,29 @@ def update_disease(disease_id):
                 data.get("description"),
                 data.get("symptomes"),
                 data.get("date_debut"),
+                examens,
                 disease_id,
             ))
 
             if cursor.rowcount == 0:
                 return jsonify({"error": "Disease not found or not updated"}), 404
+
+            # If traitements provided, replace existing traitements for this maladie
+            if traitements is not None:
+                cursor.execute("DELETE FROM traitements WHERE maladie_id = %s", (disease_id,))
+                # Insert new traitements; accept string or list
+                if isinstance(traitements, str):
+                    parts = [t.strip() for t in re.split(r"[\n;]+", traitements) if t.strip()]
+                elif isinstance(traitements, list):
+                    parts = [str(t).strip() for t in traitements if str(t).strip()]
+                else:
+                    parts = [str(traitements)]
+
+                for t in parts:
+                    cursor.execute("""
+                        INSERT INTO traitements (maladie_id, nom)
+                        VALUES (%s, %s)
+                    """, (disease_id, t))
 
             conn.commit()
 

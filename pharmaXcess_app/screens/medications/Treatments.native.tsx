@@ -33,26 +33,8 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const { treatments: profileTreatments, addTreatment, removeTreatment } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    const [treatments, setTreatments] =  useState<Treatment[]>([
-        {
-            name: 'Metformine',
-            beginDate: '01/01/2021',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '1 an',
-            sideEffects: 'nausées, vomissements, diarrhée',
-            disease: 'Diabète de type 2',
-        },
-        {
-            name: 'Lévothyrox',
-            beginDate: '01/01/2020',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '2 ans',
-            sideEffects: 'palpitations, tremblements, maux de tête',
-            disease: 'Hypothyroïdie',
-        },
-    ]);
+    // Start empty; treatments should be loaded from backend/profile
+    const [treatments, setTreatments] =  useState<Treatment[]>([]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -516,7 +498,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Nom du traitement"
                             value={isMainProfile ? newTreatment.name : newTreatmentSimple}
-                            onChangeText={(text) => {
+                            onChangeText={(text: string) => {
                                 if (isMainProfile) {
                                     setNewTreatment({ ...newTreatment, name: text })
                                 } else {
@@ -534,7 +516,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={beginDay}
-                                    onValueChange={(value) => setBeginDay(Number(value))}
+                                    onValueChange={(value: string | number) => setBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -546,7 +528,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={beginMonth}
-                                    onValueChange={(value) => setBeginMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -558,7 +540,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={beginYear}
-                                    onValueChange={(value) => setBeginYear(Number(value))}
+                                    onValueChange={(value: string | number) => setBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -574,7 +556,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={endDay}
-                                    onValueChange={(value) => setEndDay(Number(value))}
+                                    onValueChange={(value: string | number) => setEndDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -586,7 +568,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={endMonth}
-                                    onValueChange={(value) => setEndMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setEndMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -598,7 +580,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={endYear}
-                                    onValueChange={(value) => setEndYear(Number(value))}
+                                    onValueChange={(value: string | number) => setEndYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -612,7 +594,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <CustomPicker
                             label="Comprimés par jour"
                             selectedValue={dosagePerDay}
-                            onValueChange={(value) => setDosagePerDay(Number(value))}
+                            onValueChange={(value: string | number) => setDosagePerDay(Number(value))}
                             options={Array.from({ length: 10 }, (_, i) => ({ 
                                 label: (i + 1).toString(), 
                                 value: i + 1 
@@ -626,7 +608,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Valeur"
                                     selectedValue={durationValue}
-                                    onValueChange={(value) => setDurationValue(Number(value))}
+                                    onValueChange={(value: string | number) => setDurationValue(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString(), 
                                         value: i + 1 
@@ -638,7 +620,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Unité"
                                     selectedValue={durationUnit}
-                                    onValueChange={(value) => setDurationUnit(String(value))}
+                                    onValueChange={(value: string | number) => setDurationUnit(String(value))}
                                     options={durationUnits.map(unit => ({ 
                                         label: unit, 
                                         value: unit 
@@ -651,14 +633,14 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Effets secondaires"
                             value={newTreatment.sideEffects}
-                            onChangeText={(text) => setNewTreatment({ ...newTreatment, sideEffects: text })}
+                            onChangeText={(text: string) => setNewTreatment({ ...newTreatment, sideEffects: text })}
                             style={styles.input}
                         />
                         
                         <TextInput
                             placeholder="Maladie associée"
                             value={newTreatment.disease}
-                            onChangeText={(text) => setNewTreatment({ ...newTreatment, disease: text })}
+                            onChangeText={(text: string) => setNewTreatment({ ...newTreatment, disease: text })}
                             style={styles.input}
                         />
                         
@@ -712,10 +694,10 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 >
                         <Text style={styles.modalTitle}>Modifier le traitement</Text>
                         
-                        <TextInput
+                            <TextInput
                             placeholder="Nom du traitement"
                             value={editedTreatment.name}
-                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, name: text })}
+                            onChangeText={(text: string) => setEditedTreatment({ ...editedTreatment, name: text })}
                             style={styles.input}
                         />
                         
@@ -725,7 +707,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={editBeginDay}
-                                    onValueChange={(value) => setEditBeginDay(Number(value))}
+                                    onValueChange={(value: string | number) => setEditBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -737,7 +719,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={editBeginMonth}
-                                    onValueChange={(value) => setEditBeginMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setEditBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -749,7 +731,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={editBeginYear}
-                                    onValueChange={(value) => setEditBeginYear(Number(value))}
+                                    onValueChange={(value: string | number) => setEditBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -842,14 +824,14 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Effets secondaires"
                             value={editedTreatment.sideEffects}
-                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, sideEffects: text })}
+                            onChangeText={(text: string) => setEditedTreatment({ ...editedTreatment, sideEffects: text })}
                             style={styles.input}
                         />
                         
                         <TextInput
                             placeholder="Maladie associée"
                             value={editedTreatment.disease}
-                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, disease: text })}
+                            onChangeText={(text: string) => setEditedTreatment({ ...editedTreatment, disease: text })}
                             style={styles.input}
                         />
                         

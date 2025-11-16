@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle, Modal, TextInput, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,8 +6,10 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
+import { useIsFocused } from '@react-navigation/native';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type PersonalInfoProps = {
@@ -37,28 +39,77 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
     const { fontScale } = useFontScale();
     const { currentProfile, updateProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
-
     const [isModalVisible, setIsModalVisible] = useState(false);
     
-    // Determine if it's the main profile 
+    // Determine if it's the main profile (relationship 'self' or default name)
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
-    
-    // Main profile data (pre-filled for main profile, empty for others)
-    const [patientInfo, setPatientInfo] = useState<PatientInfo>(
-            isMainProfile ? {
-            name: 'John Doe',
-            birthDate: '01/01/1980',
-            age: 42,
-            weight: '70 kg',
-            height: '180 cm',
-            bloodType: 'A+',
-            phone: '06 12 34 56 78',
-            email: 'johndoe@hotmail.com',
-            socialSecurityNumber: '123-45-6789',
-            address: '1 rue de la paix, 75000 Paris',
-            emergencyContactName: 'Jane Doe',
-            emergencyContactPhone: '06 12 34 56 79',
-        } : {
+
+    // Helper to build PatientInfo from currentProfile when available
+    const buildFromProfile = (profile: any): PatientInfo => ({
+        name: profile?.name ?? '',
+        // prefer frontend-friendly fields, but fall back to backend `metadata` when available
+        // normalize birthDate to DD/MM/YYYY for display
+        birthDate: (() => {
+            const raw = profile?.dateOfBirth ?? profile?.dateOfBirthString ?? profile?.metadata?.date_naissance ?? '';
+            if (!raw) return '';
+            try {
+                // If already in DD/MM/YYYY, return directly
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(String(raw))) return String(raw);
+                // If ISO YYYY-MM-DD
+                if (/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) {
+                    const [y, m, d] = String(raw).split('-');
+                    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+                }
+                // If it's a Date object or other parseable string
+                const parsed = new Date(raw);
+                if (!Number.isNaN(parsed.getTime())) {
+                    const dd = String(parsed.getDate()).padStart(2, '0');
+                    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+                    const yyyy = parsed.getFullYear();
+                    return `${dd}/${mm}/${yyyy}`;
+                }
+                return '';
+            } catch (e) { return '' }
+        })(),
+        // compute age dynamically from birthDate (not stored in DB)
+        age: (() => {
+            const raw = profile?.dateOfBirth ?? profile?.dateOfBirthString ?? profile?.metadata?.date_naissance ?? '';
+            if (!raw) return 0;
+            try {
+                let dateObj: Date | null = null;
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(String(raw))) {
+                    const m = String(raw).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (m) dateObj = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+                } else if (/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) {
+                    dateObj = new Date(String(raw));
+                } else {
+                    const parsed = new Date(raw);
+                    if (!Number.isNaN(parsed.getTime())) dateObj = parsed;
+                }
+                if (!dateObj) return 0;
+                const today = new Date();
+                let ageCalc = today.getFullYear() - dateObj.getFullYear();
+                const mo = today.getMonth() - dateObj.getMonth();
+                if (mo < 0 || (mo === 0 && today.getDate() < dateObj.getDate())) ageCalc--;
+                return ageCalc;
+            } catch (e) { return 0 }
+        })(),
+        weight: profile?.weight ? String(profile.weight) : (profile?.metadata?.poids ? String(profile.metadata.poids) : ''),
+        height: profile?.height ? String(profile.height) : (profile?.metadata?.taille ? String(profile.metadata.taille) : ''),
+        bloodType: profile?.bloodGroup ?? profile?.metadata?.groupe_sanguin ?? '',
+        phone: profile?.telephone ?? profile?.metadata?.telephone ?? '',
+    email: profile?.email ?? profile?.metadata?.email ?? '',
+        socialSecurityNumber: profile?.socialNumber ?? profile?.ssn ?? profile?.metadata?.numero_securite_sociale ?? '',
+        address: profile?.adresse ?? profile?.address ?? profile?.metadata?.adresse ?? '',
+        emergencyContactName: profile?.contact_urgence_nom ?? profile?.metadata?.contact_urgence_nom ?? '',
+        emergencyContactPhone: profile?.contact_urgence_tel ?? profile?.metadata?.contact_urgence_tel ?? '',
+    });
+
+    // Initialize patientInfo from currentProfile when possible, otherwise empty
+    const [patientInfo, setPatientInfo] = useState<PatientInfo>(() => {
+        if (currentProfile) return buildFromProfile(currentProfile);
+        // default empty
+        return {
             name: '',
             birthDate: '',
             age: 0,
@@ -71,8 +122,8 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             address: '',
             emergencyContactName: '',
             emergencyContactPhone: '',
-        }
-    );
+        };
+    });
 
     const [editedInfo, setEditedInfo] = useState<PatientInfo>(patientInfo);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -112,15 +163,55 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
         });
     }, [navigation]);
 
+    const isFocused = useIsFocused();
+
     // Handlers for modifying and saving information
     const handleModifyPress = (): void => {
         setEditedInfo({ ...patientInfo });
         setIsModalVisible(true);
     };
 
+    // Sync local patient info when profile is loaded/updated from backend
+    React.useEffect(() => {
+        if (currentProfile) {
+            const built = buildFromProfile(currentProfile);
+            setPatientInfo(built);
+            setEditedInfo(built);
+        }
+    }, [currentProfile]);
+
+    // When arriving on this screen, fetch detailed infos from backend for the currently active profile
+    // Only fetch once per profile (avoid repeated GET loops)
+    const fetchedInfosForProfile = useRef<string | null>(null);
+    React.useEffect(() => {
+        let mounted = true;
+        const fetchInfos = async () => {
+            try {
+                if (!currentProfile || !currentProfile.id) return;
+                if (String(fetchedInfosForProfile.current) === String(currentProfile.id)) return; // already fetched
+                const res = await profileApi.getInfos(currentProfile.id);
+                if (!mounted) return;
+                if (res.ok && res.data) {
+                    // Store raw backend infos under `metadata` to avoid triggering an unnecessary backend PUT
+                    await updateProfile(currentProfile.id, { metadata: res.data } as any);
+                    // Build from profile + metadata (keep metadata under metadata to avoid half-empty merges)
+                    const built = buildFromProfile({ ...currentProfile, metadata: res.data });
+                    setPatientInfo(built);
+                    setEditedInfo(built);
+                    fetchedInfosForProfile.current = String(currentProfile.id);
+                }
+            } catch (e) {
+                console.warn('Failed to fetch profile infos on PersonalInfo screen', e);
+            }
+        };
+        fetchInfos();
+        return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentProfile?.id]);
+
     const handleSaveChanges = async (): Promise<void> => {
-        if (!editedInfo.name || !editedInfo.email || !editedInfo.phone) {
-            Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
+        if (!editedInfo.name || !editedInfo.phone) {
+            Alert.alert('Erreur', 'Veuillez remplir les champs obligatoires (nom et téléphone).');
             return;
         }
 
@@ -176,16 +267,76 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             if (emergencyName) payload.contact_urgence_nom = emergencyName;
             if (emergencyPhone) payload.contact_urgence_tel = emergencyPhone;
 
-            // If we have a current profile, try to persist via context (which will call backend when authenticated)
-            if (currentProfile && updateProfile) {
-                const success = await updateProfile(currentProfile.id, payload as any);
-                if (!success) {
-                    Alert.alert('Erreur', "Impossible d'enregistrer les informations sur le serveur. Elles ont été enregistrées localement.");
+            // Prepare backend body (map frontend keys to backend DB fields)
+            const toISO = (s?: string) => {
+                if (!s) return undefined;
+                const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+                if (/^\d{4}-\d{2}-\d{2}$/.test(String(s))) return s;
+                return undefined;
+            };
+
+            const backendBody: any = {};
+            const iso = toISO(payload.dateOfBirth);
+            if (iso) backendBody.date_naissance = iso;
+            if (payload.weight !== undefined) backendBody.poids = payload.weight;
+            if (payload.height !== undefined) backendBody.taille = payload.height;
+            if (payload.bloodGroup) backendBody.groupe_sanguin = payload.bloodGroup;
+            if (payload.telephone) backendBody.telephone = payload.telephone;
+            if (payload.socialNumber) backendBody.numero_securite_sociale = payload.socialNumber;
+            if (payload.adresse) backendBody.adresse = payload.adresse;
+            if (payload.name) {
+                backendBody.nom = payload.name;
+                backendBody.prenom = '';
+            }
+            if (payload.contact_urgence_nom) backendBody.contact_urgence_nom = payload.contact_urgence_nom;
+            if (payload.contact_urgence_tel) backendBody.contact_urgence_tel = payload.contact_urgence_tel;
+
+            // If we have a current profile, try to persist to backend first (direct call), then update local cache
+            if (currentProfile && currentProfile.id) {
+                try {
+                    const res = await profileApi.updateInfos(currentProfile.id, backendBody);
+                    if (!res.ok) {
+                        // fallback to local update
+                        await updateProfile(currentProfile.id, payload as any);
+                        Alert.alert('Avertissement', "Impossible d'enregistrer certaines informations sur le serveur. Elles ont été enregistrées localement.");
+                    } else {
+                        // success: fetch fresh infos from backend (PUT doesn't return updated row)
+                        try {
+                            const infosRes = await profileApi.getInfos(currentProfile.id);
+                            const metadata = infosRes.ok && infosRes.data ? infosRes.data : { ...(res.data || {}) };
+
+                            // update local cache: include metadata and frontend-shaped payload
+                            await updateProfile(currentProfile.id, { ...payload, metadata } as any);
+
+                            // Immediately update local UI state using buildFromProfile so age is recomputed
+                            const built = buildFromProfile({ ...currentProfile, metadata, dateOfBirth: payload.dateOfBirth });
+                            setPatientInfo(built);
+                            setEditedInfo(built);
+                        } catch (e) {
+                            console.warn('Failed to fetch updated infos after save', e);
+                            // If follow-up GET failed, still update local cache with payload so UI updates
+                            await updateProfile(currentProfile.id, payload as any);
+                            const built = buildFromProfile({ ...currentProfile, dateOfBirth: payload.dateOfBirth });
+                            setPatientInfo(built);
+                            setEditedInfo(built);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to call backend updateInfos', e);
+                    await updateProfile(currentProfile.id, payload as any);
+                    const built = buildFromProfile({ ...currentProfile, dateOfBirth: payload.dateOfBirth });
+                    setPatientInfo(built);
+                    setEditedInfo(built);
+                    Alert.alert('Erreur', "Erreur réseau : les données ont été enregistrées localement.");
                 }
+            } else if (currentProfile && updateProfile) {
+                // no server profile - just update local cache
+                await updateProfile(currentProfile.id, payload as any);
             }
 
             // Update local UI state regardless so user sees changes immediately
-            setPatientInfo({ ...editedInfo });
+            // UI updated above with built values; do not overwrite patientInfo here with editedInfo
             setIsModalVisible(false);
             Alert.alert('Succès', 'Vos informations ont été mises à jour.');
         } catch (e) {
@@ -385,15 +536,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             />
                         )}
                         
-                        <Text style={modalStyles.label}>Âge</Text>
-                        <TextInput
-                            style={modalStyles.input}
-                            placeholder="Âge"
-                            value={editedInfo.age.toString()}
-                            onChangeText={(text: string) => handleInputChange('age', parseInt(text) || 0)}
-                            keyboardType="numeric"
-                            placeholderTextColor={colors.inputBorder}
-                        />
+                        {/* Age is displayed in the main view only; not editable in the modal */}
                         
                         <Text style={modalStyles.label}>Poids</Text>
                         <TextInput
@@ -431,16 +574,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             placeholderTextColor={colors.inputBorder}
                         />
                         
-                        <Text style={modalStyles.label}>Email</Text>
-                        <TextInput
-                            style={modalStyles.input}
-                            placeholder="email@exemple.com"
-                            value={editedInfo.email}
-                            onChangeText={(text: string) => handleInputChange('email', text)}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            placeholderTextColor={colors.inputBorder}
-                        />
+                        {/* Email is view-only; do not allow editing in the modal */}
                         
                         <Text style={modalStyles.label}>Numéro de sécurité sociale</Text>
                         <TextInput

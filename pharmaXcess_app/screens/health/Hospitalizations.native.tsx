@@ -32,29 +32,8 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     const { hospitalizations: profileHospitalizations, addHospitalization, removeHospitalization } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    // Hospitalizations predefined for the main profile 
-    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([
-        {
-            name: 'Opération de l\'appendice',
-            description: 'Appendicectomie en urgence suite à une appendicite aiguë.',
-            beginDate: '15/03/2022',
-            endDate: '18/03/2022',
-            department: 'Chirurgie digestive',
-            hospital: 'Hôpital Saint-Louis',
-            doctor: 'Dr. Martin',
-            medications: 'Antibiotiques, antalgiques, anti-inflammatoires',
-        },
-        {
-            name: 'Hospitalisation COVID-19',
-            description: 'Hospitalisation pour complications respiratoires liées au COVID-19.',
-            beginDate: '10/01/2021',
-            endDate: '25/01/2021',
-            department: 'Pneumologie',
-            hospital: 'Hôpital Bichat',
-            doctor: 'Dr. Durand',
-            medications: 'Oxygénothérapie, corticoïdes, anticoagulants',
-        },
-    ]);
+    // Start empty: hospitalizations will be loaded from backend/profile
+    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -500,7 +479,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Nom/Motif" 
                         value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
-                        onChangeText={(text) => {
+                        onChangeText={(text: string) => {
                             if (isMainProfile) {
                                 setNewHospitalization({ ...newHospitalization, name: text })
                             } else {
@@ -524,7 +503,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Description" 
                         value={newHospitalization.description}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, description: text })}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, description: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -545,7 +524,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Jour" 
                                 selectedValue={selectedBeginDay} 
-                                onValueChange={(value) => setSelectedBeginDay(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
                                 options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                 placeholder="01"
                             />
@@ -554,7 +533,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Mois" 
                                 selectedValue={selectedBeginMonth} 
-                                onValueChange={(value) => setSelectedBeginMonth(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
                                 options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                 placeholder="01"
                             />
@@ -563,7 +542,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Année" 
                                 selectedValue={selectedBeginYear} 
-                                onValueChange={(value) => setSelectedBeginYear(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
                                 options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
                                 placeholder="2024"
                             />
@@ -576,7 +555,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Jour" 
                                 selectedValue={selectedEndDay} 
-                                onValueChange={(value) => setSelectedEndDay(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedEndDay(Number(value))}
                                 options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                 placeholder="01"
                             />
@@ -585,7 +564,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Mois" 
                                 selectedValue={selectedEndMonth} 
-                                onValueChange={(value) => setSelectedEndMonth(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedEndMonth(Number(value))}
                                 options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                 placeholder="01"
                             />
@@ -594,7 +573,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Année" 
                                 selectedValue={selectedEndYear} 
-                                onValueChange={(value) => setSelectedEndYear(Number(value))}
+                                onValueChange={(value: string | number) => setSelectedEndYear(Number(value))}
                                 options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
                                 placeholder="2024"
                             />
@@ -604,7 +583,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Service/Département"
                         value={newHospitalization.department}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, department: text })}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, department: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -620,7 +599,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Hôpital"
                         value={newHospitalization.hospital}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, hospital: text })}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, hospital: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -636,7 +615,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Médecin responsable"
                         value={newHospitalization.doctor}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, doctor: text })}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, doctor: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -652,7 +631,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     <TextInput 
                         placeholder="Traitements"
                         value={newHospitalization.medications}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, medications: text })}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, medications: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -736,7 +715,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Nom/Motif" 
                             value={editedHospitalization.name}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, name: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, name: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,
@@ -752,7 +731,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Description" 
                             value={editedHospitalization.description}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, description: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, description: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,
@@ -773,7 +752,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Jour" 
                                     selectedValue={editSelectedBeginDay} 
-                                    onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
                                     placeholder="01"
                                 />
@@ -782,7 +761,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Mois" 
                                     selectedValue={editSelectedBeginMonth} 
-                                    onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
                                     placeholder="01"
                                 />
@@ -791,7 +770,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Année" 
                                     selectedValue={editSelectedBeginYear} 
-                                    onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedBeginYear(Number(value))}
                                     options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
                                     placeholder="2024"
                                 />
@@ -804,7 +783,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Jour" 
                                     selectedValue={editSelectedEndDay} 
-                                    onValueChange={(value) => setEditSelectedEndDay(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedEndDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
                                     placeholder="01"
                                 />
@@ -813,7 +792,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Mois" 
                                     selectedValue={editSelectedEndMonth} 
-                                    onValueChange={(value) => setEditSelectedEndMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedEndMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
                                     placeholder="01"
                                 />
@@ -822,7 +801,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                 <CustomPicker 
                                     label="Année" 
                                     selectedValue={editSelectedEndYear} 
-                                    onValueChange={(value) => setEditSelectedEndYear(Number(value))}
+                                    onValueChange={(value: string | number) => setEditSelectedEndYear(Number(value))}
                                     options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
                                     placeholder="2024"
                                 />
@@ -832,7 +811,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Service/Département" 
                             value={editedHospitalization.department}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, department: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, department: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,
@@ -848,7 +827,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Hôpital" 
                             value={editedHospitalization.hospital}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,
@@ -864,7 +843,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Médecin responsable" 
                             value={editedHospitalization.doctor}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,
@@ -880,7 +859,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         <TextInput 
                             placeholder="Traitements" 
                             value={editedHospitalization.medications}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
                             style={{
                                 borderWidth: 1,
                                 borderColor: colors.primary,

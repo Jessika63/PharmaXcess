@@ -44,15 +44,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthState = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      const storedUserType = await AsyncStorage.getItem('userType');
-      
-      if (userData) {
-        setUser(JSON.parse(userData));
-        if (storedUserType) {
-          setUserTypeState(storedUserType as UserType);
-        }
-      }
+      // IMPORTANT: Do NOT auto-restore user from AsyncStorage to avoid automatic
+      // sign-in on app startup. Previously we restored a stored 'user' and this
+      // caused the app to appear already connected when the user opened the app
+      // after scanning a QR or returning to the app. To require an explicit
+      // login, we skip restoring the user and let the login flow set it.
+      // If you want to re-enable resume-from-storage in the future, add a
+      // secure server-side verification (e.g. call an endpoint to validate
+      // the session cookie) before trusting the local cache.
+      // Intentionally do nothing here.
     } catch (error) {
       console.error('Error checking auth state:', error);
     } finally {

@@ -38,26 +38,8 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     const { user } = useAuth();
     const styles = createStyles(colors, fontScale);
 
-    const [alarms, setAlarms] = useState<Alarm[]>([
-        {
-            id: '1',
-            medicineName: 'Paracétamol',
-            time: '08:00',
-            days: ['Lundi', 'Mercredi', 'Vendredi'],
-            sound: 'Son 1',
-            isActive: true,
-            dosage: '500mg',
-        },
-        {
-            id: '2',
-            medicineName: 'Ibuprofène',
-            time: '12:00',
-            days: ['Mardi', 'Jeudi'],
-            sound: 'Son 2',
-            isActive: false,
-            dosage: '200mg',
-        },
-    ]);
+    // Start with an empty alarms list — real alarms are loaded from the backend in the effect below
+    const [alarms, setAlarms] = useState<Alarm[]>([]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
@@ -790,7 +772,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         <View style={styles.container}>
             <FlatList
                 data={currentAlarms}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: Alarm) => item.id}
                 ListHeaderComponent={() => (
                     <>
                         {/* Header for current profile */}
@@ -854,7 +836,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                         </View>
                     </View>
                 )}
-                renderItem={({ item }) => (
+                renderItem={({ item }: { item: Alarm }) => (
                     <View style={[styles.alarmCard, !item.isActive && styles.disabledAlarmCard]}>
                         <View style={styles.alarmMainInfo}>
                             <View style={styles.alarmTimeContainer}>
@@ -917,23 +899,23 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                             style={styles.input}
                             placeholder="Nom du médicament"
                             value={newAlarm.medicineName}
-                            onChangeText={(text) => setNewAlarm({ ...newAlarm, medicineName: text })}
+                            onChangeText={(text: string) => setNewAlarm({ ...newAlarm, medicineName: text })}
                         />
 
                         <TextInput
                             style={styles.input}
                             placeholder="Dosage (ex: 500mg, 2 comprimés...)"
                             value={newAlarm.dosage}
-                            onChangeText={(text) => setNewAlarm({ ...newAlarm, dosage: text })}
+                            onChangeText={(text: string) => setNewAlarm({ ...newAlarm, dosage: text })}
                         />
 
                         <Text style={styles.label}>Heure de prise</Text>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}>
                             <View style={{ width: '45%' }}>
                                 <CustomPicker
-                                    label="Heures"
-                                    selectedValue={selectedHour}
-                                    onValueChange={(value) => setSelectedHour(Number(value))}
+                                            label="Heures"
+                                            selectedValue={selectedHour}
+                                            onValueChange={(value: number) => setSelectedHour(Number(value))}
                                     options={Array.from({ length: 24 }, (_, i) => ({
                                         label: i.toString().padStart(2, '0'),
                                         value: i
@@ -945,7 +927,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                                 <CustomPicker
                                     label="Minutes"
                                     selectedValue={selectedMinute}
-                                    onValueChange={(value) => setSelectedMinute(Number(value))}
+                                    onValueChange={(value: number) => setSelectedMinute(Number(value))}
                                     options={Array.from({ length: 60 }, (_, i) => ({
                                         label: i.toString().padStart(2, '0'),
                                         value: i
