@@ -21,7 +21,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         minHeight: 50, 
     },
     pickerContainerError: {
-        borderColor: colors.error || '#FF6B6B',
+        borderColor: colors.error,
     },
     pickerButton: {
         height: 50,
@@ -68,7 +68,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.text, 
     },
     errorText: {
-        color: colors.error || '#FF6B6B',
+        color: colors.error,
         fontSize: 14 * fontScale,
         marginTop: 5,
         marginLeft: 5,

@@ -25,7 +25,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         overflow: 'hidden',
     },
     pickerWrapperError: {
-        borderColor: colors.error || '#FF6B6B',
+        borderColor: colors.error,
     },
     picker: {
         height: 50,
@@ -36,7 +36,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.text,
     },
     errorText: {
-        color: colors.error || '#FF6B6B',
+        color: colors.error,
         fontSize: 14 * fontScale,
         marginTop: 5,
         marginLeft: 5,

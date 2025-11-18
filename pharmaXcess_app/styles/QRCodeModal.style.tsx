@@ -17,7 +17,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         width: width * 0.9,
         maxHeight: height * 0.8,
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: colors.shadow,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -61,12 +61,12 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         textAlign: 'center',
     },
     qrContainer: {
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.background,
         padding: 20,
         borderRadius: 15,
         marginBottom: 20,
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: colors.shadow,
         shadowOffset: {
             width: 0,
             height: 1,
@@ -96,7 +96,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         justifyContent: 'center',
     },
     actionButtonText: {
-        color: '#ffffff',
+        color: colors.iconPrimary,
         fontSize: 16 * fontScale,
         fontWeight: '600',
         marginLeft: 8,

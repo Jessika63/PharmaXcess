@@ -69,7 +69,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         backgroundColor: colors.primary,
     },
     buttonText: { 
-        color: '#fff', 
+        color: colors.iconPrimary, 
         fontSize: 16 * fontScale, 
         fontWeight: 'bold',
     },
