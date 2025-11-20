@@ -1,25 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { TextStyle, ViewStyle, StyleProp } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
-
-type Treatment = {
-    name: string;
-    beginDate: string;
-    endDate: string;
-    dosage: string;
-    duration: string;
-    sideEffects: string;
-    disease: string;
-};
+import { Treatment } from '../../services/treatments/types';
+import { getTreatments, createTreatment, updateTreatment, deleteTreatment } from '../../services/treatments/treatmentsService';
 
 type treatmentsProps = {
     navigation: StackNavigationProp<any, any>;
@@ -30,34 +20,15 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
-    const { treatments: profileTreatments, addTreatment, removeTreatment } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    const [treatments, setTreatments] =  useState<Treatment[]>([
-        {
-            name: 'Metformine',
-            beginDate: '01/01/2021',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '1 an',
-            sideEffects: 'nausées, vomissements, diarrhée',
-            disease: 'Diabète de type 2',
-        },
-        {
-            name: 'Lévothyrox',
-            beginDate: '01/01/2020',
-            endDate: '01/01/2022',
-            dosage: '1 comprimé par jour',
-            duration: '2 ans',
-            sideEffects: 'palpitations, tremblements, maux de tête',
-            disease: 'Hypothyroïdie',
-        },
-    ]);
-
+    const [treatments, setTreatments] = useState<Treatment[]>([]);
+    const [profileTreatments, setProfileTreatments] = useState<string[]>([]);
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [newTreatment, setNewTreatment] = useState<Treatment>({
+        id: '',
         name: '',
         beginDate: '',
         endDate: '',
@@ -67,6 +38,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         disease: '',
     });
     const [editedTreatment, setEditedTreatment] = useState<Treatment>({
+        id: '',
         name: '',
         beginDate: '',
         endDate: '',
@@ -75,6 +47,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         sideEffects: '',
         disease: '',
     });
+    const [newTreatmentSimple, setNewTreatmentSimple] = useState<string>('');
 
     // Simplified state using our new picker components
     const [beginDay, setBeginDay] = useState<number>(1);
@@ -84,7 +57,6 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const [endDay, setEndDay] = useState<number>(1);
     const [endMonth, setEndMonth] = useState<number>(1);
     const [endYear, setEndYear] = useState<number>(new Date().getFullYear());
-    
     const [dosagePerDay, setDosagePerDay] = useState<number>(1);
     const [durationValue, setDurationValue] = useState<number>(1);
     const [durationUnit, setDurationUnit] = useState<string>('mois');
@@ -104,225 +76,87 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
 
     const durationUnits = ['jour(s)', 'semaine(s)', 'mois', 'an(s)'];
 
-    // For simple treatment addition by profile 
-    const [newTreatmentSimple, setNewTreatmentSimple] = useState<string>('');
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
-    const formatDate = (day: number, month: number, year: number): string => {
-        const dayStr = day.toString().padStart(2, '0');
-        const monthStr = month.toString().padStart(2, '0');
-        return `${dayStr}/${monthStr}/${year}`;
+    useEffect(() => {
+        async function loadTreatments() {
+            try {
+                const data = await getTreatments();
+                setTreatments(data);
+            } catch (error) {
+                console.error(error);
+                Alert.alert('Erreur', 'Impossible de charger les traitements.');
+            }
+        }
+        loadTreatments();
+    }, []);
+
+    const formatDate = (day: number, month: number, year: number) => `${day.toString().padStart(2,'0')}/${month.toString().padStart(2,'0')}/${year}`;
+    const parseDate = (date: string) => {
+        const parts = date.split('/');
+        return { day: parseInt(parts[0]), month: parseInt(parts[1]), year: parseInt(parts[2]) };
+    };
+    const parseDosage = (dosage: string) => parseInt(dosage) || 1;
+    const parseDuration = (duration: string) => {
+        const parts = duration.split(' ');
+        return { value: parseInt(parts[0]) || 1, unit: parts.slice(1).join(' ') || 'mois' };
     };
 
-    const handleAddPress = (): void => {
-        if ( 
-            !newTreatment.name || 
-            !newTreatment.sideEffects ||
-            !newTreatment.disease
-        ) { 
-            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
-            return;
-        }
-
-        const newTreatmentData: Treatment = {
+    const handleAddPress = async () => {
+        const treatmentData: Treatment = {
             ...newTreatment,
             beginDate: formatDate(beginDay, beginMonth, beginYear),
             endDate: formatDate(endDay, endMonth, endYear),
             dosage: `${dosagePerDay} comprimé(s) par jour`,
             duration: `${durationValue} ${durationUnit}`,
         };
+        try {
+            const created = await createTreatment(treatmentData);
+            setTreatments([...treatments, created]);
+            setModalVisible(false);
 
-        setTreatments([...treatments, newTreatmentData]); 
-        setNewTreatment({
-            name: '',
-            beginDate: '',
-            endDate: '',
-            dosage: '',
-            duration: '',
-            sideEffects: '',
-            disease: '',
-        });
-        setModalVisible(false);
-        // Reset picker values
-        const today = new Date();
-        setBeginDay(1);
-        setBeginMonth(1);
-        setBeginYear(today.getFullYear());
-        setEndDay(1);
-        setEndMonth(1);
-        setEndYear(today.getFullYear());
-        setDosagePerDay(1);
-        setDurationValue(1);
-        setDurationUnit('mois');
-    };
-
-    const parseDate = (dateString: string) => {
-        const parts = dateString.split('/');
-        return {
-            day: parseInt(parts[0]),
-            month: parseInt(parts[1]),
-            year: parseInt(parts[2])
-        };
-    };
-
-    const parseDosage = (dosageString: string) => {
-        const match = dosageString.match(/(\d+)/);
-        return match ? parseInt(match[1]) : 1;
-    };
-
-    const parseDuration = (durationString: string) => {
-        const parts = durationString.split(' ');
-        return {
-            value: parseInt(parts[0]) || 1,
-            unit: parts.slice(1).join(' ') || 'mois'
-        };
-    };
-
-    const handleEditPress = (index: number): void => {
-        const treatment = treatments[index];
-        setEditedTreatment({ ...treatment });
-        setEditingIndex(index);
-        
-        // Parse dates
-        const beginDate = parseDate(treatment.beginDate);
-        setEditBeginDay(beginDate.day);
-        setEditBeginMonth(beginDate.month);
-        setEditBeginYear(beginDate.year);
-        
-        const endDate = parseDate(treatment.endDate);
-        setEditEndDay(endDate.day);
-        setEditEndMonth(endDate.month);
-        setEditEndYear(endDate.year);
-        
-        // Parse dosage
-        setEditDosagePerDay(parseDosage(treatment.dosage));
-        
-        // Parse duration
-        const duration = parseDuration(treatment.duration);
-        setEditDurationValue(duration.value);
-        setEditDurationUnit(duration.unit);
-        
-        setEditModalVisible(true);
-    };
-
-    const handleSaveEdit = (): void => {
-        if ( 
-            !editedTreatment.name || 
-            !editedTreatment.sideEffects ||
-            !editedTreatment.disease
-        ) { 
-            Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
-            return;
+            setNewTreatment({ id:'', name:'', beginDate:'', endDate:'', dosage:'', duration:'', sideEffects:'', disease:'' });
+            setBeginDay(1); setBeginMonth(1); setBeginYear(new Date().getFullYear());
+            setEndDay(1); setEndMonth(1); setEndYear(new Date().getFullYear());
+            setDosagePerDay(1); setDurationValue(1); setDurationUnit('mois');
+            setNewTreatmentSimple('');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible d’ajouter le traitement.');
         }
+    };
 
+    const handleSaveEdit = async () => {
         if (editingIndex !== null) {
-            const updatedTreatments = [...treatments];
-            updatedTreatments[editingIndex] = {
+            const updatedTreatment: Treatment = {
                 ...editedTreatment,
                 beginDate: formatDate(editBeginDay, editBeginMonth, editBeginYear),
                 endDate: formatDate(editEndDay, editEndMonth, editEndYear),
                 dosage: `${editDosagePerDay} comprimé(s) par jour`,
                 duration: `${editDurationValue} ${editDurationUnit}`,
             };
-            setTreatments(updatedTreatments);
-        }
-
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations du traitement ont été mises à jour.');
-    };
-
-    const handleDeleteTreatment = (index: number): void => {
-        const treatment = treatments[index];
-        Alert.alert(
-            'Supprimer le traitement',
-            `Êtes-vous sûr de vouloir supprimer "${treatment.name}" ?`,
-            [
-                { text: 'Annuler', style: 'cancel' },
-                { 
-                    text: 'Supprimer', 
-                    style: 'destructive',
-                    onPress: () => {
-                        const updatedTreatments = treatments.filter((_, i) => i !== index);
-                        setTreatments(updatedTreatments);
-                    }
-                }
-            ]
-        );
-    };
-
-    // Simple treatment management by profile 
-    const handleAddSimpleTreatment = async (): Promise<void> => {
-        // For other profiles, we only require the name field but save all available data
-        if (!newTreatment.name.trim()) {
-            Alert.alert('Erreur', 'Veuillez entrer le nom du traitement.');
-            return;
-        }
-
-        // Create complete treatment data even for other profiles
-        const treatmentData = {
-            name: newTreatment.name.trim(),
-            beginDate: formatDate(beginDay, beginMonth, beginYear),
-            endDate: formatDate(endDay, endMonth, endYear),
-            dosage: `${dosagePerDay} comprimé(s) par jour`,
-            duration: `${durationValue} ${durationUnit}`,
-            sideEffects: newTreatment.sideEffects || '',
-            disease: newTreatment.disease || ''
-        };
-
-        const success = await addTreatment(JSON.stringify(treatmentData));
-        if (success) {
-            // Reset all fields
-            setNewTreatmentSimple('');
-            setNewTreatment({
-                name: '',
-                beginDate: '',
-                endDate: '',
-                dosage: '',
-                duration: '',
-                sideEffects: '',
-                disease: '',
-            });
-            setModalVisible(false);
-            // Reset picker values
-            const today = new Date();
-            setBeginDay(1);
-            setBeginMonth(1);
-            setBeginYear(today.getFullYear());
-            setEndDay(1);
-            setEndMonth(1);
-            setEndYear(today.getFullYear());
-            setDosagePerDay(1);
-            setDurationValue(1);
-            setDurationUnit('mois');
-            Alert.alert('Succès', 'Traitement ajouté avec succès.');
-        } else {
-            Alert.alert('Erreur', 'Ce traitement est déjà enregistré ou une erreur est survenue.');
+            try {
+                const updated = await updateTreatment(updatedTreatment);
+                const updatedList = [...treatments];
+                updatedList[editingIndex] = updated;
+                setTreatments(updatedList);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+            } catch (error) {
+                console.error(error);
+                Alert.alert('Erreur', 'Impossible de modifier le traitement.');
+            }
         }
     };
 
-    const handleRemoveTreatment = async (treatment: string): Promise<void> => {
-        Alert.alert(
-            'Confirmer la suppression',
-            `Êtes-vous sûr de vouloir supprimer "${treatment}" ?`,
-            [
-                {
-                    text: 'Annuler',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Supprimer',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await removeTreatment(treatment);
-                        if (success) {
-                            Alert.alert('Succès', 'Traitement supprimé avec succès.');
-                        } else {
-                            Alert.alert('Erreur', 'Impossible de supprimer le traitement.');
-                        }
-                    },
-                },
-            ]
-        );
+    const handleDeleteTreatment = async (index: number) => {
+        try {
+            await deleteTreatment(treatments[index].id);
+            setTreatments(treatments.filter((_, i) => i !== index));
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible de supprimer le traitement.');
+        }
     };
 
     const getRelationshipText = (relationship?: string) => {
@@ -336,8 +170,6 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         }
     };
 
-    // Determine if it's the main profile 
-    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
     return (
         <View style={[styles.container, { flex: 1 }]}>
@@ -368,7 +200,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.cardTitle}>{treatment.name}</Text>
                                     <View style={styles.actionButtons}>
-                                        <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                        <TouchableOpacity onPress={() => { setEditingIndex(index); setEditedTreatment(treatment); setEditModalVisible(true); }} style={styles.editButton}>
                                             <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={() => handleDeleteTreatment(index)} style={styles.deleteButton}>
@@ -414,8 +246,8 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                     try {
                                         treatment = JSON.parse(treatmentString);
                                     } catch {
-                                        // Fallback for simple string names
                                         treatment = {
+                                            id: '',
                                             name: treatmentString,
                                             beginDate: '',
                                             endDate: '',
@@ -431,7 +263,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                             <View style={styles.cardHeader}>
                                                 <Text style={styles.cardTitle}>{treatment.name}</Text>
                                                 <View style={styles.actionButtons}>
-                                                    <TouchableOpacity onPress={() => handleRemoveTreatment(treatmentString)} style={styles.deleteButton}>
+                                                    <TouchableOpacity onPress={() => {}} style={styles.deleteButton}>
                                                         <Ionicons name="trash-outline" size={25} color="#FF4444" />
                                                     </TouchableOpacity>
                                                 </View>
@@ -663,7 +495,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         />
                         
                         <View style={styles.buttonContainer}>
-                            <TouchableOpacity onPress={isMainProfile ? handleAddPress : handleAddSimpleTreatment} style={styles.button}>
+                            <TouchableOpacity onPress={ handleAddPress } style={styles.button}>
                                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Ajouter</Text>
                                 </LinearGradient>
@@ -674,6 +506,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 // Reset all fields for both main and other profiles
                                 setNewTreatmentSimple('');
                                 setNewTreatment({
+                                    id: '',
                                     name: '',
                                     beginDate: '',
                                     endDate: '',
