@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -9,8 +9,10 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
+import { getHospitalizations, createHospitalization, updateHospitalization, deleteHospitalization } from '../../services/hospitalizations/hospitalizationsService';
 
 type Hospitalization = { 
+    id?: string;
     name: string; 
     description: string; 
     beginDate: string; 
@@ -32,34 +34,24 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     const { hospitalizations: profileHospitalizations, addHospitalization, removeHospitalization } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    // Hospitalizations predefined for the main profile 
-    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([
-        {
-            name: 'Opération de l\'appendice',
-            description: 'Appendicectomie en urgence suite à une appendicite aiguë.',
-            beginDate: '15/03/2022',
-            endDate: '18/03/2022',
-            department: 'Chirurgie digestive',
-            hospital: 'Hôpital Saint-Louis',
-            doctor: 'Dr. Martin',
-            medications: 'Antibiotiques, antalgiques, anti-inflammatoires',
-        },
-        {
-            name: 'Hospitalisation COVID-19',
-            description: 'Hospitalisation pour complications respiratoires liées au COVID-19.',
-            beginDate: '10/01/2021',
-            endDate: '25/01/2021',
-            department: 'Pneumologie',
-            hospital: 'Hôpital Bichat',
-            doctor: 'Dr. Durand',
-            medications: 'Oxygénothérapie, corticoïdes, anticoagulants',
-        },
-    ]);
+    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([]);
+
+    useEffect(() => {
+        const fetchHospitalizations = async () => {
+            try {
+                const data = await getHospitalizations();
+                setHospitalizations(data);
+            } catch (error) {
+                console.error("Erreur lors de la récupération des hospitalisations :", error);
+            }
+        };
+        fetchHospitalizations();
+    }, []);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
-    const [newHospitalization, setNewHospitalization] = useState<Hospitalization>({
+    const [newHospitalization, setNewHospitalization] = useState<Omit<Hospitalization, 'id'>>({
         name: '',
         description: '',
         beginDate: '',
@@ -69,7 +61,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         doctor: '',
         medications: '',
     });
-    const [editedHospitalization, setEditedHospitalization] = useState<Hospitalization>({
+    const [editedHospitalization, setEditedHospitalization] = useState<Omit<Hospitalization, 'id'>>({
         name: '',
         description: '',
         beginDate: '',
@@ -102,7 +94,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     }; 
 
     // Complex hospitalization management (for the main profile) 
-    const handleAddPress = (): void => {
+    const handleAddPress = async (): Promise<void> => {
         if (
             !newHospitalization.name ||
             !newHospitalization.description ||
@@ -115,30 +107,36 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             return;
         }
     
-        const newHospitalizationData: Hospitalization = {
+        const newHospitalizationData = {
             ...newHospitalization,
             beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
             endDate: `${selectedEndDay.toString().padStart(2, '0')}/${selectedEndMonth.toString().padStart(2, '0')}/${selectedEndYear}`,
         };
     
-        setHospitalizations([newHospitalizationData, ...hospitalizations]);
-        setNewHospitalization({
-            name: '',
-            description: '',
-            beginDate: '',
-            endDate: '',
-            department: '',
-            hospital: '',
-            doctor: '',
-            medications: '',
-        });
-        setModalVisible(false);
-        setSelectedBeginYear(2024);
-        setSelectedBeginMonth(1);
-        setSelectedBeginDay(1); 
-        setSelectedEndYear(2024);
-        setSelectedEndMonth(1);
-        setSelectedEndDay(1); 
+        try {
+            const created = await createHospitalization(newHospitalizationData);
+            setHospitalizations([created, ...hospitalizations]);
+            setNewHospitalization({
+                name: '',
+                description: '',
+                beginDate: '',
+                endDate: '',
+                department: '',
+                hospital: '',
+                doctor: '',
+                medications: '',
+            });
+            setModalVisible(false);
+            setSelectedBeginYear(2024);
+            setSelectedBeginMonth(1);
+            setSelectedBeginDay(1); 
+            setSelectedEndYear(2024);
+            setSelectedEndMonth(1);
+            setSelectedEndDay(1); 
+        } catch (error) {
+            console.error("Erreur lors de la création de l'hospitalisation :", error);
+            Alert.alert('Erreur', 'Une erreur est survenue lors de l\'ajout.');
+        }
     };
 
     const handleEditPress = (index: number): void => {
@@ -163,7 +161,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         setEditModalVisible(true);
     };
 
-    const handleSaveEdit = (): void => {
+    const handleSaveEdit = async (): Promise<void> => {
         if (
             !editedHospitalization.name ||
             !editedHospitalization.description ||
@@ -177,21 +175,29 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         }
 
         if (editingIndex !== null) {
-            const updatedHospitalizations = [...hospitalizations];
-            updatedHospitalizations[editingIndex] = {
+            const updatedHospitalizationData = {
                 ...editedHospitalization,
+                id: hospitalizations[editingIndex].id!,
                 beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
                 endDate: `${editSelectedEndDay.toString().padStart(2, '0')}/${editSelectedEndMonth.toString().padStart(2, '0')}/${editSelectedEndYear}`,
             };
-            setHospitalizations(updatedHospitalizations);
-        }
 
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'hospitalisation ont été mises à jour.');
+            try {
+                const updated = await updateHospitalization(updatedHospitalizationData);
+                const updatedHospitalizations = [...hospitalizations];
+                updatedHospitalizations[editingIndex] = updated;
+                setHospitalizations(updatedHospitalizations);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+                Alert.alert('Succès', 'Les informations de l\'hospitalisation ont été mises à jour.');
+            } catch (error) {
+                console.error("Erreur lors de la mise à jour de l'hospitalisation :", error);
+                Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour.');
+            }
+        }
     };
 
-    const handleDeleteHospitalization = (index: number): void => {
+    const handleDeleteHospitalization = async (index: number): Promise<void> => {
         const hospitalization = hospitalizations[index];
         Alert.alert(
             'Supprimer l\'hospitalisation',
@@ -201,9 +207,17 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                 { 
                     text: 'Supprimer', 
                     style: 'destructive',
-                    onPress: () => {
-                        const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
-                        setHospitalizations(updatedHospitalizations);
+                    onPress: async () => {
+                        try {
+                            if (hospitalization.id) {
+                                await deleteHospitalization(hospitalization.id);
+                                const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
+                                setHospitalizations(updatedHospitalizations);
+                            }
+                        } catch (error) {
+                            console.error("Erreur lors de la suppression de l'hospitalisation :", error);
+                            Alert.alert('Erreur', 'Une erreur est survenue lors de la suppression.');
+                        }
                     }
                 }
             ]
