@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type Allergy = {
@@ -30,6 +31,8 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const { currentProfile } = useProfile();
     const { allergies: profileAllergies, addAllergy, removeAllergy } = useProfileData();
     const styles = createStyles(colors, fontScale);
+
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
     // Start with an empty list: allergies will be loaded from the backend/profile data
     const [allergies, setAllergies] = useState<Allergy[]>([]);
@@ -123,19 +126,43 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
         };
 
-        setAllergies([...allergies, newAllergyData]);
-        setNewAllergy({
-            name: '',
-            beginDate: '',
-            severity: '',
-            symptoms: '',
-            medications: '',
-            comments: '',
-        });
-        setSelectedBeginYear(2024);
-        setSelectedBeginMonth(1);
-        setSelectedBeginDay(1);
-        setIsModalVisible(false);
+        // If this is the main (editable) profile, try to persist to backend via addAllergy which will handle server profile
+        if (isMainProfile) {
+            (async () => {
+                const success = await addAllergy(JSON.stringify(newAllergyData));
+                if (success) {
+                    // fetch fresh list from backend
+                    const res = await profileApi.getAllergies();
+                    if (res.ok && Array.isArray(res.data)) {
+                        const mapped = res.data.map((a: any) => ({
+                            id: a.id,
+                            name: a.nom || a.name || '',
+                            beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                            severity: a.gravite || a.severity || '',
+                            symptoms: a.symptomes || a.symptoms || '',
+                            medications: a.medicaments || '',
+                            comments: a.commentaires || a.comments || '',
+                        }));
+                        setAllergies(mapped);
+                    }
+                    setNewAllergy({ name: '', beginDate: '', severity: '', symptoms: '', medications: '', comments: '' });
+                    setSelectedBeginYear(2024);
+                    setSelectedBeginMonth(1);
+                    setSelectedBeginDay(1);
+                    setIsModalVisible(false);
+                    Alert.alert('Succès', 'Allergie ajoutée avec succès.');
+                } else {
+                    Alert.alert('Erreur', 'Cette allergie est déjà enregistrée ou une erreur est survenue.');
+                }
+            })();
+        } else {
+            setAllergies([...allergies, newAllergyData]);
+            setNewAllergy({ name: '', beginDate: '', severity: '', symptoms: '', medications: '', comments: '' });
+            setSelectedBeginYear(2024);
+            setSelectedBeginMonth(1);
+            setSelectedBeginDay(1);
+            setIsModalVisible(false);
+        }
     };
 
     const handleEditPress = (index: number): void => {
@@ -167,17 +194,52 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         }
 
         if (editingIndex !== null) {
-            const updatedAllergies = [...allergies];
-            updatedAllergies[editingIndex] = {
-                ...editedAllergy,
-                beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
-            };
-            setAllergies(updatedAllergies);
-        }
+            const target = allergies[editingIndex];
+            const payload = {
+                nom: editedAllergy.name,
+                debut: `${editSelectedBeginYear}-${String(editSelectedBeginMonth).padStart(2, '0')}-${String(editSelectedBeginDay).padStart(2, '0')}`,
+                medicaments: editedAllergy.medications || null,
+                gravite: editedAllergy.severity,
+                symptomes: editedAllergy.symptoms,
+                commentaires: editedAllergy.comments,
+            } as any;
 
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+            if (isMainProfile && target && (target as any).id) {
+                (async () => {
+                    const res = await profileApi.updateAllergy((target as any).id, payload);
+                    if (res.ok) {
+                        const list = await profileApi.getAllergies();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = list.data.map((a: any) => ({
+                                id: a.id,
+                                name: a.nom || a.name || '',
+                                beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                                severity: a.gravite || a.severity || '',
+                                symptoms: a.symptomes || a.symptoms || '',
+                                medications: a.medicaments || '',
+                                comments: a.commentaires || a.comments || '',
+                            }));
+                            setAllergies(mapped);
+                        }
+                        setEditModalVisible(false);
+                        setEditingIndex(null);
+                        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+                        return;
+                    }
+                    Alert.alert('Erreur', 'Impossible de mettre à jour l\'allergie.');
+                })();
+            } else {
+                const updatedAllergies = [...allergies];
+                updatedAllergies[editingIndex] = {
+                    ...editedAllergy,
+                    beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
+                };
+                setAllergies(updatedAllergies);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+                Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+            }
+        }
     };
 
     const handleDeleteAllergy = (index: number): void => {
@@ -191,13 +253,75 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        const updatedAllergies = allergies.filter((_, i) => i !== index);
-                        setAllergies(updatedAllergies);
+                        (async () => {
+                            if (isMainProfile && (allergy as any).id) {
+                                const res = await profileApi.deleteAllergy((allergy as any).id);
+                                if (res.ok) {
+                                    const list = await profileApi.getAllergies();
+                                    if (list.ok && Array.isArray(list.data)) {
+                                        const mapped = list.data.map((a: any) => ({
+                                            id: a.id,
+                                            name: a.nom || a.name || '',
+                                            beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                                            severity: a.gravite || a.severity || '',
+                                            symptoms: a.symptomes || a.symptoms || '',
+                                            medications: a.medicaments || '',
+                                            comments: a.commentaires || a.comments || '',
+                                        }));
+                                        setAllergies(mapped);
+                                    }
+                                    return;
+                                }
+                                Alert.alert('Erreur', 'Impossible de supprimer l\'allergie.');
+                                return;
+                            }
+
+                            const updatedAllergies = allergies.filter((_, i) => i !== index);
+                            setAllergies(updatedAllergies);
+                        })();
                     }
                 }
             ]
         );
     };
+
+    // Load allergies from backend when opening the screen for a server profile
+    React.useEffect(() => {
+        const load = async () => {
+            if (!currentProfile) return;
+            const numericCandidate = Number(currentProfile.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+            if (isServerProfile) {
+                const res = await profileApi.getAllergies();
+                if (res.ok && Array.isArray(res.data)) {
+                    const mapped = res.data.map((a: any) => ({
+                        id: a.id,
+                        name: a.nom || a.name || '',
+                        beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                        severity: a.gravite || a.severity || '',
+                        symptoms: a.symptomes || a.symptoms || '',
+                        medications: a.medicaments || '',
+                        comments: a.commentaires || a.comments || '',
+                    }));
+                    setAllergies(mapped);
+                }
+            } else {
+                // fallback to profileAllergies array if provided
+                if (Array.isArray(profileAllergies) && profileAllergies.length > 0) {
+                    try {
+                        const mapped = profileAllergies.map((a: any) => {
+                            if (typeof a === 'string') {
+                                try { const p = JSON.parse(a); return { id: p.id || undefined, name: p.name || p.nom || p, beginDate: p.beginDate || p.debut || '' , severity: p.severity || p.gravite || '', symptoms: p.symptoms || p.symptomes || '', medications: p.medications || '', comments: p.comments || p.commentaires || '' }; } catch { return { name: a, beginDate: '', severity: '', symptoms: '', medications: '', comments: '' }; }
+                            }
+                            return { id: a.id || undefined, name: a.name || a.nom || '', beginDate: a.beginDate || a.debut || '', severity: a.severity || a.gravite || '', symptoms: a.symptoms || a.symptomes || '', medications: a.medicaments || '', comments: a.comments || a.commentaires || '' };
+                        });
+                        setAllergies(mapped as any[]);
+                    } catch (e) { /* ignore */ }
+                }
+            }
+        };
+        load();
+    }, [currentProfile?.id]);
 
     const handleRemoveAllergy = async (allergy: string): Promise<void> => {
         Alert.alert(
@@ -240,9 +364,6 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             title: 'Allergies',
         });
     }, [navigation]);
-
-    // Determine if it's the main profile 
-    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
     return (
         <View style={[styles.container, { flex: 1 }]}>

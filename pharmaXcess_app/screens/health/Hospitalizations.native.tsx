@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type Hospitalization = { 
@@ -100,7 +101,58 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             endDate: `${selectedEndDay.toString().padStart(2, '0')}/${selectedEndMonth.toString().padStart(2, '0')}/${selectedEndYear}`,
         };
     
-        setHospitalizations([newHospitalizationData, ...hospitalizations]);
+        // Try to persist directly to backend for server profiles, otherwise fallback to local
+        (async () => {
+            const numericCandidate = Number(currentProfile?.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile?.id);
+            if (isServerProfile) {
+                const payload: any = {
+                    utilisateur_id: numericCandidate,
+                    type: newHospitalizationData.name,
+                    description: newHospitalizationData.description || null,
+                    dates: `${newHospitalizationData.beginDate} - ${newHospitalizationData.endDate}`,
+                    medicaments: newHospitalizationData.medications || null,
+                    service: newHospitalizationData.department || null,
+                    hopital: newHospitalizationData.hospital || null,
+                    medecin: newHospitalizationData.doctor || null,
+                };
+                try {
+                    const res = await profileApi.createHospitalization(payload);
+                    if (res.ok) {
+                        const list = await profileApi.getHospitalizations();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = (list.data as any[]).map(h => {
+                                const datesRaw = h.dates || h.date || '';
+                                let begin = '';
+                                let end = '';
+                                if (datesRaw && typeof datesRaw === 'string') {
+                                    const parts = datesRaw.split(' - ');
+                                    if (parts.length === 2) {
+                                        begin = parts[0].trim();
+                                        end = parts[1].trim();
+                                    } else {
+                                        begin = datesRaw.trim();
+                                    }
+                                }
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                            });
+                            setHospitalizations(mapped);
+                            // done
+                            return;
+                        }
+                    } else {
+                        console.warn('createHospitalization failed', res);
+                        Alert.alert('Erreur serveur', res.error || `Statut ${res.status}`);
+                    }
+                } catch (e) {
+                    console.warn('createHospitalization error', e);
+                    Alert.alert('Erreur', "Impossible de contacter le serveur. L'hospitalisation sera ajoutée localement.");
+                }
+            }
+            // fallback to local update
+            setHospitalizations([newHospitalizationData, ...hospitalizations]);
+        })();
+
         setNewHospitalization({
             name: '',
             description: '',
@@ -157,12 +209,58 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
         if (editingIndex !== null) {
             const updatedHospitalizations = [...hospitalizations];
-            updatedHospitalizations[editingIndex] = {
+            const updated = {
                 ...editedHospitalization,
                 beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
                 endDate: `${editSelectedEndDay.toString().padStart(2, '0')}/${editSelectedEndMonth.toString().padStart(2, '0')}/${editSelectedEndYear}`,
             };
-            setHospitalizations(updatedHospitalizations);
+
+            // If the original record has an id (came from backend), call PUT to update
+            const original = hospitalizations[editingIndex] as any;
+            const recordId = original && (original.id || original.hospitalisation_id || original.hospitalization_id);
+            if (recordId) {
+                (async () => {
+                    const payload: any = {
+                        type: updated.name,
+                        description: updated.description,
+                        dates: `${updated.beginDate} - ${updated.endDate}`,
+                        medicaments: updated.medications || null,
+                        service: updated.department,
+                        hopital: updated.hospital,
+                        medecin: updated.doctor,
+                    };
+                    const res = await profileApi.updateHospitalization(recordId, payload);
+                    if (res.ok) {
+                        const list = await profileApi.getHospitalizations();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = (list.data as any[]).map(h => {
+                                const datesRaw = h.dates || h.date || '';
+                                let begin = '';
+                                let end = '';
+                                if (datesRaw && typeof datesRaw === 'string') {
+                                    const parts = datesRaw.split(' - ');
+                                    if (parts.length === 2) {
+                                        begin = parts[0].trim();
+                                        end = parts[1].trim();
+                                    } else {
+                                        begin = datesRaw.trim();
+                                    }
+                                }
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                            });
+                            setHospitalizations(mapped);
+                        }
+                    } else {
+                        // backend failed -> local update
+                        updatedHospitalizations[editingIndex] = updated;
+                        setHospitalizations(updatedHospitalizations);
+                    }
+                })();
+            } else {
+                // local-only record
+                updatedHospitalizations[editingIndex] = updated;
+                setHospitalizations(updatedHospitalizations);
+            }
         }
 
         setEditModalVisible(false);
@@ -181,8 +279,34 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
-                        setHospitalizations(updatedHospitalizations);
+                        // Try backend deletion via hook; fallback to local removal
+                        (async () => {
+                            const success = await removeHospitalization(hospitalization);
+                            if (success) {
+                                const res = await profileApi.getHospitalizations();
+                                if (res.ok && Array.isArray(res.data)) {
+                                    const mapped = (res.data as any[]).map(h => {
+                                        const datesRaw = h.dates || h.date || '';
+                                        let begin = '';
+                                        let end = '';
+                                        if (datesRaw && typeof datesRaw === 'string') {
+                                            const parts = datesRaw.split(' - ');
+                                            if (parts.length === 2) {
+                                                begin = parts[0].trim();
+                                                end = parts[1].trim();
+                                            } else {
+                                                begin = datesRaw.trim();
+                                            }
+                                        }
+                                        return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                                    });
+                                    setHospitalizations(mapped);
+                                }
+                            } else {
+                                const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
+                                setHospitalizations(updatedHospitalizations);
+                            }
+                        })();
                     }
                 }
             ]
@@ -280,6 +404,48 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
     // Determine if it's the main profile 
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
+    // Load hospitalizations from backend when opening the tab for a server-side profile
+    useEffect(() => {
+        const load = async () => {
+            if (!currentProfile) return;
+            const numericCandidate = Number(currentProfile.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+            if (!isServerProfile) return;
+
+            const res = await profileApi.getHospitalizations();
+            if (res.ok && Array.isArray(res.data)) {
+                const mapped = (res.data as any[]).map(h => {
+                    const datesRaw = h.dates || h.date || '';
+                    let begin = '';
+                    let end = '';
+                    if (datesRaw && typeof datesRaw === 'string') {
+                        const parts = datesRaw.split(' - ');
+                        if (parts.length === 2) {
+                            begin = parts[0].trim();
+                            end = parts[1].trim();
+                        } else {
+                            // fallback: single date stored
+                            begin = datesRaw.trim();
+                        }
+                    }
+                    return {
+                        id: h.id,
+                        name: h.type || h.name || '',
+                        description: h.description || '',
+                        beginDate: begin,
+                        endDate: end,
+                        department: h.service || '',
+                        hospital: h.hopital || h.hospital || '',
+                        doctor: h.medecin || '',
+                        medications: h.medicaments || h.medications || ''
+                    } as Hospitalization;
+                });
+                setHospitalizations(mapped);
+            }
+        };
+        load();
+    }, [currentProfile?.id]);
 
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
