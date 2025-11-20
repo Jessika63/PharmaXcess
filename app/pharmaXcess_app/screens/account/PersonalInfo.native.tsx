@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { CustomPicker } from '../../components';
+import { getPatientInfo, updatePatientInfo } from '../../services/personalInfo/personalInfoService'
 
 type PersonalInfoProps = {
     navigation: StackNavigationProp<any, any>;
@@ -29,7 +30,7 @@ type PatientInfo = {
 
 
 // The PersonalInfo component displays the personal information of a patient, allowing them to view and modify their details.
-export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.JSX.Element {
+export default function PersonalInfo({ navigation }: PersonalInfoProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
@@ -41,37 +42,35 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
     
     // Main profile data (pre-filled for main profile, empty for others)
-    const [patientInfo, setPatientInfo] = useState<PatientInfo>(
-        isMainProfile ? {
-            name: 'John Doe',
-            birthDate: '01/01/1980',
-            age: 42,
-            weight: '70 kg',
-            height: '180 cm',
-            bloodType: 'A+',
-            phone: '06 12 34 56 78',
-            email: 'johndoe@hotmail.com',
-            socialSecurityNumber: '123-45-6789',
-            address: '1 rue de la paix, 75000 Paris',
-            emergencyContact: 'Jane Doe, 06 12 34 56 79',
-        } : {
-            name: '',
-            birthDate: '',
-            age: 0,
-            weight: '',
-            height: '',
-            bloodType: '',
-            phone: '',
-            email: '',
-            socialSecurityNumber: '',
-            address: '',
-            emergencyContact: '',
+    const emptyProfile: PatientInfo = {
+        name: '',
+        birthDate: '',
+        age: 0,
+        weight: '',
+        height: '',
+        bloodType: '',
+        phone: '',
+        email: '',
+        socialSecurityNumber: '',
+        address: '',
+        emergencyContact: '',
+    };
+
+    const [patientInfo, setPatientInfo] = useState<PatientInfo>(emptyProfile);
+    const [editedInfo, setEditedInfo] = useState<PatientInfo>(emptyProfile);
+
+    React.useEffect(() => {
+        if (currentProfile?.id) {
+            getPatientInfo(currentProfile.id)
+                .then(data => {
+                    setPatientInfo(data);
+                })
+                .catch(err => {
+                    console.error(err);
+                });
         }
-    );
+    }, [currentProfile]);
 
-    const [editedInfo, setEditedInfo] = useState<PatientInfo>(patientInfo);
-
-    // Define labels for each piece of patient information to be displayed in French
     const labels: { [key in keyof PatientInfo]: string } = {
         name: 'Nom',
         birthDate: 'Date de naissance',
@@ -116,9 +115,16 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
             return;
         }
-        setPatientInfo({ ...editedInfo });
-        setIsModalVisible(false);
-        Alert.alert('Succès', 'Vos informations ont été mises à jour.');
+
+        updatePatientInfo(currentProfile?.id ?? 'main', editedInfo)
+            .then(() => {
+                setPatientInfo({ ...editedInfo });
+                setIsModalVisible(false);
+                Alert.alert('Succès', 'Vos informations ont été mises à jour.');
+            })
+            .catch(() => {
+                Alert.alert('Erreur', 'Impossible de mettre à jour les informations.');
+            });
     };
 
     const handleInputChange = (field: keyof PatientInfo, value: string | number): void => {
@@ -188,65 +194,40 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                 </View>
             )}
 
-            {/* Conditional rendering based on profile type */}
-            {isMainProfile ? (
-                // For main profile: show existing information
-                <>
-                    {/* Map through the patientInfo object to display each piece of information */}
-                    {Object.entries(patientInfo).map(([key, value], index) => (
-                        <View 
-                            key={key} 
+            {Object.values(patientInfo).every(val => val === '' || val === 0) ? (
+                <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}>
+                    <Ionicons name="person-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                    <Text style={[styles.content, { textAlign: 'center', marginTop: 20 }]}>
+                        Aucune information personnelle enregistrée pour ce profil.
+                    </Text>
+                    <Text style={[styles.content, { textAlign: 'center', opacity: 0.7 }]}>
+                        Ajoutez les informations personnelles pour ce profil
+                    </Text>
+                </View>
+            ) : (
+                        // Show information if available
+                Object.entries(patientInfo).map(([key, value], index) => (
+                    value !== '' && value !== 0 && (
+                        <View
+                            key={key}
                             style={[
                                 styles.card,
                                 { marginVertical: 8 },
                                 index === 0 && { marginTop: 10 },
-                                index === Object.entries(patientInfo).length - 1 && { marginBottom: 20 }
                             ]}
                         >
                             <Text style={styles.title}>{labels[key as keyof PatientInfo]}</Text>
                             <Text style={styles.content}>{value}</Text>
                         </View>
-                    ))}
-                </>
-            ) : (
-                // For other profiles: show message if no information
-                <>
-                    {Object.values(patientInfo).every(val => val === '' || val === 0) ? (
-                        <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}>
-                            <Ionicons name="person-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
-                            <Text style={[styles.content, { textAlign: 'center', marginTop: 20 }]}>
-                                Aucune information personnelle enregistrée pour ce profil.
-                            </Text>
-                            <Text style={[styles.content, { textAlign: 'center', opacity: 0.7 }]}>
-                                Ajoutez les informations personnelles pour ce profil
-                            </Text>
-                        </View>
-                    ) : (
-                        // Show information if available
-                        Object.entries(patientInfo).map(([key, value], index) => (
-                            value !== '' && value !== 0 && (
-                                <View 
-                                    key={key} 
-                                    style={[
-                                        styles.card,
-                                        { marginVertical: 8 },
-                                        index === 0 && { marginTop: 10 },
-                                    ]}
-                                >
-                                    <Text style={styles.title}>{labels[key as keyof PatientInfo]}</Text>
-                                    <Text style={styles.content}>{value}</Text>
-                                </View>
-                            )
-                        ))
-                    )}
-                </>
+                    )
+                ))
             )}
 
             <View style={[styles.buttonContainer, { marginBottom: 20 }]}>
                 <TouchableOpacity style={styles.button} onPress={handleModifyPress}>
                     <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>
-                            {isMainProfile ? 'Modifier' : Object.values(patientInfo).every(val => val === '' || val === 0) ? 'Ajouter' : 'Modifier'}
+                            {Object.values(patientInfo).every(val => val === '' || val === 0) ? 'Ajouter' : 'Modifier'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -260,15 +241,17 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
             {/* Modal pour modifier les informations */}
             <Modal visible={isModalVisible} animationType="slide">
                 <View style={modalStyles.modalContainer}>
-                    <ScrollView 
+                    <ScrollView
                         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                         showsVerticalScrollIndicator={true}
                         bounces={true}
                     >
                         <Text style={modalStyles.modalTitle}>
-                            {isMainProfile ? 'Modifier mes informations' : Object.values(patientInfo).every(val => val === '' || val === 0) ? 'Ajouter les informations' : 'Modifier les informations'}
+                            {Object.values(patientInfo).every(val => val === '' || val === 0)
+                                ? 'Ajouter les informations'
+                                : 'Modifier les informations'}
                         </Text>
-                        
+
                         <Text style={modalStyles.label}>Nom complet</Text>
                         <TextInput
                             style={modalStyles.input}
