@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -7,17 +7,9 @@ import createStyles from '../../styles/ProfileInfos.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
-
-type Disease = { 
-    name: string; 
-    description: string; 
-    symptoms: string; 
-    beginDate: string; 
-    medications: string; 
-    examens: string; 
-}; 
+import { getDiseases, createDisease, updateDisease, deleteDisease } from '../../services/diseases/diseasesService'
+import { Disease } from '../../services/diseases/types';
 
 type DiseasesProps = { 
     navigation: StackNavigationProp<any, any>; 
@@ -27,45 +19,14 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
-    const { diseases: profileDiseases, addDisease, removeDisease } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    // Diseases predefined for the main profile 
-    const [diseases, setDiseases] = useState<Disease[]>([
-        {
-            name: 'Diabète',
-            description: 'Le diabète est une maladie chronique qui se caractérise par un excès de sucre dans le sang.',
-            symptoms: 'soif intense, besoin fréquent d\'uriner, fatigue, perte de poids, vision floue, cicatrisation lente, infections fréquentes, démangeaisons, fourmillements, douleurs, crampes, nausées, vomissements, haleine fruitée, perte de conscience',
-            beginDate: '01/01/2000',
-            medications: 'insuline, metformine, sulfamide hypoglycémiants, glinides, glitazones, inhibiteurs de l\'alpha-glucosidase, inhibiteurs de la DPP-4, agonistes des récepteurs du GLP-1, inhibiteurs du cotransporteur du sodium-glucose de type 2',
-            examens: 'glycémie à jeun, hémoglobine glyquée, test de tolérance au glucose, test de glycémie aléatoire, test de glycémie postprandiale (après un repas)',
-        },
-        {
-            name: 'Hypertension',
-            description: 'L\'hypertension artérielle est une maladie chronique caractérisée par une pression artérielle trop élevée dans les artères.',
-            symptoms: 'maux de tête, fatigue, étourdissements, bourdonnements d\'oreilles, palpitations, douleurs thoraciques, essoufflement, saignements de nez, vision floue',
-            beginDate: '01/01/2005',
-            medications: 'diurétiques, bêta-bloquants, inhibiteurs de l\'enzyme de conversion de l\'angiotensine (IECA), antagonistes des récepteurs de l\'angiotensine II (ARA II), inhibiteurs calciques, alpha-bloquants, alpha-bêta-bloquants, vasodilatateurs, antihypertenseurs centraux',
-            examens: 'mesure de la pression artérielle, électrocardiogramme, échocardiographie',
-        },
-    ]);
-
-        const getRelationshipText = (relationship?: string) => {
-        switch (relationship) {
-            case 'self': return 'Mon profil';
-            case 'child': return 'Profil enfant';
-            case 'parent': return 'Profil parent';
-            case 'spouse': return 'Profil conjoint(e)';
-            case 'other': return 'Autre profil';
-            default: return 'Mon profil';
-        }
-    };
-
+    const [diseases, setDiseases] = useState<Disease[]>([]);
     const [expanded, setExpanded] = useState<number | null>(null);
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
-    const [newDisease, setNewDisease] = useState<Disease>({
+    const [newDisease, setNewDisease] = useState<Omit<Disease, 'id'>>({
         name: '',
         description: '',
         symptoms: '',
@@ -74,6 +35,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         examens: '',
     });
     const [editedDisease, setEditedDisease] = useState<Disease>({
+        id: '',
         name: '',
         description: '',
         symptoms: '',
@@ -89,85 +51,96 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
     const [editSelectedMonth, setEditSelectedMonth] = useState<number>(1); 
     const [editSelectedDay, setEditSelectedDay] = useState<number>(1); 
 
-    // For simple disease addition by profile 
-    const [newDiseaseSimple, setNewDiseaseSimple] = useState<string>('');
+    const getRelationshipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    };
 
     const toggleCard = (index: number): void => { 
         setExpanded(expanded === index ? null : index);
-    }; 
+    };
 
-    // Complex disease management (for the main profile) 
-    const handleAddPress = (): void => {
-        if (
-            !newDisease.name ||
-            !newDisease.description ||
-            !newDisease.symptoms ||
-            !newDisease.medications ||
-            !newDisease.examens
-        ) {
+    const fetchDiseases = async () => {
+        if (!currentProfile?.id) return;
+        try {
+            const data = await getDiseases(currentProfile.id);
+            setDiseases(data);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible de récupérer les maladies.');
+        }
+    };
+
+    useEffect(() => {
+        fetchDiseases();
+    }, [currentProfile]);
+
+    const handleAddPress = async (): Promise<void> => {
+        if (!newDisease.name || !newDisease.description || !newDisease.symptoms || !newDisease.medications || !newDisease.examens) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle maladie.');
             return;
         }
-    
-        const newDiseaseData: Disease = {
+
+        const diseaseData = {
             ...newDisease,
-            beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
+            beginDate: `${selectedDay.toString().padStart(2,'0')}/${selectedMonth.toString().padStart(2,'0')}/${selectedYear}`
         };
-    
-        setDiseases([newDiseaseData, ...diseases]);
-        setNewDisease({
-            name: '',
-            description: '',
-            symptoms: '',
-            beginDate: '',
-            medications: '',
-            examens: '',
-        });
-        setModalVisible(false);
-        setSelectedYear(2024);
-        setSelectedMonth(1);
-        setSelectedDay(1); 
+
+        try {
+            const created = await createDisease(currentProfile!.id, diseaseData);
+            setDiseases([created, ...diseases]);
+            setNewDisease({ name:'', description:'', symptoms:'', beginDate:'', medications:'', examens:'' });
+            setModalVisible(false);
+            setSelectedYear(2024); setSelectedMonth(1); setSelectedDay(1);
+            Alert.alert('Succès', 'Maladie ajoutée avec succès.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible d\'ajouter la maladie.');
+        }
     };
 
     const handleEditPress = (index: number): void => {
         const disease = diseases[index];
         setEditedDisease({ ...disease });
         setEditingIndex(index);
-        
         const dateParts = disease.beginDate.split('/');
         if (dateParts.length === 3) {
             setEditSelectedDay(parseInt(dateParts[0]));
             setEditSelectedMonth(parseInt(dateParts[1]));
             setEditSelectedYear(parseInt(dateParts[2]));
         }
-        
         setEditModalVisible(true);
     };
 
-    const handleSaveEdit = (): void => {
-        if (
-            !editedDisease.name ||
-            !editedDisease.description ||
-            !editedDisease.symptoms ||
-            !editedDisease.medications ||
-            !editedDisease.examens
-        ) {
+    const handleSaveEdit = async (): Promise<void> => {
+        if (!editedDisease.name || !editedDisease.description || !editedDisease.symptoms || !editedDisease.medications || !editedDisease.examens) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
 
-        if (editingIndex !== null) {
-            const updatedDiseases = [...diseases];
-            updatedDiseases[editingIndex] = {
-                ...editedDisease,
-                beginDate: `${editSelectedDay.toString().padStart(2, '0')}/${editSelectedMonth.toString().padStart(2, '0')}/${editSelectedYear}`,
-            };
-            setDiseases(updatedDiseases);
-        }
+        const updatedDisease = {
+            ...editedDisease,
+            beginDate: `${editSelectedDay.toString().padStart(2,'0')}/${editSelectedMonth.toString().padStart(2,'0')}/${editSelectedYear}`
+        };
 
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de la maladie ont été mises à jour.');
+        try {
+            const saved = await updateDisease(currentProfile!.id, updatedDisease);
+            const updatedDiseases = [...diseases];
+            if (editingIndex !== null) updatedDiseases[editingIndex] = saved;
+            setDiseases(updatedDiseases);
+            setEditModalVisible(false);
+            setEditingIndex(null);
+            Alert.alert('Succès', 'Les informations de la maladie ont été mises à jour.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible de modifier la maladie.');
+        }
     };
 
     const handleDeleteDisease = (index: number): void => {
@@ -177,92 +150,18 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             `Êtes-vous sûr de vouloir supprimer "${disease.name}" ?`,
             [
                 { text: 'Annuler', style: 'cancel' },
-                { 
-                    text: 'Supprimer', 
-                    style: 'destructive',
-                    onPress: () => {
-                        const updatedDiseases = diseases.filter((_, i) => i !== index);
-                        setDiseases(updatedDiseases);
+                { text: 'Supprimer', style: 'destructive', onPress: async () => {
+                    try {
+                        await deleteDisease(currentProfile!.id, disease.id);
+                        setDiseases(diseases.filter((_, i) => i !== index));
+                        Alert.alert('Succès', 'Maladie supprimée.');
+                    } catch (error) {
+                        console.error(error);
+                        Alert.alert('Erreur', 'Impossible de supprimer la maladie.');
                     }
-                }
+                }}
             ]
         );
-    };
-
-    // Simple disease management by profile 
-    const handleAddSimpleDisease = async (): Promise<void> => {
-        // For other profiles, we only require the name field but save all available data
-        if (!newDisease.name.trim()) {
-            Alert.alert('Erreur', 'Veuillez entrer le nom de la maladie.');
-            return;
-        }
-
-        // Create complete disease data even for other profiles
-        const diseaseData = {
-            name: newDisease.name.trim(),
-            description: newDisease.description || '',
-            symptoms: newDisease.symptoms || '',
-            beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
-            medications: newDisease.medications || '',
-            examens: newDisease.examens || ''
-        };
-
-        const success = await addDisease(JSON.stringify(diseaseData));
-        if (success) {
-            // Reset all fields
-            setNewDiseaseSimple('');
-            setNewDisease({
-                name: '',
-                description: '',
-                symptoms: '',
-                beginDate: '',
-                medications: '',
-                examens: '',
-            });
-            setModalVisible(false);
-            setSelectedYear(2024);
-            setSelectedMonth(1);
-            setSelectedDay(1);
-            Alert.alert('Succès', 'Maladie ajoutée avec succès.');
-        } else {
-            Alert.alert('Erreur', 'Cette maladie est déjà enregistrée ou une erreur est survenue.');
-        }
-    };
-
-    const handleRemoveDisease = async (disease: string): Promise<void> => {
-        Alert.alert(
-            'Confirmer la suppression',
-            `Êtes-vous sûr de vouloir supprimer "${disease}" ?`,
-            [
-                {
-                    text: 'Annuler',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Supprimer',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await removeDisease(disease);
-                        if (success) {
-                            Alert.alert('Succès', 'Maladie supprimée avec succès.');
-                        } else {
-                            Alert.alert('Erreur', 'Impossible de supprimer la maladie.');
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const getRelatioinhipText = (relationship?: string) => {
-        switch (relationship) {
-            case 'self': return 'Mon profil';
-            case 'child': return 'Profil enfant';
-            case 'parent': return 'Profil parent';
-            case 'spouse': return 'Profil conjoint(e)';
-            case 'other': return 'Autre profil';
-            default: return 'Mon profil';
-        }
     }; 
 
     React.useLayoutEffect(() => {
@@ -270,9 +169,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             title: 'Maladies',
         });
     }, [navigation]);
-
-    // Determine if it's the main profile 
-    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
@@ -293,149 +189,63 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                     </View>
                 </View>
             )}
-                {/* Conditional display based on profile */} 
-                {isMainProfile ? ( 
-                    // For the main profile: predefined complex cards
-                    <>
-                        {diseases.map((disease, index) => (
-                            <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
-                                <View key={index} style={styles.card}>
-                                    <View style={styles.cardHeader}>
-                                        <Text style={styles.cardTitle}>{disease.name}</Text>
-                                        <View style={styles.actionButtons}>
-                                            <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
-                                                <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDeleteDisease(index)} style={styles.deleteButton}>
-                                                <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Description: </Text>
-                                        {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
-                                    </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Symptômes: </Text>
-                                        {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
-                                    </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Date de début: </Text>
-                                        {disease.beginDate}
-                                    </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Traitements: </Text>
-                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
-                                    </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Examens: </Text>
-                                        {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
-                                    </Text>
-
-                                    <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
-                                        <Ionicons
-                                            name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                            size={24}
-                                            color={colors.iconPrimary}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </>
-                ) : ( 
-                    // For other profiles: full disease display with same functionality
-                    <>
-                        {profileDiseases && profileDiseases.length > 0 ? (
-                            <>
-                                {profileDiseases.map((diseaseString, index) => {
-                                    // Parse disease data (could be JSON string or simple name)
-                                    let disease: Disease;
-                                    try {
-                                        disease = JSON.parse(diseaseString);
-                                    } catch {
-                                        // Fallback for simple string names
-                                        disease = {
-                                            name: diseaseString,
-                                            description: '',
-                                            symptoms: '',
-                                            beginDate: '',
-                                            medications: '',
-                                            examens: ''
-                                        };
-                                    }
-                                    
-                                    return (
-                                        <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
-                                            <View style={styles.card}>
-                                                <View style={styles.cardHeader}>
-                                                    <Text style={styles.cardTitle}>{disease.name}</Text>
-                                                    <View style={styles.actionButtons}>
-                                                        <TouchableOpacity onPress={() => handleRemoveDisease(diseaseString)} style={styles.deleteButton}>
-                                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-
-                                                {disease.description && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Description: </Text>
-                                                        {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
-                                                    </Text>
-                                                )}
-                                                {disease.symptoms && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Symptômes: </Text>
-                                                        {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
-                                                    </Text>
-                                                )}
-                                                {disease.beginDate && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Date de début: </Text>
-                                                        {disease.beginDate}
-                                                    </Text>
-                                                )}
-                                                {disease.medications && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Traitements: </Text>
-                                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
-                                                    </Text>
-                                                )}
-                                                {disease.examens && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Examens: </Text>
-                                                        {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
-                                                    </Text>
-                                                )}
-
-                                                {/* Show expand/collapse arrow only if there's expandable content */}
-                                                {(disease.description || disease.symptoms || disease.medications || disease.examens) && (
-                                                    <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
-                                                        <Ionicons
-                                                            name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                                            size={24}
-                                                            color={colors.iconPrimary}
-                                                        />
-                                                    </TouchableOpacity>
-                                                )}
-                                            </View>
+                {diseases.length > 0 ? (
+                    diseases.map((disease, index) => (
+                        <TouchableOpacity key={disease.id} onPress={() => toggleCard(index)}>
+                            <View style={styles.card}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.cardTitle}>{disease.name}</Text>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity onPress={() => handleEditPress(index)} style={styles.editButton}>
+                                            <Ionicons name="create-outline" size={25} color={colors.iconPrimary} />
                                         </TouchableOpacity>
-                                    );
-                                })}
-                            </>
-                        ) : (
-                            <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}> 
-                                <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
-                                <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
-                                    Aucune maladie enregistrée pour ce profil.
+                                        <TouchableOpacity onPress={() => handleDeleteDisease(index)} style={styles.deleteButton}>
+                                            <Ionicons name="trash-outline" size={25} color="#FF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Description: </Text>
+                                    {expanded === index ? disease.description : `${disease.description.slice(0, 70)}...`}
                                 </Text>
-                                <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}> 
-                                    Ajoutez vos maladies pour un meilleur suivi médical
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Symptômes: </Text>
+                                    {expanded === index ? disease.symptoms : `${disease.symptoms.slice(0, 75)}...`}
                                 </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Date de début: </Text>
+                                    {disease.beginDate}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Traitements: </Text>
+                                    {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                                </Text>
+                                <Text style={styles.cardText}>
+                                    <Text style={styles.bold}>Examens: </Text>
+                                    {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
+                                </Text>
+
+                                <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
+                                    <Ionicons
+                                        name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
+                                        size={24}
+                                        color={colors.iconPrimary}
+                                    />
+                                </TouchableOpacity>
                             </View>
-                        )}
-                    </> 
+                        </TouchableOpacity>
+                    ))
+                ) : (
+                    <View style={[styles.card, { marginBottom: 20, alignItems: 'center', padding: 40 }]}>
+                        <Ionicons name="medical-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
+                        <Text style={[styles.cardText, { textAlign: 'center', marginTop: 20 }]}>
+                            Aucune maladie enregistrée pour ce profil.
+                        </Text>
+                        <Text style={[styles.cardText, { textAlign: 'center', opacity: 0.7 }]}>
+                            Ajoutez vos maladies pour un meilleur suivi médical
+                        </Text>
+                    </View>
                 )}
 
                 {/* Button to add a new disease */} 
@@ -469,16 +279,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
                     <TextInput 
                         placeholder="Nom" 
-                        value={isMainProfile ? newDisease.name : newDiseaseSimple}
-                        onChangeText={(text) => {
-                            if (isMainProfile) {
-                                setNewDisease({ ...newDisease, name: text })
-                            } else {
-                                setNewDiseaseSimple(text);
-                                // For other profiles, also update newDisease.name for consistency
-                                setNewDisease({ ...newDisease, name: text });
-                            }
-                        }}
+                        value={newDisease.name}
+                        onChangeText={(text) => setNewDisease({ ...newDisease, name: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -605,8 +407,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                             }}
                             onPress={() => {
                                 setModalVisible(false);
-                                // Reset all fields for both main and other profiles
-                                setNewDiseaseSimple('');
                                 setNewDisease({
                                     name: '',
                                     description: '',
@@ -631,7 +431,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                 marginLeft: 10, 
                                 alignItems: 'center'
                             }}
-                            onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}
+                            onPress={handleAddPress}
                         >
                             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
                         </TouchableOpacity>
@@ -640,7 +440,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             </Modal>
 
             {/* Editing modal for the main profile */} 
-            {isMainProfile && ( 
+            {isEditModalVisible && ( 
                 <Modal visible={isEditModalVisible} animationType="slide"> 
                     <ScrollView 
                         contentContainerStyle={{ 
