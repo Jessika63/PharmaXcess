@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -9,8 +9,10 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
+import { getAllergies, createAllergy, updateAllergy, deleteAllergy } from '../../services/allergies/allergiesService';
 
 type Allergy = {
+    id?: string;
     name: string;
     beginDate: string;
     severity: string;
@@ -30,26 +32,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const { currentProfile } = useProfile();
     const { allergies: profileAllergies, addAllergy, removeAllergy } = useProfileData();
     const styles = createStyles(colors, fontScale);
-
-    const [allergies, setAllergies] = useState<Allergy[]>([
-        {
-            name: 'Pollen',
-            beginDate: '01/01/2021',
-            severity: 'Modérée',
-            symptoms: 'Éternuements, nez qui coule',
-            medications: 'Antihistaminiques',
-            comments: 'Allergie saisonnière',
-        },
-        {
-            name: 'Pénicilline',
-            beginDate: '01/01/2020',
-            severity: 'Sévère',
-            symptoms: 'Urticaire, œdème de Quincke',
-            medications: 'Éviter les pénicillines',
-            comments: 'Allergie connue',
-        },
-    ]);
-
+    const [allergies, setAllergies] = useState<Allergy[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -82,7 +65,18 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     // For simple allergy addition by profile 
     const [newAllergySimple, setNewAllergySimple] = useState<string>('');
 
-    // Simple allergy management by profile 
+    useEffect(() => {
+        const fetchAllergies = async () => {
+            try {
+                const fetchedAllergies = await getAllergies();
+                setAllergies(fetchedAllergies);
+            } catch (error) {
+                console.error('Failed to fetch allergies:', error);
+            }
+        };
+        fetchAllergies();
+    }, []);
+
     const handleAddSimpleAllergy = async (): Promise<void> => {
         // For other profiles, we only require the name field but save all available data
         if (!newAllergy.name.trim()) {
@@ -99,30 +93,33 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             medications: newAllergy.medications || '',
             comments: newAllergy.comments || ''
         };
-
-        const success = await addAllergy(JSON.stringify(allergyData)); 
-        if (success) { 
+        try {
+            const success = await addAllergy(JSON.stringify(allergyData));
+            if (success) {
             // Reset all fields 
-            setNewAllergySimple(''); 
-            setNewAllergy({ 
-                name: '', 
-                beginDate: '', 
-                severity: '', 
-                symptoms: '', 
-                medications: '', 
-                comments: '', 
-            }); 
-            setIsModalVisible(false); 
-            setSelectedBeginYear(2024); 
-            setSelectedBeginMonth(1); 
-            setSelectedBeginDay(1); 
-            Alert.alert('Succès', 'Allergie ajoutée avec succès.');
-        } else { 
-            Alert.alert('Erreur', 'Cette allergie est déjà enregistrée ou une erreur est survenue.'); 
+                setNewAllergySimple(''); 
+                setNewAllergy({ 
+                    name: '', 
+                    beginDate: '', 
+                    severity: '', 
+                    symptoms: '', 
+                    medications: '', 
+                    comments: '', 
+                });
+                setIsModalVisible(false); 
+                setSelectedBeginYear(2024); 
+                setSelectedBeginMonth(1); 
+                setSelectedBeginDay(1); 
+                Alert.alert('Succès', 'Allergie ajoutée avec succès.');
+            } else { 
+                Alert.alert('Erreur', 'Cette allergie est déjà enregistrée ou une erreur est survenue.');
+            }
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible d\'ajouter l\'allergie.');
         }
-    }; 
+    };
 
-    const handleAddPress = (): void => {
+    const handleAddPress = async (): Promise<void> => {
         if (
             !newAllergy.name ||
             !newAllergy.severity ||
@@ -133,25 +130,28 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
-
         const newAllergyData: Allergy = {
             ...newAllergy,
             beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
         };
-
-        setAllergies([...allergies, newAllergyData]);
-        setNewAllergy({
-            name: '',
-            beginDate: '',
-            severity: '',
-            symptoms: '',
-            medications: '',
-            comments: '',
-        });
-        setSelectedBeginYear(2024);
-        setSelectedBeginMonth(1);
-        setSelectedBeginDay(1);
-        setIsModalVisible(false);
+        try {
+            const createdAllergy = await createAllergy(newAllergyData);
+            setAllergies([...allergies, createdAllergy]);
+            setNewAllergy({
+                name: '',
+                beginDate: '',
+                severity: '',
+                symptoms: '',
+                medications: '',
+                comments: '',
+            });
+            setSelectedBeginYear(2024);
+            setSelectedBeginMonth(1);
+            setSelectedBeginDay(1);
+            setIsModalVisible(false);
+        } catch (error) {
+            Alert.alert('Erreur', 'Impossible d\'ajouter l\'allergie.');
+        }
     };
 
     const handleEditPress = (index: number): void => {
@@ -170,7 +170,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         setEditModalVisible(true);
     };
 
-    const handleSaveEdit = (): void => {
+    const handleSaveEdit = async (): Promise<void> => {
         if (
             !editedAllergy.name ||
             !editedAllergy.severity ||
@@ -183,20 +183,26 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         }
 
         if (editingIndex !== null) {
-            const updatedAllergies = [...allergies];
-            updatedAllergies[editingIndex] = {
+            const updatedAllergyData = {
                 ...editedAllergy,
+                id: allergies[editingIndex].id!,
                 beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
             };
-            setAllergies(updatedAllergies);
+            try {
+                const updatedAllergy = await updateAllergy(updatedAllergyData);
+                const updatedAllergies = [...allergies];
+                updatedAllergies[editingIndex] = updatedAllergy;
+                setAllergies(updatedAllergies);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+                Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+            } catch (error) {
+                Alert.alert('Erreur', 'Impossible de mettre à jour l\'allergie.');
+            }
         }
-
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
     };
 
-    const handleDeleteAllergy = (index: number): void => {
+    const handleDeleteAllergy = async (index: number): Promise<void> => {
         const allergy = allergies[index];
         Alert.alert(
             'Supprimer l\'allergie',
@@ -206,9 +212,14 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                 { 
                     text: 'Supprimer', 
                     style: 'destructive',
-                    onPress: () => {
-                        const updatedAllergies = allergies.filter((_, i) => i !== index);
-                        setAllergies(updatedAllergies);
+                    onPress: async () => {
+                        try {
+                            await deleteAllergy(allergy.id!);
+                            const updatedAllergies = allergies.filter((_, i) => i !== index);
+                            setAllergies(updatedAllergies);
+                        } catch (error) {
+                            Alert.alert('Erreur', 'Impossible de supprimer l\'allergie.');
+                        }
                     }
                 }
             ]
