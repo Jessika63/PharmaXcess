@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal,  TouchableOpacity, ScrollView, Alert, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, Modal, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -9,8 +9,10 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
+import { getDoctors, createDoctor, updateDoctor, deleteDoctor } from '../../services/doctors/doctorsService';
 
 type Doctor = {
+  id?: string;
   name: string;
   specialty: string;
   hospital: string;
@@ -30,27 +32,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
   const { currentProfile } = useProfile();
   const { doctors: profileDoctors, addDoctor, removeDoctor } = useProfileData();
   const styles = createStyles(colors, fontScale);
-
-  const [doctors, setDoctors] = useState<Doctor[]>([
-        {
-            name: 'Dr. Jean Dupont',
-            specialty: 'Cardiologue',
-            phoneNumber: '01 23 45 67 89',
-            email: 'dupont.cardio@hotmail.com',
-            address: '1 rue de la santé, 75000 Paris',
-            hospital: 'Hôpital Cochin',
-        },
-        {
-            name: 'Dr. Marie Curie',
-            specialty: 'Oncologue',
-            phoneNumber: '01 23 45 67 90',
-            email: 'curie.onco@hotmail.com',
-            address: '2 avenue de la médecine, 75000 Paris',
-            hospital: 'Hôpital Pitié-Salpêtrière',
-        },
-
-  ]);
-
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -75,6 +57,17 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
   const [newDoctorSimple, setNewDoctorSimple] = useState<string>('');
 
   const specialties = ['Médecin généraliste', 'Cardiologue', 'Dermatologue', 'Endocrinologue', 'Gastro-entérologue', 'Gynécologue', 'Neurologue', 'Oncologue', 'Ophtalumologue', 'ORL', 'Orthopédiste', 'Pédiatre', 'Psychiatre', 'Radiologue', 'Rhumatologue', 'Urologue', 'Autre']; 
+  useEffect(() => {
+      const fetchDoctors = async () => {
+          try {
+              const data = await getDoctors();
+              setDoctors(data);
+          } catch (error) {
+              console.error("Erreur lors du chargement des médecins :", error);
+          }
+      };
+      fetchDoctors();
+  }, []);
   const handleAddSimpleDoctor = async (): Promise<void> => {
     // For other profiles, we only require the name field but save all available data
     if (!newDoctor.name.trim()) {
@@ -111,22 +104,27 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
     }
   };
 
-  const handleAddPress = (): void => {
+  const handleAddPress = async (): Promise<void> => {
     if (!newDoctor.name || !newDoctor.specialty || !newDoctor.phoneNumber || !newDoctor.email || !newDoctor.address || !newDoctor.hospital) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
       return;
     }
-
-    setDoctors([...doctors, newDoctor]);
-    setNewDoctor({
-      name: '',
-      specialty: '',
-      phoneNumber: '',
-      email: '',
-      address: '',
-      hospital: '',
-    });
-    setIsModalVisible(false);
+    try {
+      const createdDoctor = await createDoctor(newDoctor);
+      setDoctors([...doctors, createdDoctor]);
+      setNewDoctor({
+        name: '',
+        specialty: '',
+        phoneNumber: '',
+        email: '',
+        address: '',
+        hospital: '',
+      });
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du médecin :", error);
+      Alert.alert('Erreur', 'Une erreur est survenue lors de l\'ajout du médecin.');
+    }
   };
 
   const handleEditPress = (index: number): void => {
@@ -136,24 +134,27 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
     setEditModalVisible(true);
   };
 
-  const handleSaveEdit = (): void => {
+  const handleSaveEdit = async (): Promise<void> => {
     if (!editedDoctor.name || !editedDoctor.specialty || !editedDoctor.phoneNumber || !editedDoctor.email || !editedDoctor.address || !editedDoctor.hospital) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
       return;
     }
-
     if (editingIndex !== null) {
-      const updatedDoctors = [...doctors];
-      updatedDoctors[editingIndex] = editedDoctor;
-      setDoctors(updatedDoctors);
+      try {
+        const updatedDoctor = await updateDoctor({ id: doctors[editingIndex].id!, ...editedDoctor });
+        const updatedDoctors = [...doctors];
+        updatedDoctors[editingIndex] = updatedDoctor;
+        setDoctors(updatedDoctors);
+        setEditModalVisible(false);
+        setEditingIndex(null);
+        Alert.alert('Succès', 'Les informations du médecin ont été mises à jour.');
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du médecin :", error);
+        Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour du médecin.');
+      }
     }
-
-    setEditModalVisible(false);
-    setEditingIndex(null);
-    Alert.alert('Succès', 'Les informations du médecin ont été mises à jour.');
   };
-
-  const handleDeleteDoctor = (index: number): void => {
+  const handleDeleteDoctor = async (index: number): Promise<void> => {
     const doctor = doctors[index];
     Alert.alert(
       'Supprimer le médecin',
@@ -163,9 +164,15 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
         { 
           text: 'Supprimer', 
           style: 'destructive',
-          onPress: () => {
-            const updatedDoctors = doctors.filter((_, i) => i !== index);
-            setDoctors(updatedDoctors);
+          onPress: async () => {
+            try {
+              await deleteDoctor(doctor.id!);
+              const updatedDoctors = doctors.filter((_, i) => i !== index);
+              setDoctors(updatedDoctors);
+            } catch (error) {
+              console.error("Erreur lors de la suppression du médecin :", error);
+              Alert.alert('Erreur', 'Une erreur est survenue lors de la suppression du médecin.');
+            }
           }
         }
       ]
