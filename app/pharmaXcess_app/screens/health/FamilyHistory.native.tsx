@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StyleProp, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -10,8 +10,10 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
+import { getFamilyHistory, createFamilyHistory, updateFamilyHistory, deleteFamilyHistory } from '../../services/familyHistory/familyHistoryService';
 
 type FamilyHistoryItem = {
+    id?: string;
     name: string;
     familyMember: string;
     severity: string;
@@ -33,21 +35,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
     const familyMembers = ['Père', 'Mère', 'Frère', 'Sœur', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Oncle', 'Tante', 'Cousin(e)', 'Autre'];
     const severityLevels = ['Léger', 'Modéré', 'Sévère', 'Critique'];
 
-    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
-        {
-            name: 'Diabète de type 2',
-            familyMember: 'Père',
-            severity: 'Modéré',
-            treatment: 'Insuline, régime alimentaire',
-        },
-        {
-            name: 'Hypertension artérielle',
-            familyMember: 'Mère',
-            severity: 'Sévère',
-            treatment: 'Bêtabloquants, régime alimentaire',
-        },
-    ]);
-
+    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -68,6 +56,18 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
     const [newFamilyHistorySimple, setNewFamilyHistorySimple] = useState<string>('');
 
     // Simple family history management by profile 
+    useEffect(() => {
+        const loadFamilyHistory = async () => {
+            try {
+                const history = await getFamilyHistory();
+                setFamilyHistory(history);
+            } catch (error) {
+                console.error("Erreur lors du chargement des antécédents familiaux :", error);
+            }
+        };
+        loadFamilyHistory();
+    }, []);
+
     const handleAddSimpleFamilyHistory = async (): Promise<void> => {
         // For other profiles, we only require the name field but save all available data
         if (!newFamilyHistory.name.trim()) {
@@ -107,24 +107,25 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
         setEditModalVisible(true);
     };
 
-    const handleSaveEdit = (): void => {
+    const handleSaveEdit = async (): Promise<void> => {
         if (!editedFamilyHistory.name || !editedFamilyHistory.treatment) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
-
-        if (editingIndex !== null) {
+        try {
+            const updated = await updateFamilyHistory(editedFamilyHistory);
             const updatedFamilyHistory = [...familyHistory];
-            updatedFamilyHistory[editingIndex] = editedFamilyHistory;
+            updatedFamilyHistory[editingIndex!] = updated;
             setFamilyHistory(updatedFamilyHistory);
+            setEditModalVisible(false);
+            setEditingIndex(null);
+            Alert.alert('Succès', 'Les informations ont été mises à jour.');
+        } catch (error) {
+            Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour.');
         }
-
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'antécédent familial ont été mises à jour.');
     };
 
-    const handleDeleteFamilyHistory = (index: number): void => {
+    const handleDeleteFamilyHistory = async (index: number): Promise<void> => {
         const item = familyHistory[index];
         Alert.alert(
             'Supprimer l\'antécédent familial',
@@ -134,9 +135,16 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                 { 
                     text: 'Supprimer', 
                     style: 'destructive',
-                    onPress: () => {
-                        const updatedFamilyHistory = familyHistory.filter((_, i) => i !== index);
-                        setFamilyHistory(updatedFamilyHistory);
+                    onPress: async () => {
+                        try {
+                            if (item.id) {
+                                await deleteFamilyHistory(item.id);
+                                const updatedFamilyHistory = familyHistory.filter((_, i) => i !== index);
+                                setFamilyHistory(updatedFamilyHistory);
+                            }
+                        } catch (error) {
+                            Alert.alert('Erreur', 'Une erreur est survenue lors de la suppression.');
+                        }
                     }
                 }
             ]
@@ -182,29 +190,31 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
         });
     }, [navigation]);
 
-    // Determine if it's the main profile 
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
-    const handleAddPress = (): void => {
+    const handleAddPress = async (): Promise<void> => {
         if (!newFamilyHistory.name || !newFamilyHistory.treatment) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
-
-        const finalFamilyHistory = {
-            ...newFamilyHistory,
-            familyMember: newFamilyHistory.familyMember || familyMembers[0],
-            severity: newFamilyHistory.severity || severityLevels[0]
-        };
-
-        setFamilyHistory([...familyHistory, finalFamilyHistory]);
-        setNewFamilyHistory({
-            name: '',
-            familyMember: '',
-            severity: '',
-            treatment: '',
-        });
-        setIsModalVisible(false);
+        try {
+            const finalFamilyHistory = {
+                ...newFamilyHistory,
+                familyMember: newFamilyHistory.familyMember || familyMembers[0],
+                severity: newFamilyHistory.severity || severityLevels[0]
+            };
+            const created = await createFamilyHistory(finalFamilyHistory);
+            setFamilyHistory([...familyHistory, created]);
+            setNewFamilyHistory({
+                name: '',
+                familyMember: '',
+                severity: '',
+                treatment: '',
+            });
+            setIsModalVisible(false);
+        } catch (error) {
+            Alert.alert('Erreur', 'Une erreur est survenue lors de l\'ajout.');
+        }
     };
 
     return (
