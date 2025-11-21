@@ -19,7 +19,6 @@ type Hospitalization = {
     department: string; 
     hospital: string; 
     doctor: string; 
-    medications: string; 
 }; 
 
 type HospitalizationsProps = { 
@@ -47,7 +46,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         department: '',
         hospital: '',
         doctor: '',
-        medications: '',
     });
     const [editedHospitalization, setEditedHospitalization] = useState<Hospitalization>({
         name: '',
@@ -57,7 +55,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         department: '',
         hospital: '',
         doctor: '',
-        medications: '',
     });
 
     const [selectedBeginYear, setSelectedBeginYear] = useState<number>(2024); 
@@ -88,8 +85,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             !newHospitalization.description ||
             !newHospitalization.department ||
             !newHospitalization.hospital ||
-            !newHospitalization.doctor ||
-            !newHospitalization.medications
+            !newHospitalization.doctor
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle hospitalisation.');
             return;
@@ -111,7 +107,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     type: newHospitalizationData.name,
                     description: newHospitalizationData.description || null,
                     dates: `${newHospitalizationData.beginDate} - ${newHospitalizationData.endDate}`,
-                    medicaments: newHospitalizationData.medications || null,
                     service: newHospitalizationData.department || null,
                     hopital: newHospitalizationData.hospital || null,
                     medecin: newHospitalizationData.doctor || null,
@@ -134,7 +129,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                         begin = datesRaw.trim();
                                     }
                                 }
-                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
                             });
                             setHospitalizations(mapped);
                             // done
@@ -161,7 +156,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             department: '',
             hospital: '',
             doctor: '',
-            medications: '',
         });
         setModalVisible(false);
         setSelectedBeginYear(2024);
@@ -200,8 +194,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             !editedHospitalization.description ||
             !editedHospitalization.department ||
             !editedHospitalization.hospital ||
-            !editedHospitalization.doctor ||
-            !editedHospitalization.medications
+            !editedHospitalization.doctor
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
@@ -218,13 +211,12 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             // If the original record has an id (came from backend), call PUT to update
             const original = hospitalizations[editingIndex] as any;
             const recordId = original && (original.id || original.hospitalisation_id || original.hospitalization_id);
-            if (recordId) {
+                    if (recordId) {
                 (async () => {
                     const payload: any = {
                         type: updated.name,
                         description: updated.description,
                         dates: `${updated.beginDate} - ${updated.endDate}`,
-                        medicaments: updated.medications || null,
                         service: updated.department,
                         hopital: updated.hospital,
                         medecin: updated.doctor,
@@ -246,7 +238,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                         begin = datesRaw.trim();
                                     }
                                 }
-                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
                             });
                             setHospitalizations(mapped);
                         }
@@ -298,7 +290,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                                 begin = datesRaw.trim();
                                             }
                                         }
-                                        return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '', medications: h.medicaments || h.medications || '' } as Hospitalization;
+                                        return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
                                     });
                                     setHospitalizations(mapped);
                                 }
@@ -329,8 +321,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             endDate: `${selectedEndDay.toString().padStart(2, '0')}/${selectedEndMonth.toString().padStart(2, '0')}/${selectedEndYear}`,
             department: newHospitalization.department || '',
             hospital: newHospitalization.hospital || '',
-            doctor: newHospitalization.doctor || '',
-            medications: newHospitalization.medications || ''
+            doctor: newHospitalization.doctor || ''
         };
 
         const success = await addHospitalization(JSON.stringify(hospitalizationData));
@@ -345,7 +336,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                 department: '',
                 hospital: '',
                 doctor: '',
-                medications: '',
             });
             setModalVisible(false);
             setSelectedBeginYear(2024);
@@ -437,8 +427,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         endDate: end,
                         department: h.service || '',
                         hospital: h.hopital || h.hospital || '',
-                        doctor: h.medecin || '',
-                        medications: h.medicaments || h.medications || ''
+                        doctor: h.medecin || ''
                     } as Hospitalization;
                 });
                 setHospitalizations(mapped);
@@ -510,10 +499,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                         <Text style={styles.bold}>Médecin: </Text>
                                         {hospitalization.doctor}
                                     </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Traitements: </Text>
-                                        {hospitalization.medications}
-                                    </Text>
+
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -537,8 +523,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                             endDate: '',
                                             department: '',
                                             hospital: '',
-                                            doctor: '',
-                                            medications: ''
+                                            doctor: ''
                                         };
                                     }
                                     
@@ -589,12 +574,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                                     {hospitalization.doctor}
                                                 </Text>
                                             )}
-                                            {hospitalization.medications && (
-                                                <Text style={styles.cardText}>
-                                                    <Text style={styles.bold}>Traitements: </Text>
-                                                    {hospitalization.medications}
-                                                </Text>
-                                            )}
+                                            
                                         </View>
                                     );
                                 })}
@@ -794,23 +774,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         placeholderTextColor={colors.text + '80'} 
                     />
 
-                    <TextInput 
-                        placeholder="Traitements"
-                        value={newHospitalization.medications}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, medications: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 30,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                    
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
                         <TouchableOpacity 
@@ -834,7 +798,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                     department: '',
                                     hospital: '',
                                     doctor: '',
-                                    medications: '',
                                 });
                                 setSelectedBeginYear(2024);
                                 setSelectedBeginMonth(1);
@@ -1022,23 +985,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             placeholderTextColor={colors.text + '80'}
                         />
 
-                        <TextInput 
-                            placeholder="Traitements" 
-                            value={editedHospitalization.medications}
-                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 30,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'}
-                        />
+                        
 
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
                             <TouchableOpacity 

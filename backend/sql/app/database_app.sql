@@ -67,7 +67,6 @@ CREATE TABLE IF NOT EXISTS hospitalisations (
     type VARCHAR(100),
     description TEXT,
     dates VARCHAR(100),
-    medicaments TEXT,
     service VARCHAR(100),
     hopital VARCHAR(150),
     medecin VARCHAR(150),

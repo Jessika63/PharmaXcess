@@ -55,14 +55,13 @@ def create_hospitalization():
                 return jsonify({"error": "You don't have permission to add a hospitalization for this user"}), 403
 
             cursor.execute("""
-                INSERT INTO hospitalisations (utilisateur_id, type, description, dates, medicaments, service, hopital, medecin)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO hospitalisations (utilisateur_id, type, description, dates, service, hopital, medecin)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 utilisateur_id,
                 hospitalization_type,
                 data.get("description"),
                 data.get("dates"),
-                data.get("medicaments"),
                 data.get("service"),
                 data.get("hopital"),
                 data.get("medecin")
@@ -193,14 +192,13 @@ def update_hospitalization(hospitalization_id):
             query = f"""
                 UPDATE hospitalisations h
                 JOIN utilisateurs u ON h.utilisateur_id = u.id
-                SET h.type=%s, h.description=%s, h.dates=%s, h.medicaments=%s, h.service=%s, h.hopital=%s, h.medecin=%s
+                SET h.type=%s, h.description=%s, h.dates=%s, h.service=%s, h.hopital=%s, h.medecin=%s
                 WHERE h.id=%s AND {condition}
             """
             cursor.execute(query, (
                 data.get("type"),
                 data.get("description"),
                 data.get("dates"),
-                data.get("medicaments"),
                 data.get("service"),
                 data.get("hopital"),
                 data.get("medecin"),
