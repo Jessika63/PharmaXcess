@@ -575,11 +575,16 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 />
                             </View>
                         </View>
-                        <TextInput
-                            placeholder="Gravité"
-                            value={newAllergy.severity}
-                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, severity: text })}
-                            style={styles.input}
+                        <CustomPicker
+                            label="Gravité"
+                            selectedValue={newAllergy.severity}
+                            onValueChange={(value: string | number) => setNewAllergy({ ...newAllergy, severity: String(value) })}
+                            options={[
+                                { label: 'Légère', value: 'Légère' },
+                                { label: 'Modérée', value: 'Modérée' },
+                                { label: 'Sévère', value: 'Sévère' }
+                            ]}
+                            placeholder="Sélectionner"
                         />
                         <TextInput
                             placeholder="Symptômes"
