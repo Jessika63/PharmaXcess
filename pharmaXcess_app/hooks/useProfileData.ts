@@ -52,11 +52,9 @@ export const useProfileData = () => {
                     description: diseaseObj.description || diseaseObj.desc || '',
                     symptomes: diseaseObj.symptoms || diseaseObj.symptomes || '',
                 };
-                // include examens and traitements if provided
+                // include examens if provided
                 const examens = diseaseObj.examens || diseaseObj.exams || diseaseObj.examen || undefined;
-                const traitements = diseaseObj.medications || diseaseObj.traitements || diseaseObj.treatments || undefined;
                 if (examens) payload.examens = examens;
-                if (traitements) payload.traitements = traitements;
                 const iso = toISO(diseaseObj.beginDate || diseaseObj.date_debut || diseaseObj.begin_date);
                 if (iso) payload.date_debut = iso;
 

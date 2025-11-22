@@ -17,7 +17,6 @@ type Disease = {
     description: string; 
     symptoms: string; 
     beginDate: string; 
-    medications: string; 
     examens: string; 
 }; 
 
@@ -37,12 +36,12 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
     // Helper to normalize backend disease entries (could be string, JSON string, SQL row object, or frontend shape)
     const normalizeDiseaseEntry = (entry: any): Disease => {
-        if (!entry) return { name: '', description: '', symptoms: '', beginDate: '', medications: '', examens: '' };
+        if (!entry) return { name: '', description: '', symptoms: '', beginDate: '', examens: '' };
         if (typeof entry === 'string') {
             try {
                 entry = JSON.parse(entry);
             } catch {
-                return { name: entry, description: '', symptoms: '', beginDate: '', medications: '', examens: '' };
+                return { name: entry, description: '', symptoms: '', beginDate: '', examens: '' };
             }
         }
 
@@ -51,10 +50,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         const description = entry.description || entry.desc || '';
         const symptoms = entry.symptoms || entry.symptomes || '';
         const beginDate = entry.beginDate || entry.date_debut || entry.date || '';
-        const medications = entry.medications || entry.traitements || '';
         const examens = entry.examens || entry.exams || '';
-
-        return { id, name, description, symptoms, beginDate, medications, examens };
+        return { id, name, description, symptoms, beginDate, examens };
     };
 
     // Sync local view state with backend/currentProfile data
@@ -77,11 +74,10 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 const B = b[i] || ({} as Disease);
                 if (
                     A.name !== B.name ||
-                    A.description !== B.description ||
-                    A.symptoms !== B.symptoms ||
-                    A.beginDate !== B.beginDate ||
-                    A.medications !== B.medications ||
-                    A.examens !== B.examens
+                        A.description !== B.description ||
+                        A.symptoms !== B.symptoms ||
+                        A.beginDate !== B.beginDate ||
+                        A.examens !== B.examens
                 ) return false;
             }
             return true;
@@ -137,7 +133,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         description: '',
         symptoms: '',
         beginDate: '',
-        medications: '',
         examens: '',
     });
     const [editedDisease, setEditedDisease] = useState<Disease>({
@@ -145,7 +140,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         description: '',
         symptoms: '',
         beginDate: '',
-        medications: '',
         examens: '',
     });
 
@@ -166,12 +160,11 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
     // Complex disease management (for the main profile) 
     const handleAddPress = async (): Promise<void> => {
         if (
-            !newDisease.name ||
-            !newDisease.description ||
-            !newDisease.symptoms ||
-            !newDisease.medications ||
-            !newDisease.examens
-        ) {
+                !newDisease.name ||
+                !newDisease.description ||
+                !newDisease.symptoms ||
+                !newDisease.examens
+            ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle maladie.');
             return;
         }
@@ -191,7 +184,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                     description: '',
                     symptoms: '',
                     beginDate: '',
-                    medications: '',
                     examens: '',
                 });
                 setModalVisible(false);
@@ -207,7 +199,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                     description: '',
                     symptoms: '',
                     beginDate: '',
-                    medications: '',
                     examens: '',
                 });
                 setModalVisible(false);
@@ -256,7 +247,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             !editedDisease.name ||
             !editedDisease.description ||
             !editedDisease.symptoms ||
-            !editedDisease.medications ||
             !editedDisease.examens
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
@@ -296,12 +286,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                     };
                     const iso = toISO(updated.beginDate);
                     if (iso) payload.date_debut = iso;
-                    // include examens and traitements (medications)
+                    // include examens when updating
                     if (updated.examens) payload.examens = updated.examens;
-                    if (updated.medications) payload.traitements = updated.medications;
-                    // include examens and traitements/medications when updating
-                    if (updated.examens) payload.examens = updated.examens;
-                    if (updated.medications) payload.traitements = updated.medications;
 
                     const res = await profileApi.updateDisease(diseaseId, payload);
                     if (res.ok) {
@@ -357,7 +343,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             description: newDisease.description || '',
             symptoms: newDisease.symptoms || '',
             beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
-            medications: newDisease.medications || '',
             examens: newDisease.examens || ''
         };
 
@@ -370,7 +355,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 description: '',
                 symptoms: '',
                 beginDate: '',
-                medications: '',
                 examens: '',
             });
             setModalVisible(false);
@@ -478,10 +462,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                         <Text style={styles.bold}>Date de début: </Text>
                                         {disease.beginDate}
                                     </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Traitements: </Text>
-                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
-                                    </Text>
+                                    
                                     <Text style={styles.cardText}>
                                         <Text style={styles.bold}>Examens: </Text>
                                         {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
@@ -515,7 +496,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                             description: '',
                                             symptoms: '',
                                             beginDate: '',
-                                            medications: '',
                                             examens: ''
                                         };
                                     }
@@ -550,12 +530,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                                         {disease.beginDate}
                                                     </Text>
                                                 )}
-                                                {disease.medications && (
-                                                    <Text style={styles.cardText}>
-                                                        <Text style={styles.bold}>Traitements: </Text>
-                                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
-                                                    </Text>
-                                                )}
+                                                
                                                 {disease.examens && (
                                                     <Text style={styles.cardText}>
                                                         <Text style={styles.bold}>Examens: </Text>
@@ -564,7 +539,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                                 )}
 
                                                 {/* Show expand/collapse arrow only if there's expandable content */}
-                                                {(disease.description || disease.symptoms || disease.medications || disease.examens) && (
+                                                {(disease.description || disease.symptoms || disease.examens) && (
                                                     <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
                                                         <Ionicons
                                                             name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
@@ -711,23 +686,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                         </View>
                     </View>
 
-                    <TextInput 
-                        placeholder="Traitements"
-                        value={newDisease.medications}
-                        onChangeText={(text: string) => setNewDisease({ ...newDisease, medications: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                    
 
                     <TextInput 
                         placeholder="Examens" 
@@ -766,7 +725,6 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                     description: '',
                                     symptoms: '',
                                     beginDate: '',
-                                    medications: '',
                                     examens: '',
                                 });
                                 setSelectedYear(2024);
@@ -890,23 +848,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                             </View>
                         </View>
 
-                        <TextInput 
-                            placeholder="Traitements" 
-                            value={editedDisease.medications}
-                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, medications: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'}
-                        />
+                        
 
                         <TextInput 
                             placeholder="Examens" 
