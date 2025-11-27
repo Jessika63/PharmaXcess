@@ -10,7 +10,7 @@ def forgot_password():
     data = request.get_json()
     email = data.get("email")
     if not email:
-        return jsonify({"error": "Email requis"}), 400
+        return jsonify({"error": "Email required"}), 400
 
     reset_token = str(uuid.uuid4())
     expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
