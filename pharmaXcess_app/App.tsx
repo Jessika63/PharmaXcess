@@ -27,8 +27,7 @@ function AppWithCORS(): React.JSX.Element {
 
     // Une fois l'enregistrement CORS réussi, afficher l'application normale
     return (
-        <ThemeProvider>
-            <FontScaleProvider>
+
                 <AuthProvider>
                     <ProfileProvider>
                         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -36,12 +35,17 @@ function AppWithCORS(): React.JSX.Element {
                         </GestureHandlerRootView>
                     </ProfileProvider>
                 </AuthProvider>
-            </FontScaleProvider>
-        </ThemeProvider>
+
     );
 }
 
 // App component serves as the root of the application, providing all context providers and the root navigation
 export default function App(): React.JSX.Element {
-    return <AppWithCORS />;
+    return (
+        <ThemeProvider>
+            <FontScaleProvider>
+                <AppWithCORS />
+            </FontScaleProvider>
+        </ThemeProvider>
+    );
 }

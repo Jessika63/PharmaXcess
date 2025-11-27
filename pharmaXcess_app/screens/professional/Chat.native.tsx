@@ -333,7 +333,7 @@ export default function Chat(): React.JSX.Element {
           <Ionicons 
             name="send" 
             size={20} 
-            color={newMessage.trim() ? '#FFFFFF' : colors.inputBorder} 
+            color={newMessage.trim() ? colors.iconPrimary : colors.inputBorder} 
           />
         </TouchableOpacity>
       </View>

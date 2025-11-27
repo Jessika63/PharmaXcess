@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, TextStyle, StyleProp, ViewStyle, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/ProfileChat.style';
+import createModalStyles from '../../styles/ModalForm.style'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
@@ -34,6 +35,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
     const styles = createStyles(colors, fontScale);
+    const modalStyles = createModalStyles(colors, fontScale);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     
@@ -124,45 +126,6 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
     const handleInputChange = (field: keyof PatientInfo, value: string | number): void => {
         setEditedInfo(prev => ({ ...prev, [field]: value }));
     };
-
-    // Local styles for modal and inputs
-    const modalStyles = StyleSheet.create({
-        modalContainer: {
-            flex: 1,
-            backgroundColor: colors.background,
-        },
-        modalTitle: {
-            fontSize: 24 * fontScale,
-            fontWeight: 'bold',
-            marginBottom: 20,
-            color: colors.settingsTitle,
-            textAlign: 'center',
-        },
-        input: {
-            width: '100%',
-            padding: 15,
-            borderWidth: 2,
-            borderColor: colors.inputBorder,
-            borderRadius: 10,
-            marginBottom: 15,
-            backgroundColor: colors.inputBackground,
-            fontSize: 16 * fontScale,
-            color: colors.infoText,
-        },
-        label: {
-            fontSize: 16 * fontScale,
-            fontWeight: '600',
-            marginBottom: 8,
-            color: colors.settingsTitle,
-        },
-        scrollContainer: {
-            backgroundColor: colors.background,
-        },
-        scrollContent: {
-            padding: 20,
-            paddingBottom: 30,
-        },
-    });
 
     return (
         <ScrollView 
@@ -381,7 +344,7 @@ export default function PersonalInfo({ navigation }: PersonalInfoProps) : React.
                             </TouchableOpacity>
                             
                             <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>

@@ -86,7 +86,7 @@ export default function Home({ navigation }: HomeProps): React.JSX.Element {
                 <Text style={{ 
                     fontSize: 24 * fontScale,
                     fontWeight: 'bold',
-                    color: colors.text,
+                    color: colors.profileText,
                     textAlign: 'center',
                     marginBottom: 5
                 }}>

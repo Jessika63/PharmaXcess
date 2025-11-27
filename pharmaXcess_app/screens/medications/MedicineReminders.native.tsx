@@ -888,7 +888,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(false)}>
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>

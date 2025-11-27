@@ -4,11 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/CardGrid.style';
+import createGridStyles from '../../styles/ProfileGrid.style'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
-import QRCodeModal from '../../components/QRCodeModal';
+import QRCodeModal from '../../components/QRCodeModal'; 
+
 
 type ProfileProps = {
     navigation: StackNavigationProp<any, any>;
@@ -27,6 +29,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
     const { user, logout } = useAuth();
     const { currentProfile, profiles } = useProfile();
     const styles = createStyles(colors, fontScale);
+    const gridStyles = createGridStyles(colors, fontScale);
 
     // State for QR code modal 
     const [isQRModalVisible, setIsQRModalVisible] = useState(false);
@@ -112,52 +115,67 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}> 
                             <Image 
                                 source={{ uri: getAvatarUrl() }} 
-                                style={[styles.profileImage, { width: 40, height: 40, marginRight: 15 }]} 
+                                style={[styles.profileImage, { width: 40, height: 40, marginLeft: 15 }]} 
                             />
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.cardText, { color: '#fff', fontSize: 16, fontWeight: 'bold' }]}>
+                                <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 16, fontWeight: 'bold' }]}>
                                     {currentProfile?.name || 'Aucun profil sélectionné'}
                                 </Text>
-                                <Text style={[styles.cardText, { color: '#fff', fontSize: 12, opacity: 0.9 }]}>
+                                <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 12, opacity: 0.9 }]}>
                                     {getRelationshipText(currentProfile?.relationship)}
                                 </Text>
                                 {profiles.length > 1 && (
-                                    <Text style={[styles.cardText, { color: '#fff', fontSize: 11, opacity: 0.8 }]}>
+                                    <Text style={[styles.cardText, { color: colors.iconPrimary, fontSize: 11, opacity: 0.8 }]}>
                                         {profiles.length - 1} autre(s) profil(s) disponible(s)
                                     </Text>
                                 )}
                             </View>
                         </View>
                         <View style={{ alignItems: 'center'}}> 
-                            <Ionicons name="people" size={24} color="#fff" /> 
-                            <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginTop: 2 }} />
+                            <Ionicons name="people" size={24} color={colors.iconPrimary} style={{ marginRight: 15 }} /> 
+                            <Ionicons name="chevron-forward" size={16} color={colors.iconPrimary} style={{ marginTop: 2 }} />
                         </View>
                     </View>
                 </LinearGradient>
             </TouchableOpacity>
 
             {/* Current profile information */}
-            <View style={styles.profileContainer}>
+            <View style={[styles.profileContainer, { marginBottom: 50 }]}>
                 <Image source={{ uri: getAvatarUrl() }} style={styles.profileImage} />
                 <Text style={styles.profileName}>
                     {currentProfile?.name || user?.name || 'Utilisateur'}
                 </Text>
             </View>
-            {/* Map through the items array to create a card for each profile item */}
-            {items.map((item, index) => (
-                <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate(item.route)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
-                        <Text style={styles.cardText}>{item.title}</Text>
-                        <Ionicons name={item.icon} size={24} color={colors.iconPrimary} style={styles.icon} />
-                    </LinearGradient>
-                </TouchableOpacity>
-            ))}
+            
+            {/* Grid of square cards for profile sections */}
+            <View style={gridStyles.gridContainer}>
+                {items.map((item, index) => (
+                    <TouchableOpacity 
+                        key={index} 
+                        style={gridStyles.gridCard} 
+                        onPress={() => navigation.navigate(item.route)}
+                    >
+                        <LinearGradient 
+                            colors={[colors.primary, colors.secondary]} 
+                            style={gridStyles.gridCardGradient}
+                        >
+                            <Ionicons 
+                                name={item.icon} 
+                                size={40} 
+                                color={colors.iconPrimary} 
+                                style={gridStyles.gridCardIcon} 
+                            />
+                            <Text style={gridStyles.gridCardText}>{item.title}</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                ))}
+            </View>
             
             {/* Logout button */}
             <TouchableOpacity style={[styles.card, { marginTop: 20 }]} onPress={handleLogout}>
-                <LinearGradient colors={['#ff6b6b', '#ee5a52']} style={styles.cardGradient}>
+                <LinearGradient colors={[colors.error, colors.error]} style={styles.cardGradient}>
                     <Text style={styles.cardText}>Se déconnecter</Text>
-                    <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
+                    <Ionicons name="log-out-outline" size={24} color={colors.iconPrimary} style={styles.icon} />
                 </LinearGradient>
             </TouchableOpacity>
 

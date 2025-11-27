@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import createStyles from '../../styles/ProfileInfos.style';
+import createModalStyles from '../../styles/ModalForm.style'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
@@ -31,6 +32,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     const { currentProfile } = useProfile();
     const { hospitalizations: profileHospitalizations, addHospitalization, removeHospitalization } = useProfileData();
     const styles = createStyles(colors, fontScale);
+    const modalStyles = createModalStyles(colors, fontScale);
 
     // Hospitalizations predefined for the main profile 
     const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([
@@ -304,7 +306,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Header for current profile */}
                 {currentProfile && (
                     <View style={[styles.card, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
@@ -467,79 +469,63 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         )}
                     </> 
                 )}
-
-                {/* Button to add a new hospitalization */} 
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Ajouter</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                            <Text style={styles.buttonText}>Retour</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
             </ScrollView>
+
+            {/* Button to add a new hospitalization - Fixed at bottom */} 
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                        <Text style={styles.buttonText}>Ajouter</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                        <Text style={styles.buttonText}>Retour</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
 
             {/* Modal for adding a new hospitalization - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        backgroundColor: colors.background,
-                        padding: 20
-                    }}
-                    keyboardShouldPersistTaps="handled"
-                > 
-                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                        Ajouter une hospitalisation 
-                    </Text>
+                <View style={modalStyles.modalContainer}>
+                    <ScrollView
+                        contentContainerStyle={modalStyles.scrollContent}
+                        showsVerticalScrollIndicator={true}
+                        bounces={true}
+                    > 
+                        <Text style={modalStyles.modalTitle}>
+                            Ajouter une hospitalisation 
+                        </Text>
 
-                    <TextInput 
-                        placeholder="Nom/Motif" 
-                        value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
-                        onChangeText={(text) => {
-                            if (isMainProfile) {
-                                setNewHospitalization({ ...newHospitalization, name: text })
-                            } else {
-                                setNewHospitalizationSimple(text);
-                                // For other profiles, also update newHospitalization.name for consistency
-                                setNewHospitalization({ ...newHospitalization, name: text });
-                            }
-                        }}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text
-                        }}
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Nom/Motif</Text>
+                        <TextInput 
+                            placeholder="Nom ou motif de l'hospitalisation" 
+                            value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
+                            onChangeText={(text) => {
+                                if (isMainProfile) {
+                                    setNewHospitalization({ ...newHospitalization, name: text })
+                                } else {
+                                    setNewHospitalizationSimple(text);
+                                    // For other profiles, also update newHospitalization.name for consistency
+                                    setNewHospitalization({ ...newHospitalization, name: text });
+                                }
+                            }}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <TextInput 
-                        placeholder="Description" 
-                        value={newHospitalization.description}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, description: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Description</Text>
+                        <TextInput 
+                            placeholder="Description détaillée" 
+                            value={newHospitalization.description}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, description: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date d'entrée</Text>
+                        <Text style={modalStyles.label}>Date d'entrée</Text>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
                         <View style={{ flex: 1, marginRight: 5 }}> 
                             <CustomPicker 
@@ -570,7 +556,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         </View>
                     </View>
 
-                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date de sortie</Text>
+                    <Text style={[modalStyles.label]}>Date de sortie</Text>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
                         <View style={{ flex: 1, marginRight: 5 }}> 
                             <CustomPicker 
@@ -601,330 +587,232 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                         </View>
                     </View>
 
-                    <TextInput 
-                        placeholder="Service/Département"
-                        value={newHospitalization.department}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, department: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text
-                        }}
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Service/Département</Text>
+                        <TextInput 
+                            placeholder="Service ou département"
+                            value={newHospitalization.department}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, department: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <TextInput 
-                        placeholder="Hôpital"
-                        value={newHospitalization.hospital}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, hospital: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text
-                        }}
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Hôpital</Text>
+                        <TextInput 
+                            placeholder="Nom de l'hôpital"
+                            value={newHospitalization.hospital}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, hospital: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <TextInput 
-                        placeholder="Médecin responsable"
-                        value={newHospitalization.doctor}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, doctor: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text
-                        }}
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Médecin responsable</Text>
+                        <TextInput 
+                            placeholder="Nom du médecin responsable"
+                            value={newHospitalization.doctor}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, doctor: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <TextInput 
-                        placeholder="Traitements"
-                        value={newHospitalization.medications}
-                        onChangeText={(text) => setNewHospitalization({ ...newHospitalization, medications: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 30,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+                        <Text style={modalStyles.label}>Traitements</Text>
+                        <TextInput 
+                            placeholder="Traitements administrés"
+                            value={newHospitalization.medications}
+                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, medications: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-                        <TouchableOpacity 
-                            style={{ 
-                                flex: 1, 
-                                padding: 15, 
-                                borderRadius: 10, 
-                                backgroundColor: colors.secondary + '30',
-                                marginRight: 10,
-                                alignItems: 'center'
-                            }}
-                            onPress={() => {
-                                setModalVisible(false);
-                                // Reset all fields for both main and other profiles
-                                setNewHospitalizationSimple('');
-                                setNewHospitalization({
-                                    name: '',
-                                    description: '',
-                                    beginDate: '',
-                                    endDate: '',
-                                    department: '',
-                                    hospital: '',
-                                    doctor: '',
-                                    medications: '',
-                                });
-                                setSelectedBeginYear(2024);
-                                setSelectedBeginMonth(1);
-                                setSelectedBeginDay(1); 
-                                setSelectedEndYear(2024);
-                                setSelectedEndMonth(1);
-                                setSelectedEndDay(1); 
-                            }}
-                        >
-                            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={{ 
-                                flex: 1, 
-                                padding: 15, 
-                                borderRadius: 10, 
-                                backgroundColor: colors.primary,
-                                marginLeft: 10, 
-                                alignItems: 'center'
-                            }}
-                            onPress={isMainProfile ? handleAddPress : handleAddSimpleHospitalization}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ScrollView>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={isMainProfile ? handleAddPress : handleAddSimpleHospitalization}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                                style={styles.button}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    // Reset all fields for both main and other profiles
+                                    setNewHospitalizationSimple('');
+                                    setNewHospitalization({
+                                        name: '',
+                                        description: '',
+                                        beginDate: '',
+                                        endDate: '',
+                                        department: '',
+                                        hospital: '',
+                                        doctor: '',
+                                        medications: '',
+                                    });
+                                    setSelectedBeginYear(2024);
+                                    setSelectedBeginMonth(1);
+                                    setSelectedBeginDay(1); 
+                                    setSelectedEndYear(2024);
+                                    setSelectedEndMonth(1);
+                                    setSelectedEndDay(1); 
+                                }}
+                            >
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
             </Modal>
 
             {/* Editing modal for the main profile */} 
             {isMainProfile && ( 
-                <Modal visible={isEditModalVisible} animationType="slide"> 
-                    <ScrollView 
-                        contentContainerStyle={{ 
-                            flexGrow: 1, 
-                            backgroundColor: colors.background,
-                            padding: 20
-                        }}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                            Modifier l'hospitalisation 
-                        </Text>
+                <Modal visible={isEditModalVisible} animationType="slide">
+                    <View style={modalStyles.modalContainer}>
+                        <ScrollView 
+                            contentContainerStyle={modalStyles.scrollContent}
+                            showsVerticalScrollIndicator={true}
+                            bounces={true}
+                        >
+                            <Text style={modalStyles.modalTitle}>
+                                Modifier l'hospitalisation 
+                            </Text>
 
-                        <TextInput 
-                            placeholder="Nom/Motif" 
-                            value={editedHospitalization.name}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, name: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
-                            placeholderTextColor={colors.text + '80'}
-                        />
+                            <Text style={modalStyles.label}>Nom/Motif</Text>
+                            <TextInput 
+                                placeholder="Nom ou motif de l'hospitalisation" 
+                                value={editedHospitalization.name}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, name: text })}
+                                style={modalStyles.input}
+                                placeholderTextColor={colors.inputBorder}
+                            />
 
-                        <TextInput 
-                            placeholder="Description" 
-                            value={editedHospitalization.description}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, description: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'}
-                        />
+                            <Text style={modalStyles.label}>Description</Text>
+                            <TextInput 
+                                placeholder="Description détaillée" 
+                                value={editedHospitalization.description}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, description: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
 
-                        <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date d'entrée</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                            <View style={{ flex: 1, marginRight: 5 }}> 
-                                <CustomPicker 
-                                    label="Jour" 
-                                    selectedValue={editSelectedBeginDay} 
-                                    onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
-                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
-                                    placeholder="01"
-                                />
+                            <Text style={modalStyles.label}>Date d'entrée</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                                <View style={{ flex: 1, marginRight: 5 }}> 
+                                    <CustomPicker 
+                                        label="Jour" 
+                                        selectedValue={editSelectedBeginDay} 
+                                        onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                        options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                    <CustomPicker 
+                                        label="Mois" 
+                                        selectedValue={editSelectedBeginMonth} 
+                                        onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                        options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 5 }}> 
+                                    <CustomPicker 
+                                        label="Année" 
+                                        selectedValue={editSelectedBeginYear} 
+                                        onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                        options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
+                                        placeholder="2024"
+                                    />
+                                </View>
                             </View>
-                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                                <CustomPicker 
-                                    label="Mois" 
-                                    selectedValue={editSelectedBeginMonth} 
-                                    onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
-                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
-                                    placeholder="01"
-                                />
+
+                            <Text style={modalStyles.label}>Date de sortie</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                                <View style={{ flex: 1, marginRight: 5 }}> 
+                                    <CustomPicker 
+                                        label="Jour" 
+                                        selectedValue={editSelectedEndDay} 
+                                        onValueChange={(value) => setEditSelectedEndDay(Number(value))}
+                                        options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                    <CustomPicker 
+                                        label="Mois" 
+                                        selectedValue={editSelectedEndMonth} 
+                                        onValueChange={(value) => setEditSelectedEndMonth(Number(value))}
+                                        options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 5 }}> 
+                                    <CustomPicker 
+                                        label="Année" 
+                                        selectedValue={editSelectedEndYear} 
+                                        onValueChange={(value) => setEditSelectedEndYear(Number(value))}
+                                        options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
+                                        placeholder="2024"
+                                    />
+                                </View>
                             </View>
-                            <View style={{ flex: 1, marginLeft: 5 }}> 
-                                <CustomPicker 
-                                    label="Année" 
-                                    selectedValue={editSelectedBeginYear} 
-                                    onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
-                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
-                                    placeholder="2024"
-                                />
+
+                            <Text style={modalStyles.label}>Service/Département</Text>
+                            <TextInput 
+                                placeholder="Service ou département" 
+                                value={editedHospitalization.department}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, department: text })}
+                                style={modalStyles.input}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Hôpital</Text>
+                            <TextInput 
+                                placeholder="Nom de l'hôpital" 
+                                value={editedHospitalization.hospital}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
+                                style={modalStyles.input}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Médecin responsable</Text>
+                            <TextInput 
+                                placeholder="Nom du médecin responsable" 
+                                value={editedHospitalization.doctor}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
+                                style={modalStyles.input}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Traitements</Text>
+                            <TextInput 
+                                placeholder="Traitements administrés" 
+                                value={editedHospitalization.medications}
+                                onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.button} onPress={handleSaveEdit}>
+                                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                        <Text style={styles.buttonText}>Enregistrer</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity style={styles.button} onPress={() => setEditModalVisible(false)}>
+                                    <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                        <Text style={styles.buttonText}>Annuler</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
                             </View>
-                        </View>
-
-                        <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date de sortie</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                            <View style={{ flex: 1, marginRight: 5 }}> 
-                                <CustomPicker 
-                                    label="Jour" 
-                                    selectedValue={editSelectedEndDay} 
-                                    onValueChange={(value) => setEditSelectedEndDay(Number(value))}
-                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
-                                    placeholder="01"
-                                />
-                            </View>
-                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                                <CustomPicker 
-                                    label="Mois" 
-                                    selectedValue={editSelectedEndMonth} 
-                                    onValueChange={(value) => setEditSelectedEndMonth(Number(value))}
-                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
-                                    placeholder="01"
-                                />
-                            </View>
-                            <View style={{ flex: 1, marginLeft: 5 }}> 
-                                <CustomPicker 
-                                    label="Année" 
-                                    selectedValue={editSelectedEndYear} 
-                                    onValueChange={(value) => setEditSelectedEndYear(Number(value))}
-                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
-                                    placeholder="2024"
-                                />
-                            </View>
-                        </View>
-
-                        <TextInput 
-                            placeholder="Service/Département" 
-                            value={editedHospitalization.department}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, department: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
-                            placeholderTextColor={colors.text + '80'}
-                        />
-
-                        <TextInput 
-                            placeholder="Hôpital" 
-                            value={editedHospitalization.hospital}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
-                            placeholderTextColor={colors.text + '80'}
-                        />
-
-                        <TextInput 
-                            placeholder="Médecin responsable" 
-                            value={editedHospitalization.doctor}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 15,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
-                            placeholderTextColor={colors.text + '80'}
-                        />
-
-                        <TextInput 
-                            placeholder="Traitements" 
-                            value={editedHospitalization.medications}
-                            onChangeText={(text) => setEditedHospitalization({ ...editedHospitalization, medications: text })}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 30,
-                                fontSize: 16,
-                                color: colors.text,
-                                minHeight: 80
-                            }}
-                            multiline
-                            placeholderTextColor={colors.text + '80'}
-                        />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-                            <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.secondary + '30',
-                                    marginRight: 10,
-                                    alignItems: 'center'
-                                }}
-                                onPress={() => setEditModalVisible(false)}
-                            >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.primary,
-                                    marginLeft: 10,
-                                    alignItems: 'center'
-                                }}
-                                onPress={handleSaveEdit}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Enregistrer</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                    </ScrollView>
+                        </ScrollView>
+                    </View>
                 </Modal>
             )}
         </View> 
