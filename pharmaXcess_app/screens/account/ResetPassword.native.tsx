@@ -95,20 +95,24 @@ export default function ResetPassword({ navigation, route }: Props): React.JSX.E
       return;
     }
 
+    // Note: preventing reuse of the old password requires checking against the
+    // existing password on the server. If the backend enforces "new != old",
+    // it should return a clear error message which we propagate to the UI below.
+
     try {
       const ok = await (resetPassword ? resetPassword(token, newPassword) : Promise.resolve(false));
       if (ok) {
-        setMessage('Mot de passe réinitialisé avec succès');
-        AccessibilityInfo.announceForAccessibility('Mot de passe réinitialisé avec succès');
+        const successMsg = 'Mot de passe réinitialisé avec succès';
+        setMessage(successMsg);
+        AccessibilityInfo.announceForAccessibility(successMsg);
         navigation.navigate('Login');
-      } else {
-        setMessage('Erreur lors de la réinitialisation du mot de passe');
       }
-    } catch (e) {
-      console.error('[ResetPassword] resetPassword error:', e);
-      setMessage('Erreur lors de la réinitialisation du mot de passe');
+    } catch (e: any) {
+      const errMsg = e?.message || 'Erreur lors de la réinitialisation du mot de passe';
+      setMessage(errMsg);
+      AccessibilityInfo.announceForAccessibility(errMsg);
     }
-  }, [token, newPassword, resetPassword, navigation]);
+  }, [token, newPassword, confirmPassword, resetPassword, navigation]);
 
   return (
     <View style={styles.container}>
@@ -170,7 +174,7 @@ export default function ResetPassword({ navigation, route }: Props): React.JSX.E
         <TextInput
           value={confirmPassword}
           onChangeText={(val) => {
-            setConfirmPassword(val);
+              setConfirmPassword(val);
             if (errors?.password) setErrors({});
           }}
           style={styles.input}

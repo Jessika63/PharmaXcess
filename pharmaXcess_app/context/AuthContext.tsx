@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       'Email required': 'Email requis',
       'Missing token or new password': 'Token ou nouveau mot de passe manquant',
       'Invalid or expired token': 'Token invalide ou expiré',
+      'New password must be different': "Le nouveau mot de passe doit être différent de l'ancien",
     };
     return map[errMsg] || `Erreur: ${errMsg}`;
   };
@@ -187,9 +188,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const result = await authApi.resetPassword(token, newPassword);
       if (result.ok) return true;
-      return false;
+      const err = translateBackendError(result.error);
+      setAuthError({ message: err, status: result.status });
+      throw new Error(err);
     } catch (e) {
-      return false;
+      // propagate the error so the calling screen can display the backend message
+      throw e;
     } finally {
       setIsLoading(false);
     }
