@@ -45,7 +45,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontWeight: '600',
     },
     activeTabText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
     },
     inactiveTabText: {
         color: colors.headerText,
@@ -63,7 +63,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         display: 'none',
     },
     badgeText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 12 * fontScale,
         fontWeight: 'bold',
     },
@@ -122,7 +122,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginLeft: 10,
     },
     statusText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 12 * fontScale,
         fontWeight: 'bold',
     },
@@ -199,7 +199,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         backgroundColor: colors.error,
     },
     assignmentButtonText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 16 * fontScale,
         fontWeight: 'bold',
         textAlign: 'center',
@@ -261,7 +261,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         lineHeight: 20 * fontScale,
     },
     userText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
     },
     supportText: {
         color: colors.headerText,

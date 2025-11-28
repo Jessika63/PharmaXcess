@@ -666,7 +666,7 @@ export default function ProfilPatients(): React.JSX.Element {
                     }}
                     onPress={() => handleViewDocument(document)}
                   >
-                    <Ionicons name="eye" size={20} color="#FFFFFF" />
+                    <Ionicons name="eye" size={20} color={colors.iconPrimary} />
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>
@@ -786,7 +786,7 @@ export default function ProfilPatients(): React.JSX.Element {
                   alignItems: 'center',
                   borderStyle: 'dashed',
                   borderWidth: 2,
-                  borderColor: '#000000',
+                  borderColor: colors.profileText,
                   backgroundColor: 'transparent'
                 }]}
                 onPress={() => {
@@ -800,8 +800,8 @@ export default function ProfilPatients(): React.JSX.Element {
                   );
                 }}
               >
-                <Ionicons name="cloud-upload" size={50} color="#000000" />
-                <Text style={[prescriptionStyles.prescriptionTitle, { marginTop: 15, color: '#000000' }]}>
+                <Ionicons name="cloud-upload" size={50} color={colors.profileText} />
+                <Text style={[prescriptionStyles.prescriptionTitle, { marginTop: 15, color: colors.profileText }]}>
                   Parcourir les fichiers
                 </Text>
                 <Text style={[prescriptionStyles.prescriptionText, { textAlign: 'center', marginTop: 10 }]}>
@@ -992,7 +992,7 @@ export default function ProfilPatients(): React.JSX.Element {
                   <Ionicons 
                     name={item.icon} 
                     size={40} 
-                    color="#FFFFFF" 
+                    color={colors.iconPrimary} 
                     style={styles.itemIcon}
                   />
                   <Text style={styles.itemTitle}>{item.title}</Text>
@@ -1032,7 +1032,7 @@ export default function ProfilPatients(): React.JSX.Element {
               style={styles.closeButton}
               onPress={() => setShowScanner(false)}
             >
-              <Ionicons name="close" size={24} color="#FFFFFF" />
+              <Ionicons name="close" size={24} color={colors.iconPrimary} />
             </TouchableOpacity>
           </CameraView>
         ) : (
@@ -1063,7 +1063,7 @@ export default function ProfilPatients(): React.JSX.Element {
               style={styles.scanButton}
               onPress={handleScanPress}
             >
-              <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+              <Ionicons name="qr-code-outline" size={24} color={colors.iconPrimary} />
             </TouchableOpacity>
           </View>
         </View>

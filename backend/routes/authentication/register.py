@@ -38,10 +38,10 @@ def register():
             errno = None
 
         if errno == 1062:
-            # Return a friendly message for duplicate email
-            return jsonify({"error": "Un compte existe déjà avec cet email"}), 409
-        # fallback to generic integrity error
-        return jsonify({"error": "Erreur de contrainte en base de données"}), 400
+            # Return a friendly message for duplicate email (English for backend errors)
+            return jsonify({"error": "An account already exists with this email"}), 409
+        # fallback to generic integrity error (English)
+        return jsonify({"error": "Database constraint error"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:

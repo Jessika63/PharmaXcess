@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from db_app import get_app_connection
 import datetime
 
@@ -16,12 +16,30 @@ def reset_password():
     if token == "token_non_existant":
         return jsonify({"message": "Si un compte existe pour cet email, vous recevrez un lien pour réinitialiser le mot de passe"}), 200
 
-    hashed_password = generate_password_hash(new_password)
-
     conn = None
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
+            # First, find the user by token and ensure token not expired
+            cursor.execute(
+                """SELECT mot_de_passe FROM utilisateurs
+                   WHERE reset_token=%s AND reset_token_expiration > %s""",
+                (token, datetime.datetime.now())
+            )
+            row = cursor.fetchone()
+
+            if not row:
+                return jsonify({"error": "Invalid or expired token"}), 400
+
+            # row is a dict (DictCursor) with key 'mot_de_passe'
+            current_hashed = row.get('mot_de_passe') if isinstance(row, dict) else (row[0] if row else None)
+
+            # Disallow reusing the same password
+            if current_hashed and check_password_hash(current_hashed, new_password):
+                return jsonify({"error": "New password must be different"}), 400
+
+            # Update to the new hashed password and clear the token
+            hashed_password = generate_password_hash(new_password)
             cursor.execute(
                 """UPDATE utilisateurs 
                    SET mot_de_passe=%s, 

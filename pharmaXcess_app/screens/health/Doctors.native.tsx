@@ -494,16 +494,18 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
             style={styles.input}
           />
           
-          <CustomPicker
-            label="Spécialité"
-            selectedValue={newDoctor.specialty}
-            onValueChange={(value: string | number) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
-            options={specialties.map(specialty => ({ 
-              label: specialty, 
-              value: specialty 
-            }))}
-            placeholder="Sélectionner une spécialité"
-          />
+          <View style={{ width: '100%' }}>
+            <CustomPicker
+              label="Spécialité"
+              selectedValue={newDoctor.specialty}
+              onValueChange={(value: string | number) => setNewDoctor({ ...newDoctor, specialty: String(value) })}
+              options={specialties.map(specialty => ({ 
+                label: specialty, 
+                value: specialty 
+              }))}
+              placeholder="Sélectionner une spécialité"
+            />
+          </View>
           
           <TextInput
             placeholder="Téléphone"
@@ -553,7 +555,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
                 hospital: '',
               });
             }} style={styles.button}>
-              <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+              <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Annuler</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -576,16 +578,18 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
             style={styles.input}
           />
           
-          <CustomPicker
-            label="Spécialité"
-            selectedValue={editedDoctor.specialty}
+          <View style={{ width: '100%' }}>
+            <CustomPicker
+              label="Spécialité"
+              selectedValue={editedDoctor.specialty}
             onValueChange={(value: string | number) => setEditedDoctor({ ...editedDoctor, specialty: String(value) })}
-            options={specialties.map(specialty => ({ 
-              label: specialty, 
-              value: specialty 
-            }))}
-            placeholder="Sélectionner une spécialité"
-          />
+              options={specialties.map(specialty => ({ 
+                label: specialty, 
+                value: specialty 
+              }))}
+              placeholder="Sélectionner une spécialité"
+            />
+          </View>
           
           <TextInput
             placeholder="Téléphone"
@@ -623,7 +627,7 @@ export default function Doctors({ navigation }: DoctorsProps): React.JSX.Element
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-              <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+              <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                 <Text style={styles.buttonText}>Annuler</Text>
               </LinearGradient>
             </TouchableOpacity>
