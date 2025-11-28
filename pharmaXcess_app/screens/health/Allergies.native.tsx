@@ -470,12 +470,19 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 />
                             </View>
                         </View>
-                        <TextInput
-                            placeholder="Gravité"
-                            value={newAllergy.severity}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
-                            style={styles.input}
-                        />
+                        <View style={{ width: '100%' }}>
+                            <CustomPicker
+                                label="Gravité"
+                                selectedValue={newAllergy.severity}
+                                onValueChange={(value) => setNewAllergy({ ...newAllergy, severity: String(value) })}
+                                options={[
+                                    { label: 'Légère', value: 'Légère' },
+                                    { label: 'Modérée', value: 'Modérée' },
+                                    { label: 'Sévère', value: 'Sévère' }
+                                ]}
+                                placeholder="Sélectionner"
+                            />
+                        </View>
                         <TextInput
                             placeholder="Symptômes"
                             value={newAllergy.symptoms}
@@ -520,7 +527,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 }} 
                                 style={styles.button}
                             >
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -580,17 +587,19 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             />
                         </View>
                     </View>
-                    <CustomPicker
-                        label="Gravité"
-                        selectedValue={editedAllergy.severity}
-                        onValueChange={(value) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
-                        options={[
-                            { label: 'Légère', value: 'Légère' },
-                            { label: 'Modérée', value: 'Modérée' },
-                            { label: 'Sévère', value: 'Sévère' }
-                        ]}
-                        placeholder="Sélectionner"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Gravité"
+                            selectedValue={editedAllergy.severity}
+                            onValueChange={(value) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
+                            options={[
+                                { label: 'Légère', value: 'Légère' },
+                                { label: 'Modérée', value: 'Modérée' },
+                                { label: 'Sévère', value: 'Sévère' }
+                            ]}
+                            placeholder="Sélectionner"
+                        />
+                    </View>
                     <TextInput
                         placeholder="Symptômes"
                         value={editedAllergy.symptoms}
@@ -620,7 +629,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

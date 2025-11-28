@@ -60,9 +60,9 @@ export default function Localisation(): React.ReactElement {
 
   // Transport mode state 
   const transportOptions: TransportOption[] = [
-    { mode: 'driving', icon: '🚗', label: 'Voiture', color: '#F57196' },
-    { mode: 'cycling', icon: '🚴', label: 'Vélo', color: '#F57196' },
-    { mode: 'walking', icon: '🚶', label: 'À pied', color: '#F57196' },
+    { mode: 'driving', icon: '🚗', label: 'Voiture', color: colors.secondary },
+    { mode: 'cycling', icon: '🚴', label: 'Vélo', color: colors.secondary },
+    { mode: 'walking', icon: '🚶', label: 'À pied', color: colors.secondary },
   ];
 
   // Helper to map backend transport strings to our TransportMode
@@ -671,16 +671,14 @@ export default function Localisation(): React.ReactElement {
 
       setRouteCoordinates(coords);
       
-      // Close the panel smoothly to better see the route
-      if (isPanelOpen) {
-        setIsPanelOpen(false);
-        Animated.spring(translateY, {
-          toValue: panelHeight - peekHeight,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }).start();
-      }
+      // Close the panel smoothly to better see the route and navigation button
+      setIsPanelOpen(false);
+      Animated.spring(translateY, {
+        toValue: panelHeight - peekHeight,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }).start();
     } catch (err) {
       console.error('Erreur fetch direction:', err);
       Alert.alert('Erreur', "Impossible de recuperer l'itineraire");
@@ -715,27 +713,15 @@ export default function Localisation(): React.ReactElement {
           </Text>
         </View>
         {item.distance && item.distance <= 2 && (
-          <View style={{
-            backgroundColor: '#4CAF50',
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 12,
-            alignSelf: 'center'
-          }}>
-            <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+          <View style={styles.statusBadgeClose}>
+            <Text style={styles.statusBadgeText}>
               PROCHE
             </Text>
           </View>
         )}
         {item.distance && item.distance > 5 && (
-          <View style={{
-            backgroundColor: '#F44336',
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 12,
-            alignSelf: 'center'
-          }}>
-            <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+          <View style={styles.statusBadgeFar}>
+            <Text style={styles.statusBadgeText}>
               LOIN
             </Text>
           </View>
@@ -765,7 +751,7 @@ export default function Localisation(): React.ReactElement {
           <Marker
             coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
             title="Votre position"
-            pinColor="#F57196"
+            pinColor={colors.secondary}
           />
           
           {/* Pin the pharmacies locations */}
@@ -797,52 +783,30 @@ export default function Localisation(): React.ReactElement {
 
       {/* Navigation in real-time */}
       {isNavigating && (
-        <View style={{
-          position: 'absolute',
-          top: 60,
-          left: 16,
-          right: 16,
-          backgroundColor: colors.background,
-          borderRadius: 12,
-          padding: 16,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ fontSize: 24 }}>
+        <View style={styles.navigationContainer}>
+          <View style={styles.navigationHeader}>
+            <Text style={styles.navigationIcon}>
               {transportOptions.find(opt => opt.mode === selectedTransportMode)?.icon}
             </Text>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>
+            <View style={styles.navigationInfo}>
+              <Text style={styles.navigationDistance}>
                 {remainingDistance} • {estimatedTime}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.infoTextSecondary }}>
+              <Text style={styles.navigationDestination}>
                 vers {selectedDistributor?.name}
               </Text>
             </View>
             <TouchableOpacity 
               onPress={stopNavigation}
-              style={{
-                backgroundColor: '#FF5252',
-                borderRadius: 20,
-                padding: 8,
-              }}
+              style={styles.stopButton}
             >
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>STOP</Text>
+              <Text style={styles.stopButtonText}>STOP</Text>
             </TouchableOpacity>
           </View>
           
           {nextInstruction && (
-            <View style={{
-              backgroundColor: colors.primary + '20',
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 8,
-            }}>
-              <Text style={{ fontSize: 16, color: colors.text, fontWeight: '500' }}>
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>
                 🔄 {nextInstruction.replace(/<[^>]*>/g, '')}
               </Text>
             </View>
@@ -850,48 +814,13 @@ export default function Localisation(): React.ReactElement {
         </View>
       )}
 
-      {/* Button to open QR scanner */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          top: 60,
-          right: 16,
-          backgroundColor: colors.background,
-          borderRadius: 25,
-          width: 50,
-          height: 50,
-          justifyContent: 'center',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        }}
-        onPress={openQRScanner}
-      >
-        <Text style={{ fontSize: 15 }}>📷</Text>
-      </TouchableOpacity>
-
       {/* Button to recenter the map */}
       {location && (
         <TouchableOpacity
-          style={{
-            position: 'absolute',
+          style={[styles.recenterButton, {
             bottom: isNavigating ? 140 : (isPanelOpen ? 400 : 200),
             right: 16,
-            backgroundColor: colors.background,
-            borderRadius: 25,
-            width: 50,
-            height: 50,
-            justifyContent: 'center',
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}
+          }]}
           onPress={() => {
             if (mapRef.current && location) {
               mapRef.current.animateToRegion({
@@ -903,72 +832,47 @@ export default function Localisation(): React.ReactElement {
             }
           }}
         >
-          <Text style={{ fontSize: 20 }}>📍</Text>
+          <Text style={styles.recenterIcon}>📍</Text>
         </TouchableOpacity>
       )}
 
+      {/* Button to open QR scanner - positioned above the location button */}
+      <TouchableOpacity
+        style={[styles.qrButton, {
+          bottom: isNavigating ? 200 : (isPanelOpen ? 460 : 260),
+          right: 16,
+        }]}
+        onPress={openQRScanner}
+      >
+        <Text style={styles.qrIcon}>📷</Text>
+      </TouchableOpacity>
+
       {/* Sliding panel at the bottom */}
       <Animated.View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
+        style={[styles.slidingPanel, {
           height: panelHeight,
-          backgroundColor: colors.background,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.27,
-          shadowRadius: 4.65,
-          elevation: 6,
           transform: [{ translateY }],
-        }}
+        }]}
       >
         {/* Swipe handle with visual indicator */}
         <TouchableOpacity 
           onPress={togglePanel} 
-          style={{
-            alignItems: 'center',
-            paddingVertical: 15,
-            paddingHorizontal: 50,
-          }}
+          style={styles.swipeHandle}
         >
-          <View style={{
-            width: 40,
-            height: 4,
+          <View style={[styles.swipeIndicator, {
             backgroundColor: isPanelOpen ? colors.primary : colors.inputBorder,
-            borderRadius: 2,
-          }} />
-          <Text style={{ 
-            fontSize: 12, 
-            color: colors.infoTextSecondary,
-            marginTop: 4, 
-          }}>
+          }]} />
+          <Text style={styles.swipeText}>
             {isPanelOpen ? '▼ Réduire' : '▲ Voir plus'}
           </Text>
         </TouchableOpacity>
 
         {/* Panel header */}
-        <View style={{
-          paddingHorizontal: 20,
-          paddingBottom: 10,
-        }}>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: colors.text,
-            textAlign: 'center',
-          }}>
+        <View style={styles.panelHeader}>
+          <Text style={styles.panelTitle}>
             📍 {distributors.length} pharmacies trouvées
           </Text>
-          <Text style={{
-            fontSize: 14,
-            color: colors.infoTextSecondary,
-            textAlign: 'center',
-            marginTop: 4,
-          }}>
+          <Text style={styles.panelSubtitle}>
             Triées par distance
           </Text>
         </View>
@@ -992,37 +896,24 @@ export default function Localisation(): React.ReactElement {
 
                 
                 {/* Transportation mode selector */}
-                <Text style={[styles.text, { fontSize: 16, fontWeight: 'bold', marginTop: 15, marginBottom: 10 }]}>
+                <Text style={styles.transportModeLabel}>
                   🚶 Mode de transport :
                 </Text>
-                <View style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                  marginBottom: 15,
-                }}>
+                <View style={styles.transportModeContainer}>
                   {transportOptions.map((option) => (
                     <TouchableOpacity
                       key={option.mode}
-                      style={{
-                        flex: 1,
-                        minWidth: '48%',
+                      style={[styles.transportModeButton, {
                         backgroundColor: selectedTransportMode === option.mode ? option.color : colors.inputBorder + '40',
-                        borderRadius: 8,
-                        padding: 12,
-                        margin: 2,
-                        alignItems: 'center',
-                        borderWidth: 2,
                         borderColor: selectedTransportMode === option.mode ? option.color : 'transparent',
-                      }}
+                      }]}
                       onPress={() => setSelectedTransportMode(option.mode)}
                     >
-                      <Text style={{ fontSize: 20, marginBottom: 4 }}>{option.icon}</Text>
-                      <Text style={{
-                        fontSize: 12,
+                      <Text style={styles.transportModeIcon}>{option.icon}</Text>
+                      <Text style={[styles.transportModeText, {
                         fontWeight: selectedTransportMode === option.mode ? 'bold' : 'normal',
-                        color: selectedTransportMode === option.mode ? 'white' : colors.text,
-                      }}>
+                        color: selectedTransportMode === option.mode ? 'white' : colors.profileText,
+                      }]}>
                         {option.label}
                       </Text>
                     </TouchableOpacity>
@@ -1040,10 +931,10 @@ export default function Localisation(): React.ReactElement {
                 {/* Navigation button in real-time  */}
                 {routeCoordinates.length > 0 && !isNavigating && (
                   <TouchableOpacity 
-                    style={[styles.goButton, { marginTop: 8, backgroundColor: '#4CAF50' }]} 
+                    style={[styles.goButton, styles.startNavigationButton]} 
                     onPress={startNavigation}
                   >
-                    <View style={[styles.gradientButton, { backgroundColor: '#4CAF50' }]}>
+                    <View style={[styles.gradientButton, styles.startNavigationButton]}>
                       <Text style={styles.text}>
                         🧭 Démarrer la navigation
                       </Text>
@@ -1062,26 +953,18 @@ export default function Localisation(): React.ReactElement {
         animationType="slide"
         onRequestClose={closeQRScanner}
       >
-        <View style={{ flex: 1, backgroundColor: 'black' }}>
+        <View style={styles.modalContainer}>
           {/* Scanner header  */}
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: 20,
-          }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+          <View style={styles.scannerHeader}>
+            <View style={styles.scannerHeaderRow}>
+              <Text style={styles.scannerTitle}>
                 Scanner QR Code
               </Text>
               <TouchableOpacity onPress={closeQRScanner}>
-                <Text style={{ color: 'white', fontSize: 16 }}>✕ Fermer</Text>
+                <Text style={styles.scannerClose}>✕ Fermer</Text>
               </TouchableOpacity>
             </View>
-            <Text style={{ color: 'white', fontSize: 14, marginTop: 5 }}>
+            <Text style={styles.scannerInstructions}>
               Scannez un QR code de pharmacie pour charger l'itinéraire
             </Text>
             {/* Manual code entry as alternative to scanning */}
@@ -1117,77 +1000,18 @@ export default function Localisation(): React.ReactElement {
               onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
             >
               {/* Scanner view */}
-              <View style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <View style={{
-                  width: 250,
-                  height: 250,
-                  borderWidth: 2,
-                  borderColor: 'white',
-                  borderRadius: 20,
-                  backgroundColor: 'transparent',
-                }}>
-                  <View style={{
-                    position: 'absolute',
-                    top: -10,
-                    left: -10,
-                    width: 40,
-                    height: 40,
-                    borderLeftWidth: 4,
-                    borderTopWidth: 4,
-                    borderColor: '#4CAF50',
-                    borderTopLeftRadius: 20,
-                  }} />
-                  <View style={{
-                    position: 'absolute',
-                    top: -10,
-                    right: -10,
-                    width: 40,
-                    height: 40,
-                    borderRightWidth: 4,
-                    borderTopWidth: 4,
-                    borderColor: '#4CAF50',
-                    borderTopRightRadius: 20,
-                  }} />
-                  <View style={{
-                    position: 'absolute',
-                    bottom: -10,
-                    left: -10,
-                    width: 40,
-                    height: 40,
-                    borderLeftWidth: 4,
-                    borderBottomWidth: 4,
-                    borderColor: '#4CAF50',
-                    borderBottomLeftRadius: 20,
-                  }} />
-                  <View style={{
-                    position: 'absolute',
-                    bottom: -10,
-                    right: -10,
-                    width: 40,
-                    height: 40,
-                    borderRightWidth: 4,
-                    borderBottomWidth: 4,
-                    borderColor: '#4CAF50',
-                    borderBottomRightRadius: 20,
-                  }} />
+              <View style={styles.scannerView}>
+                <View style={styles.scannerBox}>
+                  <View style={[styles.scannerCorner, styles.scannerCornerTopLeft]} />
+                  <View style={[styles.scannerCorner, styles.scannerCornerTopRight]} />
+                  <View style={[styles.scannerCorner, styles.scannerCornerBottomLeft]} />
+                  <View style={[styles.scannerCorner, styles.scannerCornerBottomRight]} />
                 </View>
               </View>
 
               {/* Scanner view */}
-              <View style={{
-                position: 'absolute',
-                bottom: 60,
-                left: 20,
-                right: 20,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 10,
-                padding: 15,
-              }}>
-                <Text style={{ color: 'white', fontSize: 16, textAlign: 'center' }}>
+              <View style={styles.scannerStatus}>
+                <Text style={styles.scannerStatusText}>
                   {scanned ? '✅ QR Code détecté!' : 'Pointez votre caméra vers le QR code'}
                 </Text>
               </View>
@@ -1196,23 +1020,18 @@ export default function Localisation(): React.ReactElement {
 
           {/* Message if there is not permission for the camera */}
           {hasCameraPermission === false && (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-              <Text style={{ color: 'white', fontSize: 18, textAlign: 'center', marginBottom: 20 }}>
+            <View style={styles.noPermissionContainer}>
+              <Text style={styles.noPermissionText}>
                 Permission caméra requise
               </Text>
               <TouchableOpacity
-                style={{
-                  backgroundColor: '#4CAF50',
-                  padding: 15,
-                  borderRadius: 10,
-                  marginBottom: 10,
-                }}
+                style={styles.allowCameraButton}
                 onPress={requestCameraPermission}
               >
-                <Text style={{ color: 'white', fontSize: 16 }}>Autoriser la caméra</Text>
+                <Text style={styles.allowCameraText}>Autoriser la caméra</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={closeQRScanner}>
-                <Text style={{ color: 'white', fontSize: 16 }}>Annuler</Text>
+                <Text style={styles.cancelText}>Annuler</Text>
               </TouchableOpacity>
             </View>
           )}

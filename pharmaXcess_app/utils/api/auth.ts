@@ -18,13 +18,25 @@ async function postJson<T = any>(url: string, body: any): Promise<ApiResult<T>> 
       body: JSON.stringify(body),
     });
 
-    const json = await res.json().catch(() => ({}));
-
-    if (res.ok) {
-      return { ok: true, data: json, status: res.status };
+    // Try to parse JSON response; if parsing fails, fallback to raw text
+    let json: any = {};
+    let textBody: string | null = null;
+    try {
+      json = await res.json();
+    } catch (e) {
+      try {
+        textBody = await res.text();
+      } catch (e2) {
+        textBody = null;
+      }
     }
 
-    return { ok: false, error: json?.error || json?.message || 'Request failed', status: res.status };
+    if (res.ok) {
+      return { ok: true, data: json || (textBody as any) || undefined, status: res.status };
+    }
+
+    const backendError = json?.error || json?.message || textBody || res.statusText || 'Request failed';
+    return { ok: false, error: backendError, status: res.status };
   } catch (error: any) {
     return { ok: false, error: error?.message || String(error) };
   }

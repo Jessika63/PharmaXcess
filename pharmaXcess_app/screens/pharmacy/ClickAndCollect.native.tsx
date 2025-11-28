@@ -154,11 +154,9 @@ export default function ClickAndCollect(): React.JSX.Element {
       {cameraVisible ? (
         // The camera view is the camera is visible. 
         <CameraView style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
-          {/* Display a title and a button to take a picture */}
+          {/* Display a button at the bottom to take a picture */}
           <TouchableOpacity style={styles.cameraButton} onPress={takePicture}>
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-              <Text style={styles.buttonText}>Prendre la photo</Text>
-            </LinearGradient>
+            <Text style={styles.cameraIcon}>📷</Text>
           </TouchableOpacity>
         </CameraView>
       ) : isWaiting ? (
@@ -171,10 +169,13 @@ export default function ClickAndCollect(): React.JSX.Element {
         // Display the result of the validation process - QR code affiché selon le profil
         <View style={styles.centeredContent}>
           {currentProfileData?.qrCode ? (
-            <>
-              <Text style={styles.loadingText}>Votre ordonnance a été validée !</Text>
-              <QRCode value={currentProfileData.qrCode} size={150} color={colors.secondary} />
-            </>
+            <View style={styles.qrContainer}>
+              <Text style={styles.qrTitle}>Votre ordonnance a été validée !</Text>
+              <View style={styles.qrCodeWrapper}>
+                <QRCode value={currentProfileData.qrCode} size={200} color={colors.secondary} />
+              </View>
+              <Text style={styles.qrText}>Présentez ce QR code en pharmacie</Text>
+            </View>
           ) : (
             <>
               <Text style={styles.loadingText}>Erreur : le format de l'ordonnance n'est pas valide.</Text>
@@ -190,28 +191,24 @@ export default function ClickAndCollect(): React.JSX.Element {
         // The initial state or when no photo has been taken yet
         <View style={styles.centeredContent}>
             {!photo ? (
-                <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(true)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                        <Text style={styles.buttonText}>Prendre une photo de votre ordonnance</Text>
+                <TouchableOpacity style={styles.card} onPress={() => setCameraVisible(true)}>
+                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
+                        <Text style={styles.cardText}>Prendre une photo de votre ordonnance</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             ) : (
-                <>
+                <View style={styles.qrContainer}>
                     <Image source={{ uri: photo.uri }} style={styles.image} />
                     <Text style={styles.loadingText}>Voulez-vous valider cette photo ou recommencer ?</Text>
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.button} onPress={resetProcess}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Recommencer</Text>
-                            </LinearGradient>
+                        <TouchableOpacity style={styles.rejectButton} onPress={resetProcess}>
+                            <Text style={styles.buttonText}>Recommencer</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.button} onPress={handleImageValidation}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.buttonText}>Valider</Text>
-                            </LinearGradient>
+                        <TouchableOpacity style={styles.approveButton} onPress={handleImageValidation}>
+                            <Text style={styles.buttonText}>Valider</Text>
                         </TouchableOpacity>
                     </View>
-                </>
+                </View>
             )}
         </View>
       )}
