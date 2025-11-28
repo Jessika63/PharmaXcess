@@ -13,6 +13,12 @@ def login():
     Expects JSON: { "email": "...", "password": "..." }
     Returns user_id if successful, 401 if credentials invalid.
     """
+    if "user_id" in session:
+        return jsonify({
+            "error": "A user is already logged in",
+            "user_id": session["user_id"]
+        }), 403
+
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
@@ -40,11 +46,18 @@ def login():
             conn.commit()
 
             session["user_id"] = user["id"]
-            return jsonify({"message": "Login successful", "user_id": user["id"]}), 200
+
+            return jsonify({
+                "message": "Login successful",
+                "user_id": user["id"]
+            }), 200
+
         else:
             return jsonify({"error": "Invalid credentials"}), 401
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     finally:
         if conn:
             conn.close()
