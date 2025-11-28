@@ -269,9 +269,9 @@ export default function Chat(): React.JSX.Element {
     // Function to get status badge color
     const getStatusColor = (status: string): string => {
         switch (status) {
-            case 'open': return '#4CAF50';
-            case 'pending': return '#FF9800';
-            case 'closed': return '#9E9E9E';
+            case 'open': return colors.success || colors.primary;
+            case 'pending': return colors.warning || colors.secondary;
+            case 'closed': return colors.textSecondary || colors.infoTextSecondary;
             default: return colors.infoTextSecondary;
         }
     };
@@ -351,29 +351,32 @@ export default function Chat(): React.JSX.Element {
                             style={styles.chatCard} 
                             onPress={() => handleChatPress(item)}
                         >
-                            <View style={styles.chatHeader}>
-                                <View style={styles.chatInfo}>
-                                    <Text style={styles.chatTitle}>{item.title}</Text>
-                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                                        <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                            {/* Title and status on the top */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={[styles.chatTitle, { flex: 1, marginRight: 8 }]}>{item.title}</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                                    <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                                </View>
+                                {unreadCount > 0 && (
+                                    <View style={[styles.unreadBadge, { marginLeft: 8 }]}>
+                                        <Text style={styles.unreadText}>{unreadCount}</Text>
                                     </View>
-                                </View>
-                                <View style={styles.chatMeta}>
-                                    <Text style={styles.chatDate}>{item.lastActivity}</Text>
-                                    {unreadCount > 0 && (
-                                        <View style={styles.unreadBadge}>
-                                            <Text style={styles.unreadText}>{unreadCount}</Text>
-                                        </View>
-                                    )}
-                                </View>
+                                )}
                             </View>
+                            {/* Preview message and details */} 
+
                             <Text style={styles.chatPreview} numberOfLines={2}>
                                 {item.messages.length > 0 
                                     ? item.messages[item.messages.length - 1].text 
                                     : item.question
                                 }
                             </Text>
-                            <Text style={styles.chatName}>Par {item.name}</Text>
+                            
+                            {/* Date and name on the bottom  */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                <Text style={styles.chatName}>Par {item.name}</Text>
+                                <Text style={styles.chatDate}>{item.lastActivity}</Text>
+                            </View>
                         </TouchableOpacity>
                     );
                 }}
@@ -415,7 +418,7 @@ export default function Chat(): React.JSX.Element {
                     style={styles.backButton} 
                     onPress={() => setSelectedChat(null)}
                 >
-                    <Ionicons name="arrow-back" size={24} color={colors.iconPrimary} />
+                    <Ionicons name="arrow-back" size={24} color={colors.profileText} />
                 </TouchableOpacity>
                 <View style={styles.conversationInfo}>
                     <Text style={styles.conversationTitle}>{selectedChat?.title}</Text>
@@ -515,7 +518,7 @@ export default function Chat(): React.JSX.Element {
                         </TouchableOpacity>
                         
                         <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.saveButtonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

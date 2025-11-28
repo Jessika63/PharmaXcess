@@ -865,7 +865,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 setDurationValue(1);
                                 setDurationUnit('mois');
                             }} style={styles.button}>
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -1033,7 +1033,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                             </TouchableOpacity>
                             
                             <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
