@@ -4,7 +4,8 @@ import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import createStyles from '../../styles/CardGrid.style';
+import createCardStyles from '../../styles/CardGrid.style';
+import { createStyles } from '../../styles/ProfileSelection.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { Profile, useProfile } from '../../context/ProfileContext';
@@ -18,6 +19,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { profiles, currentProfile, switchProfile, createProfile } = useProfile();
+    const cardStyles = createCardStyles(colors, fontScale); 
     const styles = createStyles(colors, fontScale);
 
     const [showCreateModal, setShowCreateModal] = useState(false); 
@@ -86,7 +88,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
             headerRight: () => (
                 <TouchableOpacity 
                     onPress={() => navigation.navigate('ProfileManagement')} 
-                    style={[styles.headerButton, { marginRight: 10 }]}
+                    style={[cardStyles.headerButton, { marginRight: 10 }]}
                 >
                     <Ionicons name="settings-outline" size={24} color={colors.profileText} />
                 </TouchableOpacity>
@@ -95,33 +97,33 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
     }, [navigation]);
 
     return ( 
-        <View style={[styles.container, { flex: 1 }]}> 
+        <View style={[cardStyles.container, { flex: 1 }]}> 
             <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-                <Text style={[styles.profileName, { textAlign: 'center', marginBottom: 20 }]}>
+                <Text style={[cardStyles.profileName, { textAlign: 'center', marginBottom: 20 }]}>
                     Sélectionnez un profil
                 </Text>
 
                 {profiles.map((profile) => (
                     <TouchableOpacity 
                         key={profile.id} 
-                        style={[styles.card, currentProfile?.id === profile.id && { borderWidth: 3, borderColor: colors.primary }]} 
+                        style={[cardStyles.card, currentProfile?.id === profile.id && { borderWidth: 3, borderColor: colors.primary }]} 
                         onPress={() => handleProfileSwitch(profile.id)}
                     >
                         <LinearGradient 
                             colors={currentProfile?.id === profile.id ? [colors.primary, colors.secondary] : [colors.background, colors.background]} 
-                            style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                            style={[cardStyles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                                 <Image 
                                     source={{ uri: getAvatarUrl(profile) }} 
-                                    style={[styles.profileImage, { width: 50, height: 50, marginRight: 15 }]} 
+                                    style={[cardStyles.profileImage, { width: 50, height: 50, marginLeft: 15 }]} 
                                 />
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold' }, currentProfile?.id === profile.id && { color: '#fff' }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 18, fontWeight: 'bold' }, currentProfile?.id === profile.id && { color: colors.iconPrimary }]}>
                                         {profile.name}
                                         {profile.isMain && ' (Principal)'}
                                     </Text>
-                                    <Text style={[styles.cardText, { fontSize: 14, opacity: 0.8 }, currentProfile?.id === profile.id && { color: '#fff' }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 14, opacity: 0.8 }, currentProfile?.id === profile.id && { color: colors.iconPrimary }]}>
                                         {getRelatiionshipText(profile.relationship)}
                                     </Text>
                                 </View>
@@ -130,11 +132,11 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                 <Ionicons 
                                     name={getRelationshipIcon(profile.relationship) as any} 
                                     size={24} 
-                                    color={currentProfile?.id === profile.id ? '#fff' : colors.iconPrimary} 
+                                    color={currentProfile?.id === profile.id ? colors.iconPrimary : colors.profileText} 
                                     style={{ marginRight: 10 }} 
                                 />
                                 {currentProfile?.id === profile.id && (
-                                    <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                                    <Ionicons name="checkmark-circle" size={24} color={colors.iconPrimary} style={{ marginRight: 10 }} />
                                 )}
                             </View>
                         </LinearGradient>
@@ -143,15 +145,15 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
 
                 {/* Button to create a new profile */}
                 <TouchableOpacity 
-                    style={[styles.card, { marginTop: 20 }]} 
+                    style={[cardStyles.card, { marginTop: 20 }]} 
                     onPress={() => setShowCreateModal(true)}
                 >
                     <LinearGradient 
                         colors={[colors.secondary, colors.primary]} 
-                        style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                        style={[cardStyles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
                     >
-                        <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
-                        <Text style={[styles.cardText, { color: '#fff', fontWeight: 'bold' }]}>
+                        <Ionicons name="add-circle-outline" size={24} color={colors.iconPrimary} style={{ marginRight: 10 }} />
+                        <Text style={[cardStyles.cardText, { color: colors.iconPrimary, fontWeight: 'bold' }]}>
                             Créer un nouveau profil
                         </Text>
                     </LinearGradient>
@@ -165,52 +167,27 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                 animationType="slide"
                 onRequestClose={() => setShowCreateModal(false)}
             >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 20
-                }}>
-                    <View style={{
-                        backgroundColor: colors.background,
-                        borderRadius: 15,
-                        padding: 20,
-                        width: '100%',
-                        maxWidth: 400
-                    }}>
-                        <Text style={[styles.profileName, { textAlign: 'center', marginBottom: 20 }]}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>
                             Nouveau profil
                         </Text>
 
-                        <Text style={[styles.cardText, { marginBottom: 10 }]}>Nom du profil</Text>
+                        <Text style={styles.inputLabel}>Nom du profil</Text>
                         <TextInput
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 20,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
+                            style={styles.input}
                             value={newProfileName}
                             onChangeText={setNewProfileName}
                             placeholder="Entrez le nom du profil"
-                            placeholderTextColor={colors.text + '80'}
+                            placeholderTextColor={colors.textSecondary}
                         />
 
-                        <Text style={[styles.cardText, { marginBottom: 10 }]}>Relation</Text>
-                        <View style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            marginBottom: 20
-                        }}>
+                        <Text style={styles.inputLabel}>Relation</Text>
+                        <View style={styles.pickerContainer}>
                             <Picker
                                 selectedValue={newProfileRelationship}
                                 onValueChange={(itemValue) => setNewProfileRelationship(itemValue as 'child' | 'parent' | 'spouse' | 'other')}
-                                style={{ color: colors.text }}
+                                style={styles.picker}
                             >
                                 <Picker.Item label="Enfant" value="child" />
                                 <Picker.Item label="Parent" value="parent" />
@@ -219,33 +196,29 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                             </Picker>
                         </View>
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={styles.buttonContainer}>
                             <TouchableOpacity
-                                style={{
-                                    flex: 1,
-                                    padding: 15,
-                                    borderRadius: 10,
-                                    backgroundColor: colors.secondary + '30',
-                                    marginRight: 10,
-                                    alignItems: 'center'
-                                }}
+                                style={[styles.cancelButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
                                 onPress={() => setShowCreateModal(false)}
                             >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+                                <LinearGradient 
+                                    colors={[colors.textSecondary, colors.infoTextSecondary]} 
+                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
+                                >
+                                    <Text style={[styles.cancelButtonText, { color: colors.iconPrimary }]}>Annuler</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.primary,
-                                    marginLeft: 10,
-                                    alignItems: 'center'
-                                }}
+                                style={[styles.createButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
                                 onPress={handleCreateProfile}
                             >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Créer</Text>
+                                <LinearGradient 
+                                    colors={[colors.primary, colors.secondary]} 
+                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
+                                >
+                                    <Text style={[styles.createButtonText, { color: colors.iconPrimary }]}>Créer</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
                         </View>
                     </View>

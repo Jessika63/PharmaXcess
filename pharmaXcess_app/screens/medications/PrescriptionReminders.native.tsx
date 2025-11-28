@@ -974,7 +974,7 @@ export default function PrescriptionReminders({ navigation }: Props): React.JSX.
                             </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.button} onPress={resetForm}>
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>

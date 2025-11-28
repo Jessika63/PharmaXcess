@@ -43,7 +43,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         borderWidth: 2,
     },
     inputError: {
-        borderColor: colors.error || '#FF6B6B',
+        borderColor: colors.error,
         borderWidth: 2,
     },
     passwordContainer: {
@@ -57,7 +57,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.profileText,
     },
     errorText: {
-        color: colors.error || '#FF6B6B',
+        color: colors.error,
         fontSize: 14 * fontScale,
         marginTop: 5,
         marginLeft: 5,
