@@ -54,13 +54,12 @@ def create_allergy():
                 return jsonify({"error": "You don't have permission to add allergy for this user"}), 403
 
             cursor.execute("""
-                INSERT INTO allergies (utilisateur_id, nom, debut, medicaments, gravite, symptomes, commentaires)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO allergies (utilisateur_id, nom, debut, gravite, symptomes, commentaires)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 utilisateur_id,
                 nom,
                 data.get("debut"),
-                data.get("medicaments"),
                 data.get("gravite"),
                 data.get("symptomes"),
                 data.get("commentaires"),
@@ -204,13 +203,12 @@ def update_allergy(allergy_id):
             # Perform the update (we already checked permissions)
             query = """
                 UPDATE allergies
-                SET nom=%s, debut=%s, medicaments=%s, gravite=%s, symptomes=%s, commentaires=%s
+                SET nom=%s, debut=%s, gravite=%s, symptomes=%s, commentaires=%s
                 WHERE id=%s
             """
             cursor.execute(query, (
                 data.get("nom"),
                 data.get("debut"),
-                data.get("medicaments"),
                 data.get("gravite"),
                 data.get("symptomes"),
                 data.get("commentaires"),

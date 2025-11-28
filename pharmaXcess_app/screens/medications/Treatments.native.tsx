@@ -9,7 +9,6 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
-import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type Treatment = {
@@ -19,7 +18,7 @@ type Treatment = {
     dosage: string;
     duration: string;
     sideEffects: string;
-    disease: string | number;
+    disease: string;
 };
 
 type treatmentsProps = {
@@ -34,57 +33,26 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
     const { treatments: profileTreatments, addTreatment, removeTreatment } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    const diseaseOptions = React.useMemo(() => {
-        const diseases = (currentProfile?.diseases || []) as any[];
-        return diseases.map(d => {
-            if (!d) return null;
-            if (typeof d === 'string') return { label: d, value: d };
-            const label = d.nom || d.name || String(d);
-            const value = d.id || d.maladie_id || label;
-            return { label, value };
-        }).filter(Boolean) as { label: string; value: any }[];
-    }, [currentProfile?.diseases]);
-
-    // Start empty; treatments should be loaded from backend/profile
-    const [treatments, setTreatments] =  useState<Treatment[]>([]);
-
-    // Load treatments from backend (per disease) for server profiles
-    React.useEffect(() => {
-        const load = async () => {
-            if (!currentProfile) return;
-            const numericCandidate = Number(currentProfile.id);
-            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
-            if (!isServerProfile) return;
-
-            // collect treatments for each disease that has an id
-            const aggregated: Treatment[] = [];
-            const diseases = (currentProfile.diseases || []) as any[];
-            for (const d of diseases) {
-                const maladieId = d?.id || d?.maladie_id || d?.maladieId;
-                if (!maladieId) continue;
-                const res = await profileApi.getTreatments(maladieId);
-                if (res.ok && Array.isArray(res.data)) {
-                    for (const t of res.data) {
-                        aggregated.push({
-                            // map backend traitement fields to UI shape
-                            name: t.nom || '',
-                            beginDate: t.debut || '',
-                            endDate: t.fin || '',
-                            dosage: t.dosage || '',
-                            duration: t.duree || '',
-                            sideEffects: t.effets_secondaires || '',
-                            disease: d.nom || d.name || '',
-                            // keep id for updates/deletes
-                            // @ts-ignore - add id dynamically
-                            id: t.id,
-                        } as any);
-                    }
-                }
-            }
-            if (aggregated.length > 0) setTreatments(aggregated);
-        };
-        load();
-    }, [currentProfile?.id]);
+    const [treatments, setTreatments] =  useState<Treatment[]>([
+        {
+            name: 'Metformine',
+            beginDate: '01/01/2021',
+            endDate: '01/01/2022',
+            dosage: '1 comprimé par jour',
+            duration: '1 an',
+            sideEffects: 'nausées, vomissements, diarrhée',
+            disease: 'Diabète de type 2',
+        },
+        {
+            name: 'Lévothyrox',
+            beginDate: '01/01/2020',
+            endDate: '01/01/2022',
+            dosage: '1 comprimé par jour',
+            duration: '2 ans',
+            sideEffects: 'palpitations, tremblements, maux de tête',
+            disease: 'Hypothyroïdie',
+        },
+    ]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -145,14 +113,6 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
         return `${dayStr}/${monthStr}/${year}`;
     };
 
-    const toISO = (s?: string) => {
-        if (!s) return null;
-        const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-        if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(String(s))) return s;
-        return null;
-    };
-
     const handleAddPress = (): void => {
         if ( 
             !newTreatment.name || 
@@ -171,65 +131,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
             duration: `${durationValue} ${durationUnit}`,
         };
 
-        // Try to persist to backend if possible (find maladie id)
-        (async () => {
-            let created = false;
-            const numericCandidate = Number(currentProfile?.id);
-            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile?.id);
-            if (isServerProfile) {
-                // Try to resolve disease -> maladie_id
-                let maladieId: any = null;
-                // If user selected a disease that is actually an id (number or numeric string)
-                if (newTreatment.disease && (typeof newTreatment.disease === 'number' || /^\d+$/.test(String(newTreatment.disease)))) maladieId = Number(newTreatment.disease);
-                // Otherwise try to match by name in profile diseases
-                if (!maladieId && currentProfile?.diseases) {
-                    const match = (currentProfile.diseases as any[]).find(d => (d.nom || d.name || '').toLowerCase() === String(newTreatment.disease || '').toLowerCase());
-                    maladieId = match ? (match.id || match.maladie_id) : null;
-                }
-
-                if (maladieId) {
-                    const payload: any = {
-                        maladie_id: maladieId,
-                        nom: newTreatmentData.name,
-                        debut: toISO(newTreatmentData.beginDate) || null,
-                        fin: toISO(newTreatmentData.endDate) || null,
-                        dosage: newTreatmentData.dosage || null,
-                        duree: newTreatmentData.duration || null,
-                        effets_secondaires: newTreatmentData.sideEffects || null,
-                    };
-                    const res = await profileApi.createTreatment(payload);
-                    if (res.ok) {
-                        // refresh list across diseases
-                        const aggregated: Treatment[] = [];
-                        const diseases = (currentProfile.diseases || []) as any[];
-                        for (const d of diseases) {
-                            const id = d?.id || d?.maladie_id || d?.maladieId;
-                            if (!id) continue;
-                            const r = await profileApi.getTreatments(id);
-                            if (r.ok && Array.isArray(r.data)) {
-                                for (const t of r.data) {
-                                    aggregated.push({ name: t.nom || '', beginDate: t.debut || '', endDate: t.fin || '', dosage: t.dosage || '', duration: t.duree || '', sideEffects: t.effets_secondaires || '', disease: d.nom || d.name || '', /* @ts-ignore */ id: t.id } as any);
-                                }
-                            }
-                        }
-                        setTreatments(aggregated);
-                        created = true;
-                    } else {
-                        // surface backend error to user and console for debugging
-                        console.warn('createTreatment failed', res);
-                        Alert.alert('Erreur serveur', res.error || `Statut ${res.status}`);
-                    }
-                }
-                else {
-                    // cannot resolve maladie_id -> inform user that POST won't be attempted
-                    Alert.alert('Maladie introuvable', "Impossible de trouver la maladie associée dans le profil. Le traitement sera ajouté localement seulement. Pour persister sur le serveur, saisissez le nom exact d'une maladie existante ou son id.");
-                }
-            }
-            if (!created) {
-                // fallback to local
-                setTreatments([...treatments, newTreatmentData]); 
-            }
-        })();
+        setTreatments([...treatments, newTreatmentData]); 
         setNewTreatment({
             name: '',
             beginDate: '',
@@ -314,51 +216,14 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
 
         if (editingIndex !== null) {
             const updatedTreatments = [...treatments];
-            const updated = {
+            updatedTreatments[editingIndex] = {
                 ...editedTreatment,
                 beginDate: formatDate(editBeginDay, editBeginMonth, editBeginYear),
                 endDate: formatDate(editEndDay, editEndMonth, editEndYear),
                 dosage: `${editDosagePerDay} comprimé(s) par jour`,
                 duration: `${editDurationValue} ${editDurationUnit}`,
-            } as any;
-
-            const original = treatments[editingIndex] as any;
-            const recordId = original && (original.id || original.traitement_id || original.treatment_id);
-            if (recordId) {
-                (async () => {
-                    const payload: any = {
-                        nom: updated.name,
-                        debut: toISO(updated.beginDate) || null,
-                        fin: toISO(updated.endDate) || null,
-                        dosage: updated.dosage || null,
-                        duree: updated.duration || null,
-                        effets_secondaires: updated.sideEffects || null,
-                    };
-                    const res = await profileApi.updateTreatment(recordId, payload);
-                    if (res.ok) {
-                        // refresh aggregated list
-                        const aggregated: Treatment[] = [];
-                        const diseases = (currentProfile?.diseases || []) as any[];
-                        for (const d of diseases) {
-                            const id = d?.id || d?.maladie_id || d?.maladieId;
-                            if (!id) continue;
-                            const r = await profileApi.getTreatments(id);
-                            if (r.ok && Array.isArray(r.data)) {
-                                for (const t of r.data) {
-                                    aggregated.push({ name: t.nom || '', beginDate: t.debut || '', endDate: t.fin || '', dosage: t.dosage || '', duration: t.duree || '', sideEffects: t.effets_secondaires || '', disease: d.nom || d.name || '', /* @ts-ignore */ id: t.id } as any);
-                                }
-                            }
-                        }
-                        setTreatments(aggregated);
-                    } else {
-                        updatedTreatments[editingIndex] = updated;
-                        setTreatments(updatedTreatments);
-                    }
-                })();
-            } else {
-                updatedTreatments[editingIndex] = updated;
-                setTreatments(updatedTreatments);
-            }
+            };
+            setTreatments(updatedTreatments);
         }
 
         setEditModalVisible(false);
@@ -377,33 +242,8 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        (async () => {
-                            const original = treatments[index] as any;
-                            const recId = original && (original.id || original.traitement_id || original.treatment_id);
-                            if (recId) {
-                                const res = await profileApi.deleteTreatment(recId);
-                                if (res.ok) {
-                                    // refresh aggregated list
-                                    const aggregated: Treatment[] = [];
-                                    const diseases = (currentProfile?.diseases || []) as any[];
-                                    for (const d of diseases) {
-                                        const id = d?.id || d?.maladie_id || d?.maladieId;
-                                        if (!id) continue;
-                                        const r = await profileApi.getTreatments(id);
-                                        if (r.ok && Array.isArray(r.data)) {
-                                            for (const t of r.data) {
-                                                aggregated.push({ name: t.nom || '', beginDate: t.debut || '', endDate: t.fin || '', dosage: t.dosage || '', duration: t.duree || '', sideEffects: t.effets_secondaires || '', disease: d.nom || d.name || '', /* @ts-ignore */ id: t.id } as any);
-                                            }
-                                        }
-                                    }
-                                    setTreatments(aggregated);
-                                    return;
-                                }
-                            }
-                            // fallback local removal
-                            const updatedTreatments = treatments.filter((_, i) => i !== index);
-                            setTreatments(updatedTreatments);
-                        })();
+                        const updatedTreatments = treatments.filter((_, i) => i !== index);
+                        setTreatments(updatedTreatments);
                     }
                 }
             ]
@@ -652,17 +492,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
             </ScrollView>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => {
-                        const hasDiseases = currentProfile && Array.isArray(currentProfile.diseases) && currentProfile.diseases.length > 0;
-                        if (!hasDiseases) {
-                            Alert.alert('Aucune maladie', "Veuillez ajouter une maladie avant d'ajouter un traitement.");
-                            return;
-                        }
-                        setModalVisible(true);
-                    }}
-                >
+                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
                     <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
                         <Text style={styles.buttonText}>Ajouter</Text>
                     </LinearGradient>
@@ -686,7 +516,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Nom du traitement"
                             value={isMainProfile ? newTreatment.name : newTreatmentSimple}
-                            onChangeText={(text: string) => {
+                            onChangeText={(text) => {
                                 if (isMainProfile) {
                                     setNewTreatment({ ...newTreatment, name: text })
                                 } else {
@@ -704,7 +534,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={beginDay}
-                                    onValueChange={(value: string | number) => setBeginDay(Number(value))}
+                                    onValueChange={(value) => setBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -716,7 +546,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={beginMonth}
-                                    onValueChange={(value: string | number) => setBeginMonth(Number(value))}
+                                    onValueChange={(value) => setBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -728,7 +558,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={beginYear}
-                                    onValueChange={(value: string | number) => setBeginYear(Number(value))}
+                                    onValueChange={(value) => setBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -744,7 +574,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={endDay}
-                                    onValueChange={(value: string | number) => setEndDay(Number(value))}
+                                    onValueChange={(value) => setEndDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -756,7 +586,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={endMonth}
-                                    onValueChange={(value: string | number) => setEndMonth(Number(value))}
+                                    onValueChange={(value) => setEndMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -768,7 +598,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={endYear}
-                                    onValueChange={(value: string | number) => setEndYear(Number(value))}
+                                    onValueChange={(value) => setEndYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -782,7 +612,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <CustomPicker
                             label="Comprimés par jour"
                             selectedValue={dosagePerDay}
-                            onValueChange={(value: string | number) => setDosagePerDay(Number(value))}
+                            onValueChange={(value) => setDosagePerDay(Number(value))}
                             options={Array.from({ length: 10 }, (_, i) => ({ 
                                 label: (i + 1).toString(), 
                                 value: i + 1 
@@ -796,7 +626,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Valeur"
                                     selectedValue={durationValue}
-                                    onValueChange={(value: string | number) => setDurationValue(Number(value))}
+                                    onValueChange={(value) => setDurationValue(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString(), 
                                         value: i + 1 
@@ -808,7 +638,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Unité"
                                     selectedValue={durationUnit}
-                                    onValueChange={(value: string | number) => setDurationUnit(String(value))}
+                                    onValueChange={(value) => setDurationUnit(String(value))}
                                     options={durationUnits.map(unit => ({ 
                                         label: unit, 
                                         value: unit 
@@ -821,16 +651,15 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Effets secondaires"
                             value={newTreatment.sideEffects}
-                            onChangeText={(text: string) => setNewTreatment({ ...newTreatment, sideEffects: text })}
+                            onChangeText={(text) => setNewTreatment({ ...newTreatment, sideEffects: text })}
                             style={styles.input}
                         />
                         
-                        <CustomPicker
-                            label="Maladie associée"
-                            selectedValue={newTreatment.disease}
-                            onValueChange={(value: string | number) => setNewTreatment({ ...newTreatment, disease: value })}
-                            options={diseaseOptions}
-                            placeholder="Sélectionner une maladie"
+                        <TextInput
+                            placeholder="Maladie associée"
+                            value={newTreatment.disease}
+                            onChangeText={(text) => setNewTreatment({ ...newTreatment, disease: text })}
+                            style={styles.input}
                         />
                         
                         <View style={styles.buttonContainer}>
@@ -883,10 +712,10 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                 >
                         <Text style={styles.modalTitle}>Modifier le traitement</Text>
                         
-                            <TextInput
+                        <TextInput
                             placeholder="Nom du traitement"
                             value={editedTreatment.name}
-                            onChangeText={(text: string) => setEditedTreatment({ ...editedTreatment, name: text })}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, name: text })}
                             style={styles.input}
                         />
                         
@@ -896,7 +725,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={editBeginDay}
-                                    onValueChange={(value: string | number) => setEditBeginDay(Number(value))}
+                                    onValueChange={(value) => setEditBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -908,7 +737,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={editBeginMonth}
-                                    onValueChange={(value: string | number) => setEditBeginMonth(Number(value))}
+                                    onValueChange={(value) => setEditBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -920,7 +749,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={editBeginYear}
-                                    onValueChange={(value: string | number) => setEditBeginYear(Number(value))}
+                                    onValueChange={(value) => setEditBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -936,7 +765,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={editEndDay}
-                                    onValueChange={(value: string | number) => setEditEndDay(Number(value))}
+                                    onValueChange={(value) => setEditEndDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -948,7 +777,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={editEndMonth}
-                                    onValueChange={(value: string | number) => setEditEndMonth(Number(value))}
+                                    onValueChange={(value) => setEditEndMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -960,7 +789,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={editEndYear}
-                                    onValueChange={(value: string | number) => setEditEndYear(Number(value))}
+                                    onValueChange={(value) => setEditEndYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -974,7 +803,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <CustomPicker
                             label="Comprimés par jour"
                             selectedValue={editDosagePerDay}
-                            onValueChange={(value: string | number) => setEditDosagePerDay(Number(value))}
+                            onValueChange={(value) => setEditDosagePerDay(Number(value))}
                             options={Array.from({ length: 10 }, (_, i) => ({ 
                                 label: (i + 1).toString(), 
                                 value: i + 1 
@@ -988,7 +817,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Valeur"
                                     selectedValue={editDurationValue}
-                                    onValueChange={(value: string | number) => setEditDurationValue(Number(value))}
+                                    onValueChange={(value) => setEditDurationValue(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString(), 
                                         value: i + 1 
@@ -1000,7 +829,7 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                                 <CustomPicker
                                     label="Unité"
                                     selectedValue={editDurationUnit}
-                                    onValueChange={(value: string | number) => setEditDurationUnit(String(value))}
+                                    onValueChange={(value) => setEditDurationUnit(String(value))}
                                     options={durationUnits.map(unit => ({ 
                                         label: unit, 
                                         value: unit 
@@ -1013,16 +842,15 @@ export default function Treatments({ navigation }: treatmentsProps): React.JSX.E
                         <TextInput
                             placeholder="Effets secondaires"
                             value={editedTreatment.sideEffects}
-                            onChangeText={(text: string) => setEditedTreatment({ ...editedTreatment, sideEffects: text })}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, sideEffects: text })}
                             style={styles.input}
                         />
                         
-                        <CustomPicker
-                            label="Maladie associée"
-                            selectedValue={editedTreatment.disease}
-                            onValueChange={(value: string | number) => setEditedTreatment({ ...editedTreatment, disease: value })}
-                            options={diseaseOptions}
-                            placeholder="Sélectionner une maladie"
+                        <TextInput
+                            placeholder="Maladie associée"
+                            value={editedTreatment.disease}
+                            onChangeText={(text) => setEditedTreatment({ ...editedTreatment, disease: text })}
+                            style={styles.input}
                         />
                         
                         <View style={styles.buttonContainer}>

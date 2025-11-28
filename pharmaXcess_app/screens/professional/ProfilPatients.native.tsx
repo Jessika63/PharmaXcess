@@ -127,15 +127,243 @@ export default function ProfilPatients(): React.JSX.Element {
 
   // Mock currentDoctorId - in real app, this would come from auth context
   const currentDoctorId = 'DR001';
-  // In production the documents list must come from backend; start empty and populate via API
-  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([]);
 
-  // Consultation notes should come from backend; start empty
-  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([]);
+  // Mock data for professional documents
+  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([
+    {
+      id: 'PDOC001',
+      name: 'Résultats analyses sanguines - Jean Dupont',
+      type: 'Analyses biologiques',
+      dateAdded: '28/10/2023',
+      size: '1.8 MB',
+      uri: 'documents/analyses_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC002',
+      name: 'Ordonnance Metformine - Jean Dupont',
+      type: 'Prescription',
+      dateAdded: '15/10/2023',
+      size: '0.5 MB',
+      uri: 'documents/ordonnance_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC003',
+      name: 'Compte-rendu consultation - Marie Curie',
+      type: 'Compte-rendu médical',
+      dateAdded: '20/10/2023',
+      size: '1.2 MB',
+      uri: 'documents/consultation_marie_curie.pdf',
+      doctorId: 'DR001',
+      patientId: 'P002'
+    }
+  ]);
 
-  // Patients list must come from backend for professionals; start empty
-  const [patients, setPatients] = useState<Patient[]>([]);
-  
+  // Mock data for consultation notes
+  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([
+    {
+      id: 'NOTE001',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '28/10/2023',
+      content: 'Patient présente une amélioration de sa glycémie. Poids stable. Recommandation de poursuivre le traitement actuel et surveiller la tension artérielle.',
+      createdAt: '28/10/2023 14:30'
+    },
+    {
+      id: 'NOTE002',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '15/10/2023',
+      content: 'Consultation de contrôle diabète. HbA1c à 7.2%. Ajustement posologie Metformine. Patient motivé pour changements alimentaires.',
+      createdAt: '15/10/2023 10:15'
+    },
+    {
+      id: 'NOTE003',
+      patientId: 'P002',
+      doctorId: 'DR001',
+      consultationDate: '20/10/2023',
+      content: 'Première consultation pour migraines. Fréquence: 3-4 épisodes/mois. Prescrit Sumatriptan. RDV de suivi dans 1 mois.',
+      createdAt: '20/10/2023 16:45'
+    }
+  ]);
+
+  // Mock data - patients
+  const [patients, setPatients] = useState<Patient[]>([
+    {
+      id: 'P001',
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      age: 45,
+      dateOfBirth: '15/03/1979',
+      phone: '06 12 34 56 78',
+      email: 'jean.dupont@email.com',
+      address: '123 Rue de la Paix, 75001 Paris',
+      weight: '75 kg',
+      height: '1m78',
+      bloodType: 'A+',
+      socialSecurityNumber: '1 79 03 75 001 234 56',
+      medicalHistory: ['Hypertension artérielle', 'Diabète type 2'],
+      allergies: ['Pénicilline', 'Arachides'],
+      currentMedications: ['Metformine 850mg', 'Ramipril 5mg'],
+      hospitalizations: [
+        {
+          id: 'H001',
+          reason: 'Chirurgie cardiaque',
+          hospital: 'Hôpital Pitié-Salpêtrière',
+          service: 'Cardiologie',
+          doctor: 'Dr. Martin',
+          date: '15/06/2022',
+          duration: '5 jours'
+        },
+        {
+          id: 'H002',
+          reason: 'Contrôle diabète',
+          hospital: 'Clinique Saint-Louis',
+          service: 'Endocrinologie',
+          doctor: 'Dr. Dubois',
+          date: '12/03/2023',
+          duration: '2 jours'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D001',
+          name: 'Dr. Martin Dubois',
+          specialty: 'Médecine générale',
+          phone: '01 45 67 89 12',
+          email: 'martin.dubois@medical.fr',
+          address: 'Cabinet médical Saint-Antoine, 15 rue de la Santé, 75014 Paris'
+        },
+        {
+          id: 'D002',
+          name: 'Dr. Sophie Lemaire',
+          specialty: 'Cardiologie',
+          phone: '01 56 09 20 00',
+          email: 'sophie.lemaire@hopital-pompidou.fr',
+          address: 'Hôpital Européen Georges Pompidou, 20 rue Leblanc, 75015 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Marie Dupont',
+        phone: '06 98 76 54 32',
+        relationship: 'Épouse'
+      }
+    },
+    {
+      id: 'P002',
+      firstName: 'Marie',
+      lastName: 'Curie',
+      age: 38,
+      dateOfBirth: '22/08/1986',
+      phone: '06 87 65 43 21',
+      email: 'marie.curie@email.com',
+      address: '456 Avenue de la Science, 75005 Paris',
+      weight: '62 kg',
+      height: '1m65',
+      bloodType: 'O-',
+      socialSecurityNumber: '2 86 08 75 005 678 90',
+      medicalHistory: ['Migraine chronique', 'Anémie'],
+      allergies: ['Aspirine'],
+      currentMedications: ['Sumatriptan 50mg', 'Fer sulfate'],
+      hospitalizations: [
+        {
+          id: 'H003',
+          reason: 'Traitement de l\'anémie',
+          hospital: 'Hôpital Cochin',
+          service: 'Hématologie',
+          doctor: 'Dr. Laurent',
+          date: '08/09/2023',
+          duration: '3 jours'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D003',
+          name: 'Dr. Claire Laurent',
+          specialty: 'Hématologie',
+          phone: '01 58 41 25 00',
+          email: 'claire.laurent@hopital-cochin.fr',
+          address: 'Hôpital Cochin, 27 rue du Faubourg Saint-Jacques, 75014 Paris'
+        },
+        {
+          id: 'D004',
+          name: 'Dr. Michel Petit',
+          specialty: 'Neurologie',
+          phone: '01 42 16 00 00',
+          email: 'michel.petit@pitie-salpetriere.fr',
+          address: 'Hôpital Pitié-Salpêtrière, 47-83 Boulevard de l\'Hôpital, 75013 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Pierre Curie',
+        phone: '06 11 22 33 44',
+        relationship: 'Époux'
+      }
+    },
+    {
+      id: 'P003',
+      firstName: 'Pierre',
+      lastName: 'Martin',
+      age: 62,
+      dateOfBirth: '10/12/1962',
+      phone: '06 55 44 33 22',
+      email: 'pierre.martin@email.com',
+      address: '789 Boulevard Saint-Germain, 75006 Paris',
+      weight: '82 kg',
+      height: '1m75',
+      bloodType: 'B+',
+      socialSecurityNumber: '1 62 12 75 006 789 01',
+      medicalHistory: ['Arthrose', 'Cholestérol élevé'],
+      allergies: ['Aucune allergie connue'],
+      currentMedications: ['Atorvastatine 20mg', 'Glucosamine'],
+      hospitalizations: [
+        {
+          id: 'H004',
+          reason: 'Prothèse de hanche',
+          hospital: 'Hôpital Saint-Antoine',
+          service: 'Orthopédie',
+          doctor: 'Dr. Rousseau',
+          date: '20/01/2023',
+          duration: '7 jours'
+        },
+        {
+          id: 'H005',
+          reason: 'Bilan cardiologique',
+          hospital: 'Clinique du Faubourg',
+          service: 'Cardiologie',
+          doctor: 'Dr. Moreau',
+          date: '05/11/2023',
+          duration: '1 jour'
+        }
+      ],
+      doctors: [
+        {
+          id: 'D005',
+          name: 'Dr. Jean Rousseau',
+          specialty: 'Orthopédie',
+          phone: '01 49 28 20 00',
+          email: 'jean.rousseau@st-antoine.fr',
+          address: 'Hôpital Saint-Antoine, 184 rue du Faubourg Saint-Antoine, 75012 Paris'
+        },
+        {
+          id: 'D006',
+          name: 'Dr. Anne Moreau',
+          specialty: 'Cardiologie',
+          phone: '01 45 75 43 21',
+          email: 'anne.moreau@clinique-faubourg.fr',
+          address: 'Clinique du Faubourg, 8 rue de la Roquette, 75011 Paris'
+        }
+      ],
+      emergencyContact: {
+        name: 'Sophie Martin',
+        phone: '06 77 88 99 00',
+        relationship: 'Fille'
+      }
+    }
+  ]);
 
   const requestCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -390,7 +618,7 @@ export default function ProfilPatients(): React.JSX.Element {
       title: 'Antécédents familiaux',
       icon: 'people-outline',
       section: 'antecedents',
-      data: ((patient as any).familyHistory && (patient as any).familyHistory.length > 0) ? (patient as any).familyHistory : ['Aucun antécédent familial']
+      data: ['Diabète familial', 'Maladies cardiovasculaires']
     },
     {
       title: 'Médecins',

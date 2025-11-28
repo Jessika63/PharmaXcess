@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,16 +8,15 @@ import createModalStyles from '../../styles/ModalForm.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
-import profileApi from '../../utils/api/profile';
 import { useProfileData } from '../../hooks/useProfileData';
 import { CustomPicker } from '../../components';
 
 type Disease = { 
-    id?: number | string;
     name: string; 
     description: string; 
     symptoms: string; 
     beginDate: string; 
+    medications: string; 
     examens: string; 
 }; 
 
@@ -28,92 +27,30 @@ type DiseasesProps = {
 export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
-    const { currentProfile, updateProfile } = useProfile();
+    const { currentProfile } = useProfile();
     const { diseases: profileDiseases, addDisease, removeDisease } = useProfileData();
     const styles = createStyles(colors, fontScale);
     const modalStyles = createModalStyles(colors, fontScale);
 
-    // Diseases: source of truth is backend via useProfileData/currentProfile
-    const [diseases, setDiseases] = useState<Disease[]>([]);
-
-    // Helper to normalize backend disease entries (could be string, JSON string, SQL row object, or frontend shape)
-    const normalizeDiseaseEntry = (entry: any): Disease => {
-        if (!entry) return { name: '', description: '', symptoms: '', beginDate: '', examens: '' };
-        if (typeof entry === 'string') {
-            try {
-                entry = JSON.parse(entry);
-            } catch {
-                return { name: entry, description: '', symptoms: '', beginDate: '', examens: '' };
-            }
-        }
-
-        const id = entry.id || entry.maladie_id || entry.id_maladie || undefined;
-        const name = entry.name || entry.nom || '';
-        const description = entry.description || entry.desc || '';
-        const symptoms = entry.symptoms || entry.symptomes || '';
-        const beginDate = entry.beginDate || entry.date_debut || entry.date || '';
-        const examens = entry.examens || entry.exams || '';
-        return { id, name, description, symptoms, beginDate, examens };
-    };
-
-    // Sync local view state with backend/currentProfile data
-    // Guard: only update local `diseases` state when the normalized data actually changed
-    useEffect(() => {
-        const sourceArray: any[] =
-            (profileDiseases && Array.isArray(profileDiseases) && profileDiseases) ||
-            (currentProfile && Array.isArray((currentProfile as any).diseases) && ((currentProfile as any).diseases || [])) ||
-            [];
-
-        const normalized = sourceArray.map(normalizeDiseaseEntry);
-
-        // shallow deep-equality for disease arrays (compare lengths and key fields)
-        const equal = (a: Disease[], b: Disease[]) => {
-            if (a === b) return true;
-            if (!Array.isArray(a) || !Array.isArray(b)) return false;
-            if (a.length !== b.length) return false;
-            for (let i = 0; i < a.length; i++) {
-                const A = a[i] || ({} as Disease);
-                const B = b[i] || ({} as Disease);
-                if (
-                    A.name !== B.name ||
-                        A.description !== B.description ||
-                        A.symptoms !== B.symptoms ||
-                        A.beginDate !== B.beginDate ||
-                        A.examens !== B.examens
-                ) return false;
-            }
-            return true;
-        };
-
-        if (!equal(diseases, normalized)) {
-            setDiseases(normalized);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [profileDiseases, currentProfile]);
-
-    // When arriving on the diseases screen, fetch diseases from backend once and attach to profile cache
-    const fetchedDiseasesForProfile = useRef<string | null>(null);
-    React.useEffect(() => {
-        let mounted = true;
-        const fetchDiseases = async () => {
-            try {
-                if (!currentProfile || !currentProfile.id) return;
-                if (String(fetchedDiseasesForProfile.current) === String(currentProfile.id)) return; // already fetched
-                const res = await profileApi.getDiseases();
-                if (!mounted) return;
-                if (res.ok && Array.isArray(res.data)) {
-                    // persist to local profile cache without triggering a redundant backend PUT
-                    await updateProfile(currentProfile.id, { diseases: res.data });
-                    fetchedDiseasesForProfile.current = String(currentProfile.id);
-                    // local state will sync via the other effect
-                }
-            } catch (e) {
-                console.warn('Failed to fetch diseases on Diseases screen', e);
-            }
-        };
-        fetchDiseases();
-        return () => { mounted = false; };
-    }, [currentProfile?.id]);
+    // Diseases predefined for the main profile 
+    const [diseases, setDiseases] = useState<Disease[]>([
+        {
+            name: 'Diabète',
+            description: 'Le diabète est une maladie chronique qui se caractérise par un excès de sucre dans le sang.',
+            symptoms: 'soif intense, besoin fréquent d\'uriner, fatigue, perte de poids, vision floue, cicatrisation lente, infections fréquentes, démangeaisons, fourmillements, douleurs, crampes, nausées, vomissements, haleine fruitée, perte de conscience',
+            beginDate: '01/01/2000',
+            medications: 'insuline, metformine, sulfamide hypoglycémiants, glinides, glitazones, inhibiteurs de l\'alpha-glucosidase, inhibiteurs de la DPP-4, agonistes des récepteurs du GLP-1, inhibiteurs du cotransporteur du sodium-glucose de type 2',
+            examens: 'glycémie à jeun, hémoglobine glyquée, test de tolérance au glucose, test de glycémie aléatoire, test de glycémie postprandiale (après un repas)',
+        },
+        {
+            name: 'Hypertension',
+            description: 'L\'hypertension artérielle est une maladie chronique caractérisée par une pression artérielle trop élevée dans les artères.',
+            symptoms: 'maux de tête, fatigue, étourdissements, bourdonnements d\'oreilles, palpitations, douleurs thoraciques, essoufflement, saignements de nez, vision floue',
+            beginDate: '01/01/2005',
+            medications: 'diurétiques, bêta-bloquants, inhibiteurs de l\'enzyme de conversion de l\'angiotensine (IECA), antagonistes des récepteurs de l\'angiotensine II (ARA II), inhibiteurs calciques, alpha-bloquants, alpha-bêta-bloquants, vasodilatateurs, antihypertenseurs centraux',
+            examens: 'mesure de la pression artérielle, électrocardiogramme, échocardiographie',
+        },
+    ]);
 
         const getRelationshipText = (relationship?: string) => {
         switch (relationship) {
@@ -135,6 +72,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         description: '',
         symptoms: '',
         beginDate: '',
+        medications: '',
         examens: '',
     });
     const [editedDisease, setEditedDisease] = useState<Disease>({
@@ -142,6 +80,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         description: '',
         symptoms: '',
         beginDate: '',
+        medications: '',
         examens: '',
     });
 
@@ -160,73 +99,36 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
     }; 
 
     // Complex disease management (for the main profile) 
-    const handleAddPress = async (): Promise<void> => {
+    const handleAddPress = (): void => {
         if (
-                !newDisease.name ||
-                !newDisease.description ||
-                !newDisease.symptoms ||
-                !newDisease.examens
-            ) {
+            !newDisease.name ||
+            !newDisease.description ||
+            !newDisease.symptoms ||
+            !newDisease.medications ||
+            !newDisease.examens
+        ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle maladie.');
             return;
         }
-
+    
         const newDiseaseData: Disease = {
             ...newDisease,
             beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
         };
-
-        // Try to persist via useProfileData.addDisease which handles server POST or local fallback
-        try {
-            const success = await addDisease(JSON.stringify(newDiseaseData));
-            if (success) {
-                // reset form and close modal; the profile cache will be refreshed by the hook/context
-                setNewDisease({
-                    name: '',
-                    description: '',
-                    symptoms: '',
-                    beginDate: '',
-                    examens: '',
-                });
-                setModalVisible(false);
-                setSelectedYear(2024);
-                setSelectedMonth(1);
-                setSelectedDay(1);
-                Alert.alert('Succès', 'Maladie ajoutée avec succès.');
-            } else {
-                // Fallback: update local UI immediately
-                setDiseases([newDiseaseData, ...diseases]);
-                setNewDisease({
-                    name: '',
-                    description: '',
-                    symptoms: '',
-                    beginDate: '',
-                    examens: '',
-                });
-                setModalVisible(false);
-                setSelectedYear(2024);
-                setSelectedMonth(1);
-                setSelectedDay(1);
-                Alert.alert('Avertissement', "La maladie a été ajoutée localement mais n'a pas pu être enregistrée sur le serveur.");
-            }
-        } catch (e) {
-            console.warn('Failed to add disease', e);
-            // keep UX consistent by adding locally
-            setDiseases([newDiseaseData, ...diseases]);
-            setNewDisease({
-                name: '',
-                description: '',
-                symptoms: '',
-                beginDate: '',
-                medications: '',
-                examens: '',
-            });
-            setModalVisible(false);
-            setSelectedYear(2024);
-            setSelectedMonth(1);
-            setSelectedDay(1);
-            Alert.alert('Erreur', 'Impossible d\'ajouter la maladie. Elle a été ajoutée localement.');
-        }
+    
+        setDiseases([newDiseaseData, ...diseases]);
+        setNewDisease({
+            name: '',
+            description: '',
+            symptoms: '',
+            beginDate: '',
+            medications: '',
+            examens: '',
+        });
+        setModalVisible(false);
+        setSelectedYear(2024);
+        setSelectedMonth(1);
+        setSelectedDay(1); 
     };
 
     const handleEditPress = (index: number): void => {
@@ -244,11 +146,12 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         setEditModalVisible(true);
     };
 
-    const handleSaveEdit = async (): Promise<void> => {
+    const handleSaveEdit = (): void => {
         if (
             !editedDisease.name ||
             !editedDisease.description ||
             !editedDisease.symptoms ||
+            !editedDisease.medications ||
             !editedDisease.examens
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
@@ -257,54 +160,11 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
         if (editingIndex !== null) {
             const updatedDiseases = [...diseases];
-            const newBeginDate = `${editSelectedDay.toString().padStart(2, '0')}/${editSelectedMonth.toString().padStart(2, '0')}/${editSelectedYear}`;
-            const updated = {
+            updatedDiseases[editingIndex] = {
                 ...editedDisease,
-                beginDate: newBeginDate,
+                beginDate: `${editSelectedDay.toString().padStart(2, '0')}/${editSelectedMonth.toString().padStart(2, '0')}/${editSelectedYear}`,
             };
-            updatedDiseases[editingIndex] = updated;
             setDiseases(updatedDiseases);
-
-            // If this disease has a server id and the current profile looks server-side, call backend PUT
-            const diseaseId = diseases[editingIndex]?.id;
-            const numericCandidate = currentProfile ? Number(currentProfile.id) : NaN;
-            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile?.id);
-
-            if (isServerProfile && diseaseId) {
-                try {
-                    // convert DD/MM/YYYY -> YYYY-MM-DD
-                    const toISO = (s?: string) => {
-                        if (!s) return undefined;
-                        const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-                        if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(String(s))) return s;
-                        return undefined;
-                    };
-
-                    const payload: any = {
-                        nom: updated.name,
-                        description: updated.description,
-                        symptomes: updated.symptoms,
-                    };
-                    const iso = toISO(updated.beginDate);
-                    if (iso) payload.date_debut = iso;
-                    // include examens when updating
-                    if (updated.examens) payload.examens = updated.examens;
-
-                    const res = await profileApi.updateDisease(diseaseId, payload);
-                    if (res.ok) {
-                        // refresh diseases from backend and update local profile cache
-                        const diseasesRes = await profileApi.getDiseases();
-                        if (diseasesRes.ok && Array.isArray(diseasesRes.data)) {
-                            await updateProfile(currentProfile!.id, { diseases: diseasesRes.data });
-                        }
-                    } else {
-                        console.warn('Failed to update disease on server', res.error);
-                    }
-                } catch (e) {
-                    console.warn('Error while updating disease on server', e);
-                }
-            }
         }
 
         setEditModalVisible(false);
@@ -345,6 +205,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
             description: newDisease.description || '',
             symptoms: newDisease.symptoms || '',
             beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
+            medications: newDisease.medications || '',
             examens: newDisease.examens || ''
         };
 
@@ -357,6 +218,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 description: '',
                 symptoms: '',
                 beginDate: '',
+                medications: '',
                 examens: '',
             });
             setModalVisible(false);
@@ -464,7 +326,10 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                         <Text style={styles.bold}>Date de début: </Text>
                                         {disease.beginDate}
                                     </Text>
-                                    
+                                    <Text style={styles.cardText}>
+                                        <Text style={styles.bold}>Traitements: </Text>
+                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                                    </Text>
                                     <Text style={styles.cardText}>
                                         <Text style={styles.bold}>Examens: </Text>
                                         {expanded === index ? disease.examens : `${disease.examens.slice(0, 75)}...`}
@@ -498,6 +363,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                             description: '',
                                             symptoms: '',
                                             beginDate: '',
+                                            medications: '',
                                             examens: ''
                                         };
                                     }
@@ -532,7 +398,12 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                                         {disease.beginDate}
                                                     </Text>
                                                 )}
-                                                
+                                                {disease.medications && (
+                                                    <Text style={styles.cardText}>
+                                                        <Text style={styles.bold}>Traitements: </Text>
+                                                        {expanded === index ? disease.medications : `${disease.medications.slice(0, 75)}...`}
+                                                    </Text>
+                                                )}
                                                 {disease.examens && (
                                                     <Text style={styles.cardText}>
                                                         <Text style={styles.bold}>Examens: </Text>
@@ -541,7 +412,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                                 )}
 
                                                 {/* Show expand/collapse arrow only if there's expandable content */}
-                                                {(disease.description || disease.symptoms || disease.examens) && (
+                                                {(disease.description || disease.symptoms || disease.medications || disease.examens) && (
                                                     <TouchableOpacity onPress={() => toggleCard(index)} style={styles.arrowContainer}>
                                                         <Ionicons
                                                             name={expanded === index ? 'chevron-up-outline' : 'chevron-down-outline'}
@@ -586,177 +457,29 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
             {/* Modal for adding a new disease - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-<ScrollView
-    contentContainerStyle={{
-        flexGrow: 1,
-        backgroundColor: colors.background,
-        padding: 20
-    }}
-    keyboardShouldPersistTaps="handled"
-> 
-    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-        Ajouter une maladie 
-    </Text>
-
-    <TextInput 
-        placeholder="Nom" 
-        value={isMainProfile ? newDisease.name : newDiseaseSimple}
-        onChangeText={(text: string) => {
-            if (isMainProfile) {
-                setNewDisease({ ...newDisease, name: text })
-            } else {
-                setNewDiseaseSimple(text);
-                // For other profiles, also update newDisease.name for consistency
-                setNewDisease({ ...newDisease, name: text });
-            }
-        }}
-        style={{
-            borderWidth: 1,
-            borderColor: colors.primary,
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 15,
-            fontSize: 16,
-            color: colors.text
-        }}
-        placeholderTextColor={colors.text + '80'} 
-    />
-
-    <TextInput 
-        placeholder="Description" 
-        value={newDisease.description}
-        onChangeText={(text: string) => setNewDisease({ ...newDisease, description: text })}
-        style={{
-            borderWidth: 1,
-            borderColor: colors.primary,
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 15,
-            fontSize: 16,
-            color: colors.text,
-            minHeight: 80
-        }}
-        multiline
-        placeholderTextColor={colors.text + '80'} 
-    />
-    
-    <TextInput 
-        placeholder="Symptômes"
-        value={newDisease.symptoms}
-        onChangeText={(text: string) => setNewDisease({ ...newDisease, symptoms: text })}
-        style={{
-            borderWidth: 1,
-            borderColor: colors.primary,
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 15,
-            fontSize: 16,
-            color: colors.text,
-            minHeight: 80
-        }}
-        multiline
-        placeholderTextColor={colors.text + '80'} 
-    />
-
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-        <View style={{ flex: 1, marginRight: 5 }}> 
-            <CustomPicker 
-                label="Jour" 
-                selectedValue={selectedDay} 
-                onValueChange={(value: string | number) => setSelectedDay(Number(value))}
-                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                placeholder="01"
-            />
-        </View>
-        <View style={{ flex: 1, marginHorizontal: 5 }}> 
-            <CustomPicker 
-                label="Mois" 
-                selectedValue={selectedMonth} 
-                onValueChange={(value: string | number) => setSelectedMonth(Number(value))}
-                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                placeholder="01"
-            />
-        </View>
-        <View style={{ flex: 1, marginLeft: 5 }}> 
-            <CustomPicker 
-                label="Année" 
-                selectedValue={selectedYear} 
-                onValueChange={(value: string | number) => setSelectedYear(Number(value))}
-                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
-                placeholder="2024"
-            />
-        </View>
-    </View>
-
-    <TextInput 
-        placeholder="Examens" 
-        value={newDisease.examens}
-        onChangeText={(text: string) => setNewDisease({ ...newDisease, examens: text })}
-        style={{
-            borderWidth: 1,
-            borderColor: colors.primary,
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 30,
-            fontSize: 16,
-            color: colors.text,
-            minHeight: 80
-        }}
-        multiline
-        placeholderTextColor={colors.text + '80'} 
-    />
-
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-        <TouchableOpacity 
-            style={{ 
-                flex: 1, 
-                padding: 15, 
-                borderRadius: 10, 
-                backgroundColor: colors.secondary + '30',
-                marginRight: 10,
-                alignItems: 'center'
-            }}
-            onPress={() => {
-                setModalVisible(false);
-                // Reset all fields for both main and other profiles
-                setNewDiseaseSimple('');
-                setNewDisease({
-                    name: '',
-                    description: '',
-                    symptoms: '',
-                    beginDate: '',
-                    examens: '',
-                });
-                setSelectedYear(2024);
-                setSelectedMonth(1);
-                setSelectedDay(1);
-            }}
-        >
-            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-            style={{ 
-                flex: 1, 
-                padding: 15, 
-                borderRadius: 10, 
-                backgroundColor: colors.primary,
-                marginLeft: 10, 
-                alignItems: 'center'
-            }}
-            onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}
-        >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
-        </TouchableOpacity>
-    </View>
-</ScrollView>
-
+                <View style={modalStyles.modalContainer}>
+                    <ScrollView
+                        contentContainerStyle={modalStyles.scrollContent}
+                        showsVerticalScrollIndicator={true}
+                        bounces={true}
+                    > 
+                        <Text style={modalStyles.modalTitle}> 
+                            Ajouter une maladie 
                         </Text>
 
                         <Text style={modalStyles.label}>Nom</Text>
                         <TextInput 
                             placeholder="Nom de la maladie" 
-                            value={editedDisease.name}
-                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, name: text })}
+                            value={isMainProfile ? newDisease.name : newDiseaseSimple}
+                            onChangeText={(text) => {
+                                if (isMainProfile) {
+                                    setNewDisease({ ...newDisease, name: text })
+                                } else {
+                                    setNewDiseaseSimple(text);
+                                    // For other profiles, also update newDisease.name for consistency
+                                    setNewDisease({ ...newDisease, name: text });
+                                }
+                            }}
                             style={modalStyles.input}
                             placeholderTextColor={colors.inputBorder} 
                         />
@@ -764,8 +487,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                         <Text style={modalStyles.label}>Description</Text>
                         <TextInput 
                             placeholder="Description de la maladie" 
-                            value={editedDisease.description}
-                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, description: text })}
+                            value={newDisease.description}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, description: text })}
                             style={modalStyles.inputMultiline}
                             multiline
                             numberOfLines={3}
@@ -775,8 +498,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                         <Text style={modalStyles.label}>Symptômes</Text>
                         <TextInput 
                             placeholder="Symptômes observés"
-                            value={editedDisease.symptoms}
-                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, symptoms: text })}
+                            value={newDisease.symptoms}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, symptoms: text })}
                             style={modalStyles.inputMultiline}
                             multiline
                             numberOfLines={3}
@@ -788,8 +511,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                             <View style={{ flex: 1, marginRight: 5 }}> 
                                 <CustomPicker 
                                     label="Jour" 
-                                    selectedValue={editSelectedDay} 
-                                    onValueChange={(value: string | number) => setEditSelectedDay(Number(value))}
+                                    selectedValue={selectedDay} 
+                                    onValueChange={(value) => setSelectedDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                     placeholder="01"
                                 />
@@ -797,8 +520,8 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                             <View style={{ flex: 1, marginHorizontal: 5 }}> 
                                 <CustomPicker 
                                     label="Mois" 
-                                    selectedValue={editSelectedMonth} 
-                                    onValueChange={(value: string | number) => setEditSelectedMonth(Number(value))}
+                                    selectedValue={selectedMonth} 
+                                    onValueChange={(value) => setSelectedMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
                                     placeholder="01"
                                 />
@@ -806,19 +529,30 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                             <View style={{ flex: 1, marginLeft: 5 }}> 
                                 <CustomPicker 
                                     label="Année" 
-                                    selectedValue={editSelectedYear} 
-                                    onValueChange={(value: string | number) => setEditSelectedYear(Number(value))}
+                                    selectedValue={selectedYear} 
+                                    onValueChange={(value) => setSelectedYear(Number(value))}
                                     options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
                                     placeholder="2024"
                                 />
                             </View>
                         </View>
 
+                        <Text style={modalStyles.label}>Traitements</Text>
+                        <TextInput 
+                            placeholder="Traitements prescrits"
+                            value={newDisease.medications}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, medications: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
+
                         <Text style={modalStyles.label}>Examens</Text>
                         <TextInput 
                             placeholder="Examens réalisés ou à réaliser" 
-                            value={editedDisease.examens}
-                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, examens: text })}
+                            value={newDisease.examens}
+                            onChangeText={(text) => setNewDisease({ ...newDisease, examens: text })}
                             style={modalStyles.inputMultiline}
                             multiline
                             numberOfLines={3}
