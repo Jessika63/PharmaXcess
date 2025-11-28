@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../context/ThemeContext';
 import { useFontScale } from '../context/FontScaleContext';
+import createStyles from '../styles/TimePicker.style';
 
 interface TimePickerProps {
     label?: string;
@@ -32,6 +33,7 @@ export default function TimePicker({
 }: TimePickerProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const getHourOptions = () => {
         const hours = [];
@@ -55,54 +57,6 @@ export default function TimePicker({
         }
         return minutes;
     };
-
-    const styles = StyleSheet.create({
-        container: {
-            marginBottom: 15,
-        },
-        label: {
-            fontSize: 16 * fontScale,
-            fontWeight: '600',
-            color: colors.profileText,
-            marginBottom: 8,
-        },
-        timeContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-        },
-        pickerWrapper: {
-            flex: 1,
-            borderWidth: 1,
-            borderColor: colors.inputBorder,
-            borderRadius: 10,
-            backgroundColor: colors.inputBackground,
-            overflow: 'hidden',
-        },
-        pickerWrapperError: {
-            borderColor: colors.error || '#FF6B6B',
-        },
-        picker: {
-            height: 50,
-            color: colors.text,
-        },
-        pickerItem: {
-            fontSize: 16 * fontScale,
-            color: colors.text,
-        },
-        separator: {
-            fontSize: 18 * fontScale,
-            fontWeight: 'bold',
-            color: colors.text,
-            marginHorizontal: 5,
-        },
-        errorText: {
-            color: colors.error || '#FF6B6B',
-            fontSize: 14 * fontScale,
-            marginTop: 5,
-            marginLeft: 5,
-        },
-    });
 
     const hasError = errors && (errors.hour || errors.minute);
 

@@ -133,7 +133,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         backgroundColor: 'transparent',
     },
     scannerText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 18 * fontScale,
         textAlign: 'center',
         marginTop: 20,
@@ -199,7 +199,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginRight: 15,
     },
     profileImageText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 24 * fontScale,
         fontWeight: 'bold',
     },
@@ -244,7 +244,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
     itemTitle: {
         fontSize: 16 * fontScale,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         textAlign: 'center',
         lineHeight: 20 * fontScale,
     },
@@ -302,7 +302,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginLeft: 10,
     },
     severityText: {
-        color: '#FFFFFF',
+        color: colors.iconPrimary,
         fontSize: 12 * fontScale,
         fontWeight: 'bold',
     },

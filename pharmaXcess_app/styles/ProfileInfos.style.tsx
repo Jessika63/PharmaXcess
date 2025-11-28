@@ -66,12 +66,12 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         alignItems: 'center',
     },
     deleteButton: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: colors.background,
         padding: 8,
         borderRadius: 50,
         marginLeft: 8,
         borderWidth: 1,
-        borderColor: '#FFEBEE',
+        borderColor: colors.border,
     },
     buttonContainer: {
         flexDirection: 'row',

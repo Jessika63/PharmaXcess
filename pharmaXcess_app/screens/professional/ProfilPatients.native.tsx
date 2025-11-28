@@ -17,6 +17,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfilPatients.style';
 import createProfileInfoStyles from '../../styles/ProfileInfos.style'; 
+import createMyPrescriptionsStyles from '../../styles/MyPrescriptions.style'; 
+
 
 type Hospitalization = { 
   id: string; 
@@ -64,11 +66,11 @@ type Patient = {
 
 type ProfileItem = { 
   title: string;
-  icon: "person-outline" | "medkit-outline" | "bandage-outline" | "bed-outline" | "alert-circle-outline" | "people-outline" | "person-add-outline";
+  icon: "person-outline" | "medkit-outline" | "bandage-outline" | "bed-outline" | "alert-circle-outline" | "people-outline" | "person-add-outline" | "document-text-outline" | "clipboard-outline";
   data: string[]; 
 }; 
 
-type SectionType = 'info' | 'maladies' | 'traitements' | 'hospitalisations' | 'allergies' | 'antecedents' | 'medecins';
+type SectionType = 'info' | 'maladies' | 'traitements' | 'hospitalisations' | 'allergies' | 'antecedents' | 'medecins' | 'documents' | 'notes';
 
 type DetailedItem = {
   id: string; 
@@ -79,19 +81,114 @@ type DetailedItem = {
   notes?: string; 
 }; 
 
+type ProfessionalDocument = {
+  id: string; 
+  name: string; 
+  type: string; 
+  dateAdded: string;
+  size: string; 
+  uri: string;
+  doctorId: string; // ID of the doctor who added the document
+  patientId: string; 
+}; 
+
+type ConsultationNote = { 
+  id: string; 
+  patientId: string; 
+  doctorId: string; 
+  consultationDate: string;
+  content: string;
+  createdAt: string; 
+};
+
 
 export default function ProfilPatients(): React.JSX.Element {
   const { colors } = useTheme();
   const { fontScale } = useFontScale();
   const styles = createStyles(colors, fontScale);
   const profileInfoStyles = createProfileInfoStyles(colors, fontScale);
+  const prescriptionStyles = createMyPrescriptionsStyles(colors, fontScale); 
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedSection, setSelectedSection] = useState<SectionType | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false); 
+  const [showNotesModal, setShowNotesModal] = useState(false); 
+  const [showAddDocumentModal, setShowAddDocumentModal] = useState(false); 
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false); 
+  const [previewDocument, setPreviewDocument] = useState<ProfessionalDocument | null>(null); 
+  const [newNoteContent, setNewNoteContent] = useState(''); 
+  const [newNoteDate, setNewNoteDate] = useState(''); 
+
   const cameraRef = useRef<CameraView | null>(null);
+
+  // Mock currentDoctorId - in real app, this would come from auth context
+  const currentDoctorId = 'DR001';
+
+  // Mock data for professional documents
+  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([
+    {
+      id: 'PDOC001',
+      name: 'Résultats analyses sanguines - Jean Dupont',
+      type: 'Analyses biologiques',
+      dateAdded: '28/10/2023',
+      size: '1.8 MB',
+      uri: 'documents/analyses_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC002',
+      name: 'Ordonnance Metformine - Jean Dupont',
+      type: 'Prescription',
+      dateAdded: '15/10/2023',
+      size: '0.5 MB',
+      uri: 'documents/ordonnance_jean_dupont.pdf',
+      doctorId: 'DR001',
+      patientId: 'P001'
+    },
+    {
+      id: 'PDOC003',
+      name: 'Compte-rendu consultation - Marie Curie',
+      type: 'Compte-rendu médical',
+      dateAdded: '20/10/2023',
+      size: '1.2 MB',
+      uri: 'documents/consultation_marie_curie.pdf',
+      doctorId: 'DR001',
+      patientId: 'P002'
+    }
+  ]);
+
+  // Mock data for consultation notes
+  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([
+    {
+      id: 'NOTE001',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '28/10/2023',
+      content: 'Patient présente une amélioration de sa glycémie. Poids stable. Recommandation de poursuivre le traitement actuel et surveiller la tension artérielle.',
+      createdAt: '28/10/2023 14:30'
+    },
+    {
+      id: 'NOTE002',
+      patientId: 'P001',
+      doctorId: 'DR001',
+      consultationDate: '15/10/2023',
+      content: 'Consultation de contrôle diabète. HbA1c à 7.2%. Ajustement posologie Metformine. Patient motivé pour changements alimentaires.',
+      createdAt: '15/10/2023 10:15'
+    },
+    {
+      id: 'NOTE003',
+      patientId: 'P002',
+      doctorId: 'DR001',
+      consultationDate: '20/10/2023',
+      content: 'Première consultation pour migraines. Fréquence: 3-4 épisodes/mois. Prescrit Sumatriptan. RDV de suivi dans 1 mois.',
+      createdAt: '20/10/2023 16:45'
+    }
+  ]);
 
   // Mock data - patients
   const [patients, setPatients] = useState<Patient[]>([
@@ -429,7 +526,13 @@ export default function ProfilPatients(): React.JSX.Element {
   };
 
   const handleSectionPress = (section: SectionType) => {
-    setSelectedSection(section);
+    if (section === 'documents') {
+      setShowDocumentsModal(true);
+    } else if (section === 'notes') {
+      setShowNotesModal(true);
+    } else {
+      setSelectedSection(section);
+    }
   };
 
   const getSectionTitle = (section: SectionType): string => {
@@ -441,6 +544,10 @@ export default function ProfilPatients(): React.JSX.Element {
       case 'allergies': return 'Allergies';
       case 'antecedents': return 'Antécédents familiaux';
       case 'medecins': return 'Médecins';
+      case 'documents': return 'Documents'; 
+      case 'notes': return 'Notes de consultation';
+      // case 'documents': return 'Documents';
+      // case 'notes': return 'Notes de consultation';
       default: return '';
     }
   };
@@ -482,26 +589,6 @@ export default function ProfilPatients(): React.JSX.Element {
 
   const getProfileItems = (patient: Patient): (ProfileItem & { section: SectionType })[] => [
     {
-      title: 'Informations',
-      icon: 'person-outline',
-      section: 'info',
-      data: [
-        `Email: ${patient.email}`,
-        `Nom: ${patient.lastName}`,
-        `Prénom: ${patient.firstName}`,
-        `Date de naissance: ${patient.dateOfBirth}`,
-        `Âge: ${patient.age} ans`,
-        `Poids: ${patient.weight}`,
-        `Taille: ${patient.height}`,
-        `Groupe sanguin: ${patient.bloodType}`,
-        `Numéro de téléphone: ${patient.phone}`,
-        `Numéro de sécurité sociale: ${patient.socialSecurityNumber}`,
-        `Adresse: ${patient.address}`,
-        `Contact d'urgence (nom): ${patient.emergencyContact.name}`,
-        `Contact d'urgence (téléphone): ${patient.emergencyContact.phone}`
-      ]
-    },
-    {
       title: 'Maladies',
       icon: 'medkit-outline',
       section: 'maladies',
@@ -540,7 +627,24 @@ export default function ProfilPatients(): React.JSX.Element {
       data: patient.doctors.length > 0 
         ? patient.doctors.map(d => `${d.name} (${d.specialty})`)
         : ['Aucun médecin enregistré']
-    }
+    }, 
+    {
+      title: 'Documents', 
+      icon: 'document-text-outline',
+      section: 'documents', 
+      data: professionalDocuments.filter(doc => doc.patientId === patient.id && doc.doctorId === currentDoctorId).length > 0 
+        ? [`${professionalDocuments.filter(doc => doc.patientId === patient.id && doc.doctorId === currentDoctorId).length} document(s)`]
+        : ['Aucun document ajouté'] 
+    }, 
+    { 
+      title: 'Notes', 
+      icon: 'clipboard-outline',
+      section: 'notes', 
+      data: consultationNotes.filter(note => note.patientId === patient.id && note.doctorId === currentDoctorId).length > 0
+        ? [`${consultationNotes.filter(note => note.patientId === patient.id && note.doctorId === currentDoctorId).length} note(s) de consultation`]
+        : ['Aucune note de consultation'] 
+
+    },
   ];
 
   const renderPatientCard = ({ item }: { item: Patient }) => (
@@ -575,6 +679,107 @@ export default function ProfilPatients(): React.JSX.Element {
       case 'légère': return colors.success;
       default: return colors.infoTextSecondary;
     }
+  };
+
+  // Functions for document management 
+  const handleAddDocument = () => { 
+    setShowAddDocumentModal(true); 
+  };
+
+  const handleSimulateDocumentSelection = () => {
+    const newDocument: ProfessionalDocument = { 
+      id: `PDOC${Date.now()}`,
+      name: `Nouveau document - ${selectedPatient?.firstName} ${selectedPatient?.lastName}`,
+      type: 'Compte-rendu médical',
+      dateAdded: new Date().toLocaleDateString('fr-FR'),
+      size: '1.5 MB', 
+      uri: `documents/nouveau_document_${Date.now()}.pdf`,
+      doctorId: currentDoctorId,
+      patientId: selectedPatient?.id || '' 
+    };
+
+    setPreviewDocument(newDocument); 
+  }; 
+
+  const handleAddDocumentSubmit = () => { 
+    if (previewDocument) {
+      setProfessionalDocuments(prev => [previewDocument, ...prev]);
+      setPreviewDocument(null); 
+      setShowAddDocumentModal(false); 
+      Alert.alert('Succès', 'Document ajouté avec succès !');
+    }
+  };
+
+  const handleCancelAddDocument = () => { 
+    setPreviewDocument(null); 
+    setShowAddDocumentModal(false); 
+  };
+
+  const handleViewDocument= (document: ProfessionalDocument) => { 
+    Alert.alert( 
+      document.name,
+      `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
+      [
+        { text: 'Fermer', style: 'cancel'},
+        {
+          text: 'Télécharger', 
+          onPress: () => handleDownloadDocument(document) 
+        }
+      ]
+    );
+  };
+
+  const handleDownloadDocument = (document: ProfessionalDocument) => { 
+    Alert.alert( 
+      'Téléchargement', 
+      `Le document "${document.name}" sera téléchargé prochainement.`, 
+      [{ text: 'OK' }] 
+    );
+  };
+
+  // Functions for note management 
+  const handleAddNote = () => { 
+    setShowAddNoteModal(true); 
+    setNewNoteDate(new Date().toLocaleDateString('fr-FR'));
+  };
+
+  const handleSaveNote = () => { 
+    if (newNoteContent.trim() && newNoteDate.trim() && selectedPatient) {
+      const newNote: ConsultationNote = { 
+        id: `NOTE${Date.now()}`, 
+        patientId: selectedPatient.id, 
+        doctorId: currentDoctorId,
+        consultationDate: newNoteDate, 
+        content: newNoteContent, 
+        createdAt: new Date().toLocaleString('fr-FR')
+      };
+
+      setConsultationNotes(prev => [newNote, ...prev]);
+      setNewNoteContent(''); 
+      setNewNoteDate(''); 
+      setShowAddNoteModal(false); 
+      Alert.alert('Succès', 'Note de consultation ajoutée avec succès !'); 
+    } else { 
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');  
+    }
+  };
+
+  const handleCancelNote = () => {
+    setNewNoteContent(''); 
+    setNewNoteDate(''); 
+    setShowAddNoteModal(false); 
+  };
+
+  const getPatientDocuments = (patientId: string) => { 
+    return professionalDocuments.filter(doc => 
+      doc.patientId === patientId && doc.doctorId === currentDoctorId
+    );
+  };
+
+  const getPatientNotes = (patientId: string) => { 
+    return consultationNotes.filter(note => 
+      note.patientId === patientId && note.doctorId === currentDoctorId
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); 
   };
 
   const renderSectionDetail = () => (
@@ -646,6 +851,312 @@ export default function ProfilPatients(): React.JSX.Element {
     </Modal>
   );
 
+  // Documents Modal
+  const renderDocumentsModal = () => (
+    <Modal
+      visible={showDocumentsModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.sectionModal}>
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setShowDocumentsModal(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            Documents - {selectedPatient?.firstName} {selectedPatient?.lastName}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.sectionContent}>
+          {selectedPatient && getPatientDocuments(selectedPatient.id).length > 0 ? (
+            getPatientDocuments(selectedPatient.id).map((document) => (
+              <TouchableOpacity 
+                key={document.id}
+                style={styles.itemCard}
+                onPress={() => handleViewDocument(document)}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.itemCardTitle}>{document.name}</Text>
+                    <Text style={styles.itemDescription}>Type: {document.type}</Text>
+                    <Text style={styles.itemDate}>📅 Ajouté le: {document.dateAdded}</Text>
+                    <Text style={styles.itemNotes}>📄 Taille: {document.size}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: colors.editButtonBackground,
+                      padding: 8,
+                      borderRadius: 50
+                    }}
+                    onPress={() => handleViewDocument(document)}
+                  >
+                    <Ionicons name="eye" size={20} color={colors.iconPrimary} />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.itemCard, { alignItems: 'center', padding: 40 }]}>
+              <Ionicons name="folder-open-outline" size={60} color={colors.primary} />
+              <Text style={[styles.itemCardTitle, { marginTop: 20, textAlign: 'center' }]}>
+                Aucun document
+              </Text>
+              <Text style={[styles.itemDescription, { textAlign: 'center', marginTop: 10 }]}>
+                Vous n'avez encore ajouté aucun document pour ce patient
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={handleAddDocument}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Ajouter</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={() => setShowDocumentsModal(false)}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Fermer</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Notes Modal
+  const renderNotesModal = () => (
+    <Modal
+      visible={showNotesModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.sectionModal}>
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setShowNotesModal(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.headerText} />
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            Notes - {selectedPatient?.firstName} {selectedPatient?.lastName}
+          </Text>
+        </View>
+
+        <ScrollView style={styles.sectionContent}>
+          {selectedPatient && getPatientNotes(selectedPatient.id).length > 0 ? (
+            getPatientNotes(selectedPatient.id).map((note) => (
+              <View key={note.id} style={styles.itemCard}>
+                <View style={styles.itemCardHeader}>
+                  <Text style={styles.itemCardTitle}>Consultation du {note.consultationDate}</Text>
+                  <View style={[styles.severityBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.severityText}>Note</Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.itemDescription}>{note.content}</Text>
+                
+                <Text style={styles.itemDate}>📝 Rédigé le: {note.createdAt}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={[styles.itemCard, { alignItems: 'center', padding: 40 }]}>
+              <Ionicons name="clipboard-outline" size={60} color={colors.primary} />
+              <Text style={[styles.itemCardTitle, { marginTop: 20, textAlign: 'center' }]}>
+                Aucune note
+              </Text>
+              <Text style={[styles.itemDescription, { textAlign: 'center', marginTop: 10 }]}>
+                Vous n'avez encore pris aucune note pour ce patient
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={handleAddNote}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Ajouter</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={prescriptionStyles.button} onPress={() => setShowNotesModal(false)}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Fermer</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Add Document Modal
+  const renderAddDocumentModal = () => (
+    <Modal
+      visible={showAddDocumentModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={prescriptionStyles.container}>
+        <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
+          <View style={prescriptionStyles.prescriptionCard}>
+            <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
+              Ajouter un document - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            </Text>
+            
+            {!previewDocument ? (
+              // File selection area
+              <TouchableOpacity 
+                style={[prescriptionStyles.prescriptionCard, { 
+                  alignItems: 'center',
+                  borderStyle: 'dashed',
+                  borderWidth: 2,
+                  borderColor: colors.profileText,
+                  backgroundColor: 'transparent'
+                }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Sélectionner un fichier',
+                    'Cette fonctionnalité nécessite l\'installation du package expo-document-picker pour permettre la sélection de fichiers.',
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      { text: 'Simuler la sélection', onPress: handleSimulateDocumentSelection }
+                    ]
+                  );
+                }}
+              >
+                <Ionicons name="cloud-upload" size={50} color={colors.profileText} />
+                <Text style={[prescriptionStyles.prescriptionTitle, { marginTop: 15, color: colors.profileText }]}>
+                  Parcourir les fichiers
+                </Text>
+                <Text style={[prescriptionStyles.prescriptionText, { textAlign: 'center', marginTop: 10 }]}>
+                  Formats acceptés: PDF, JPG, PNG
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              // Document preview
+              <View style={prescriptionStyles.prescriptionCard}>
+                <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 15, color: colors.infoText }]}>
+                  Document sélectionné
+                </Text>
+                <View style={{ marginBottom: 15 }}>
+                  <Text style={prescriptionStyles.prescriptionTitle}>{previewDocument.name}</Text>
+                  <Text style={prescriptionStyles.prescriptionText}>Type: {previewDocument.type}</Text>
+                  <Text style={prescriptionStyles.prescriptionText}>Taille: {previewDocument.size}</Text>
+                </View>
+                <Text style={[prescriptionStyles.prescriptionText, { textAlign: 'center', fontStyle: 'italic', color: colors.infoText }]}>
+                  Appuyez sur "Ajouter" pour confirmer l'ajout de ce document
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleCancelAddDocument}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Annuler</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleAddDocumentSubmit}
+            disabled={!previewDocument}
+          >
+            <LinearGradient 
+              colors={previewDocument ? [colors.primary, colors.secondary] : [colors.primary + '50', colors.secondary + '50']} 
+              style={prescriptionStyles.gradient}
+            >
+              <Text style={[prescriptionStyles.buttonText, { opacity: previewDocument ? 1 : 0.5 }]}>
+                Ajouter
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Add Note Modal
+  const renderAddNoteModal = () => (
+    <Modal
+      visible={showAddNoteModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={prescriptionStyles.container}>
+        <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
+          <View style={prescriptionStyles.prescriptionCard}>
+            <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
+              Ajouter une note - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            </Text>
+            
+            <Text style={[prescriptionStyles.prescriptionText, { marginBottom: 10 }]}>
+              Date de consultation *
+            </Text>
+            <TextInput
+              style={[prescriptionStyles.prescriptionCard, { 
+                marginBottom: 15,
+                padding: 15,
+                borderWidth: 1,
+                borderRadius: 8
+              }]}
+              placeholder="JJ/MM/AAAA"
+              value={newNoteDate}
+              onChangeText={setNewNoteDate}
+            />
+            
+            <Text style={[prescriptionStyles.prescriptionText, { marginBottom: 10 }]}>
+              Contenu de la note *
+            </Text>
+            <TextInput
+              style={[prescriptionStyles.prescriptionCard, { 
+                marginBottom: 15,
+                padding: 15,
+                borderWidth: 1,
+                borderRadius: 8,
+                height: 120,
+                textAlignVertical: 'top'
+              }]}
+              placeholder="Décrivez la consultation, les observations, recommandations..."
+              value={newNoteContent}
+              onChangeText={setNewNoteContent}
+              multiline
+              numberOfLines={5}
+            />
+          </View>
+        </ScrollView>
+
+        <View style={prescriptionStyles.buttonContainer}>
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleCancelNote}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Annuler</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={prescriptionStyles.button}
+            onPress={handleSaveNote}
+          >
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={prescriptionStyles.gradient}>
+              <Text style={prescriptionStyles.buttonText}>Sauvegarder</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderPatientDetail = () => (
     <Modal
       visible={selectedPatient !== null}
@@ -668,7 +1179,10 @@ export default function ProfilPatients(): React.JSX.Element {
         <ScrollView style={styles.detailContent}>
           {/* Profile Header */}
           <View style={styles.profileSection}>
-            <View style={styles.profileHeader}>
+            <TouchableOpacity 
+              style={styles.profileHeader}
+              onPress={() => handleSectionPress('info')}
+            >
               <View style={styles.profileImage}>
                 <Text style={styles.profileImageText}>
                   {selectedPatient?.firstName?.[0]}{selectedPatient?.lastName?.[0]}
@@ -682,7 +1196,13 @@ export default function ProfilPatients(): React.JSX.Element {
                   {selectedPatient?.age} ans • ID: {selectedPatient?.id}
                 </Text>
               </View>
-            </View>
+              <Ionicons 
+                name="chevron-forward" 
+                size={24} 
+                color={colors.infoTitle} 
+                style={{ marginLeft: 10 }}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Profile Grid */}
@@ -700,7 +1220,7 @@ export default function ProfilPatients(): React.JSX.Element {
                   <Ionicons 
                     name={item.icon} 
                     size={40} 
-                    color="#FFFFFF" 
+                    color={colors.iconPrimary} 
                     style={styles.itemIcon}
                   />
                   <Text style={styles.itemTitle}>{item.title}</Text>
@@ -740,7 +1260,7 @@ export default function ProfilPatients(): React.JSX.Element {
               style={styles.closeButton}
               onPress={() => setShowScanner(false)}
             >
-              <Ionicons name="close" size={24} color="#FFFFFF" />
+              <Ionicons name="close" size={24} color={colors.iconPrimary} />
             </TouchableOpacity>
           </CameraView>
         ) : (
@@ -771,7 +1291,7 @@ export default function ProfilPatients(): React.JSX.Element {
               style={styles.scanButton}
               onPress={handleScanPress}
             >
-              <Ionicons name="qr-code-outline" size={24} color="#FFFFFF" />
+              <Ionicons name="qr-code-outline" size={24} color={colors.iconPrimary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -804,7 +1324,11 @@ export default function ProfilPatients(): React.JSX.Element {
         </View>
         {renderScanner()} 
         {renderPatientDetail()} 
-        {renderSectionDetail()} 
+        {renderSectionDetail()}
+        {renderDocumentsModal()}
+        {renderNotesModal()}
+        {renderAddDocumentModal()}
+        {renderAddNoteModal()} 
 
 {/* 
         {renderScanner()}

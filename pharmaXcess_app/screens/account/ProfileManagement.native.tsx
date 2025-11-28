@@ -12,12 +12,12 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import createStyles from '../../styles/CardGrid.style';
+import createCardStyles from '../../styles/CardGrid.style';
+import createStyles from '../../styles/ProfileManagement.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile, Profile } from '../../context/ProfileContext';
-import { Picker } from '@react-native-picker/picker'; 
-import profile from '../../locales/en/profile';
+import { Picker } from '@react-native-picker/picker';
 
 type ProfileManagementProps = { 
     navigation: StackNavigationProp<any, any>; 
@@ -28,6 +28,7 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { profiles, updateProfile, deleteProfile } = useProfile();
+    const cardStyles = createCardStyles(colors, fontScale); 
     const styles = createStyles(colors, fontScale);
 
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
@@ -136,10 +137,10 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
                 </Text>
 
                 {profiles.map((profile) => (
-                    <View key={profile.id} style={[styles.card, { marginBottom: 15 }]}>
+                    <View key={profile.id} style={[cardStyles.card, { marginBottom: 15 }]}>
                         <LinearGradient 
                             colors={[colors.background, colors.background]} 
-                            style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                            style={[cardStyles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                                 <Image 
@@ -147,14 +148,14 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
                                     style={[styles.profileImage, { width: 50, height: 50, marginRight: 15 }]} 
                                 />
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.cardText, { fontSize: 18, fontWeight: 'bold' }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 18, fontWeight: 'bold' }]}>
                                         {profile.name}
                                         {profile.isMain && ' (Principal)'}
                                     </Text>
-                                    <Text style={[styles.cardText, { fontSize: 14, opacity: 0.8 }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 14, opacity: 0.8 }]}>
                                         {getRelationshipText(profile.relationship)}
                                     </Text>
-                                    <Text style={[styles.cardText, { fontSize: 12, opacity: 0.6 }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 12, opacity: 0.6 }]}>
                                         Créé le: {new Date(profile.createdAt).toLocaleDateString('fr-FR')}
                                     </Text>
                                 </View>
@@ -188,9 +189,9 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
                 ))} 
 
                 {profiles.length === 0 && ( 
-                    <View style={[styles.card, { alignItems: 'center', padding: 40 }]}>
+                    <View style={[cardStyles.card, { alignItems: 'center', padding: 40 }]}>
                         <Ionicons name="people-outline" size={48} color={colors.iconPrimary} style={{ marginBottom: 15 }} />
-                        <Text style={[styles.cardText, { textAlign: 'center', fontSize: 16 }]}>
+                        <Text style={[cardStyles.cardText, { textAlign: 'center', fontSize: 16 }]}>
                             Aucun profil trouvé
                         </Text>
                     </View>
@@ -204,35 +205,15 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
                 animationType="slide"
                 onRequestClose={() => setShowEditModal(false)} 
             > 
-                <View style={{ 
-                    flex: 1,  
-                    backgroundColor: 'rgba(0,0,0,0.5)', 
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 20
-                }}> 
-                    <View style={{ 
-                        backgroundColor: colors.background, 
-                        borderRadius: 15, 
-                        padding: 20, 
-                        width: '100%', 
-                        maxWidth: 400 
-                    }}> 
-                        <Text style={[styles.profileName, { textAlign: 'center', marginBottom: 20 }]}>
+                <View style={styles.modalOverlay}> 
+                    <View style={styles.modalContainer}> 
+                        <Text style={styles.modalTitle}>
                             Modifier le profil
                         </Text>
 
-                        <Text style={[styles.cardText, { marginBottom: 10 }]}>Nom du profil</Text>
+                        <Text style={styles.inputLabel}>Nom du profil</Text>
                         <TextInput
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.primary,
-                                borderRadius: 10,
-                                padding: 15,
-                                marginBottom: 20,
-                                fontSize: 16,
-                                color: colors.text
-                            }}
+                            style={styles.input}
                             value={editName}
                             onChangeText={setEditName}
                             placeholder="Entrez le nom du profil"
@@ -241,17 +222,12 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
 
                         {selectedProfile && !selectedProfile.isMain && (
                             <>
-                                <Text style={[styles.cardText, { marginBottom: 10 }]}>Relation</Text>
-                                <View style={{
-                                    borderWidth: 1,
-                                    borderColor: colors.primary,
-                                    borderRadius: 10,
-                                    marginBottom: 20
-                                }}>
+                                <Text style={styles.inputLabel}>Relation</Text>
+                                <View style={styles.pickerContainer}>
                                     <Picker
                                         selectedValue={editRelationship}
                                         onValueChange={(itemValue: string) => setEditRelationship(itemValue as 'self' | 'child' | 'parent' | 'spouse' | 'other')}
-                                        style={{ color: colors.text }}
+                                        style={styles.picker}
                                     >
                                         <Picker.Item label="Enfant" value="child" />
                                         <Picker.Item label="Parent" value="parent" />
@@ -262,33 +238,29 @@ export default function ProfileManagement({ navigation }: ProfileManagementProps
                             </>
                         )}
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={styles.buttonContainer}>
                             <TouchableOpacity
-                                style={{
-                                    flex: 1,
-                                    padding: 15,
-                                    borderRadius: 10,
-                                    backgroundColor: colors.secondary + '30',
-                                    marginRight: 10,
-                                    alignItems: 'center'
-                                }}
+                                style={[styles.cancelButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
                                 onPress={() => setShowEditModal(false)}
                             >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+                                <LinearGradient 
+                                    colors={[colors.textSecondary, colors.infoTextSecondary]} 
+                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
+                                >
+                                    <Text style={[styles.cancelButtonText, { color: colors.iconPrimary }]}>Annuler</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                style={{ 
-                                    flex: 1, 
-                                    padding: 15, 
-                                    borderRadius: 10, 
-                                    backgroundColor: colors.primary,
-                                    marginLeft: 10,
-                                    alignItems: 'center'
-                                }}
+                                style={[styles.saveButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
                                 onPress={handleUpdateProfile}
                             >
-                                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Enregistrer</Text>
+                                <LinearGradient 
+                                    colors={[colors.primary, colors.secondary]} 
+                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
+                                >
+                                    <Text style={styles.saveButtonText}>Enregistrer</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
                         </View>
                     </View>

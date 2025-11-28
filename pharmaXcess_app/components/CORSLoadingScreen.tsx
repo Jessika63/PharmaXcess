@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import createStyles from '../styles/CORSLoadingScreen.style';
+import { useTheme } from '../context/ThemeContext';
+import { useFontScale } from '../context/FontScaleContext';
 
 interface CORSLoadingScreenProps {
   isLoading: boolean;
@@ -9,13 +12,17 @@ interface CORSLoadingScreenProps {
 }
 
 /**
- * Composant d'écran de chargement pour l'enregistrement CORS
+ * Component to display a loading screen during CORS initialization
+ * or an error message with a retry option if initialization fails.
  */
 export default function CORSLoadingScreen({ isLoading, error, onRetry }: CORSLoadingScreenProps): React.JSX.Element {
+  const { colors } = useTheme(); 
+  const { fontScale } = useFontScale(); 
+  const styles = createStyles(colors, fontScale);
   if (isLoading) {
     return (
       <LinearGradient
-        colors={['#ec4899', '#f43f5e']}
+        colors={[colors.primary, colors.secondary]}
         style={styles.container}
       >
         <View style={styles.content}>
@@ -29,14 +36,19 @@ export default function CORSLoadingScreen({ isLoading, error, onRetry }: CORSLoa
   if (error) {
     return (
       <LinearGradient
-        colors={['#ec4899', '#f43f5e']}
+        colors={[colors.primary, colors.secondary]}
         style={styles.container}
       >
         <View style={styles.errorContent}>
           <Text style={styles.errorTitle}>Erreur de connexion</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-            <Text style={styles.retryButtonText}>Réessayer</Text>
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              style={styles.retryButtonGradient}
+            >
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -45,68 +57,3 @@ export default function CORSLoadingScreen({ isLoading, error, onRetry }: CORSLoa
 
   return <></>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    color: '#ffffff',
-    fontSize: 18,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  errorContent: {
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    margin: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#dc2626',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    fontSize: 16,
-    color: '#374151',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
