@@ -29,20 +29,8 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   const { currentProfile } = useProfile();
   const styles = createStyles(colors, fontScale);
 
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-    {
-      name: 'Ordonnance 1',
-      date: '01/01/2021',
-      doctor: 'Dr. Dupont',
-      medications: 'Paracétamol, Ibuprofène',
-    },
-    {
-      name: 'Ordonnance 2',
-      date: '01/01/2020',
-      doctor: 'Dr. Martin',
-      medications: 'Amoxicilline, Azithromycine',
-    },
-  ]);
+  // Start empty; prescriptions should come from backend/profile
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
 
   // State to manage camera permissions, visibility, and photo capture
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
