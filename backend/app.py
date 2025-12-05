@@ -197,6 +197,7 @@ def register_blueprints():
     from routes.profile.allergies import allergies_bp
     from routes.profile.family_history import family_history_bp
     from routes.profile.doctors import doctors_bp
+    from routes.profile.documents import documents_bp
     from routes.profile.sub_profiles import sub_profile_bp
 
     # Save blueprints
@@ -243,6 +244,7 @@ def register_blueprints():
     app.register_blueprint(allergies_bp)
     app.register_blueprint(family_history_bp)
     app.register_blueprint(doctors_bp)
+    app.register_blueprint(documents_bp)
 
 register_blueprints()
 
