@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Camera, CameraView } from 'expo-camera';
+import qrApi from '../../utils/api/qr';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfilPatients.style';
@@ -156,47 +157,127 @@ export default function ProfilPatients(): React.JSX.Element {
     setShowScanner(false);
     
     try {
-      // Try to parse QR code data as JSON
-      const patientData = JSON.parse(data);
-      
-      // Check if it's a valid patient QR code
-      if (patientData.type === 'patient_profile' && patientData.patientId) {
-        // Find existing patient or create new one
-        const existingPatient = patients.find(p => p.id === patientData.patientId);
-        
-        if (existingPatient) {
-          setSelectedPatient(existingPatient);
-        } else {
-          // Create new patient from QR data
-        const newPatient: Patient = {
-          id: patientData.id,
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
-          age: patientData.age,
-          dateOfBirth: patientData.dateOfBirth,
-          phone: patientData.phone,
-          email: patientData.email,
-          address: patientData.address,
-          weight: patientData.weight || 'Non renseigné',
-          height: patientData.height || 'Non renseigné',
-          bloodType: patientData.bloodType || 'Non renseigné',
-          socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
-          medicalHistory: patientData.medicalHistory || [],
-          allergies: patientData.allergies || [],
-          currentMedications: patientData.currentMedications || [],
-          hospitalizations: patientData.hospitalizations || [],
-          doctors: patientData.doctors || [],
-          emergencyContact: patientData.emergencyContact || {
-            name: '',
-            phone: '',
-            relationship: ''
+      // Prefer server-side parsing: send raw QR content to backend
+      (async () => {
+        try {
+          const res = await qrApi.readProfileQrContent(data, 'medecin');
+          if (res.ok && res.data && res.data.profile) {
+            const p = res.data.profile;
+            // Map backend fields to local Patient type conservatively
+            const mapped: Patient = {
+              id: String(p.id || p.user_id || p.utilisateur_id || (p.telephone || 'unknown')),
+              firstName: p.prenom || p.firstName || p.nom || '',
+              lastName: p.nom || p.lastName || '',
+              age: p.age ? Number(p.age) : (p.date_of_birth ? new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : 0),
+              dateOfBirth: p.date_de_naissance || p.dateOfBirth || p.dateOfBirth || '',
+              phone: p.telephone || p.phone || '',
+              email: p.email || '',
+              address: p.adresse || p.address || '',
+              weight: (p.poids && String(p.poids)) || 'Non renseigné',
+              height: (p.taille && String(p.taille)) || 'Non renseigné',
+              bloodType: p.groupe_sanguin || p.bloodType || 'Non renseigné',
+              socialSecurityNumber: p.numero_securite_sociale || p.socialSecurityNumber || 'Non renseigné',
+              medicalHistory: p.medical_history || p.diseases || [],
+              allergies: p.allergies || [],
+              currentMedications: p.currentMedications || p.traitements || [],
+              hospitalizations: p.hospitalisations || [],
+              doctors: p.doctors || [],
+              emergencyContact: p.emergencyContact || { name: '', phone: '', relationship: '' }
+            };
+
+            const existing = patients.find(pt => pt.id === mapped.id);
+            if (existing) {
+              setSelectedPatient(existing);
+            } else {
+              setPatients(prev => [mapped, ...prev]);
+              setSelectedPatient(mapped);
+            }
+            return;
           }
-        };          setPatients(prev => [newPatient, ...prev]);
-          setSelectedPatient(newPatient);
+
+          // If server didn't return a profile, fallback to local parsing
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const existingPatient = patients.find(p => p.id === patientData.patientId);
+              if (existingPatient) {
+                setSelectedPatient(existingPatient);
+              } else {
+                const newPatient: Patient = {
+                  id: patientData.id,
+                  firstName: patientData.firstName,
+                  lastName: patientData.lastName,
+                  age: patientData.age,
+                  dateOfBirth: patientData.dateOfBirth,
+                  phone: patientData.phone,
+                  email: patientData.email,
+                  address: patientData.address,
+                  weight: patientData.weight || 'Non renseigné',
+                  height: patientData.height || 'Non renseigné',
+                  bloodType: patientData.bloodType || 'Non renseigné',
+                  socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                  medicalHistory: patientData.medicalHistory || [],
+                  allergies: patientData.allergies || [],
+                  currentMedications: patientData.currentMedications || [],
+                  hospitalizations: patientData.hospitalizations || [],
+                  doctors: patientData.doctors || [],
+                  emergencyContact: patientData.emergencyContact || {
+                    name: '',
+                    phone: '',
+                    relationship: ''
+                  }
+                };
+                setPatients(prev => [newPatient, ...prev]);
+                setSelectedPatient(newPatient);
+                return;
+              }
+            }
+          } catch (e) {
+            // not JSON or fallback failed
+          }
+
+          Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
+        } catch (err: any) {
+          console.error('Scan error:', err);
+          // Try local parse as last resort
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const newPatient: Patient = {
+                id: patientData.id,
+                firstName: patientData.firstName,
+                lastName: patientData.lastName,
+                age: patientData.age,
+                dateOfBirth: patientData.dateOfBirth,
+                phone: patientData.phone,
+                email: patientData.email,
+                address: patientData.address,
+                weight: patientData.weight || 'Non renseigné',
+                height: patientData.height || 'Non renseigné',
+                bloodType: patientData.bloodType || 'Non renseigné',
+                socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                medicalHistory: patientData.medicalHistory || [],
+                allergies: patientData.allergies || [],
+                currentMedications: patientData.currentMedications || [],
+                hospitalizations: patientData.hospitalizations || [],
+                doctors: patientData.doctors || [],
+                emergencyContact: patientData.emergencyContact || {
+                  name: '',
+                  phone: '',
+                  relationship: ''
+                }
+              };
+              setPatients(prev => [newPatient, ...prev]);
+              setSelectedPatient(newPatient);
+              return;
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
         }
-      } else {
-        Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
-      }
+      })();
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
     }
