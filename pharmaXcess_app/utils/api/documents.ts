@@ -45,4 +45,28 @@ export async function uploadDocument(userId: string | number, fileObj: { uri: st
   }
 }
 
-export default { getDocuments, uploadDocument };
+export async function getDocumentStatus(docId: string | number): Promise<ApiResult<any>> {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/documents/status/${docId}`;
+  try {
+    const res = await fetch(url, { method: 'GET', credentials: 'include' });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    return { ok: false, error: json?.error || json?.message || 'Request failed', status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
+export async function deleteDocument(userId: string | number, docId: string | number): Promise<ApiResult<any>> {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/documents/${userId}/${docId}`;
+  try {
+    const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    return { ok: false, error: json?.error || json?.message || 'Delete failed', status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
+export default { getDocuments, uploadDocument, getDocumentStatus, deleteDocument };

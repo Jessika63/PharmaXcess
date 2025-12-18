@@ -26,6 +26,5 @@ COPY scripts/init_medicine.sh /init_medicine.sh
 RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
-# Use Gunicorn with multiple workers for better concurrency (avoid Flask dev server single-thread blocking on uploads)
-# Use 4 workers by default — adapt to available CPU if needed.
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+# Run Flask directly in the container. For production you may restore Gunicorn.
+CMD ["python", "app.py"]

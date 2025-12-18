@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS documents (
     filename VARCHAR(255),
     size INT,
     date_ajout DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'processing',
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -251,6 +252,7 @@ CREATE INDEX idx_prescription_reminders_ordonnance ON prescription_reminders(ord
 CREATE INDEX idx_prescription_reminders_due_date ON prescription_reminders(due_date);
 CREATE INDEX idx_prescription_reminders_completed ON prescription_reminders(is_completed);
 CREATE INDEX idx_documents_utilisateur ON documents(utilisateur_id);
+CREATE INDEX idx_documents_status ON documents(status);
 
 -- Enable event scheduler
 SET GLOBAL event_scheduler = ON;

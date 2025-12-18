@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput, Linking } from 'react-native';
 import config from '../../config';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,12 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import documentsApi from '../../utils/api/documents';
+// Static imports to ensure the native modules are bundled at startup
+import * as DocumentPicker from 'expo-document-picker';
+// Use legacy FileSystem API to preserve documentDirectory/cacheDirectory and
+// backwards-compatible functions (getInfoAsync, downloadAsync, copyAsync).
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 
 type DocumentsProps = {
     navigation: StackNavigationProp<any, any>;
@@ -22,6 +28,7 @@ type Document = {
     size: string;
     uri: string;
     docId?: number | string;
+    status?: 'processing' | 'done' | 'failed';
 };
 
 // The Documents component displays and manages the user's medical documents
@@ -33,6 +40,7 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
 
     const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
     const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+    const pollingRefs = useRef<Record<string, number>>({});
     // Use documents from the backend-backed profile when available, otherwise start empty
     const [documents, setDocuments] = useState<Document[]>(() => {
         try {
@@ -67,7 +75,8 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                         type: 'Document patient',
                         dateAdded: d.date_ajout || d.dateAdded || new Date().toLocaleDateString('fr-FR'),
                         size: d.size ? `${(d.size / 1024).toFixed(1)} KB` : '—',
-                        uri: `${d.filename}`
+                        uri: `${d.filename}`,
+                        status: d.status || 'done'
                     }));
                     setDocuments(docs as Document[]);
                 }
@@ -97,15 +106,10 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
         setPreviewDocument(newDocument);
     };
 
-    // Try to open the native document picker using expo-document-picker.
-    // Uses dynamic import so the app doesn't crash if the package is not installed.
+    // Open the native document picker (statically imported so it's bundled at startup)
     const handleOpenDocumentPicker = async () => {
         try {
-            // dynamic import to avoid bundling errors when the package isn't installed
-            const DocumentPickerModule = await import('expo-document-picker');
-            const DocumentPicker: any = DocumentPickerModule.default ?? DocumentPickerModule;
-
-            const res = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+            const res = await (DocumentPicker as any).getDocumentAsync({ type: '*/*' });
             if (!res) {
                 Alert.alert('Erreur', "Aucun résultat du sélecteur de fichiers.");
                 return;
@@ -120,7 +124,6 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                 return;
             }
 
-            // New shape: { canceled: false, assets: [ { name, uri, size, ... } ] }
             let fileName: string | undefined;
             let fileUri: string | undefined;
             let fileSizeBytes: number | undefined;
@@ -141,7 +144,6 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                 fileName = res.name || (res.uri ? res.uri.split('/').pop() : undefined);
             }
 
-            // Show quick debug alert (can be removed later)
             try {
                 Alert.alert('Fichier sélectionné', `${fileName || '–'}\n${fileUri || 'URI manquante'}`);
             } catch (e) {
@@ -158,10 +160,9 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
             };
             setPreviewDocument(newDocument);
         } catch (err) {
-            // If import fails (module not installed) or picker errors, fallback to alert + simulation
             Alert.alert(
-                'Module manquant',
-                "L'ouverture du sélecteur de fichiers a échoué. Installez 'expo-document-picker' et relancez l'application, ou utilisez la simulation.",
+                'Erreur',
+                "Ouverture du sélecteur de fichiers échouée. Assurez-vous d'avoir installé 'expo-document-picker' et relancez l'application.",
                 [
                     { text: 'Annuler', style: 'cancel' },
                     { text: 'Simuler la sélection', onPress: handleSimulateDocumentSelection }
@@ -177,26 +178,40 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
         if (currentProfile && (currentProfile as any).id && previewDocument.uri && previewDocument.uri.length > 0) {
             try {
                 const fileObj = { uri: previewDocument.uri, name: previewDocument.name };
-                const res = await documentsApi.uploadDocument((currentProfile as any).id, fileObj, previewDocument.name);
-                if (res.ok && res.data) {
-                    const created = res.data;
-                    const newDoc: Document = {
-                        id: `DOC${created.id}`,
-                        docId: created.id,
-                        name: created.title || created.filename,
-                        type: 'Document patient',
-                        dateAdded: new Date().toLocaleDateString('fr-FR'),
-                        size: created.size ? `${(created.size / 1024).toFixed(1)} KB` : '—',
-                        uri: created.filename || previewDocument.uri
-                    };
-                    setDocuments(prev => [newDoc, ...prev]);
-                    setPreviewDocument(null);
-                    setShowAddDocumentModal(false);
-                    Alert.alert('Succès', 'Document ajouté avec succès !');
-                    return;
-                } else {
-                    Alert.alert('Erreur', `Échec de l'upload: ${res.error || res.status}`);
-                }
+
+                // Close modal and inform user immediately; upload runs in background
+                setPreviewDocument(null);
+                setShowAddDocumentModal(false);
+                Alert.alert('Info', "Document en cours d'upload. L'application fonctionne normalement pendant l'upload.");
+
+                // Start upload in background (non-blocking)
+                (async () => {
+                    try {
+                        const res = await documentsApi.uploadDocument((currentProfile as any).id, fileObj, previewDocument.name);
+                        if (res.ok && res.data) {
+                            const created = res.data;
+                            const newDoc: Document = {
+                                id: `DOC${created.id}`,
+                                docId: created.id,
+                                name: created.title || created.filename || previewDocument.name,
+                                type: 'Document patient',
+                                dateAdded: new Date().toLocaleDateString('fr-FR'),
+                                size: created.size ? `${(created.size / 1024).toFixed(1)} KB` : previewDocument.size || '—',
+                                uri: created.filename || previewDocument.uri
+                            };
+                            // Add to list now that backend confirmed upload
+                            setDocuments(prev => [newDoc, ...prev]);
+                            Alert.alert('Succès', 'Document ajouté avec succès !');
+                        } else {
+                            Alert.alert('Erreur', `Échec de l'upload: ${res.error || res.status}`);
+                        }
+                    } catch (err) {
+                        console.warn('Background upload error', err);
+                        Alert.alert('Erreur', 'Erreur lors de l\'upload du document en arrière-plan.');
+                    }
+                })();
+
+                return;
             } catch (e) {
                 console.warn('Upload error', e);
                 Alert.alert('Erreur', 'Erreur lors de l\'upload du document.');
@@ -218,11 +233,47 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
 
     // Function to handle viewing a document
     const handleViewDocument = (document: Document) => {
+        // If document is still being processed/uploaded, block interactions
+        if (document.status === 'processing' || !document.docId) {
+            Alert.alert('Enregistrement', 'Le document est en cours d\'enregistrement. Réessayez plus tard.');
+            return;
+        }
+
+        // Show options: Close, Delete, Download
         Alert.alert(
             document.name,
             `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
             [
                 { text: 'Fermer', style: 'cancel' },
+                { text: 'Supprimer', style: 'destructive', onPress: () => {
+                    // confirm deletion
+                    Alert.alert(
+                        'Confirmer la suppression',
+                        `Voulez-vous vraiment supprimer "${document.name}" ?`,
+                        [
+                            { text: 'Non', style: 'cancel' },
+                            { text: 'Oui', style: 'destructive', onPress: async () => {
+                                try {
+                                    const uid = (currentProfile as any)?.id;
+                                    if (!uid || !document.docId) {
+                                        Alert.alert('Erreur', 'Impossible de supprimer: identifiants manquants.');
+                                        return;
+                                    }
+                                    const res = await documentsApi.deleteDocument(uid, document.docId as any);
+                                    if (res.ok) {
+                                        setDocuments(prev => prev.filter(d => d.docId !== document.docId && d.id !== document.id));
+                                        Alert.alert('Supprimé', 'Le document a été supprimé.');
+                                    } else {
+                                        Alert.alert('Erreur', `Impossible de supprimer: ${res.error || res.status}`);
+                                    }
+                                } catch (err) {
+                                    console.warn('Delete error', err);
+                                    Alert.alert('Erreur', 'Erreur lors de la suppression.');
+                                }
+                            }}
+                        ]
+                    );
+                }},
                 { 
                     text: 'Télécharger', 
                     onPress: () => handleDownloadDocument(document)
@@ -239,19 +290,8 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
             const url = `${config.backendUrl.replace(/\/$/, '')}/documents/${uid}/${document.docId}`;
             (async () => {
                 try {
-                    // Prefer legacy API to avoid deprecation errors on downloadAsync
-                    let FileSystemModule: any;
-                    try {
-                        FileSystemModule = await import('expo-file-system/legacy');
-                    } catch (e) {
-                        FileSystemModule = await import('expo-file-system');
-                    }
-                    const SharingModule = await import('expo-sharing');
-                    const FileSystem: any = FileSystemModule.default ?? FileSystemModule;
-                    const Sharing: any = SharingModule.default ?? SharingModule;
-
                     const filename = document.name ? document.name.replace(/[^a-z0-9.\-_]/gi, '_') : `document_${document.docId}`;
-                    const baseDir = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? '';
+                    const baseDir = (FileSystem as any)?.documentDirectory ?? (FileSystem as any)?.cacheDirectory ?? '';
                     if (!baseDir) {
                         console.warn('No writable directory available from FileSystem:', FileSystem);
                         // fallback to opening URL
@@ -266,21 +306,70 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                     console.log('Downloading document from url:', url, 'to', localPath);
 
                     // Try downloadAsync (fast native download)
-                    try {
-                        const dl = await FileSystem.downloadAsync(url, localPath);
-                        const savedUri = dl?.uri;
-                        if (savedUri) {
-                            // Share / open
-                            if (await Sharing.isAvailableAsync()) {
-                                await Sharing.shareAsync(savedUri);
+                        try {
+                            // Prefer module's downloadAsync (some builds may use different shapes)
+                            const downloadFn = (FileSystem as any)?.downloadAsync ?? (FileSystem as any)?.downloadResumable;
+                            if (typeof downloadFn === 'function') {
+                                const dl = await downloadFn(url, localPath);
+                                const savedUri = dl?.uri || (dl && dl._downloadedFileUri) || null;
+                                if (savedUri) {
+                                    // Ask the user where to save: Téléchargements or Stockage interne (app)
+                                    Alert.alert(
+                                        'Téléchargé',
+                                        `Fichier téléchargé: ${savedUri}\nOù souhaitez-vous l'enregistrer ?`,
+                                        [
+                                            { text: 'Annuler', style: 'cancel' },
+                                            {
+                                                text: 'Téléchargements',
+                                                onPress: async () => {
+                                                    try {
+                                                        const dest = `file:///sdcard/Download/${filename}`;
+                                                        await FileSystem.copyAsync({ from: savedUri, to: dest });
+                                                        Alert.alert('Enregistré', `Fichier enregistré dans Téléchargements: ${dest}`);
+                                                    } catch (copyErr) {
+                                                            console.warn('Copy to downloads failed', copyErr);
+                                                            // If copying to Downloads failed, try saving to gallery (for images) using expo-media-library
+                                                            try {
+                                                                const permission = await (MediaLibrary as any).requestPermissionsAsync();
+                                                                if (permission && permission.granted) {
+                                                                    const asset = await (MediaLibrary as any).createAssetAsync(savedUri);
+                                                                    try {
+                                                                        const album = await (MediaLibrary as any).getAlbumAsync('Download');
+                                                                        if (album) {
+                                                                            await (MediaLibrary as any).addAssetsToAlbumAsync([asset], album.id, false);
+                                                                        } else {
+                                                                            await (MediaLibrary as any).createAlbumAsync('Download', asset, false);
+                                                                        }
+                                                                        Alert.alert('Enregistré', 'Fichier enregistré dans la galerie (album Download).');
+                                                                    } catch (albErr) {
+                                                                        console.warn('Unable to create/add album', albErr);
+                                                                        Alert.alert('Enregistré', `Fichier enregistré dans la galerie.`);
+                                                                    }
+                                                                    return;
+                                                                }
+                                                            } catch (mlErr) {
+                                                                console.warn('Media library fallback failed', mlErr);
+                                                            }
+                                                            Alert.alert('Erreur', 'Impossible d\'écrire dans Téléchargements. Vérifiez les permissions.');
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                text: 'Stockage interne',
+                                                onPress: () => {
+                                                    Alert.alert('Enregistré', `Fichier disponible: ${savedUri}`);
+                                                }
+                                            }
+                                        ]
+                                    );
+                                    return;
+                                }
                             } else {
-                                Alert.alert('Téléchargé', `Fichier téléchargé: ${savedUri}`);
+                                console.warn('FileSystem download function not available on module:', FileSystem);
                             }
-                            return;
+                        } catch (e) {
+                            console.warn('downloadAsync failed:', e);
                         }
-                    } catch (e) {
-                        console.warn('downloadAsync failed:', e);
-                    }
 
                     // Fallback: open in browser (simpler and more reliable than manual base64 write)
                     Linking.openURL(url).catch((linkErr) => {
@@ -289,10 +378,11 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                     });
                     return;
                 } catch (err) {
-                    // Modules not installed
+                    // Show detailed error to help diagnose import/runtime failures
+                    console.error('Download module import error', err);
                     Alert.alert(
-                        'Module manquant',
-                        "Pour télécharger les documents, installez 'expo-file-system' et 'expo-sharing' dans le dossier mobile et relancez l'app:\n\nexpo install expo-file-system expo-sharing",
+                        'Module manquant / Erreur',
+                        `Erreur lors de l'import ou de l'utilisation des modules natifs:\n${String(err)}\n\nPour télécharger les documents, installez 'expo-file-system' et 'expo-sharing' dans le dossier mobile et relancez l'app:\n\nexpo install expo-file-system expo-sharing`,
                         [{ text: 'OK' }]
                     );
                 }
