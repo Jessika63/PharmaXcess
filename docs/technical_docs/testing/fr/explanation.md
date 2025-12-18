@@ -19,9 +19,6 @@ Ce document décrit la stratégie de test pour le projet PharmaXcess, couvrant �
 
 ### Exécution des Tests
 ```bash
-# Activer l'environnement virtuel
-source venv/bin/activate  # ou venv\Scripts\activate sur Windows
-
 # Lancer tous les tests
 pytest
 

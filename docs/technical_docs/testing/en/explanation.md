@@ -19,9 +19,6 @@ This document outlines the testing strategy for the PharmaXcess project, coverin
 
 ### Running Tests
 ```bash
-# Activate virtual environment
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
 # Run all tests
 pytest
 
