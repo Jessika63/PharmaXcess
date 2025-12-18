@@ -22,10 +22,6 @@ L'étape de test exécute la suite de tests automatisés pour vérifier la corre
     - Tests unitaires
     - Tests d'intégration
     - Commande : `pytest` (ou équivalent)
-- **Tests Frontend** :
-    - Tests de composants
-    - Tests de bout en bout (E2E)
-    - Commande : `npm test` (ou équivalent)
 
 ### 3. Deploy (Déploiement)
 L'étape de déploiement déploie l'application vers l'environnement cible (Staging/Production).

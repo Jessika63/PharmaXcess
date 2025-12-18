@@ -22,10 +22,6 @@ The test stage runs the automated test suite to verify the correctness of the co
     - Unit tests
     - Integration tests
     - Command: `pytest` (or equivalent)
-- **Frontend Tests**:
-    - Component tests
-    - End-to-end tests
-    - Command: `npm test` (or equivalent)
 
 ### 3. Deploy
 The deploy stage deploys the application to the target environment (Staging/Production).
