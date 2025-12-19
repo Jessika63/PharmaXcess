@@ -9,11 +9,20 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Linking,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Camera, CameraView } from 'expo-camera';
 import qrApi from '../../utils/api/qr';
+// File handling and sharing
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import config from '../../config';
+import logger from '../../utils/logger';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfilPatients.style';
@@ -569,25 +578,146 @@ export default function ProfilPatients(): React.JSX.Element {
   };
 
   const handleViewDocument= (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      document.name,
-      `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
-      [
-        { text: 'Fermer', style: 'cancel'},
-        {
-          text: 'Télécharger', 
-          onPress: () => handleDownloadDocument(document) 
-        }
-      ]
-    );
+    (async () => {
+      Alert.alert(
+        document.name,
+        `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
+        [
+          { text: 'Fermer', style: 'cancel'},
+          {
+            text: 'Télécharger',
+            onPress: async () => {
+              handleDownloadDocument(document);
+            }
+          }
+        ]
+      );
+    })();
   };
 
-  const handleDownloadDocument = (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      'Téléchargement', 
-      `Le document "${document.name}" sera téléchargé prochainement.`, 
-      [{ text: 'OK' }] 
-    );
+  const handleDownloadDocument = async (document: ProfessionalDocument) => {
+    try {
+      const filenameBase = document.name ? document.name.replace(/[^a-z0-9.\-_]/gi, '_') : `document_${document.id}`;
+      const filename = /\.[a-zA-Z0-9]+$/.test(filenameBase) ? filenameBase : `${filenameBase}.pdf`;
+
+      // Determine source URL or local uri
+      let source = document.uri || '';
+      if (!/^https?:\/\//.test(source) && !source.startsWith('file://')) {
+        // try constructing a backend URL (best-effort)
+        source = `${config.backendUrl.replace(/\/$/, '')}/documents/${document.patientId}/${document.id}`;
+      }
+
+      const cachePath = `${FileSystem.cacheDirectory}${filename}`;
+
+      // Download to cache first
+      const downloadRes = await FileSystem.downloadAsync(source, cachePath);
+
+      // Try to move to Downloads directory (Android)
+      // Note: DownloadDirectoryPath may be undefined on iOS or some environments
+      // Use (FileSystem as any) to access legacy constant without TS complaints
+      const downloadsDir = (FileSystem as any).DownloadDirectoryPath as string | undefined;
+      if (!downloadsDir) {
+        // If no direct Downloads directory is available (common in Expo Go), open URL in browser to let system download
+        if (/^https?:\/\//.test(source)) {
+          Linking.openURL(source).catch((err) => {
+            console.warn('[Download] Linking.openURL failed', err);
+          });
+          return;
+        }
+      }
+
+      if (downloadsDir) {
+        const targetPath = `${downloadsDir}/${filename}`;
+        try {
+          // On Android, request WRITE_EXTERNAL_STORAGE at runtime for older Android versions
+          if (Platform.OS === 'android') {
+            try {
+              const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                {
+                  title: 'Permission d\'écriture',
+                  message: 'L\'application a besoin d\'écrire dans Téléchargements pour sauvegarder le fichier.',
+                  buttonNeutral: 'Demander plus tard',
+                  buttonNegative: 'Annuler',
+                  buttonPositive: 'OK',
+                }
+              );
+              if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                console.warn('[Download] WRITE_EXTERNAL_STORAGE non accordée');
+              }
+            } catch (permErr) {
+              console.warn('[Download] Permission request failed', permErr);
+            }
+          }
+
+          // moveAsync may fail due to permission restrictions; attempt it
+          await FileSystem.moveAsync({ from: downloadRes.uri, to: targetPath });
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans Mes téléchargements: ${filename}`);
+          return;
+        } catch (err) {
+          // fallback to MediaLibrary / Sharing below
+          console.warn('[Download] Move to Downloads failed, falling back:', err);
+        }
+      }
+
+      // Try to save to media library (may prompt for permission)
+      try {
+        const perm = await MediaLibrary.requestPermissionsAsync();
+        if (perm.status === 'granted') {
+          const asset = await MediaLibrary.createAssetAsync(downloadRes.uri);
+          // Try to add to 'Download' album if possible
+          const albumName = 'Download';
+          let album = await MediaLibrary.getAlbumAsync(albumName);
+          if (!album) {
+            try {
+              album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
+            } catch (e) {
+              console.warn('[Download] createAlbumAsync failed', e);
+            }
+          } else {
+            try {
+              await MediaLibrary.addAssetsToAlbumAsync([asset], album.id, false);
+            } catch (e) {
+              console.warn('[Download] addAssetsToAlbumAsync failed', e);
+            }
+          }
+
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans la bibliothèque: ${filename}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('[Download] MediaLibrary save failed', e);
+      }
+
+      // Fallback: present share dialog so user can save manually (iOS / limited Android)
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(downloadRes.uri, { dialogTitle: `Enregistrer ${filename}` });
+        return;
+      }
+
+      // If sharing isn't available, try opening the document URL in the browser
+      try {
+        if (/^https?:\/\//.test(source)) {
+          Alert.alert(
+            'Téléchargement externe',
+            'Impossible d\'enregistrer automatiquement sur l\'appareil. Ouvrir le document dans le navigateur pour le télécharger dans le dossier Téléchargements ?',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Ouvrir', onPress: () => { Linking.openURL(source).catch((err) => { console.warn('[Download] Linking.openURL failed', err); }); } }
+            ]
+          );
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Last resort: notify user where the cached file is located
+      Alert.alert('Téléchargement', `Le fichier est disponible dans le cache: ${downloadRes.uri}`);
+    } catch (err: any) {
+      console.error('handleDownloadDocument error', err);
+      Alert.alert('Erreur', `Impossible de télécharger le document: ${String(err)}`);
+    }
   };
 
   // Functions for note management 

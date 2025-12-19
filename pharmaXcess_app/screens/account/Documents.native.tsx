@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput, Linking, Platform, PermissionsAndroid } from 'react-native';
 import config from '../../config';
+import Constants from 'expo-constants';
+import * as LinkingModule from 'expo-linking';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,12 +14,6 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import documentsApi from '../../utils/api/documents';
-// Static imports to ensure the native modules are bundled at startup
-import * as DocumentPicker from 'expo-document-picker';
-// Use legacy FileSystem API to preserve documentDirectory/cacheDirectory and
-// backwards-compatible functions (getInfoAsync, downloadAsync, copyAsync).
-import * as FileSystem from 'expo-file-system/legacy';
-import * as MediaLibrary from 'expo-media-library';
 
 type DocumentsProps = {
     navigation: StackNavigationProp<any, any>;
@@ -106,10 +105,10 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
         setPreviewDocument(newDocument);
     };
 
-    // Open the native document picker (statically imported so it's bundled at startup)
+    // Try to open the native document picker using expo-document-picker.
     const handleOpenDocumentPicker = async () => {
         try {
-            const res = await (DocumentPicker as any).getDocumentAsync({ type: '*/*' });
+            const res = await DocumentPicker.getDocumentAsync({ type: '*/*' });
             if (!res) {
                 Alert.alert('Erreur', "Aucun résultat du sélecteur de fichiers.");
                 return;
@@ -124,6 +123,7 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                 return;
             }
 
+            // New shape: { canceled: false, assets: [ { name, uri, size, ... } ] }
             let fileName: string | undefined;
             let fileUri: string | undefined;
             let fileSizeBytes: number | undefined;
@@ -144,6 +144,7 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                 fileName = res.name || (res.uri ? res.uri.split('/').pop() : undefined);
             }
 
+            // Show quick debug alert (can be removed later)
             try {
                 Alert.alert('Fichier sélectionné', `${fileName || '–'}\n${fileUri || 'URI manquante'}`);
             } catch (e) {
@@ -160,9 +161,10 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
             };
             setPreviewDocument(newDocument);
         } catch (err) {
+            // If import fails (module not installed) or picker errors, fallback to alert + simulation
             Alert.alert(
-                'Erreur',
-                "Ouverture du sélecteur de fichiers échouée. Assurez-vous d'avoir installé 'expo-document-picker' et relancez l'application.",
+                'Module manquant',
+                "L'ouverture du sélecteur de fichiers a échoué. Installez 'expo-document-picker' et relancez l'application, ou utilisez la simulation.",
                 [
                     { text: 'Annuler', style: 'cancel' },
                     { text: 'Simuler la sélection', onPress: handleSimulateDocumentSelection }
@@ -288,6 +290,15 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
         const uid = (currentProfile as any)?.id;
         if (document.docId && uid) {
             const url = `${config.backendUrl.replace(/\/$/, '')}/documents/${uid}/${document.docId}`;
+            // If running inside Expo Go, open the URL in the external browser immediately
+            try {
+                if (Constants && Constants.appOwnership === 'expo') {
+                    Linking.openURL(url).catch(() => {
+                        Alert.alert('Erreur', "Impossible d'ouvrir le navigateur.");
+                    });
+                    return;
+                }
+            } catch {}
             (async () => {
                 try {
                     const filename = document.name ? document.name.replace(/[^a-z0-9.\-_]/gi, '_') : `document_${document.docId}`;
@@ -307,11 +318,21 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
 
                     // Try downloadAsync (fast native download)
                         try {
-                            // Prefer module's downloadAsync (some builds may use different shapes)
-                            const downloadFn = (FileSystem as any)?.downloadAsync ?? (FileSystem as any)?.downloadResumable;
-                            if (typeof downloadFn === 'function') {
-                                const dl = await downloadFn(url, localPath);
-                                const savedUri = dl?.uri || (dl && dl._downloadedFileUri) || null;
+                            // Prefer module's downloadAsync; otherwise use createDownloadResumable if available
+                            let savedUri: string | null = null;
+                            if (typeof FileSystem?.downloadAsync === 'function') {
+                                const dl = await FileSystem.downloadAsync(url, localPath);
+                                savedUri = dl?.uri || (dl && dl._downloadedFileUri) || null;
+                            } else if (typeof FileSystem?.createDownloadResumable === 'function') {
+                                const resumable = FileSystem.createDownloadResumable(url, localPath);
+                                const dl = await resumable.downloadAsync();
+                                savedUri = dl?.uri || (dl && dl._downloadedFileUri) || null;
+                            } else if (typeof FileSystem?.downloadResumable === 'function') {
+                                // older API shape fallback
+                                const dl = await FileSystem.downloadResumable(url, localPath);
+                                savedUri = dl?.uri || (dl && dl._downloadedFileUri) || null;
+                            }
+                            if (savedUri) {
                                 if (savedUri) {
                                     // Ask the user where to save: Téléchargements or Stockage interne (app)
                                     Alert.alert(
@@ -323,15 +344,34 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                                                 text: 'Téléchargements',
                                                 onPress: async () => {
                                                     try {
-                                                        const dest = `file:///sdcard/Download/${filename}`;
-                                                        await FileSystem.copyAsync({ from: savedUri, to: dest });
-                                                        Alert.alert('Enregistré', `Fichier enregistré dans Téléchargements: ${dest}`);
-                                                    } catch (copyErr) {
-                                                            console.warn('Copy to downloads failed', copyErr);
-                                                            // If copying to Downloads failed, try saving to gallery (for images) using expo-media-library
+                                                            // On Android request runtime permission before writing to external Downloads
+                                                            if (Platform.OS === 'android') {
+                                                                try {
+                                                                    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+                                                                    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                                                                        // Permission denied — fallback to browser
+                                                                        Linking.openURL(url).catch(() => {
+                                                                            Alert.alert('Erreur', "Impossible d'ouvrir le navigateur.");
+                                                                        });
+                                                                        return;
+                                                                    }
+                                                                } catch (permErr) {
+                                                                    Linking.openURL(url).catch(() => {
+                                                                        Alert.alert('Erreur', "Impossible d'ouvrir le navigateur.");
+                                                                    });
+                                                                    return;
+                                                                }
+                                                            }
+
+                                                            const dest = `file:///sdcard/Download/${filename}`;
+                                                            await FileSystem.copyAsync({ from: savedUri, to: dest });
+                                                            Alert.alert('Enregistré', `Fichier enregistré dans Téléchargements: ${dest}`);
+                                                        } catch (copyErr) {
+                                                            
+                                                                                            // If copying to Downloads failed, try saving to gallery (for images) using expo-media-library
                                                             try {
                                                                 const permission = await (MediaLibrary as any).requestPermissionsAsync();
-                                                                if (permission && permission.granted) {
+                                                                if (permission.granted) {
                                                                     const asset = await (MediaLibrary as any).createAssetAsync(savedUri);
                                                                     try {
                                                                         const album = await (MediaLibrary as any).getAlbumAsync('Download');
@@ -350,7 +390,10 @@ export default function Documents({ navigation }: DocumentsProps): React.JSX.Ele
                                                             } catch (mlErr) {
                                                                 console.warn('Media library fallback failed', mlErr);
                                                             }
-                                                            Alert.alert('Erreur', 'Impossible d\'écrire dans Téléchargements. Vérifiez les permissions.');
+                                                            // As a last resort open the link in the browser so the system can download it
+                                                            Linking.openURL(url).catch(() => {
+                                                                Alert.alert('Erreur', 'Impossible d\'écrire dans Téléchargements. Vérifiez les permissions.');
+                                                            });
                                                     }
                                                 }
                                             },

@@ -14,6 +14,7 @@ import config from './config';
 // Use legacy FileSystem for backward-compatible directory constants and helpers
 import * as FileSystem from 'expo-file-system/legacy';
 import { useProfile } from './context/ProfileContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Composant interne pour gérer l'enregistrement CORS
 function AppWithCORS(): React.JSX.Element {
@@ -85,6 +86,62 @@ function PreloadManager(): null {
         return () => { mounted = false; };
     }, [currentProfile?.id]);
 
+    return null;
+}
+
+// Early preloader: attempt to prefetch documents from any stored local profiles
+// This runs as soon as the app mounts (before CORS registration), and is best-effort.
+function EarlyPreloadManager(): null {
+    React.useEffect(() => {
+        let mounted = true;
+        const run = async () => {
+            try {
+                const keys = await AsyncStorage.getAllKeys();
+                const profileListKeys = keys.filter(k => typeof k === 'string' && k.includes('profiles_') && k.endsWith('_list'));
+                for (const key of profileListKeys) {
+                    if (!mounted) break;
+                    try {
+                        const raw = await AsyncStorage.getItem(key);
+                        if (!raw) continue;
+                        const profiles = JSON.parse(raw);
+                        if (!Array.isArray(profiles)) continue;
+                        for (const p of profiles) {
+                            if (!mounted) break;
+                            const pid = p?.id;
+                            if (!pid) continue;
+                            try {
+                                const res = await documentsApi.getDocuments(pid);
+                                if (!res || !res.ok || !Array.isArray(res.data)) continue;
+                                for (const d of res.data) {
+                                    if (!mounted) break;
+                                    const docId = d.id;
+                                    const filename = (d.filename || d.title || `document_${docId}`).toString().replace(/[^a-z0-9.\-_]/gi, '_');
+                                    const url = `${config.backendUrl.replace(/\/$/, '')}/documents/${pid}/${docId}`;
+                                    const localPath = `${FileSystem.cacheDirectory}${filename}`;
+                                    try {
+                                        const info = await FileSystem.getInfoAsync(localPath);
+                                        if (!info.exists) {
+                                            await FileSystem.downloadAsync(url, localPath).catch(() => null);
+                                        }
+                                    } catch (e) {
+                                        // ignore per-file errors
+                                    }
+                                }
+                            } catch (e) {
+                                // ignore profile-specific errors
+                            }
+                        }
+                    } catch (e) {
+                        // ignore key-specific errors
+                    }
+                }
+            } catch (err) {
+                // ignore global errors
+            }
+        };
+        run();
+        return () => { mounted = false; };
+    }, []);
     return null;
 }
 
