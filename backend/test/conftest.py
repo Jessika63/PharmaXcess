@@ -3,6 +3,9 @@ import sys
 import os
 import pytest
 
+# Set CORS_SECRET_KEY before importing app module
+os.environ.setdefault('CORS_SECRET_KEY', 'test_secret_key_default')
+
 # Add the application directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
