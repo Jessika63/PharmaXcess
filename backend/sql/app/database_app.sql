@@ -167,13 +167,31 @@ CREATE TABLE IF NOT EXISTS distributeurs (
 -- Commandes Click & Collect
 CREATE TABLE IF NOT EXISTS commandes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    utilisateur_id INT,
-    ordonnance_id INT,
-    statut ENUM('en_attente','valide','refuse','retire'),
-    contenu_qr TEXT,
+    utilisateur_id INT NOT NULL,
+    ordonnance_id INT NOT NULL,
+    statut ENUM('en_attente', 'valide', 'refuse', 'retire') DEFAULT 'en_attente',
+    raison_refus TEXT NULL,
+    contenu_qr TEXT NULL,
     date_demande DATETIME DEFAULT CURRENT_TIMESTAMP,
+    date_validation DATETIME NULL,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
-    FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE
+    FOREIGN KEY (ordonnance_id) REFERENCES ordonnances(id) ON DELETE CASCADE,
+    INDEX idx_utilisateur_id (utilisateur_id),
+    INDEX idx_ordonnance_id (ordonnance_id),
+    INDEX idx_statut (statut)
+);
+
+CREATE TABLE IF NOT EXISTS ordonnance_images_temp (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    utilisateur_id INT NOT NULL,
+    ordonnance_id INT NULL,
+    filename VARCHAR(255),
+    image_data LONGBLOB,
+    mime_type VARCHAR(100) DEFAULT 'image/png',
+    date_upload DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    INDEX idx_user_upload (utilisateur_id),
+    INDEX idx_ordonnance (ordonnance_id)
 );
 
 -- Discussion / Tickets
