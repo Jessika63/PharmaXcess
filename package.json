@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "expo-document-picker": "^14.0.7",
-    "expo-file-system": "^19.0.19",
-    "expo-sharing": "^14.0.7"
-  }
-}

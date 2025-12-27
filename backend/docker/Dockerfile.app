@@ -26,5 +26,4 @@ COPY scripts/init_medicine.sh /init_medicine.sh
 RUN sed -i 's/\r$//' /init_medicine.sh && chmod +x /init_medicine.sh
 
 ENTRYPOINT ["/init_medicine.sh"]
-# Run Flask directly in the container. For production you may restore Gunicorn.
 CMD ["python", "app.py"]
