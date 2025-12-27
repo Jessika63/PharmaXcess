@@ -125,18 +125,6 @@ CREATE TABLE IF NOT EXISTS ordonnances (
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
--- Documents (uploaded files metadata)
-CREATE TABLE IF NOT EXISTS documents (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    utilisateur_id INT NOT NULL,
-    title VARCHAR(255),
-    filename VARCHAR(255),
-    size INT,
-    date_ajout DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'processing',
-    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- Alarmes
 CREATE TABLE IF NOT EXISTS alarmes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -269,8 +257,6 @@ CREATE INDEX idx_prescription_reminders_utilisateur ON prescription_reminders(ut
 CREATE INDEX idx_prescription_reminders_ordonnance ON prescription_reminders(ordonnance_id);
 CREATE INDEX idx_prescription_reminders_due_date ON prescription_reminders(due_date);
 CREATE INDEX idx_prescription_reminders_completed ON prescription_reminders(is_completed);
-CREATE INDEX idx_documents_utilisateur ON documents(utilisateur_id);
-CREATE INDEX idx_documents_status ON documents(status);
 
 -- Enable event scheduler
 SET GLOBAL event_scheduler = ON;

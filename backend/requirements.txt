@@ -3,7 +3,11 @@ PyMySQL==1.1.1
 python-dotenv==1.0.0
 numpy==1.26.4
 opencv-python==4.8.1.78
+pytest==8.3.3
 pytesseract>=0.3.10
+pytest-mock==3.10.0
+pytest-order==1.0.1
+pytest-cov==6.0.0
 tqdm==4.67.1
 pyzbar==0.1.8
 qrcode==7.4.2

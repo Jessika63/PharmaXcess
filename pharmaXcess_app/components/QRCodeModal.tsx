@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Modal,
   Text,
   TouchableOpacity,
-  View,
+  View, 
   StyleSheet,
-  Image,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
@@ -15,7 +13,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useFontScale } from '../context/FontScaleContext';
 import { Profile } from '../context/ProfileContext';
 import { generateQRData } from '../utils/qrCodeUtils';
-import qrApi from '../utils/api/qr';
 import createStyles from '../styles/QRCodeModal.style';
 
 interface QRCodeModalProps {
@@ -44,43 +41,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       return '';
     }
   };
-
-  // State to hold backend-generated QR image (base64)
-  const [backendImage, setBackendImage] = useState<string | null>(null);
-  const [loadingBackend, setLoadingBackend] = useState(false);
-  const [backendError, setBackendError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetchBackendQr() {
-      if (!visible || !profile) return;
-      setBackendImage(null);
-      setBackendError(null);
-      setLoadingBackend(true);
-      try {
-        const res = await qrApi.generateProfileQr(profile.id as any);
-        if (!mounted) return;
-        if (res.ok && res.data) {
-          // Expecting { id, code_unique, image }
-          const img = res.data.image;
-          if (img) {
-            setBackendImage(`data:image/png;base64,${img}`);
-          } else {
-            setBackendError('Aucune image reçue');
-          }
-        } else {
-          setBackendError(res.error || `Erreur ${res.status}`);
-        }
-      } catch (e: any) {
-        setBackendError(e?.message || String(e));
-      } finally {
-        if (mounted) setLoadingBackend(false);
-      }
-    }
-
-    fetchBackendQr();
-    return () => { mounted = false; };
-  }, [visible, profile]);
 
   const getRelationshipText = (relationship?: string) => {
     switch (relationship) {
@@ -129,26 +89,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </View>
 
           <View style={styles.qrContainer}>
-            {loadingBackend ? (
-              <ActivityIndicator size="large" color={colors.primary} />
-            ) : backendImage ? (
-              <Image
-                source={{ uri: backendImage }}
-                style={{ width: 200, height: 200 }}
-                resizeMode="contain"
-              />
-            ) : (
-              // Fallback to local generated QR code
-              <QRCode
-                value={getQRData()}
-                size={200}
-                color="#000000"
-                backgroundColor="#ffffff"
-              />
-            )}
-            {backendError ? (
-              <Text style={{ color: 'red', marginTop: 8 }}>{backendError}</Text>
-            ) : null}
+            <QRCode
+              value={getQRData()}
+              size={200}
+              color="#000000"
+              backgroundColor="#ffffff"
+            />
           </View>
 
           <Text style={styles.instructionText}>

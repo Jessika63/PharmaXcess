@@ -17,11 +17,6 @@ function DocumentsChecking() {
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     const [currentDocType, setCurrentDocType] = useState(null);
     const [showCINOptions, setShowCINOptions] = useState(false);
-    // Document upload states
-    const [userIdInput, setUserIdInput] = useState('1');
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [docTitle, setDocTitle] = useState('');
-    const [documents, setDocuments] = useState([]);
 
     const navigate = useNavigate();
 
@@ -165,77 +160,6 @@ function DocumentsChecking() {
     useEffect(() => {
     }, [focusedIndex]);
 
-    // Fetch documents for a user
-    const fetchDocuments = async (uid) => {
-        try {
-            const res = await fetch(`${config.backendUrl}/documents/${uid}`);
-            if (res.ok) {
-                const data = await res.json();
-                setDocuments(data);
-            } else {
-                console.error('Failed to fetch documents');
-            }
-        } catch (e) {
-            console.error('Error fetching documents', e);
-        }
-    };
-
-    useEffect(() => {
-        if (userIdInput) fetchDocuments(userIdInput);
-    }, [userIdInput]);
-
-    const handleFileChange = (e) => {
-        setSelectedFile(e.target.files[0]);
-    };
-
-    const handleUpload = async () => {
-        if (!selectedFile) return alert('Choisir un fichier');
-        const uid = userIdInput || '1';
-        const fd = new FormData();
-        fd.append('file', selectedFile);
-        fd.append('title', docTitle || selectedFile.name);
-        try {
-            const res = await fetch(`${config.backendUrl}/documents/${uid}`, {
-                method: 'POST',
-                body: fd
-            });
-            if (res.ok) {
-                setSelectedFile(null);
-                setDocTitle('');
-                fetchDocuments(uid);
-                alert('Fichier uploadé');
-            } else {
-                const data = await res.json();
-                alert('Erreur upload: ' + (data.error || res.statusText));
-            }
-        } catch (e) {
-            console.error('Upload error', e);
-            alert('Erreur réseau');
-        }
-    };
-
-    const handleDownload = (doc) => {
-        const uid = userIdInput || '1';
-        // open in new tab to trigger download
-        window.open(`${config.backendUrl}/documents/${uid}/${doc.id}`);
-    };
-
-    const handleDelete = async (doc) => {
-        const uid = userIdInput || '1';
-        if (!confirm('Supprimer ce document ?')) return;
-        try {
-            const res = await fetch(`${config.backendUrl}/documents/${uid}/${doc.id}`, { method: 'DELETE' });
-            if (res.ok) {
-                fetchDocuments(uid);
-            } else {
-                alert('Erreur suppression');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Erreur réseau');
-        }
-    };
-
     return (
         <>
             {showInactivityModal && (
@@ -275,41 +199,6 @@ function DocumentsChecking() {
                     {/* Logo */}
                     <div className="flex-grow flex justify-center pr-64">
                         <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-96 h-24" />
-                    </div>
-                </div>
-
-                {/* Document upload area */}
-                <div className="w-2/3 mt-6 p-6 bg-white rounded-lg shadow-md">
-                    <div className="mb-4">
-                        <label className="block mb-1">User ID</label>
-                        <input value={userIdInput} onChange={(e) => setUserIdInput(e.target.value)} className="border p-2 rounded w-32" />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block mb-1">Titre (optionnel)</label>
-                        <input value={docTitle} onChange={(e) => setDocTitle(e.target.value)} className="border p-2 rounded w-full" />
-                    </div>
-                    <div className="mb-4">
-                        <input type="file" onChange={handleFileChange} />
-                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}>Upload</button>
-                    </div>
-
-                    <div>
-                        <h3 className="font-bold mb-2">Documents</h3>
-                        {documents.length === 0 && <div className="text-sm text-gray-500">Aucun document</div>}
-                        <ul>
-                            {documents.map((d) => (
-                                <li key={d.id} className="flex items-center justify-between py-2 border-b">
-                                    <div>
-                                        <div className="font-medium">{d.title}</div>
-                                        <div className="text-xs text-gray-500">{d.size} bytes — {new Date(d.date_ajout).toLocaleString()}</div>
-                                    </div>
-                                    <div>
-                                        <button onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
-                                        <button onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
                     </div>
                 </div>
 

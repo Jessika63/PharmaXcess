@@ -218,6 +218,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 description: '',
                 symptoms: '',
                 beginDate: '',
+                medications: '',
                 examens: '',
             });
             setModalVisible(false);
@@ -332,15 +333,15 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
 
     // Simple disease management by profile 
     const handleAddSimpleDisease = async (): Promise<void> => {
-        // For other profiles, require the simple name input
-        if (!newDiseaseSimple.trim()) {
+        // For other profiles, we only require the name field but save all available data
+        if (!newDisease.name.trim()) {
             Alert.alert('Erreur', 'Veuillez entrer le nom de la maladie.');
             return;
         }
 
         // Create complete disease data even for other profiles
         const diseaseData = {
-            name: newDiseaseSimple.trim(),
+            name: newDisease.name.trim(),
             description: newDisease.description || '',
             symptoms: newDisease.symptoms || '',
             beginDate: `${selectedDay.toString().padStart(2, '0')}/${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`,
@@ -393,7 +394,16 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
         );
     };
 
-    // (removed duplicate relationship helper - use `getRelationshipText` above)
+    const getRelatioinhipText = (relationship?: string) => {
+        switch (relationship) {
+            case 'self': return 'Mon profil';
+            case 'child': return 'Profil enfant';
+            case 'parent': return 'Profil parent';
+            case 'spouse': return 'Profil conjoint(e)';
+            case 'other': return 'Autre profil';
+            default: return 'Mon profil';
+        }
+    }; 
 
     React.useLayoutEffect(() => {
         navigation.setOptions({
@@ -429,7 +439,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                     <>
                         {diseases.map((disease, index) => (
                             <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
-                                <View style={styles.card}>
+                                <View key={index} style={styles.card}>
                                     <View style={styles.cardHeader}>
                                         <Text style={styles.cardTitle}>{disease.name}</Text>
                                         <View style={styles.actionButtons}>
@@ -492,7 +502,7 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                                         };
                                     }
                                     
-                                        return (
+                                    return (
                                         <TouchableOpacity key={index} onPress={() => toggleCard(index)}>
                                             <View style={styles.card}>
                                                 <View style={styles.cardHeader}>
@@ -574,295 +584,396 @@ export default function Diseases ({ navigation }: DiseasesProps): React.JSX.Elem
                 </TouchableOpacity>
             </View>
 
-            {/* Add Modal */}
+            {/* Modal for adding a new disease - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        backgroundColor: colors.background,
-                        padding: 20
-                    }}
-                    keyboardShouldPersistTaps="handled"
-                > 
-                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                        Ajouter une maladie 
-                    </Text>
+<ScrollView
+    contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: colors.background,
+        padding: 20
+    }}
+    keyboardShouldPersistTaps="handled"
+> 
+    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
+        Ajouter une maladie 
+    </Text>
 
-                    <TextInput 
-                        placeholder="Nom" 
-                        value={isMainProfile ? newDisease.name : newDiseaseSimple}
-                        onChangeText={(text: string) => {
-                            if (isMainProfile) {
-                                setNewDisease({ ...newDisease, name: text })
-                            } else {
-                                setNewDiseaseSimple(text);
-                                // For other profiles, also update newDisease.name for consistency
-                                setNewDisease({ ...newDisease, name: text });
-                            }
-                        }}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text
-                        }}
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+    <TextInput 
+        placeholder="Nom" 
+        value={isMainProfile ? newDisease.name : newDiseaseSimple}
+        onChangeText={(text: string) => {
+            if (isMainProfile) {
+                setNewDisease({ ...newDisease, name: text })
+            } else {
+                setNewDiseaseSimple(text);
+                // For other profiles, also update newDisease.name for consistency
+                setNewDisease({ ...newDisease, name: text });
+            }
+        }}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            fontSize: 16,
+            color: colors.text
+        }}
+        placeholderTextColor={colors.text + '80'} 
+    />
 
-                    <TextInput 
-                        placeholder="Description" 
-                        value={newDisease.description}
-                        onChangeText={(text: string) => setNewDisease({ ...newDisease, description: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
-                    
-                    <TextInput 
-                        placeholder="Symptômes"
-                        value={newDisease.symptoms}
-                        onChangeText={(text: string) => setNewDisease({ ...newDisease, symptoms: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 15,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+    <TextInput 
+        placeholder="Description" 
+        value={newDisease.description}
+        onChangeText={(text: string) => setNewDisease({ ...newDisease, description: text })}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            fontSize: 16,
+            color: colors.text,
+            minHeight: 80
+        }}
+        multiline
+        placeholderTextColor={colors.text + '80'} 
+    />
+    
+    <TextInput 
+        placeholder="Symptômes"
+        value={newDisease.symptoms}
+        onChangeText={(text: string) => setNewDisease({ ...newDisease, symptoms: text })}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            fontSize: 16,
+            color: colors.text,
+            minHeight: 80
+        }}
+        multiline
+        placeholderTextColor={colors.text + '80'} 
+    />
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                        <View style={{ flex: 1, marginRight: 5 }}> 
-                            <CustomPicker 
-                                label="Jour" 
-                                selectedValue={selectedDay} 
-                                onValueChange={(value: string | number) => setSelectedDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                            <CustomPicker 
-                                label="Mois" 
-                                selectedValue={selectedMonth} 
-                                onValueChange={(value: string | number) => setSelectedMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 5 }}> 
-                            <CustomPicker 
-                                label="Année" 
-                                selectedValue={selectedYear} 
-                                onValueChange={(value: string | number) => setSelectedYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
-                                placeholder="2024"
-                            />
-                        </View>
-                    </View>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+        <View style={{ flex: 1, marginRight: 5 }}> 
+            <CustomPicker 
+                label="Jour" 
+                selectedValue={selectedDay} 
+                onValueChange={(value: string | number) => setSelectedDay(Number(value))}
+                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+            <CustomPicker 
+                label="Mois" 
+                selectedValue={selectedMonth} 
+                onValueChange={(value: string | number) => setSelectedMonth(Number(value))}
+                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginLeft: 5 }}> 
+            <CustomPicker 
+                label="Année" 
+                selectedValue={selectedYear} 
+                onValueChange={(value: string | number) => setSelectedYear(Number(value))}
+                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                placeholder="2024"
+            />
+        </View>
+    </View>
 
-                    <TextInput 
-                        placeholder="Examens" 
-                        value={newDisease.examens}
-                        onChangeText={(text: string) => setNewDisease({ ...newDisease, examens: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: colors.primary,
-                            borderRadius: 10,
-                            padding: 15,
-                            marginBottom: 30,
-                            fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
-                        }}
-                        multiline
-                        placeholderTextColor={colors.text + '80'} 
-                    />
+    <TextInput 
+        placeholder="Examens" 
+        value={newDisease.examens}
+        onChangeText={(text: string) => setNewDisease({ ...newDisease, examens: text })}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 30,
+            fontSize: 16,
+            color: colors.text,
+            minHeight: 80
+        }}
+        multiline
+        placeholderTextColor={colors.text + '80'} 
+    />
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
-                        <TouchableOpacity 
-                            style={{ 
-                                flex: 1, 
-                                padding: 15, 
-                                borderRadius: 10, 
-                                backgroundColor: colors.secondary + '30',
-                                marginRight: 10,
-                                alignItems: 'center'
-                            }}
-                            onPress={() => {
-                                setModalVisible(false);
-                                // Reset all fields for both main and other profiles
-                                setNewDiseaseSimple('');
-                                setNewDisease({
-                                    name: '',
-                                    description: '',
-                                    symptoms: '',
-                                    beginDate: '',
-                                    examens: '',
-                                });
-                                setSelectedYear(2024);
-                                setSelectedMonth(1);
-                                setSelectedDay(1);
-                            }}
-                        >
-                            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={{ 
-                                flex: 1, 
-                                padding: 15, 
-                                borderRadius: 10, 
-                                backgroundColor: colors.primary,
-                                marginLeft: 10, 
-                                alignItems: 'center'
-                            }}
-                            onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ScrollView>
-            </Modal>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
+        <TouchableOpacity 
+            style={{ 
+                flex: 1, 
+                padding: 15, 
+                borderRadius: 10, 
+                backgroundColor: colors.secondary + '30',
+                marginRight: 10,
+                alignItems: 'center'
+            }}
+            onPress={() => {
+                setModalVisible(false);
+                // Reset all fields for both main and other profiles
+                setNewDiseaseSimple('');
+                setNewDisease({
+                    name: '',
+                    description: '',
+                    symptoms: '',
+                    beginDate: '',
+                    examens: '',
+                });
+                setSelectedYear(2024);
+                setSelectedMonth(1);
+                setSelectedDay(1);
+            }}
+        >
+            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+            style={{ 
+                flex: 1, 
+                padding: 15, 
+                borderRadius: 10, 
+                backgroundColor: colors.primary,
+                marginLeft: 10, 
+                alignItems: 'center'
+            }}
+            onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}
+        >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
+        </TouchableOpacity>
+    </View>
+</ScrollView>
 
-            {/* Edit Modal */}
-            <Modal visible={isEditModalVisible} animationType="slide">
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        backgroundColor: colors.background,
-                        padding: 20
-                    }}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                        Modifier la maladie 
-                    </Text>
+                        </Text>
 
-                    <Text style={modalStyles.label}>Nom</Text>
-                    <TextInput 
-                        placeholder="Nom de la maladie" 
-                        value={editedDisease.name}
-                        onChangeText={(text: string) => setEditedDisease({ ...editedDisease, name: text })}
-                        style={modalStyles.input}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
+                        <Text style={modalStyles.label}>Nom</Text>
+                        <TextInput 
+                            placeholder="Nom de la maladie" 
+                            value={editedDisease.name}
+                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, name: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <Text style={modalStyles.label}>Description</Text>
-                    <TextInput 
-                        placeholder="Description de la maladie" 
-                        value={editedDisease.description}
-                        onChangeText={(text: string) => setEditedDisease({ ...editedDisease, description: text })}
-                        style={modalStyles.inputMultiline}
-                        multiline
-                        numberOfLines={3}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
+                        <Text style={modalStyles.label}>Description</Text>
+                        <TextInput 
+                            placeholder="Description de la maladie" 
+                            value={editedDisease.description}
+                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, description: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
                         
-                    <Text style={modalStyles.label}>Symptômes</Text>
-                    <TextInput 
-                        placeholder="Symptômes observés"
-                        value={editedDisease.symptoms}
-                        onChangeText={(text: string) => setEditedDisease({ ...editedDisease, symptoms: text })}
-                        style={modalStyles.inputMultiline}
-                        multiline
-                        numberOfLines={3}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
+                        <Text style={modalStyles.label}>Symptômes</Text>
+                        <TextInput 
+                            placeholder="Symptômes observés"
+                            value={editedDisease.symptoms}
+                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, symptoms: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <Text style={modalStyles.label}>Date de début</Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                        <View style={{ flex: 1, marginRight: 5 }}> 
-                            <CustomPicker 
-                                label="Jour" 
-                                selectedValue={editSelectedDay} 
-                                onValueChange={(value: string | number) => setEditSelectedDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                placeholder="01"
-                            />
+                        <Text style={modalStyles.label}>Date de début</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                            <View style={{ flex: 1, marginRight: 5 }}> 
+                                <CustomPicker 
+                                    label="Jour" 
+                                    selectedValue={editSelectedDay} 
+                                    onValueChange={(value: string | number) => setEditSelectedDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                <CustomPicker 
+                                    label="Mois" 
+                                    selectedValue={editSelectedMonth} 
+                                    onValueChange={(value: string | number) => setEditSelectedMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}> 
+                                <CustomPicker 
+                                    label="Année" 
+                                    selectedValue={editSelectedYear} 
+                                    onValueChange={(value: string | number) => setEditSelectedYear(Number(value))}
+                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                    placeholder="2024"
+                                />
+                            </View>
                         </View>
-                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                            <CustomPicker 
-                                label="Mois" 
-                                selectedValue={editSelectedMonth} 
-                                onValueChange={(value: string | number) => setEditSelectedMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 5 }}> 
-                            <CustomPicker 
-                                label="Année" 
-                                selectedValue={editSelectedYear} 
-                                onValueChange={(value: string | number) => setEditSelectedYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
-                                placeholder="2024"
-                            />
-                        </View>
-                    </View>
 
-                    <Text style={modalStyles.label}>Examens</Text>
-                    <TextInput 
-                        placeholder="Examens réalisés ou à réaliser" 
-                        value={editedDisease.examens}
-                        onChangeText={(text: string) => setEditedDisease({ ...editedDisease, examens: text })}
-                        style={modalStyles.inputMultiline}
-                        multiline
-                        numberOfLines={3}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
+                        <Text style={modalStyles.label}>Examens</Text>
+                        <TextInput 
+                            placeholder="Examens réalisés ou à réaliser" 
+                            value={editedDisease.examens}
+                            onChangeText={(text: string) => setEditedDisease({ ...editedDisease, examens: text })}
+                            style={modalStyles.inputMultiline}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                padding: 15,
-                                borderRadius: 10,
-                                backgroundColor: colors.secondary + '30',
-                                marginRight: 10,
-                                alignItems: 'center'
-                            }}
-                            onPress={() => {
-                                setEditModalVisible(false);
-                                setEditingIndex(null);
-                                setEditedDisease({ name: '', description: '', symptoms: '', beginDate: '', examens: '' });
-                            }}
-                        >
-                            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                padding: 15,
-                                borderRadius: 10,
-                                backgroundColor: colors.primary,
-                                marginLeft: 10,
-                                alignItems: 'center'
-                            }}
-                            onPress={handleSaveEdit}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Enregistrer</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ScrollView>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={isMainProfile ? handleAddPress : handleAddSimpleDisease}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                                style={styles.button}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    // Reset all fields for both main and other profiles
+                                    setNewDiseaseSimple('');
+                                    setNewDisease({
+                                        name: '',
+                                        description: '',
+                                        symptoms: '',
+                                        beginDate: '',
+                                        medications: '',
+                                        examens: '',
+                                    });
+                                    setSelectedYear(2024);
+                                    setSelectedMonth(1);
+                                    setSelectedDay(1);
+                                }}
+                            >
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
             </Modal>
 
+            {/* Editing modal for the main profile */} 
+            {isMainProfile && ( 
+                <Modal visible={isEditModalVisible} animationType="slide">
+                    <View style={modalStyles.modalContainer}>
+                        <ScrollView 
+                            contentContainerStyle={modalStyles.scrollContent}
+                            showsVerticalScrollIndicator={true}
+                            bounces={true}
+                        >
+                            <Text style={modalStyles.modalTitle}>
+                                Modifier la maladie 
+                            </Text>
+
+                            <Text style={modalStyles.label}>Nom</Text>
+                            <TextInput 
+                                placeholder="Nom de la maladie" 
+                                value={editedDisease.name}
+                                onChangeText={(text) => setEditedDisease({ ...editedDisease, name: text })}
+                                style={modalStyles.input}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Description</Text>
+                            <TextInput 
+                                placeholder="Description de la maladie" 
+                                value={editedDisease.description}
+                                onChangeText={(text) => setEditedDisease({ ...editedDisease, description: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Symptômes</Text>
+                            <TextInput 
+                                placeholder="Symptômes observés" 
+                                value={editedDisease.symptoms}
+                                onChangeText={(text) => setEditedDisease({ ...editedDisease, symptoms: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Date de début</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                                <View style={{ flex: 1, marginRight: 5 }}> 
+                                    <CustomPicker 
+                                        label="Jour" 
+                                        selectedValue={editSelectedDay} 
+                                        onValueChange={(value) => setEditSelectedDay(Number(value))}
+                                        options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                    <CustomPicker 
+                                        label="Mois" 
+                                        selectedValue={editSelectedMonth} 
+                                        onValueChange={(value) => setEditSelectedMonth(Number(value))}
+                                        options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
+                                        placeholder="01"
+                                    />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 5 }}> 
+                                    <CustomPicker 
+                                        label="Année" 
+                                        selectedValue={editSelectedYear} 
+                                        onValueChange={(value) => setEditSelectedYear(Number(value))}
+                                        options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
+                                        placeholder="2024"
+                                    />
+                                </View>
+                            </View>
+
+                            <Text style={modalStyles.label}>Traitements</Text>
+                            <TextInput 
+                                placeholder="Traitements prescrits" 
+                                value={editedDisease.medications}
+                                onChangeText={(text) => setEditedDisease({ ...editedDisease, medications: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <Text style={modalStyles.label}>Examens</Text>
+                            <TextInput 
+                                placeholder="Examens réalisés ou à réaliser" 
+                                value={editedDisease.examens}
+                                onChangeText={(text) => setEditedDisease({ ...editedDisease, examens: text })}
+                                style={modalStyles.inputMultiline}
+                                multiline
+                                numberOfLines={3}
+                                placeholderTextColor={colors.inputBorder}
+                            />
+
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.button} onPress={handleSaveEdit}>
+                                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                        <Text style={styles.buttonText}>Enregistrer</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity style={styles.button} onPress={() => setEditModalVisible(false)}>
+                                    <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                        <Text style={styles.buttonText}>Annuler</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </Modal>
+            )}
         </View> 
     ); 
 }
