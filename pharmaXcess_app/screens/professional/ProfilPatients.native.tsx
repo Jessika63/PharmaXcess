@@ -9,10 +9,20 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Linking,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Camera, CameraView } from 'expo-camera';
+import qrApi from '../../utils/api/qr';
+// File handling and sharing
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import config from '../../config';
+import logger from '../../utils/logger';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfilPatients.style';
@@ -156,47 +166,127 @@ export default function ProfilPatients(): React.JSX.Element {
     setShowScanner(false);
     
     try {
-      // Try to parse QR code data as JSON
-      const patientData = JSON.parse(data);
-      
-      // Check if it's a valid patient QR code
-      if (patientData.type === 'patient_profile' && patientData.patientId) {
-        // Find existing patient or create new one
-        const existingPatient = patients.find(p => p.id === patientData.patientId);
-        
-        if (existingPatient) {
-          setSelectedPatient(existingPatient);
-        } else {
-          // Create new patient from QR data
-        const newPatient: Patient = {
-          id: patientData.id,
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
-          age: patientData.age,
-          dateOfBirth: patientData.dateOfBirth,
-          phone: patientData.phone,
-          email: patientData.email,
-          address: patientData.address,
-          weight: patientData.weight || 'Non renseigné',
-          height: patientData.height || 'Non renseigné',
-          bloodType: patientData.bloodType || 'Non renseigné',
-          socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
-          medicalHistory: patientData.medicalHistory || [],
-          allergies: patientData.allergies || [],
-          currentMedications: patientData.currentMedications || [],
-          hospitalizations: patientData.hospitalizations || [],
-          doctors: patientData.doctors || [],
-          emergencyContact: patientData.emergencyContact || {
-            name: '',
-            phone: '',
-            relationship: ''
+      // Prefer server-side parsing: send raw QR content to backend
+      (async () => {
+        try {
+          const res = await qrApi.readProfileQrContent(data, 'medecin');
+          if (res.ok && res.data && res.data.profile) {
+            const p = res.data.profile;
+            // Map backend fields to local Patient type conservatively
+            const mapped: Patient = {
+              id: String(p.id || p.user_id || p.utilisateur_id || (p.telephone || 'unknown')),
+              firstName: p.prenom || p.firstName || p.nom || '',
+              lastName: p.nom || p.lastName || '',
+              age: p.age ? Number(p.age) : (p.date_of_birth ? new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : 0),
+              dateOfBirth: p.date_de_naissance || p.dateOfBirth || p.dateOfBirth || '',
+              phone: p.telephone || p.phone || '',
+              email: p.email || '',
+              address: p.adresse || p.address || '',
+              weight: (p.poids && String(p.poids)) || 'Non renseigné',
+              height: (p.taille && String(p.taille)) || 'Non renseigné',
+              bloodType: p.groupe_sanguin || p.bloodType || 'Non renseigné',
+              socialSecurityNumber: p.numero_securite_sociale || p.socialSecurityNumber || 'Non renseigné',
+              medicalHistory: p.medical_history || p.diseases || [],
+              allergies: p.allergies || [],
+              currentMedications: p.currentMedications || p.traitements || [],
+              hospitalizations: p.hospitalisations || [],
+              doctors: p.doctors || [],
+              emergencyContact: p.emergencyContact || { name: '', phone: '', relationship: '' }
+            };
+
+            const existing = patients.find(pt => pt.id === mapped.id);
+            if (existing) {
+              setSelectedPatient(existing);
+            } else {
+              setPatients(prev => [mapped, ...prev]);
+              setSelectedPatient(mapped);
+            }
+            return;
           }
-        };          setPatients(prev => [newPatient, ...prev]);
-          setSelectedPatient(newPatient);
+
+          // If server didn't return a profile, fallback to local parsing
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const existingPatient = patients.find(p => p.id === patientData.patientId);
+              if (existingPatient) {
+                setSelectedPatient(existingPatient);
+              } else {
+                const newPatient: Patient = {
+                  id: patientData.id,
+                  firstName: patientData.firstName,
+                  lastName: patientData.lastName,
+                  age: patientData.age,
+                  dateOfBirth: patientData.dateOfBirth,
+                  phone: patientData.phone,
+                  email: patientData.email,
+                  address: patientData.address,
+                  weight: patientData.weight || 'Non renseigné',
+                  height: patientData.height || 'Non renseigné',
+                  bloodType: patientData.bloodType || 'Non renseigné',
+                  socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                  medicalHistory: patientData.medicalHistory || [],
+                  allergies: patientData.allergies || [],
+                  currentMedications: patientData.currentMedications || [],
+                  hospitalizations: patientData.hospitalizations || [],
+                  doctors: patientData.doctors || [],
+                  emergencyContact: patientData.emergencyContact || {
+                    name: '',
+                    phone: '',
+                    relationship: ''
+                  }
+                };
+                setPatients(prev => [newPatient, ...prev]);
+                setSelectedPatient(newPatient);
+                return;
+              }
+            }
+          } catch (e) {
+            // not JSON or fallback failed
+          }
+
+          Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
+        } catch (err: any) {
+          console.error('Scan error:', err);
+          // Try local parse as last resort
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const newPatient: Patient = {
+                id: patientData.id,
+                firstName: patientData.firstName,
+                lastName: patientData.lastName,
+                age: patientData.age,
+                dateOfBirth: patientData.dateOfBirth,
+                phone: patientData.phone,
+                email: patientData.email,
+                address: patientData.address,
+                weight: patientData.weight || 'Non renseigné',
+                height: patientData.height || 'Non renseigné',
+                bloodType: patientData.bloodType || 'Non renseigné',
+                socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                medicalHistory: patientData.medicalHistory || [],
+                allergies: patientData.allergies || [],
+                currentMedications: patientData.currentMedications || [],
+                hospitalizations: patientData.hospitalizations || [],
+                doctors: patientData.doctors || [],
+                emergencyContact: patientData.emergencyContact || {
+                  name: '',
+                  phone: '',
+                  relationship: ''
+                }
+              };
+              setPatients(prev => [newPatient, ...prev]);
+              setSelectedPatient(newPatient);
+              return;
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
         }
-      } else {
-        Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
-      }
+      })();
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
     }
@@ -488,25 +578,146 @@ export default function ProfilPatients(): React.JSX.Element {
   };
 
   const handleViewDocument= (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      document.name,
-      `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
-      [
-        { text: 'Fermer', style: 'cancel'},
-        {
-          text: 'Télécharger', 
-          onPress: () => handleDownloadDocument(document) 
-        }
-      ]
-    );
+    (async () => {
+      Alert.alert(
+        document.name,
+        `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
+        [
+          { text: 'Fermer', style: 'cancel'},
+          {
+            text: 'Télécharger',
+            onPress: async () => {
+              handleDownloadDocument(document);
+            }
+          }
+        ]
+      );
+    })();
   };
 
-  const handleDownloadDocument = (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      'Téléchargement', 
-      `Le document "${document.name}" sera téléchargé prochainement.`, 
-      [{ text: 'OK' }] 
-    );
+  const handleDownloadDocument = async (document: ProfessionalDocument) => {
+    try {
+      const filenameBase = document.name ? document.name.replace(/[^a-z0-9.\-_]/gi, '_') : `document_${document.id}`;
+      const filename = /\.[a-zA-Z0-9]+$/.test(filenameBase) ? filenameBase : `${filenameBase}.pdf`;
+
+      // Determine source URL or local uri
+      let source = document.uri || '';
+      if (!/^https?:\/\//.test(source) && !source.startsWith('file://')) {
+        // try constructing a backend URL (best-effort)
+        source = `${config.backendUrl.replace(/\/$/, '')}/documents/${document.patientId}/${document.id}`;
+      }
+
+      const cachePath = `${FileSystem.cacheDirectory}${filename}`;
+
+      // Download to cache first
+      const downloadRes = await FileSystem.downloadAsync(source, cachePath);
+
+      // Try to move to Downloads directory (Android)
+      // Note: DownloadDirectoryPath may be undefined on iOS or some environments
+      // Use (FileSystem as any) to access legacy constant without TS complaints
+      const downloadsDir = (FileSystem as any).DownloadDirectoryPath as string | undefined;
+      if (!downloadsDir) {
+        // If no direct Downloads directory is available (common in Expo Go), open URL in browser to let system download
+        if (/^https?:\/\//.test(source)) {
+          Linking.openURL(source).catch((err) => {
+            console.warn('[Download] Linking.openURL failed', err);
+          });
+          return;
+        }
+      }
+
+      if (downloadsDir) {
+        const targetPath = `${downloadsDir}/${filename}`;
+        try {
+          // On Android, request WRITE_EXTERNAL_STORAGE at runtime for older Android versions
+          if (Platform.OS === 'android') {
+            try {
+              const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                {
+                  title: 'Permission d\'écriture',
+                  message: 'L\'application a besoin d\'écrire dans Téléchargements pour sauvegarder le fichier.',
+                  buttonNeutral: 'Demander plus tard',
+                  buttonNegative: 'Annuler',
+                  buttonPositive: 'OK',
+                }
+              );
+              if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                console.warn('[Download] WRITE_EXTERNAL_STORAGE non accordée');
+              }
+            } catch (permErr) {
+              console.warn('[Download] Permission request failed', permErr);
+            }
+          }
+
+          // moveAsync may fail due to permission restrictions; attempt it
+          await FileSystem.moveAsync({ from: downloadRes.uri, to: targetPath });
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans Mes téléchargements: ${filename}`);
+          return;
+        } catch (err) {
+          // fallback to MediaLibrary / Sharing below
+          console.warn('[Download] Move to Downloads failed, falling back:', err);
+        }
+      }
+
+      // Try to save to media library (may prompt for permission)
+      try {
+        const perm = await MediaLibrary.requestPermissionsAsync();
+        if (perm.status === 'granted') {
+          const asset = await MediaLibrary.createAssetAsync(downloadRes.uri);
+          // Try to add to 'Download' album if possible
+          const albumName = 'Download';
+          let album = await MediaLibrary.getAlbumAsync(albumName);
+          if (!album) {
+            try {
+              album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
+            } catch (e) {
+              console.warn('[Download] createAlbumAsync failed', e);
+            }
+          } else {
+            try {
+              await MediaLibrary.addAssetsToAlbumAsync([asset], album.id, false);
+            } catch (e) {
+              console.warn('[Download] addAssetsToAlbumAsync failed', e);
+            }
+          }
+
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans la bibliothèque: ${filename}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('[Download] MediaLibrary save failed', e);
+      }
+
+      // Fallback: present share dialog so user can save manually (iOS / limited Android)
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(downloadRes.uri, { dialogTitle: `Enregistrer ${filename}` });
+        return;
+      }
+
+      // If sharing isn't available, try opening the document URL in the browser
+      try {
+        if (/^https?:\/\//.test(source)) {
+          Alert.alert(
+            'Téléchargement externe',
+            'Impossible d\'enregistrer automatiquement sur l\'appareil. Ouvrir le document dans le navigateur pour le télécharger dans le dossier Téléchargements ?',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Ouvrir', onPress: () => { Linking.openURL(source).catch((err) => { console.warn('[Download] Linking.openURL failed', err); }); } }
+            ]
+          );
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Last resort: notify user where the cached file is located
+      Alert.alert('Téléchargement', `Le fichier est disponible dans le cache: ${downloadRes.uri}`);
+    } catch (err: any) {
+      console.error('handleDownloadDocument error', err);
+      Alert.alert('Erreur', `Impossible de télécharger le document: ${String(err)}`);
+    }
   };
 
   // Functions for note management 
