@@ -40,13 +40,24 @@ def setup_ngrok(mobile_app_folder):
 
     # Vérification ngrok (Windows -> ngrok.cmd, Linux/Mac -> ngrok)
     ngrok_path = shutil.which("ngrok") or shutil.which("ngrok.cmd")
+    use_npx = False
     if not ngrok_path:
-        colored_print("✗ Ngrok introuvable dans le PATH Python", "red")
-        return None
+        # Try fallback to npx if available (no global ngrok installed)
+        npx_path = shutil.which("npx")
+        if npx_path:
+            colored_print("Ngrok non trouvé globalement, fallback sur 'npx ngrok'", "yellow")
+            use_npx = True
+        else:
+            colored_print("✗ Ngrok introuvable dans le PATH Python et 'npx' absent", "red")
+            return None
 
     try:
-        subprocess.run([ngrok_path, "--version"], check=True, capture_output=True)
-        colored_print("✓ Ngrok est installé", "green")
+        # Build command for version check
+        if use_npx:
+            subprocess.run(["npx", "ngrok", "--version"], check=True, capture_output=True)
+        else:
+            subprocess.run([ngrok_path, "--version"], check=True, capture_output=True)
+        colored_print("✓ Ngrok est installé (ou accessible via npx)", "green")
     except subprocess.CalledProcessError as e:
         colored_print(f"✗ Erreur en lançant ngrok: {e}", "red")
         return None
@@ -54,7 +65,10 @@ def setup_ngrok(mobile_app_folder):
     # Authentification ngrok
     try:
         colored_print("Authentification ngrok...", "blue")
-        subprocess.run([ngrok_path, "authtoken", ngrok_token], check=True)
+        if use_npx:
+            subprocess.run(["npx", "ngrok", "authtoken", ngrok_token], check=True)
+        else:
+            subprocess.run([ngrok_path, "authtoken", ngrok_token], check=True)
         colored_print("✓ Authentification ngrok réussie", "green")
     except subprocess.CalledProcessError as e:
         colored_print(f"✗ Erreur authentification ngrok: {e}", "red")
@@ -63,29 +77,47 @@ def setup_ngrok(mobile_app_folder):
     # Démarrage de ngrok
     try:
         colored_print("Démarrage du tunnel ngrok...", "blue")
-        subprocess.Popen(
-            [ngrok_path, "http", "5000", "--log=stdout"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
+        # Start ngrok (either global binary or via npx)
+        if use_npx:
+            proc = subprocess.Popen([
+                "npx", "ngrok", "http", "5000", "--log=stdout"
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        else:
+            proc = subprocess.Popen([
+                ngrok_path, "http", "5000", "--log=stdout"
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-        # Attendre que ngrok soit prêt
-        time.sleep(3)
+        # Poll the local API a few times to wait for ngrok to be ready
+        max_attempts = 10
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = requests.get('http://localhost:4040/api/tunnels', timeout=2)
+                if response.status_code == 200:
+                    tunnels = response.json().get("tunnels", [])
+                    for tunnel in tunnels:
+                        if tunnel.get("proto") == "https":
+                            ngrok_url = tunnel["public_url"]
+                            colored_print(f"✓ Tunnel ngrok actif: {ngrok_url}", "green")
+                            return ngrok_url
+                # if API reachable but no https tunnel yet, continue polling
+            except Exception:
+                # API not ready yet
+                pass
 
-        # Récupérer l'URL du tunnel
+            time.sleep(1)
+
+        # If we reach here, API didn't return a tunnel. Grab process output for debugging.
         try:
-            response = requests.get('http://localhost:4040/api/tunnels', timeout=5)
-            if response.status_code == 200:
-                tunnels = response.json().get("tunnels", [])
-                for tunnel in tunnels:
-                    if tunnel.get("proto") == "https":
-                        ngrok_url = tunnel["public_url"]
-                        colored_print(f"✓ Tunnel ngrok actif: {ngrok_url}", "green")
-                        return ngrok_url
+            out, err = proc.communicate(timeout=1)
         except Exception:
-            colored_print("⚠ Impossible de récupérer l'URL ngrok via API", "yellow")
-            return None
+            out, err = (None, None)
+
+        colored_print("⚠ Impossible de récupérer l'URL ngrok via API", "yellow")
+        if out:
+            colored_print(f"ngrok stdout:\n{out}", "yellow")
+        if err:
+            colored_print(f"ngrok stderr:\n{err}", "yellow")
+        return None
 
     except Exception as e:
         colored_print(f"✗ Erreur démarrage ngrok: {e}", "red")
