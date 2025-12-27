@@ -12,7 +12,7 @@
         "app/pharmaXcess_app/yarn.lock",
         "backend/docker-compose.yml",
         "database_dump_px_doctors_db_07_10_2025.sql",
-        "database_dump_px_app_db_16_10_2025.sql"
+        "database_dump_px_app_db_04_12_2025.sql"
     ],
     "ignore_dirs": [
         ".git",
