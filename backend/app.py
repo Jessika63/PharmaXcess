@@ -197,8 +197,16 @@ def register_blueprints():
     from routes.profile.allergies import allergies_bp
     from routes.profile.family_history import family_history_bp
     from routes.profile.doctors import doctors_bp
+    from routes.clickAndCollect.click_collect_request import clickcollect_request_bp
+    from routes.clickAndCollect.click_collect_send import clickcollect_send_bp
+    from routes.clickAndCollect.click_collect_command import clickcollect_command_bp
+    from routes.clickAndCollect.click_collect_validate import clickcollect_validate_bp
+    from routes.clickAndCollect.click_collect_refuse import clickcollect_refuse_bp
+    from routes.clickAndCollect.click_collect_status import clickcollect_status_bp
+    from routes.clickAndCollect.click_collect_temp_images import clickcollect_temp_images_bp
     from routes.profile.documents import documents_bp
     from routes.profile.sub_profiles import sub_profile_bp
+    from routes.ordonnances.ordonnance_create import ordonnances_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -244,6 +252,14 @@ def register_blueprints():
     app.register_blueprint(allergies_bp)
     app.register_blueprint(family_history_bp)
     app.register_blueprint(doctors_bp)
+    app.register_blueprint(clickcollect_send_bp)
+    app.register_blueprint(clickcollect_request_bp)
+    app.register_blueprint(clickcollect_command_bp)
+    app.register_blueprint(clickcollect_validate_bp)
+    app.register_blueprint(clickcollect_refuse_bp)
+    app.register_blueprint(clickcollect_status_bp)
+    app.register_blueprint(clickcollect_temp_images_bp)
+    app.register_blueprint(ordonnances_bp)
     app.register_blueprint(documents_bp)
 
 register_blueprints()
