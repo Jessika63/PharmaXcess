@@ -53,37 +53,18 @@ def create_allergy():
             if not is_target_accessible(cursor, utilisateur_id, 'id'):
                 return jsonify({"error": "You don't have permission to add allergy for this user"}), 403
 
-            # Defensive: some DB instances may not have the `medicaments` column
-            cursor.execute("SHOW COLUMNS FROM allergies LIKE 'medicaments'")
-            has_medicaments = cursor.fetchone() is not None
-
-            if has_medicaments:
-                cursor.execute("""
-                    INSERT INTO allergies (utilisateur_id, nom, debut, medicaments, gravite, symptomes, commentaires)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    utilisateur_id,
-                    nom,
-                    data.get("debut"),
-                    data.get("medicaments"),
-                    data.get("gravite"),
-                    data.get("symptomes"),
-                    data.get("commentaires"),
-                ))
-            else:
-                # Fallback: omit medicaments column when it's missing in the schema
-                cursor.execute("""
-                    INSERT INTO allergies (utilisateur_id, nom, debut, gravite, symptomes, commentaires)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (
-                    utilisateur_id,
-                    nom,
-                    data.get("debut"),
-                    data.get("gravite"),
-                    data.get("symptomes"),
-                    data.get("commentaires"),
-                ))
-
+            cursor.execute("""
+                INSERT INTO allergies (utilisateur_id, nom, debut, medicaments, gravite, symptomes, commentaires)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                utilisateur_id,
+                nom,
+                data.get("debut"),
+                data.get("medicaments"),
+                data.get("gravite"),
+                data.get("symptomes"),
+                data.get("commentaires"),
+            ))
             conn.commit()
             allergy_id = cursor.lastrowid
 
@@ -221,39 +202,20 @@ def update_allergy(allergy_id):
                 return jsonify({"error": "No permission to update this allergy"}), 403
 
             # Perform the update (we already checked permissions)
-            # Defensive: handle cases where `medicaments` column does not exist
-            cursor.execute("SHOW COLUMNS FROM allergies LIKE 'medicaments'")
-            has_medicaments = cursor.fetchone() is not None
-
-            if has_medicaments:
-                query = """
-                    UPDATE allergies
-                    SET nom=%s, debut=%s, medicaments=%s, gravite=%s, symptomes=%s, commentaires=%s
-                    WHERE id=%s
-                """
-                cursor.execute(query, (
-                    data.get("nom"),
-                    data.get("debut"),
-                    data.get("medicaments"),
-                    data.get("gravite"),
-                    data.get("symptomes"),
-                    data.get("commentaires"),
-                    allergy_id,
-                ))
-            else:
-                query = """
-                    UPDATE allergies
-                    SET nom=%s, debut=%s, gravite=%s, symptomes=%s, commentaires=%s
-                    WHERE id=%s
-                """
-                cursor.execute(query, (
-                    data.get("nom"),
-                    data.get("debut"),
-                    data.get("gravite"),
-                    data.get("symptomes"),
-                    data.get("commentaires"),
-                    allergy_id,
-                ))
+            query = """
+                UPDATE allergies
+                SET nom=%s, debut=%s, medicaments=%s, gravite=%s, symptomes=%s, commentaires=%s
+                WHERE id=%s
+            """
+            cursor.execute(query, (
+                data.get("nom"),
+                data.get("debut"),
+                data.get("medicaments"),
+                data.get("gravite"),
+                data.get("symptomes"),
+                data.get("commentaires"),
+                allergy_id,
+            ))
 
             if cursor.rowcount == 0:
                 return jsonify({"error": "Allergy not found or not updated"}), 404

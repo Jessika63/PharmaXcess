@@ -45,24 +45,6 @@ def create_disease():
     date_debut = data.get("date_debut")
     examens = data.get("examens")
 
-    # Accept date in DD/MM/YYYY from frontend and convert to YYYY-MM-DD
-    def normalize_date(s):
-        if not s:
-            return None
-        s = str(s)
-        m = None
-        # DD/MM/YYYY
-        import re
-        m = re.match(r"^(\d{2})/(\d{2})/(\d{4})$", s)
-        if m:
-            return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
-        # already ISO
-        if re.match(r"^\d{4}-\d{2}-\d{2}$", s):
-            return s
-        return s
-
-    date_debut = normalize_date(date_debut)
-
     if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -82,20 +64,10 @@ def create_disease():
             if not accessible:
                 return jsonify({"error": "You don't have permission to add disease for this user"}), 403
 
-            # Check if the 'examens' column exists in the maladies table; some DBs may be older
-            cursor.execute("SHOW COLUMNS FROM maladies LIKE %s", ('examens',))
-            has_examens = cursor.fetchone() is not None
-
-            if has_examens:
-                cursor.execute("""
-                    INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut, examens)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (utilisateur_id, nom, description, symptomes, date_debut, examens))
-            else:
-                cursor.execute("""
-                    INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (utilisateur_id, nom, description, symptomes, date_debut))
+            cursor.execute("""
+                INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut, examens)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (utilisateur_id, nom, description, symptomes, date_debut, examens))
             conn.commit()
             disease_id = cursor.lastrowid
 
@@ -234,37 +206,20 @@ def update_disease(disease_id):
             if not is_target_accessible(cursor, owner_id, 'id'):
                 return jsonify({"error": "No permission to update this disease"}), 403
 
-            # Check if 'examens' column exists before constructing update
-            cursor.execute("SHOW COLUMNS FROM maladies LIKE %s", ('examens',))
-            has_examens = cursor.fetchone() is not None
-
-            if has_examens:
-                query = """
-                    UPDATE maladies
-                    SET nom=%s, description=%s, symptomes=%s, date_debut=%s, examens=%s
-                    WHERE id=%s
-                """
-                cursor.execute(query, (
-                    data.get("nom"),
-                    data.get("description"),
-                    data.get("symptomes"),
-                    normalize_date(data.get("date_debut")),
-                    examens,
-                    disease_id,
-                ))
-            else:
-                query = """
-                    UPDATE maladies
-                    SET nom=%s, description=%s, symptomes=%s, date_debut=%s
-                    WHERE id=%s
-                """
-                cursor.execute(query, (
-                    data.get("nom"),
-                    data.get("description"),
-                    data.get("symptomes"),
-                    normalize_date(data.get("date_debut")),
-                    disease_id,
-                ))
+            # Perform update now that permission is confirmed
+            query = """
+                UPDATE maladies
+                SET nom=%s, description=%s, symptomes=%s, date_debut=%s, examens=%s
+                WHERE id=%s
+            """
+            cursor.execute(query, (
+                data.get("nom"),
+                data.get("description"),
+                data.get("symptomes"),
+                data.get("date_debut"),
+                examens,
+                disease_id,
+            ))
 
             if cursor.rowcount == 0:
                 return jsonify({"error": "Disease not found or not updated"}), 404

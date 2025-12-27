@@ -20,7 +20,6 @@ type Hospitalization = {
     department: string; 
     hospital: string; 
     doctor: string; 
-    medications?: string;
 }; 
 
 type HospitalizationsProps = { 
@@ -49,7 +48,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         department: '',
         hospital: '',
         doctor: '',
-        medications: '',
     });
     const [editedHospitalization, setEditedHospitalization] = useState<Hospitalization>({
         name: '',
@@ -59,7 +57,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
         department: '',
         hospital: '',
         doctor: '',
-        medications: '',
     });
 
     const [selectedBeginYear, setSelectedBeginYear] = useState<number>(2024); 
@@ -615,30 +612,247 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
             {/* Modal for adding a new hospitalization - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        backgroundColor: colors.background,
-                        padding: 20
-                    }}
-                    keyboardShouldPersistTaps="handled"
-                > 
-                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
-                        Ajouter une hospitalisation 
-                    </Text>
+<ScrollView
+    contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: colors.background,
+        padding: 20
+    }}
+    keyboardShouldPersistTaps="handled"
+> 
+    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
+        Ajouter une hospitalisation 
+    </Text>
+
+    <TextInput 
+        placeholder="Nom/Motif" 
+        value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
+        onChangeText={(text: string) => {
+            if (isMainProfile) {
+                setNewHospitalization({ ...newHospitalization, name: text })
+            } else {
+                setNewHospitalizationSimple(text);
+                // For other profiles, also update for consistency
+                setNewHospitalization({ ...newHospitalization, name: text });
+            }
+        }}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            fontSize: 16,
+            color: colors.text
+        }}
+        placeholderTextColor={colors.text + '80'} 
+    />
+
+    <TextInput 
+        placeholder="Description" 
+        value={newHospitalization.description}
+        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, description: text })}
+        style={{
+            borderWidth: 1,
+            borderColor: colors.primary,
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            fontSize: 16,
+            color: colors.text,
+            minHeight: 80
+        }}
+        multiline
+        placeholderTextColor={colors.text + '80'} 
+    />
+
+    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
+        Date d'entrée
+    </Text>
+
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+        <View style={{ flex: 1, marginRight: 5 }}> 
+            <CustomPicker 
+                label="Jour" 
+                selectedValue={entryDay} 
+                onValueChange={(value: string | number) => setEntryDay(Number(value))}
+                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+            <CustomPicker 
+                label="Mois" 
+                selectedValue={entryMonth} 
+                onValueChange={(value: string | number) => setEntryMonth(Number(value))}
+                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginLeft: 5 }}> 
+            <CustomPicker 
+                label="Année" 
+                selectedValue={entryYear} 
+                onValueChange={(value: string | number) => setEntryYear(Number(value))}
+                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: `${i + 1920}` }))}
+                placeholder="2024"
+            />
+        </View>
+    </View>
+
+    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
+        Date de sortie (optionnelle)
+    </Text>
+
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}> 
+        <View style={{ flex: 1, marginRight: 5 }}> 
+            <CustomPicker 
+                label="Jour" 
+                selectedValue={exitDay} 
+                onValueChange={(value: string | number) => setExitDay(Number(value))}
+                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+            <CustomPicker 
+                label="Mois" 
+                selectedValue={exitMonth} 
+                onValueChange={(value: string | number) => setExitMonth(Number(value))}
+                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
+                placeholder="01"
+            />
+        </View>
+        <View style={{ flex: 1, marginLeft: 5 }}> 
+            <CustomPicker 
+                label="Année" 
+                selectedValue={exitYear} 
+                onValueChange={(value: string | number) => setExitYear(Number(value))}
+                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: `${i + 1920}` }))}
+                placeholder="2024"
+            />
+        </View>
+    </View>
+
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
+        <TouchableOpacity 
+            style={{ 
+                flex: 1, 
+                padding: 15, 
+                borderRadius: 10, 
+                backgroundColor: colors.secondary + '30',
+                marginRight: 10,
+                alignItems: 'center'
+            }}
+            onPress={() => {
+                setModalVisible(false);
+                setNewHospitalizationSimple('');
+                setNewHospitalization({
+                    name: '',
+                    description: '',
+                    entryDate: '',
+                    exitDate: ''
+                });
+                setEntryDay(1);
+                setEntryMonth(1);
+                setEntryYear(2024);
+                setExitDay(1);
+                setExitMonth(1);
+                setExitYear(2024);
+            }}
+        >
+            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+            style={{ 
+                flex: 1, 
+                padding: 15, 
+                borderRadius: 10, 
+                backgroundColor: colors.primary,
+                marginLeft: 10, 
+                alignItems: 'center'
+            }}
+            onPress={isMainProfile ? handleAddHospitalization : handleAddSimpleHospitalization}
+        >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
+        </TouchableOpacity>
+    </View>
+</ScrollView>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                        <View style={{ flex: 1, marginRight: 5 }}> 
+                            <CustomPicker 
+                                label="Jour" 
+                                selectedValue={selectedBeginDay} 
+                                onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                            <CustomPicker 
+                                label="Mois" 
+                                selectedValue={selectedBeginMonth} 
+                                onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 5 }}> 
+                            <CustomPicker 
+                                label="Année" 
+                                selectedValue={selectedBeginYear} 
+                                onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
+                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                placeholder="2024"
+                            />
+                        </View>
+                    </View>
+
+                    <Text style={[modalStyles.label]}>Date de sortie</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                        <View style={{ flex: 1, marginRight: 5 }}> 
+                            <CustomPicker 
+                                label="Jour" 
+                                selectedValue={selectedEndDay} 
+                                onValueChange={(value: string | number) => setSelectedEndDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                            <CustomPicker 
+                                label="Mois" 
+                                selectedValue={selectedEndMonth} 
+                                onValueChange={(value: string | number) => setSelectedEndMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                placeholder="01"
+                            />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 5 }}> 
+                            <CustomPicker 
+                                label="Année" 
+                                selectedValue={selectedEndYear} 
+                                onValueChange={(value: string | number) => setSelectedEndYear(Number(value))}
+                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                placeholder="2024"
+                            />
+                        </View>
+                    </View>
 
                     <TextInput 
-                        placeholder="Nom/Motif" 
-                        value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
-                        onChangeText={(text: string) => {
-                            if (isMainProfile) {
-                                setNewHospitalization({ ...newHospitalization, name: text })
-                            } else {
-                                setNewHospitalizationSimple(text);
-                                // For other profiles, also update for consistency
-                                setNewHospitalization({ ...newHospitalization, name: text });
-                            }
-                        }}
+                        placeholder="Service ou Département"
+                        value={newHospitalization.department}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, department: text })}
+                        style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                    />
+
+                    <TextInput 
+                        placeholder="Hôpital"
+                        value={newHospitalization.hospital}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, hospital: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -652,9 +866,9 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     />
 
                     <TextInput 
-                        placeholder="Description" 
-                        value={newHospitalization.description}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, description: text })}
+                        placeholder="Médecin responsable"
+                        value={newHospitalization.doctor}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, doctor: text })}
                         style={{
                             borderWidth: 1,
                             borderColor: colors.primary,
@@ -662,114 +876,12 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             padding: 15,
                             marginBottom: 15,
                             fontSize: 16,
-                            color: colors.text,
-                            minHeight: 80
+                            color: colors.text
                         }}
-                        multiline
                         placeholderTextColor={colors.text + '80'} 
                     />
 
-                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
-                        Date d'entrée
-                    </Text>
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
-                        <View style={{ flex: 1, marginRight: 5 }}> 
-                            <CustomPicker 
-                                label="Jour" 
-                                selectedValue={selectedBeginDay} 
-                                onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                            <CustomPicker 
-                                label="Mois" 
-                                selectedValue={selectedBeginMonth} 
-                                onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 5 }}> 
-                            <CustomPicker 
-                                label="Année" 
-                                selectedValue={selectedBeginYear} 
-                                onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: i + 1920 }))}
-                                placeholder="2024"
-                            />
-                        </View>
-                    </View>
-
-                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
-                        Date de sortie (optionnelle)
-                    </Text>
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}> 
-                        <View style={{ flex: 1, marginRight: 5 }}> 
-                            <CustomPicker 
-                                label="Jour" 
-                                selectedValue={selectedEndDay} 
-                                onValueChange={(value: string | number) => setSelectedEndDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginHorizontal: 5 }}> 
-                            <CustomPicker 
-                                label="Mois" 
-                                selectedValue={selectedEndMonth} 
-                                onValueChange={(value: string | number) => setSelectedEndMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-                                placeholder="01"
-                            />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 5 }}> 
-                            <CustomPicker 
-                                label="Année" 
-                                selectedValue={selectedEndYear} 
-                                onValueChange={(value: string | number) => setSelectedEndYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: i + 1920 }))}
-                                placeholder="2024"
-                            />
-                        </View>
-                    </View>
-
-                    <TextInput 
-                        placeholder="Service ou Département"
-                        value={newHospitalization.department}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, department: text })}
-                        style={modalStyles.input}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
-
-                    <TextInput 
-                        placeholder="Hôpital"
-                        value={newHospitalization.hospital}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, hospital: text })}
-                        style={modalStyles.input}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
-
-                    <TextInput 
-                        placeholder="Médecin responsable"
-                        value={newHospitalization.doctor}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, doctor: text })}
-                        style={modalStyles.input}
-                        placeholderTextColor={colors.inputBorder} 
-                    />
-
-                    <TextInput 
-                        placeholder="Traitements (optionnel)" 
-                        value={newHospitalization.medications}
-                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, medications: text })}
-                        style={modalStyles.inputMultiline}
-                        multiline
-                        numberOfLines={2}
-                        placeholderTextColor={colors.inputBorder}
-                    />
+                    
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
                         <TouchableOpacity 
@@ -783,6 +895,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             }}
                             onPress={() => {
                                 setModalVisible(false);
+                                // Reset all fields for both main and other profiles
                                 setNewHospitalizationSimple('');
                                 setNewHospitalization({
                                     name: '',
@@ -792,19 +905,17 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                     department: '',
                                     hospital: '',
                                     doctor: '',
-                                    medications: ''
                                 });
-                                setSelectedBeginDay(1);
-                                setSelectedBeginMonth(1);
                                 setSelectedBeginYear(2024);
-                                setSelectedEndDay(1);
-                                setSelectedEndMonth(1);
+                                setSelectedBeginMonth(1);
+                                setSelectedBeginDay(1); 
                                 setSelectedEndYear(2024);
+                                setSelectedEndMonth(1);
+                                setSelectedEndDay(1); 
                             }}
                         >
                             <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity 
                             style={{ 
                                 flex: 1, 
@@ -822,7 +933,191 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                 </ScrollView>
             </Modal>
 
-            
+            {/* Editing modal for the main profile */} 
+            {isMainProfile && ( 
+                <Modal visible={isEditModalVisible} animationType="slide"> 
+                    <ScrollView 
+                        contentContainerStyle={{ 
+                            flexGrow: 1, 
+                            backgroundColor: colors.background,
+                            padding: 20
+                        }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
+                            Modifier l'hospitalisation 
+                        </Text>
+
+                        <TextInput 
+                            placeholder="Nom/Motif" 
+                            value={editedHospitalization.name}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, name: text })}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: colors.primary,
+                                borderRadius: 10,
+                                padding: 15,
+                                marginBottom: 15,
+                                fontSize: 16,
+                                color: colors.text
+                            }}
+                            placeholderTextColor={colors.text + '80'}
+                        />
+
+                        <TextInput 
+                            placeholder="Description" 
+                            value={editedHospitalization.description}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, description: text })}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: colors.primary,
+                                borderRadius: 10,
+                                padding: 15,
+                                marginBottom: 15,
+                                fontSize: 16,
+                                color: colors.text,
+                                minHeight: 80
+                            }}
+                            multiline
+                            placeholderTextColor={colors.text + '80'}
+                        />
+
+                        <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date d'entrée</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                            <View style={{ flex: 1, marginRight: 5 }}> 
+                                <CustomPicker 
+                                    label="Jour" 
+                                    selectedValue={editSelectedBeginDay} 
+                                    onValueChange={(value: string | number) => setEditSelectedBeginDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                <CustomPicker 
+                                    label="Mois" 
+                                    selectedValue={editSelectedBeginMonth} 
+                                    onValueChange={(value: string | number) => setEditSelectedBeginMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}> 
+                                <CustomPicker 
+                                    label="Année" 
+                                    selectedValue={editSelectedBeginYear} 
+                                    onValueChange={(value: string | number) => setEditSelectedBeginYear(Number(value))}
+                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+
+                        <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>Date de sortie</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                            <View style={{ flex: 1, marginRight: 5 }}> 
+                                <CustomPicker 
+                                    label="Jour" 
+                                    selectedValue={editSelectedEndDay} 
+                                    onValueChange={(value: string | number) => setEditSelectedEndDay(Number(value))}
+                                    options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1}))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginHorizontal: 5 }}> 
+                                <CustomPicker 
+                                    label="Mois" 
+                                    selectedValue={editSelectedEndMonth} 
+                                    onValueChange={(value: string | number) => setEditSelectedEndMonth(Number(value))}
+                                    options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))}
+                                    placeholder="01"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 5 }}> 
+                                <CustomPicker 
+                                    label="Année" 
+                                    selectedValue={editSelectedEndYear} 
+                                    onValueChange={(value: string | number) => setEditSelectedEndYear(Number(value))}
+                                    options={Array.from({ length: 100 }, (_, i) => ({ label: (1980 + i).toString(), value: 1980 + i }))}
+                                    placeholder="2024"
+                                />
+                            </View>
+                        </View>
+
+                        <TextInput 
+                            placeholder="Service/Département" 
+                            value={editedHospitalization.department}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, department: text })}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: colors.primary,
+                                borderRadius: 10,
+                                padding: 15,
+                                marginBottom: 15,
+                                fontSize: 16,
+                                color: colors.text
+                            }}
+                            placeholderTextColor={colors.text + '80'}
+                        />
+
+                        <Text style={modalStyles.label}>Hôpital</Text>
+                        <TextInput 
+                            placeholder="Nom de l'hôpital"
+                            value={editedHospitalization.hospital}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, hospital: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
+
+                        <Text style={modalStyles.label}>Médecin responsable</Text>
+                        <TextInput 
+                            placeholder="Nom du médecin responsable"
+                            value={editedHospitalization.doctor}
+                            onChangeText={(text: string) => setEditedHospitalization({ ...editedHospitalization, doctor: text })}
+                            style={modalStyles.input}
+                            placeholderTextColor={colors.inputBorder} 
+                        />
+
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={isMainProfile ? handleAddPress : handleAddSimpleHospitalization}>
+                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Ajouter</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                                style={styles.button}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    // Reset all fields for both main and other profiles
+                                    setNewHospitalizationSimple('');
+                                    setNewHospitalization({
+                                        name: '',
+                                        description: '',
+                                        beginDate: '',
+                                        endDate: '',
+                                        department: '',
+                                        hospital: '',
+                                        doctor: '',
+                                        medications: '',
+                                    });
+                                    setSelectedBeginYear(2024);
+                                    setSelectedBeginMonth(1);
+                                    setSelectedBeginDay(1); 
+                                    setSelectedEndYear(2024);
+                                    setSelectedEndMonth(1);
+                                    setSelectedEndDay(1); 
+                                }}
+                            >
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                    <Text style={styles.buttonText}>Annuler</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
             {/* Editing modal for the main profile */} 
             {isMainProfile && ( 
                 <Modal visible={isEditModalVisible} animationType="slide">
