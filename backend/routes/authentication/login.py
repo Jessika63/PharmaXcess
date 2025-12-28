@@ -13,13 +13,7 @@ def login():
     Expects JSON: { "email": "...", "password": "..." }
     Returns user_id if successful, 401 if credentials invalid.
     """
-    if "user_id" in session:
-        return jsonify({
-            "error": "A user is already logged in",
-            "user_id": session["user_id"]
-        }), 403
-
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("email")
     password = data.get("password")
 
@@ -36,24 +30,37 @@ def login():
         if not user:
             return jsonify({"error": "Invalid credentials"}), 401
 
-        if check_password_hash(user["mot_de_passe"], password):
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    UPDATE utilisateurs
-                    SET reset_token = NULL, reset_token_expiration = NULL
-                    WHERE id = %s
-                """, (user["id"],))
-            conn.commit()
-
-            session["user_id"] = user["id"]
-
-            return jsonify({
-                "message": "Login successful",
-                "user_id": user["id"]
-            }), 200
-
-        else:
+        # Verify password first
+        if not check_password_hash(user["mot_de_passe"], password):
             return jsonify({"error": "Invalid credentials"}), 401
+
+        # If there is already a session with a different user, refuse unless client requests force
+        if "user_id" in session and session.get("user_id") != user["id"] and not data.get("force", False):
+            return jsonify({
+                "error": "A user is already logged in",
+                "user_id": session.get("user_id"),
+                "hint": "Provide {\"force\": true} in request body to override the existing session"
+            }), 403
+
+        # Clear reset tokens and set session to this user
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE utilisateurs
+                SET reset_token = NULL, reset_token_expiration = NULL
+                WHERE id = %s
+            """, (user["id"],))
+        conn.commit()
+
+        # If there was a different user in session, clear session to avoid mixing state
+        if "user_id" in session and session.get("user_id") != user["id"]:
+            session.clear()
+
+        session["user_id"] = user["id"]
+
+        return jsonify({
+            "message": "Login successful",
+            "user_id": user["id"]
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -90,6 +90,7 @@ def create_ordonnance():
 @ordonnances_bp.route("/ordonnances", methods=["GET"])
 def get_ordonnances():
     user_id = request.args.get("user_id")
+    include_images = request.args.get("include_images", "0")
     if not user_id:
         return jsonify({"error": "Missing 'user_id'"}), 400
 
@@ -97,22 +98,34 @@ def get_ordonnances():
     try:
         conn = get_app_connection()
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            cursor.execute("""
-                SELECT o.*, t.id AS temp_image_id, t.mime_type, t.image_data
-                FROM ordonnances o
-                LEFT JOIN ordonnance_images_temp t 
-                    ON o.id = t.ordonnance_id
-                WHERE o.utilisateur_id = %s
-                ORDER BY o.date_ajout DESC
-            """, (user_id,))
-            ordonnances = cursor.fetchall()
-
-        for o in ordonnances:
-            if o.get("image_data"):
-                o["image_base64"] = base64.b64encode(o["image_data"]).decode("utf-8")
+            # Fetch metadata only by default to keep payload small and fast for clients.
+            # If client explicitly requests images (include_images=1) we will include base64 blobs.
+            if include_images == '1':
+                cursor.execute("""
+                    SELECT o.*, t.id AS temp_image_id, t.mime_type, t.image_data
+                    FROM ordonnances o
+                    LEFT JOIN ordonnance_images_temp t 
+                        ON o.id = t.ordonnance_id
+                    WHERE o.utilisateur_id = %s
+                    ORDER BY o.date_ajout DESC
+                """, (user_id,))
+                ordonnances = cursor.fetchall()
+                for o in ordonnances:
+                    if o.get("image_data"):
+                        o["image_base64"] = base64.b64encode(o["image_data"]).decode("utf-8")
+                    else:
+                        o["image_base64"] = None
+                    o.pop("image_data", None)
             else:
-                o["image_base64"] = None
-            o.pop("image_data", None)
+                cursor.execute("""
+                    SELECT o.*, t.id AS temp_image_id, t.mime_type, t.filename, t.date_upload
+                    FROM ordonnances o
+                    LEFT JOIN ordonnance_images_temp t 
+                        ON o.id = t.ordonnance_id
+                    WHERE o.utilisateur_id = %s
+                    ORDER BY o.date_ajout DESC
+                """, (user_id,))
+                ordonnances = cursor.fetchall()
 
         return jsonify({"ordonnances": ordonnances}), 200
 
