@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import config from '../../config';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfessionalChat.style';
@@ -48,6 +50,7 @@ export default function Chat(): React.JSX.Element {
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [ticketToAssign, setTicketToAssign] = useState<Ticket | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const { user } = useAuth();
 
   // Mock data - non-assigned tickets 
   const [unassignedTickets, setUnassignedTickets] = useState<Ticket[]>([
@@ -149,13 +152,65 @@ export default function Chat(): React.JSX.Element {
   ]);
 
   // Functions
-  const handleTicketPress = (ticket: Ticket) => {
+  const handleTicketPress = async (ticket: Ticket) => {
     if (ticket.status === 'unassigned') {
+      // If backend is available, try to fetch the first message to show patient name and question
+      if (config.backendUrl) {
+        try {
+          const base = config.backendUrl.replace(/\/$/, '');
+          const res = await fetch(`${base}/messages/discussion/${ticket.id}`);
+          if (res.ok) {
+            const messages = await res.json();
+            if (messages && messages.length > 0) {
+              const first = messages[0];
+              const patientNameFromMsg = first.auteur_name || first.auteur || '';
+              const questionFromMsg = first.message || first.message_text || '';
+              setTicketToAssign({ ...ticket, patientName: patientNameFromMsg, question: questionFromMsg });
+              setShowAssignmentModal(true);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch first message for ticket', e);
+        }
+      }
+
+      // Fallback to local/mock data if backend not available or fetch failed
       setTicketToAssign(ticket);
       setShowAssignmentModal(true);
     } else {
-      setSelectedTicket(ticket);
-      // Mark messages as read
+      // If backend available, fetch messages for this discussion BEFORE setting selectedTicket
+      if (config.backendUrl) {
+        try {
+          const base = config.backendUrl.replace(/\/$/, '');
+          const url = `${base}/messages/discussion/${ticket.id}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const messages = await res.json();
+            const mapped = (messages || []).map((m: any) => ({
+              id: String(m.id || m.message_id || Math.random()),
+              text: m.message || '',
+              sender: Number(m.auteur_id) === Number(user?.id) ? 'support' : 'user',
+              timestamp: m.date_envoi || m.date || new Date().toLocaleString('fr-FR'),
+              isRead: true
+            }));
+            
+            // Create updated ticket with messages
+            const updatedTicket = { ...ticket, messages: mapped };
+            
+            // Update ticket with messages first
+            setAssignedTickets(prev => prev.map(t => t.id === ticket.id ? updatedTicket : t));
+            
+            // Set selected ticket with the updated ticket that has messages
+            setSelectedTicket(updatedTicket);
+            return; // Exit early since we set selectedTicket
+          }
+        } catch (e) {
+          console.warn('Failed to fetch messages for ticket', e);
+        }
+      }
+
+      // Mark messages as read locally
       setAssignedTickets(prev => prev.map(t => 
         t.id === ticket.id 
           ? { ...t, messages: t.messages.map(m => ({ ...m, isRead: true })) }
@@ -167,13 +222,30 @@ export default function Chat(): React.JSX.Element {
   const handleAssignTicket = () => {
     if (!ticketToAssign) return;
 
+    // Try to assign on backend if possible
+    if (config.backendUrl && user?.id) {
+      (async () => {
+        try {
+          const base = config.backendUrl.replace(/\/$/, '');
+          const res = await fetch(`${base}/discussions/update/${ticketToAssign.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ professionnel_id: Number(user.id), statut: 'en_cours' })
+          });
+          if (!res.ok) console.warn('Assign request failed', await res.text());
+        } catch (e) {
+          console.warn('Failed to call assign API', e);
+        }
+      })();
+    }
+
     const assignedTicket: Ticket = {
       ...ticketToAssign,
       status: 'assigned',
-      assignedTo: 'Pharmacien',
+      assignedTo: user?.prenom ? `${user.prenom} ${user.nom}` : 'Pharmacien',
     };
 
-    // Move ticket from unassigned to assigned
+    // Move ticket from unassigned to assigned (local update)
     setUnassignedTickets(prev => prev.filter(t => t.id !== ticketToAssign.id));
     setAssignedTickets(prev => [assignedTicket, ...prev]);
 
@@ -187,11 +259,91 @@ export default function Chat(): React.JSX.Element {
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedTicket) return;
 
+    const now = new Date().toLocaleString('fr-FR');
+
+    // If backend available, post the message
+    if (config.backendUrl && user?.id) {
+      (async () => {
+        try {
+          const base = config.backendUrl.replace(/\/$/, '');
+          const res = await fetch(`${base}/messages/add/${selectedTicket.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auteur_id: Number(user.id), message: newMessage.trim() })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const message: Message = {
+              id: String(json.message_id || Math.random()),
+              text: newMessage.trim(),
+              sender: 'support',
+              timestamp: now,
+              isRead: true
+            };
+
+            // Create updated ticket with new message
+            const updatedTicket = {
+              ...selectedTicket,
+              messages: [...selectedTicket.messages, message],
+              lastActivity: message.timestamp
+            };
+
+            setAssignedTickets(prev => prev.map(ticket => 
+              ticket.id === selectedTicket.id ? updatedTicket : ticket
+            ));
+            
+            // Update selectedTicket with the new message so it displays immediately
+            setSelectedTicket(updatedTicket);
+            setNewMessage('');
+
+            // If backend confirms message creation, ask to close the discussion
+            if (json?.message === 'Message added') {
+              // Capture the discussion ID now before Alert changes state
+              const discussionIdToClose = selectedTicket.id;
+              Alert.alert(
+                'Clore la discussion ?',
+                'La question est-elle résolue ? Voulez-vous fermer cette discussion ?',
+                [
+                  { text: 'Non', style: 'cancel' },
+                  {
+                    text: 'Oui',
+                    onPress: async () => {
+                      try {
+                        const updateRes = await fetch(`${base}/discussions/update/${discussionIdToClose}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ statut: 'ferme' })
+                        });
+                        if (!updateRes.ok) {
+                          console.warn('Failed to close discussion', await updateRes.text());
+                        } else {
+                          // Optionally reflect closure locally
+                          setAssignedTickets(prev => prev.map(t => 
+                            t.id === discussionIdToClose ? { ...t, status: 'closed' } : t
+                          ));
+                        }
+                      } catch (e) {
+                        console.warn('Error calling close discussion API', e);
+                      }
+                    }
+                  }
+                ]
+              );
+            }
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to send professional message', e);
+        }
+      })();
+      return;
+    }
+
     const message: Message = {
       id: Math.random().toString(),
       text: newMessage.trim(),
       sender: 'support',
-      timestamp: new Date().toLocaleString('fr-FR'),
+      timestamp: now,
       isRead: true
     };
 
@@ -207,6 +359,103 @@ export default function Chat(): React.JSX.Element {
 
     setNewMessage('');
   };
+
+  // Load open and professional discussions from backend on mount
+  useEffect(() => {
+    if (!config.backendUrl) return;
+    const base = config.backendUrl.replace(/\/$/, '');
+
+    // Fetch open discussions for pharmacists by default (region=all)
+    (async () => {
+      try {
+        const res = await fetch(`${base}/discussions/open?sector=pharmacien&region=all`);
+        if (res.ok) {
+          const json = await res.json();
+          const rawList = (json.open_discussions || []).map((d: any) => ({
+            id: String(d.id),
+            title: d.sujet || 'Sans sujet',
+            patientName: '',
+            patientId: String(d.utilisateur_id || d.user_id || ''),
+            question: '',
+            createdAt: d.date_creation || '',
+            status: 'unassigned',
+            messages: [],
+            lastActivity: d.date_creation || ''
+          }));
+
+          // Enrich each ticket with the first message (to get auteur_name and question)
+          const enrich = async (tickets: typeof rawList) => {
+            return await Promise.all(tickets.map(async (t) => {
+              try {
+                const r = await fetch(`${base}/messages/discussion/${t.id}`);
+                if (r.ok) {
+                  const msgs = await r.json();
+                  if (msgs && msgs.length > 0) {
+                    const first = msgs[0];
+                    return { ...t, patientName: first.auteur_name || t.patientName, question: first.message || t.question };
+                  }
+                }
+              } catch (e) {
+                // ignore per-ticket failures
+              }
+              return t;
+            }));
+          };
+
+          const enriched = await enrich(rawList);
+          setUnassignedTickets(enriched);
+        }
+      } catch (e) {
+        console.warn('Failed to load open discussions', e);
+      }
+    })();
+
+    // If professional user, fetch assigned/owned discussions
+    if (user?.id) {
+      (async () => {
+        try {
+          const res = await fetch(`${base}/discussions/professional/${user.id}`);
+          if (res.ok) {
+            const discussions = await res.json();
+            const rawMapped = (discussions || []).map((d: any) => ({
+              id: String(d.id),
+              title: d.sujet || 'Sans sujet',
+              patientName: '',
+              patientId: String(d.utilisateur_id || ''),
+              question: '',
+              createdAt: d.date_creation || '',
+              status: d.statut === 'ouvert' ? 'assigned' : 'closed',
+              messages: [],
+              lastActivity: d.date_creation || ''
+            }));
+
+            const enrichAssigned = async (tickets: typeof rawMapped) => {
+              return await Promise.all(tickets.map(async (t) => {
+                try {
+                  const r = await fetch(`${base}/messages/discussion/${t.id}`);
+                  if (r.ok) {
+                    const msgs = await r.json();
+                    if (msgs && msgs.length > 0) {
+                      const first = msgs[0];
+                      return { ...t, patientName: first.auteur_name || t.patientName, question: first.message || t.question };
+                    }
+                  }
+                } catch (e) {
+                  // ignore
+                }
+                return t;
+              }));
+            };
+
+            const enrichedAssigned = await enrichAssigned(rawMapped);
+            setAssignedTickets(enrichedAssigned);
+          }
+        } catch (e) {
+          console.warn('Failed to load professional discussions', e);
+        }
+      })();
+    }
+  }, [user?.id]);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -230,7 +479,7 @@ export default function Chat(): React.JSX.Element {
     return messages.filter(msg => !msg.isRead && msg.sender === 'user').length;
   };
 
-  const renderTicketCard = ({ item }: { item: Ticket }) => {
+  const renderTicketCard = useCallback(({ item }: { item: Ticket }) => {
     const unreadCount = getUnreadCount(item.messages);
     
     return (
@@ -241,10 +490,10 @@ export default function Chat(): React.JSX.Element {
         <View style={styles.ticketHeader}>
           <View style={styles.ticketInfo}>
             <Text style={styles.ticketTitle}>{item.title}</Text>
-            <Text style={styles.ticketPatient}>Patient: {item.patientName}</Text>
+            <Text style={styles.ticketPatient}>Patient: {item.patientName || item.patientId || 'Nom inconnu'}</Text>
             <Text style={styles.ticketDate}>Créé le {item.createdAt}</Text>
           </View>
-          {item.status === 'unassigned' && (
+          {item.status !== 'assigned' && getStatusLabel(item.status) && (
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
               <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
             </View>
@@ -260,7 +509,7 @@ export default function Chat(): React.JSX.Element {
         </Text>
       </TouchableOpacity>
     );
-  };
+  }, [handleTicketPress, getUnreadCount]);
 
   const renderConversation = () => (
     <KeyboardAvoidingView 
@@ -370,6 +619,11 @@ export default function Chat(): React.JSX.Element {
         renderItem={renderTicketCard}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
       />
     );
   };
