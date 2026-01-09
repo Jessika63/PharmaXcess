@@ -4,16 +4,22 @@ from unittest.mock import patch
 
 # Test case for successfully removing a doctor
 @pytest.mark.order(3) # LOX n°1
-def test_remove_doctor_success(client):
+@pytest.mark.order(3) # LOX n°1
+def test_remove_doctor_success(client, mock_db_connection):
     """
     Objectif: Test the /remove_doctor endpoint for successful removal of a doctor from the database.
 
     Parameters:
         - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mock_db_connection: Fixture for mocked DB connection.
 
     Return Value:
         - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
+    # Configure mock to simulate impact
+    mock_cursor = mock_db_connection.cursor.return_value
+    mock_cursor.rowcount = 1
+
     # Perform a DELETE request to the /remove_doctor route with a doctor's information
     response = client.delete('/remove_doctor',
         query_string=config.dict_doctor_to_add["add_success_1"]
