@@ -4,16 +4,22 @@ from unittest.mock import patch
 
 # Test case to successfully find a doctor by their RPPS code
 @pytest.mark.order(2)  # LOX n°1
-def test_find_doctor_by_rpps_success(client):
+@pytest.mark.order(2)  # LOX n°1
+def test_find_doctor_by_rpps_success(client, mock_db_connection):
     """
     Objectif: Test the /find_doctor_by_rpps endpoint for successfully finding a doctor by their RPPS code.
 
     Parameters:
         - client: Flask test client used to make HTTP requests to the application. (FlaskClient)
+        - mock_db_connection: Mock DB fixture
 
     Return Value:
         - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
+    # Configure mock
+    mock_cursor = mock_db_connection.cursor.return_value
+    mock_cursor.fetchone.return_value = {'rpps': config.dict_doctor_to_add["add_success_1"]["rpps"]}
+
     # Sending a GET request with a valid RPPS code to find a doctor
     response = client.get('/find_doctor_by_rpps', query_string={
         'rpps': config.dict_doctor_to_add["add_success_1"]["rpps"]
