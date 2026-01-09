@@ -133,7 +133,7 @@ def test_list_origins_success(client):
         response = client.get('/list-origins',
             headers={'X-Secret-Key': 'test_secret_key_default'}
         )
-        
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert 'allowed_origins' in data
@@ -173,17 +173,17 @@ def test_remove_origin_success(client):
     """
     # Create a mutable set for testing
     test_origins = {'https://example.com', 'https://test.com'}
-    
+
     def mock_save(origins):
         pass
-    
+
     with patch('app.allowed_origins', test_origins):
         with patch('app.save_allowed_origins', side_effect=mock_save):
             response = client.post('/remove-origin',
                 headers={'X-Secret-Key': 'test_secret_key_default'},
                 json={'origin': 'https://example.com'}
             )
-            
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data['message'] == 'Origin removed successfully'
