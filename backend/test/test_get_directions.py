@@ -37,6 +37,7 @@ def test_successful_directions(client, mocker):
 
     # Mock the environment variable
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
+    mocker.patch('routes.get_directions.ORS_API_KEY', 'dummy')
 
 
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
@@ -75,6 +76,7 @@ def test_invalid_coordinates(client, mocker):
         - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
+    mocker.patch('routes.get_directions.ORS_API_KEY', 'dummy')
     resp = client.get('/get_direction?origin=bad,coords&destination=3,4&mode=driving')
     assert resp.status_code == 400
     assert b'Invalid coordinates' in resp.data
@@ -100,6 +102,8 @@ def test_ors_non_200_status(client, mocker):
 
     # Mock the environment variable
     mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
+    mocker.patch('routes.get_directions.ORS_API_KEY', 'dummy')
+    mocker.patch('routes.get_directions.ORS_API_KEY', 'dummy')
 
 
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')

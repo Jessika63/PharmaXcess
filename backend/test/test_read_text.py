@@ -184,9 +184,8 @@ def test_main_with_bytes_and_flip(mock_paddleocr, tmp_path):
 
     # Créer une image de test
     img_path = tmp_path / "test_image.png"
-    img = np.zeros((100, 100, 3), dtype=np.uint8)
-    cv2.imwrite(str(img_path), img)
-
+    img_path.write_bytes(b'fake image bytes')
+    
     # Appeler la fonction
     raw = img_path.read_bytes()
     res = extract_main(raw, "P", from_base64=True, flip_horizontal=True)  # Removed is_bytes parameter
@@ -448,8 +447,7 @@ def test_main_entry_point(mock_ocr_predictor, tmp_path, capsys):
 
     # Create fake image
     img_path = tmp_path / "cli_image.png"
-    img = np.zeros((100, 100, 3), dtype=np.uint8)
-    cv2.imwrite(str(img_path), img)
+    img_path.write_bytes(b'fake image bytes')
 
     # Call main directly
     output = extract_main(str(img_path), "P")
