@@ -10,7 +10,7 @@ from helpers.verify.verify_frontend_is_up import verify_frontend_is_up
 from helpers.troubleshooting_message_giver import troubleshooting_message_front_install
 from helpers.config.update_frontend_config import update_frontend_config
 
-def handle_front(frontend_folder, front_app_container_name, no_cache=False, install_front=False, sudo=False, location='paris'):
+def handle_front(frontend_folder, front_app_container_name, no_cache=False, install_front=False, sudo=False):
     """
     Objectif: Handles frontend-related operations including dependency installation and Docker container management.
 
@@ -20,13 +20,11 @@ def handle_front(frontend_folder, front_app_container_name, no_cache=False, inst
         - no_cache: If True, builds Docker images without cache. Defaults to False. (Boolean)
         - install_front: If True, installs npm dependencies before starting containers. Defaults to False. (Boolean)
         - sudo: If True, uses sudo for npm install. Defaults to False. (Boolean)
-        - location: Default location for the frontend ('paris' or 'lyon'). Defaults to 'paris'. (String)
 
     Return Value:
         - None: This function does not return a value but performs operations and prints status messages. (NoneType)
     """
     colored_print("Starting frontend operations...", "blue")
-    colored_print(f"Setting default location to: {location}", "blue")
 
     # Step 0: Change working directory to frontend/
     change_directory(frontend_folder)
@@ -65,8 +63,5 @@ def handle_front(frontend_folder, front_app_container_name, no_cache=False, inst
             return
 
     # Step 2: Build and start containers with docker-compose
-    update_frontend_config(location)
-    build_args = ["--build-arg", f"DEFAULT_LOCATION={location}"]
-    os.environ['DEFAULT_LOCATION'] = location
-    start_containers(no_cache=no_cache, build_args=build_args)
+    start_containers(no_cache=no_cache)
     verify_frontend_is_up(front_app_container_name, nb_of_retry=10)
