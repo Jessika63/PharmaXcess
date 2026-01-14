@@ -77,13 +77,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return map[errMsg] || `Erreur: ${errMsg}`;
   };
 
-  const login = async (email: string, password: string, userType?: UserType): Promise<boolean> => {
+  const login = async (email: string, password: string, userType?: UserType, force?: boolean): Promise<boolean> => {
     try {
       // Clear any previous auth error so UI doesn't show stale messages while attempting login
       setAuthError(null);
       setIsLoading(true);
       // Call backend
-      const result = await authApi.login(email, password);
+      const result = await authApi.login(email, password, force);
 
       if (result.ok && result.data) {
         // backend returns user_id and sets session cookie (credentials: include)
@@ -131,8 +131,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await authApi.register(nom, prenom, email, password);
 
       if (result.ok) {
-        // Optionally auto-login after register
-        const logged = await login(email, password, userType);
+        // Optionally auto-login after register (force=true to override any existing session)
+        const logged = await login(email, password, userType, true);
         return logged;
       }
 
