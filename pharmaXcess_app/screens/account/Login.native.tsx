@@ -40,7 +40,7 @@ interface FormErrors {
 export default function Login({ navigation }: LoginProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
-    const { login, isLoading: authLoading } = useAuth();
+    const { login, isLoading: authLoading, authError, clearAuthError } = useAuth();
     const { t } = useTranslation('common');
     const styles = createStyles(colors, fontScale);
 
@@ -52,6 +52,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
+    const [errorStatus, setErrorStatus] = useState<number | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -99,7 +100,16 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
         }
-    }, [errors]);
+        // Clear general error/status when user edits any field
+        if (errors.general) {
+            setErrors(prev => ({ ...prev, general: undefined }));
+        }
+        if (errorStatus) {
+            setErrorStatus(null);
+        }
+        // Clear shared auth error in context so it doesn't persist across remounts
+        if (clearAuthError) clearAuthError();
+    }, [errors, errorStatus, clearAuthError]);
 
     // Handle login submission
     const handleLogin = useCallback(async () => {
@@ -111,22 +121,23 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
         }
 
         setErrors({});
+    setErrorStatus(null);
 
-        try {
-            const success = await login(formData.email, formData.password, formData.userType);
-            
-            // Mock authentication logic
-            if (formData.email === 'test@example.com' && formData.password === 'password') {
+            try {
+                // call AuthContext.login which now throws on failure with backend message
+                await login(formData.email, formData.password, formData.userType);
                 AccessibilityInfo.announceForAccessibility('Connexion réussie');
-                // La navigation sera automatiquement gérée par RootNavigation
-            } else {
-                throw new Error('Identifiants invalides');
+                // Navigation will be handled by RootNavigation observing auth state
+            } catch (error: any) {
+                const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+
+                // If backend returned 401 (not found / wrong password) show the backend message
+                // inline on the page instead of a popup to avoid interrupting the flow.
+                const status = error?.status;
+                setErrors({ general: errorMessage });
+                setErrorStatus(status || null);
+                AccessibilityInfo.announceForAccessibility(`Erreur de connexion: ${errorMessage}`);
             }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
-            setErrors({ general: errorMessage });
-            AccessibilityInfo.announceForAccessibility(`Erreur de connexion: ${errorMessage}`);
-        }
     }, [formData, validateForm, errors, login]);
 
     // Toggle password visibility
@@ -174,14 +185,20 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                 </Text>
 
                 {/* General error message */}
-                {errors.general && (
+                { (errors.general || authError?.message) && (
                     <Text 
                         style={styles.errorText}
                         accessibilityRole="alert"
                         accessibilityLiveRegion="assertive"
                     >
-                        {errors.general}
+                        {errors.general || authError?.message}
                     </Text>
+                )}
+                {/* If the backend indicated 401 (not found/wrong password), show a small inline link to SignUp */}
+                { (errors.general ? errorStatus === 401 : authError?.status === 401) && (
+                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')} accessibilityRole="button">
+                        <Text style={[styles.registerLink, { marginTop: 8 }]}>Créer un compte</Text>
+                    </TouchableOpacity>
                 )}
 
 {/* 
