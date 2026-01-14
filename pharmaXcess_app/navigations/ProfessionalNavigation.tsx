@@ -96,7 +96,9 @@ export default function ProfessionalNavigation(): React.JSX.Element {
         name="Chat" 
         component={Chat} 
         options={{ 
-          title: 'Chat'
+          title: 'Chat',
+          // Remove logout button from Chat header
+          headerRight: () => null
         }} 
       />
       <Tab.Screen 

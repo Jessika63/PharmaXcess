@@ -3,6 +3,11 @@ from db_app import get_app_connection
 import pymysql
 from datetime import datetime
 import base64
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 ordonnances_bp = Blueprint('ordonnances', __name__)
 
@@ -14,6 +19,10 @@ def create_ordonnance():
     """
     Crée une ordonnance à partir d'une image temporaire (ordonnance_images_temp)
     """
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     data = request.get_json()
     user_id = data.get("user_id")
     description = data.get("description")
@@ -25,6 +34,17 @@ def create_ordonnance():
 
     if not user_id:
         return jsonify({"error": "Missing 'user_id'"}), 400
+
+    # Ensure the target user_id is accessible by the current session user
+    conn_check = get_app_connection()
+    try:
+        with conn_check.cursor() as cursor:
+            condition = profile_target_access_condition('id')
+            cursor.execute(f"SELECT id FROM utilisateurs WHERE {condition}", (user_id, current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({"error": "Target user not found or not accessible"}), 403
+    finally:
+        conn_check.close()
 
     conn = None
     try:
@@ -89,10 +109,12 @@ def create_ordonnance():
 # -------------------------------
 @ordonnances_bp.route("/ordonnances", methods=["GET"])
 def get_ordonnances():
-    user_id = request.args.get("user_id")
+    # Use current session and profile access rules instead of arbitrary user_id query param
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     include_images = request.args.get("include_images", "0")
-    if not user_id:
-        return jsonify({"error": "Missing 'user_id'"}), 400
 
     conn = None
     try:
@@ -100,15 +122,16 @@ def get_ordonnances():
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             # Fetch metadata only by default to keep payload small and fast for clients.
             # If client explicitly requests images (include_images=1) we will include base64 blobs.
+            condition = profile_access_condition('o.utilisateur_id')
             if include_images == '1':
-                cursor.execute("""
+                cursor.execute(f"""
                     SELECT o.*, t.id AS temp_image_id, t.mime_type, t.image_data
                     FROM ordonnances o
                     LEFT JOIN ordonnance_images_temp t 
                         ON o.id = t.ordonnance_id
-                    WHERE o.utilisateur_id = %s
+                    WHERE {condition}
                     ORDER BY o.date_ajout DESC
-                """, (user_id,))
+                """, (current_user_id, current_user_id))
                 ordonnances = cursor.fetchall()
                 for o in ordonnances:
                     if o.get("image_data"):
@@ -117,14 +140,14 @@ def get_ordonnances():
                         o["image_base64"] = None
                     o.pop("image_data", None)
             else:
-                cursor.execute("""
+                cursor.execute(f"""
                     SELECT o.*, t.id AS temp_image_id, t.mime_type, t.filename, t.date_upload
                     FROM ordonnances o
                     LEFT JOIN ordonnance_images_temp t 
                         ON o.id = t.ordonnance_id
-                    WHERE o.utilisateur_id = %s
+                    WHERE {condition}
                     ORDER BY o.date_ajout DESC
-                """, (user_id,))
+                """, (current_user_id, current_user_id))
                 ordonnances = cursor.fetchall()
 
         return jsonify({"ordonnances": ordonnances}), 200
@@ -144,6 +167,11 @@ def get_ordonnances():
 def delete_ordonnance():
     data = request.get_json()
     ordonnance_id = data.get("ordonnance_id")
+    # delete must be performed by a session user with access to the ordonnance owner
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     user_id = data.get("user_id")
 
     if not ordonnance_id or not user_id:
@@ -153,10 +181,10 @@ def delete_ordonnance():
     try:
         conn = get_app_connection()
         with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT id FROM ordonnances WHERE id=%s AND utilisateur_id=%s",
-                (ordonnance_id, user_id)
-            )
+            # ensure provided user_id is accessible by session user
+            condition = profile_access_condition('o.utilisateur_id')
+            cursor.execute(f"SELECT id FROM ordonnances o WHERE o.id=%s AND {condition}",
+                           (ordonnance_id, current_user_id, current_user_id))
             if not cursor.fetchone():
                 return jsonify({"error": "Ordonnance not found or unauthorized"}), 404
 
