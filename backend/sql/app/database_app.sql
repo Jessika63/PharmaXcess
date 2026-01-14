@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS maladies (
     description TEXT,
     symptomes TEXT,
     date_debut DATE,
+    examens TEXT,
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
@@ -78,6 +79,7 @@ CREATE TABLE IF NOT EXISTS allergies (
     utilisateur_id INT,
     nom VARCHAR(150),
     debut DATE,
+    medicaments TEXT,
     gravite VARCHAR(50),
     symptomes TEXT,
     commentaires TEXT,

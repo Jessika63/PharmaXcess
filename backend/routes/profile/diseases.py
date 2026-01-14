@@ -1,5 +1,6 @@
 
 from flask import Blueprint, request, jsonify
+import re
 from db_app import get_app_connection
 from .profile_access import (
     get_current_user_id,
@@ -42,6 +43,7 @@ def create_disease():
     description = data.get("description")
     symptomes = data.get("symptomes")
     date_debut = data.get("date_debut")
+    examens = data.get("examens")
 
     if not utilisateur_id or not nom:
         return jsonify({"error": "Missing required fields"}), 400
@@ -63,9 +65,9 @@ def create_disease():
                 return jsonify({"error": "You don't have permission to add disease for this user"}), 403
 
             cursor.execute("""
-                INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (utilisateur_id, nom, description, symptomes, date_debut))
+                INSERT INTO maladies (utilisateur_id, nom, description, symptomes, date_debut, examens)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (utilisateur_id, nom, description, symptomes, date_debut, examens))
             conn.commit()
             disease_id = cursor.lastrowid
 
@@ -188,6 +190,7 @@ def update_disease(disease_id):
         return error_response, status
 
     data = request.get_json()
+    examens = data.get("examens")
     condition = profile_access_condition('m.utilisateur_id')
 
     conn = get_app_connection()
@@ -206,7 +209,7 @@ def update_disease(disease_id):
             # Perform update now that permission is confirmed
             query = """
                 UPDATE maladies
-                SET nom=%s, description=%s, symptomes=%s, date_debut=%s
+                SET nom=%s, description=%s, symptomes=%s, date_debut=%s, examens=%s
                 WHERE id=%s
             """
             cursor.execute(query, (
@@ -214,6 +217,7 @@ def update_disease(disease_id):
                 data.get("description"),
                 data.get("symptomes"),
                 data.get("date_debut"),
+                examens,
                 disease_id,
             ))
 
