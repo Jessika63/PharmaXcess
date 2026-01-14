@@ -9,6 +9,8 @@ import createStyles from '../../styles/Reminders.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
+import { useAuth } from '../../context/AuthContext';
+import alarmsApi from '../../utils/api/alarms';
 import { useProfileData } from '../../hooks/useProfileData';
 import { TimePicker, CustomPicker } from '../../components';
 import { NotificationService } from '../../utils/notificationService';
@@ -33,6 +35,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
+    const { user } = useAuth();
     const styles = createStyles(colors, fontScale);
 
     const [alarms, setAlarms] = useState<Alarm[]>([
@@ -87,6 +90,37 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
     useEffect(() => {
         initializeNotifications();
     }, []);
+
+    // Load alarms from backend when user/profile changes (main profile only)
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (!user || !currentProfile) return;
+                const isMainProfile = currentProfile.name === 'Profil de base' || currentProfile.relationship === 'self';
+                if (!isMainProfile) return;
+
+                const res = await alarmsApi.getAlarms(user.id);
+                if (res.ok && Array.isArray(res.data)) {
+                    const mapped = res.data.map((a: any) => ({
+                        id: String(a.id),
+                        medicineName: a.medicine_name,
+                        time: a.time ? a.time.slice(0,5) : '08:00',
+                        days: a.days || [],
+                        sound: a.sound || 'Son 1',
+                        isActive: Boolean(a.is_active),
+                        dosage: a.dosage || '',
+                        nextAlarm: a.next_alarm ? new Date(a.next_alarm) : undefined,
+                    }));
+                    setAlarms(mapped);
+                } else {
+                    console.warn('Failed to fetch alarms', res.error);
+                }
+            } catch (error) {
+                console.error('Error loading alarms:', error);
+            }
+        };
+        load();
+    }, [user?.id, currentProfile?.id]);
 
     const initializeNotifications = async () => {
         const isEnabled = await NotificationService.requestPermissions();
@@ -281,6 +315,7 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         console.log(`🔄 Toggle alarme ${id}`);
 
         if (isMainProfile) {
+            // Optimistic UI update
             setAlarms(prevAlarms =>
                 prevAlarms.map(alarm => {
                     if (alarm.id === id) {
@@ -311,6 +346,20 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                     return alarm;
                 })
             );
+
+            // Persist toggle to backend
+            try {
+                if (user) {
+                    const res = await alarmsApi.toggleAlarm(id);
+                    if (!res.ok) {
+                        console.warn('Failed to toggle alarm on backend', res.error);
+                        // rollback: refetch or invert again locally
+                        setAlarms(prevAlarms => prevAlarms.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a));
+                    }
+                }
+            } catch (e) {
+                console.warn('Error toggling alarm on backend', e);
+            }
         } else {
             // For other profiles: update profile data
             const currentAlarms = getCurrentAlarms();
@@ -377,6 +426,16 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
                     onPress: async () => {
                         // Cancel the notification before deleting
                         await cancelNotification(id);
+                        // Persist deletion to backend if possible
+                        try {
+                            if (user) {
+                                const res = await alarmsApi.deleteAlarm(id);
+                                if (!res.ok) console.warn('Backend delete failed', res.error);
+                            }
+                        } catch (e) {
+                            console.warn('Error calling delete API', e);
+                        }
+
                         setAlarms(prevAlarms => prevAlarms.filter(alarm => alarm.id !== id));
                     }
                 }
@@ -434,32 +493,73 @@ export default function MedicineReminders({ navigation }: MedicineRemindersProps
         alarmData.nextAlarm = calculateNextAlarm(alarmData);
 
         if (isMainProfile) {
-            // For main profile: use existing logic
-            if (editingAlarm) {
-                // Cancel existing notifications before updating
-                await cancelNotification(editingAlarm.id);
+            // For main profile: persist to backend and then update local state + notifications
+            try {
+                if (editingAlarm) {
+                    // Cancel existing notifications before updating
+                    await cancelNotification(editingAlarm.id);
 
-                // Edit existing alarm
-                setAlarms(prevAlarms =>
-                    prevAlarms.map(alarm =>
-                        alarm.id === editingAlarm.id ? alarmData : alarm
-                    )
-                );
+                    // Build payload for backend
+                    const payload = {
+                        medicine_name: alarmData.medicineName,
+                        time: alarmData.time.length === 5 ? `${alarmData.time}:00` : alarmData.time,
+                        days: alarmData.days,
+                        sound: alarmData.sound,
+                        dosage: alarmData.dosage,
+                        is_active: alarmData.isActive,
+                        next_alarm: alarmData.nextAlarm ? alarmData.nextAlarm.toISOString() : null,
+                    };
 
-                console.log(`🔄 Alarme modifiée: ${alarmData.medicineName}`);
-            } else {
-                // Add new alarm
-                setAlarms(prevAlarms => [...prevAlarms, alarmData]);
-                console.log(`🆕 Nouvelle alarme créée: ${alarmData.medicineName}`);
-            }
+                    const res = await alarmsApi.updateAlarm(editingAlarm.id, payload);
+                    if (!res.ok) {
+                        Alert.alert('Erreur', `Impossible de modifier l'alarme: ${res.error || ''}`);
+                    } else {
+                        // Update local state with edited alarm
+                        setAlarms(prevAlarms => prevAlarms.map(a => a.id === editingAlarm.id ? { ...alarmData, id: editingAlarm.id } : a));
+                        console.log(`🔄 Alarme modifiée: ${alarmData.medicineName}`);
+                        // Schedule notifications for updated alarm
+                        if (alarmData.isActive && notificationsEnabled) {
+                            const notificationIds = await scheduleNotification({ ...alarmData, id: editingAlarm.id });
+                            if (notificationIds.length > 0) {
+                                setNotificationIds(prev => new Map(prev.set(editingAlarm.id, notificationIds.join(','))));
+                            }
+                        }
+                    }
+                } else {
+                    // Build payload including utilisateur_id from auth user
+                    const payload: any = {
+                        utilisateur_id: user ? Number(user.id) : undefined,
+                        medicine_name: alarmData.medicineName,
+                        time: alarmData.time.length === 5 ? `${alarmData.time}:00` : alarmData.time,
+                        days: alarmData.days,
+                        sound: alarmData.sound,
+                        dosage: alarmData.dosage,
+                        is_active: alarmData.isActive,
+                        next_alarm: alarmData.nextAlarm ? alarmData.nextAlarm.toISOString() : null,
+                    };
 
-            // Schedule notifications only once after state update
-            if (alarmData.isActive && notificationsEnabled) {
-                console.log(`📅 Programmation des notifications pour: ${alarmData.medicineName}`);
-                const notificationIds = await scheduleNotification(alarmData);
-                if (notificationIds.length > 0) {
-                    setNotificationIds(prev => new Map(prev.set(alarmData.id, notificationIds.join(','))));
+                    const res = await alarmsApi.createAlarm(payload);
+                    if (res.ok && res.data && (res.data.id || res.data?.id === 0)) {
+                        const newId = String(res.data.id);
+                        const newAlarmWithId = { ...alarmData, id: newId };
+                        setAlarms(prevAlarms => [...prevAlarms, newAlarmWithId]);
+                        console.log(`🆕 Nouvelle alarme créée: ${alarmData.medicineName} (id: ${newId})`);
+
+                        // Schedule notifications
+                        if (newAlarmWithId.isActive && notificationsEnabled) {
+                            console.log(`📅 Programmation des notifications pour: ${newAlarmWithId.medicineName}`);
+                            const notificationIds = await scheduleNotification(newAlarmWithId);
+                            if (notificationIds.length > 0) {
+                                setNotificationIds(prev => new Map(prev.set(newAlarmWithId.id, notificationIds.join(','))));
+                            }
+                        }
+                    } else {
+                        Alert.alert('Erreur', `Impossible de créer l'alarme: ${res.error || ''}`);
+                    }
                 }
+            } catch (error) {
+                console.error('Error persisting alarm to backend:', error);
+                Alert.alert('Erreur', 'Une erreur est survenue lors de la communication avec le serveur.');
             }
         } else {
             // For other profiles: add to profile data
