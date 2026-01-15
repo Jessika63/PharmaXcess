@@ -15,14 +15,14 @@ def register_subprofile():
         return error_response, status
 
     data = request.get_json()
-    nom = data.get("nom")
-    prenom = data.get("prenom")
+    # Accept a single full name field from frontend
+    name = data.get("name") or data.get("nom")
     profile_type = data.get("profile_type")
     main_profile_id = data.get("main_profile_id")
     email = data.get("email")  # facultatif
 
     # ✅ Validation
-    if not nom or not prenom or not profile_type or not main_profile_id:
+    if not name or not profile_type or not main_profile_id:
         return jsonify({"error": "Missing required fields"}), 400
     if profile_type not in ("parent", "enfant", "epoux", "autre"):
         return jsonify({"error": "Invalid profile_type"}), 400
@@ -43,10 +43,11 @@ def register_subprofile():
                 return jsonify({"error": "You are not allowed to create a sub-profile for this user"}), 403
 
             # 🔹 Crée le sous-profil avec email facultatif
+            # Store the full name in 'nom' and leave 'prenom' empty (we don't distinguish)
             cursor.execute("""
                 INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, profile_type)
                 VALUES (%s, %s, %s, '', %s)
-            """, (nom, prenom, email, profile_type))
+            """, (name, '', email, profile_type))
             sub_profile_id = cursor.lastrowid
 
             # 🔹 Enregistre la relation

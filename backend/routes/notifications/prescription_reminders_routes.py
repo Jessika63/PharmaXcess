@@ -6,7 +6,7 @@ import os
 from db_app import get_app_connection
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from routes.profile.profile_access import get_current_user_id, profile_access_condition
+from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 prescription_reminders_bp = Blueprint('prescription_reminders', __name__, url_prefix='/prescription-reminders')
 
@@ -121,9 +121,9 @@ def create_prescription_reminder():
     if error_response:
         return error_response, status
 
-    # When creating we need to ensure the ordonnance belongs to an accessible profile.
-    # This query references the `ordonnances` table directly (no alias), so use the plain column name.
-    condition = profile_access_condition('utilisateur_id')
+    # When creating we need to ensure the provided `utilisateur_id` is accessible
+    # and that the ordonnance belongs to that user. This avoids creating reminders
+    # for ordonnances belonging to another profile.
     data = request.get_json()
     required_fields = ['utilisateur_id', 'prescription_id', 'name', 'due_date']
 
@@ -134,19 +134,18 @@ def create_prescription_reminder():
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
+            # Verify the session user can access the target utilisateur_id
+            condition_target = profile_target_access_condition('id')
+            cursor.execute(f"SELECT id FROM utilisateurs WHERE {condition_target}",
+                           (data['utilisateur_id'], current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Target user not found or not accessible'}), 403
 
-            # Vérifier que la prescription appartient à un profil accessible
-            # and fetch the prescription owner so we insert the reminder for that owner
-            query = f"""
-                SELECT id, utilisateur_id FROM ordonnances
-                WHERE id = %s AND {condition}
-            """
-            cursor.execute(query, (data['prescription_id'], current_user_id, current_user_id))
-            ord_row = cursor.fetchone()
-            if not ord_row:
-                return jsonify({'error': 'Prescription not found or not accessible'}), 404
-
-            ordonnance_owner_id = ord_row['utilisateur_id']
+            # Verify the ordonnance exists and belongs to the provided utilisateur_id
+            cursor.execute("SELECT id FROM ordonnances WHERE id = %s AND utilisateur_id = %s",
+                           (data['prescription_id'], data['utilisateur_id']))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Prescription not found for this user'}), 404
 
             due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
             cursor.execute("""
@@ -154,7 +153,7 @@ def create_prescription_reminder():
                 (utilisateur_id, ordonnance_id, name, due_date, sound, is_completed, notes)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                ordonnance_owner_id,
+                data['utilisateur_id'],
                 data['prescription_id'],
                 data['name'],
                 due_date,

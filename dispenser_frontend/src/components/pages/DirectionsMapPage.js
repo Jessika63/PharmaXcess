@@ -10,6 +10,7 @@ import ErrorPage from '../ErrorPage';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { getDefaultPosition } from '../../utils/positionUtils';
 
 // Fix default icon issue with Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -73,62 +74,50 @@ function DirectionsMapPage() {
     }
     apiCalledRef.current = true;
 
-    const fetchDirections = (lat, lng) => {
-      const url =
-        `${config.backendUrl}/get_direction?origin=${lat},${lng}` +
-        `&destination=${pharmacy.latitude},${pharmacy.longitude}` +
-        `&mode=${transport}`;
-      fetchWithTimeout(url, undefined, 5000)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
-          } else if (data.routes && data.routes.length > 0) {
-            const {geometry} = data.routes[0];
-            let coords = [];
-            if (typeof geometry === 'string') {
-              coords = polyline.decode(geometry);
-            } else if (geometry && geometry.coordinates) {
-              coords = geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-            }
-            setRouteCoords(coords);
-          } else {
-            setError('Aucun itinéraire trouvé.' + (data.error_message ? ' - ' + data.error_message : ''));
+    const fetchDirections = async () => {
+      try {
+        // Use default position from backend (configured by --location flag)
+        const position = await getDefaultPosition();
+        console.log('Using configured default position for directions:', position);
+        const originLat = position.lat;
+        const originLon = position.lon;
+        
+        setUserCoords([originLat, originLon]);
+        
+        const url =
+          `${config.backendUrl}/get_direction?origin=${originLat},${originLon}` +
+          `&destination=${pharmacy.latitude},${pharmacy.longitude}` +
+          `&mode=${transport}`;
+          
+        const res = await fetchWithTimeout(url, undefined, 5000);
+        const data = await res.json();
+        
+        if (data.error) {
+          setError('Erreur serveur: ' + data.error + (data.error_message ? ' - ' + data.error_message : ''));
+        } else if (data.routes && data.routes.length > 0) {
+          const {geometry} = data.routes[0];
+          let coords = [];
+          if (typeof geometry === 'string') {
+            coords = polyline.decode(geometry);
+          } else if (geometry && geometry.coordinates) {
+            coords = geometry.coordinates.map(([lon, lat]) => [lat, lon]);
           }
-          setLoading(false);
-        })
-        .catch((err) => {
-          if (err.message === 'Timeout') {
-            setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
-          } else {
-            setError('Erreur réseau ou serveur. Détail: ' + err.message);
-          }
-          setLoading(false);
-        });
+          setRouteCoords(coords);
+        } else {
+          setError('Aucun itinéraire trouvé.' + (data.error_message ? ' - ' + data.error_message : ''));
+        }
+        setLoading(false);
+      } catch (err) {
+        if (err.message === 'Timeout') {
+          setError('Le serveur ne répond pas (délai dépassé). Veuillez réessayer plus tard.');
+        } else {
+          setError('Erreur réseau ou serveur. Détail: ' + err.message);
+        }
+        setLoading(false);
+      }
     };
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setUserCoords([latitude, longitude]);
-          fetchDirections(latitude, longitude);
-        },
-        () => {
-          alert(`Impossible d'accéder à la position. Assurez-vous qu'elle est activée. Utilisation de la position par défaut (${config.Default_Location.name}).`);
-          const defaultLat = config.Default_Location.lat;
-          const defaultLon = config.Default_Location.lon;
-          setUserCoords([defaultLat, defaultLon]);
-          fetchDirections(defaultLat, defaultLon);
-        }
-      );
-    } else {
-      alert(`La géolocalisation n'est pas supportée par ce navigateur. Utilisation de la position par défaut (${config.Default_Location.name}).`);
-      const defaultLat = config.Default_Location.lat;
-      const defaultLon = config.Default_Location.lon;
-      setUserCoords([defaultLat, defaultLon]);
-      fetchDirections(defaultLat, defaultLon);
-    }
+    fetchDirections();
   }, [pharmacy, transport]);
 
   // Focus management

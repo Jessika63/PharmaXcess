@@ -21,12 +21,14 @@ import MedicalProfile from '../screens/health/MedicalProfile.native';
 
 // Medications screens
 import MyPrescriptions from '../screens/medications/MyPrescriptions.native';
+import AddOrdonnance from '../screens/medications/AddOrdonnance.native';
 import Treatments from '../screens/medications/Treatments.native';
 import MedicineReminders from '../screens/medications/MedicineReminders.native';
 import PrescriptionReminders from '../screens/medications/PrescriptionReminders.native';
 import MedicationManagement from '../screens/medications/MedicationManagement.native';
 import PrescriptionImport from '../screens/medications/PrescriptionImport.native';
 import MedicationManagementFAQ from '../screens/medications/MedicationManagementFAQ.native';
+import OrdonnanceDetail from '../screens/medications/OrdonnanceDetail.native';
 
 // Pharmacy screens
 import Localisation from '../screens/pharmacy/Localisation.native';
@@ -135,6 +137,8 @@ const HomeStackScreen = (): React.JSX.Element => {
   return createStack([
     { name: 'Home', component: Home, title: 'Accueil' },
     { name: 'MyPrescriptions', component: MyPrescriptions, title: 'Mes ordonnances' },
+    { name: 'AddOrdonnance', component: AddOrdonnance, title: "Ajouter une ordonnance" },
+    { name: 'OrdonnanceDetail', component: OrdonnanceDetail, title: 'Détails ordonnance' },
     { name: 'MedicineReminders', component: MedicineReminders, title: 'Mes rappels médicaments' },
     { name: 'PrescriptionReminders', component: PrescriptionReminders, title: 'Mes rappels ordonnances' },
   ], colors);

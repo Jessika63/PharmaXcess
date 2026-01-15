@@ -163,6 +163,7 @@ def register_blueprints():
     from routes.get_pharmacies import get_pharmacies_bp
     from routes.get_available_medicine import get_available_medicine_bp
     from routes.get_directions import get_directions_bp
+    from routes.get_default_position import get_default_position_bp
     from routes.stripe.pay_with_stripe import create_payment_intent_bp
     from routes.stripe.vpn_check import vpn_check_bp
     from routes.stripe.update_stock import update_stock_bp
@@ -204,6 +205,7 @@ def register_blueprints():
     from routes.clickAndCollect.click_collect_refuse import clickcollect_refuse_bp
     from routes.clickAndCollect.click_collect_status import clickcollect_status_bp
     from routes.clickAndCollect.click_collect_temp_images import clickcollect_temp_images_bp
+    from routes.profile.documents import documents_bp
     from routes.profile.sub_profiles import sub_profile_bp
     from routes.ordonnances.ordonnance_create import ordonnances_bp
 
@@ -217,6 +219,7 @@ def register_blueprints():
     app.register_blueprint(get_pharmacies_bp)
     app.register_blueprint(get_available_medicine_bp)
     app.register_blueprint(get_directions_bp)
+    app.register_blueprint(get_default_position_bp)
     app.register_blueprint(create_payment_intent_bp)
     app.register_blueprint(vpn_check_bp)
     app.register_blueprint(update_stock_bp)
@@ -259,6 +262,7 @@ def register_blueprints():
     app.register_blueprint(clickcollect_status_bp)
     app.register_blueprint(clickcollect_temp_images_bp)
     app.register_blueprint(ordonnances_bp)
+    app.register_blueprint(documents_bp)
 
 register_blueprints()
 

@@ -6,6 +6,7 @@ import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
+import { getDefaultPosition } from '../../utils/positionUtils';
 
 function DrugStoresAvailable() {
   const location = useLocation();
@@ -134,25 +135,20 @@ function DrugStoresAvailable() {
       }
     };
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          fetchPharmacies(latitude, longitude);
-        },
-        (error) => {
-          console.error("Position error :", error);
-          alert("Cannot access to position. Make sure it is activated");
-          setLoading(false);
-        }
-      );
-    } else {
-      alert(`Position not supported by browser. Using default location (${config.Default_Location.name}).`);
-      const defaultLat = config.Default_Location.lat;
-      const defaultLon = config.Default_Location.lon;
-      fetchPharmacies(defaultLat, defaultLon);
-      setLoading(false);
-    }
+    // Use default position from backend (configured by --location flag)
+    const initializePharmacies = async () => {
+      try {
+        const position = await getDefaultPosition();
+        console.log('Using configured default position:', position);
+        fetchPharmacies(position.lat, position.lon);
+      } catch (error) {
+        console.error("Failed to get position:", error);
+        setError("Unable to determine position");
+        setLoading(false);
+      }
+    };
+
+    initializePharmacies();
   }, [navigate, location.pathname]);
 
   useEffect(() => {
