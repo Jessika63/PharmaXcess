@@ -35,6 +35,23 @@ To launch the verification, the backend and the frontend at the same time you ne
 python launch.py --all
 ```
 
+### Configurer la position par défaut
+
+Vous pouvez configurer la position par défaut pour les cartes (utilisée quand la géolocalisation n'est pas disponible) avec le flag `--location` :
+
+```bash
+# Lancer avec Paris comme position par défaut (défaut)
+python launch.py --all --location paris
+
+# Lancer avec Lyon comme position par défaut
+python launch.py --all --location lyon
+
+# Ou uniquement le backend avec Lyon
+python launch.py --back --location lyon
+```
+
+Ce paramètre configure la variable d'environnement `DEFAULT_LOCATION` dans le backend, qui détermine quelle position sera renvoyée par l'API `/get_default_position` lorsqu'aucun paramètre de localisation n'est fourni.
+
 ### The verification
 
 To launch the verification you need to use this command:

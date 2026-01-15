@@ -17,6 +17,7 @@ function DocumentsChecking() {
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     const [currentDocType, setCurrentDocType] = useState(null);
     const [showCINOptions, setShowCINOptions] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
     // Document upload states
     const [userIdInput, setUserIdInput] = useState('1');
     const [selectedFile, setSelectedFile] = useState(null);
@@ -222,7 +223,13 @@ function DocumentsChecking() {
 
     const handleDelete = async (doc) => {
         const uid = userIdInput || '1';
-        if (!confirm('Supprimer ce document ?')) return;
+        setConfirmDelete(doc);
+    };
+
+    const confirmDeleteDocument = async () => {
+        const uid = userIdInput || '1';
+        const doc = confirmDelete;
+        setConfirmDelete(null);
         try {
             const res = await fetch(`${config.backendUrl}/documents/${uid}/${doc.id}`, { method: 'DELETE' });
             if (res.ok) {
@@ -253,6 +260,29 @@ function DocumentsChecking() {
                     `} onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
+                </ModalStandard>
+            )}
+            {confirmDelete && (
+                <ModalStandard onClose={() => setConfirmDelete(null)}>
+                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+                        Supprimer ce document ?
+                    </div>
+                    <div className="flex gap-4">
+                        <button className={`
+                            ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                            ${config.transitions.default}
+                        `} onClick={() => setConfirmDelete(null)}>
+                            Annuler
+                        </button>
+                        <button className={`
+                            ${config.padding.button} bg-red-600 text-white ${config.fontSizes.md}
+                            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                            ${config.transitions.default}
+                        `} onClick={confirmDeleteDocument}>
+                            Supprimer
+                        </button>
+                    </div>
                 </ModalStandard>
             )}
             <div className={`bg-background_color w-full h-screen flex flex-col items-center`}>
