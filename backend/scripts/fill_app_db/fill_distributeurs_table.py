@@ -270,13 +270,14 @@ def insert_into_db(pharmacies, cursor=None, conn=None):
     try:
         if conn is None:
             conn = mysql.connector.connect(**DB_CONFIG)
-            cursor = conn.cursor()
+            # Use buffered cursor to avoid "Unread result found" when chaining queries
+            cursor = conn.cursor(buffered=True)
             close_conn = True
 
         for ph in pharmacies:
             if not is_duplicate(cursor, ph["lat"], ph["lon"]):
                 cursor.execute(
-                    "INSERT INTO distributors (name, latitude, longitude, address) VALUES (%s,%s,%s,%s)",
+                    "INSERT INTO distributeurs (nom, latitude, longitude, adresse) VALUES (%s,%s,%s,%s)",
                     (to_latin1_safe(ph["name"]), ph["lat"], ph["lon"], to_latin1_safe(ph["address"]))
                 )
                 inserted_count += 1
