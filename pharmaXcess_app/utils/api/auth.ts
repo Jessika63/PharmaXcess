@@ -42,9 +42,11 @@ async function postJson<T = any>(url: string, body: any): Promise<ApiResult<T>> 
   }
 }
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string, force?: boolean) {
   const url = `${config.backendUrl.replace(/\/$/, '')}/login`;
-  return postJson(url, { email, password });
+  const body: any = { email, password };
+  if (force) body.force = true;
+  return postJson(url, body);
 }
 
 export async function register(nom: string, prenom: string, email: string, password: string) {

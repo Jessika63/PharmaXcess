@@ -13,7 +13,7 @@ from helpers.env_functions.load_env_file import load_env_file
 
 from .handle_down import remove_volume
 
-def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False):
+def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False, location='paris'):
     """
     Objective:
     Orchestrates backend operations including environment verification, Docker container management, database import for multiple databases, and backend readiness verification.
@@ -28,6 +28,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     - back_app_container_name (str): Name of the backend application Docker container.
     - volumes (List[str]): List of Docker volumes to optionally remove when no_cache=True.
     - no_cache (bool): If True, rebuild Docker images without cache and remove volumes. Defaults to False.
+    - location (str): Default location for the backend ('paris' or 'lyon'). Defaults to 'paris'.
 
     Behavior:
     - Changes the working directory to the backend folder.
@@ -43,6 +44,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     """
 
     colored_print("Starting backend operations...", "blue")
+    colored_print(f"Setting default location to: {location}", "blue")
 
     # Step 0: Change working directory to backend/
     change_directory(backend_folder)
@@ -53,7 +55,10 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
         for v in volumes:
             remove_volume(v)
 
-    # Step 2: Start containers with docker-compose in detached mode
+    # Step 2: Set environment variable for default location
+    os.environ['DEFAULT_LOCATION'] = location
+
+    # Step 3: Start containers with docker-compose in detached mode
     start_containers(no_cache=no_cache)
 
     # Step 3: Wait for all database containers to be ready

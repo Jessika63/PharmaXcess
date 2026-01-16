@@ -142,14 +142,52 @@ def verify_database_is_ready(
             if tables:
                 actual_count = len(tables)
                 if expected_tables is not None:
-                    if actual_count == expected_tables:
-                        colored_print(f"✅ Database '{db_name}' contains {actual_count} table(s).", "green")
-                    else:
-                        colored_print(
-                            f"⚠️ Database '{db_name}' contains {actual_count} table(s), "
-                            f"but {expected_tables} were expected.",
-                            "yellow"
-                        )
+                        if actual_count == expected_tables:
+                            colored_print(f"✅ Database '{db_name}' contains {actual_count} table(s).", "green")
+                        else:
+                            # If there are fewer tables than expected, wait briefly and re-check a few times
+                            if actual_count < expected_tables:
+                                colored_print(
+                                    f"ℹ️ Database '{db_name}' contains {actual_count} table(s), expecting {expected_tables} — retrying briefly to allow initialization...",
+                                    "yellow"
+                                )
+                                # Number of short rechecks to perform
+                                short_retries = 5
+                                short_wait = 5  # seconds
+                                rechecked = False
+                                for i in range(short_retries):
+                                    time.sleep(short_wait)
+                                    try:
+                                        show2 = subprocess.run(
+                                            ["docker", "exec", db_container_name, "mysql", "-uroot", "-p" + root_password, "-e", f"USE {db_name}; SHOW TABLES;"],
+                                            capture_output=True, text=True
+                                        )
+                                        stdout2 = (show2.stdout or "").strip()
+                                        lines2 = [l.strip() for l in stdout2.splitlines() if l.strip()]
+                                        if lines2 and lines2[0].lower().startswith("tables_in"):
+                                            tables2 = lines2[1:]
+                                        else:
+                                            tables2 = lines2
+
+                                        actual_count2 = len(tables2)
+                                        if actual_count2 == expected_tables:
+                                            colored_print(f"✅ After retry, database '{db_name}' contains {actual_count2} table(s).", "green")
+                                            rechecked = True
+                                            break
+                                    except Exception:
+                                        # ignore and continue retrying
+                                        pass
+
+                                if rechecked:
+                                    # Ensure event scheduler and return success
+                                    ensure_event_scheduler(db_container_name, root_password)
+                                    return True
+                            # If we reach here, rechecks did not reach expected count (or actual_count > expected)
+                            colored_print(
+                                f"⚠️ Database '{db_name}' contains {actual_count} table(s), "
+                                f"but {expected_tables} were expected.",
+                                "yellow"
+                            )
                 else:
                     colored_print(f"✅ Database '{db_name}' contains {len(tables)} table(s).", "green")
 

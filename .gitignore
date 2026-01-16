@@ -31,3 +31,6 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+
+/backend/uploads/*
+!/backend/uploads/.gitkeep

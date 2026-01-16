@@ -7,6 +7,7 @@ import fetchWithTimeout from '../../utils/fetchWithTimeout';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
 import ErrorPage from '../ErrorPage';
+import { getDefaultPosition } from '../../utils/positionUtils';
 
 function InsufficientStock() {
 
@@ -55,23 +56,11 @@ function InsufficientStock() {
 
       let lat, lon;
       try {
-        if (navigator.geolocation) {
-          await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                lat = position.coords.latitude;
-                lon = position.coords.longitude;
-                resolve();
-              },
-              (error) => {
-                reject(error);
-              }
-            );
-          });
-        } else {
-          lat = config.Default_Location.lat;
-          lon = config.Default_Location.lon;
-        }
+        // Use default position from backend (configured by --location flag)
+        const position = await getDefaultPosition();
+        console.log('Using configured default position:', position);
+        lat = position.lat;
+        lon = position.lon;
       } catch (geoError) {
         setError('Impossible d\'obtenir votre position.');
         setLoadingPharmacies(false);
@@ -298,23 +287,11 @@ function InsufficientStock() {
 
       let lat, lon;
       try {
-        if (navigator.geolocation) {
-          await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                lat = position.coords.latitude;
-                lon = position.coords.longitude;
-                resolve();
-              },
-              (error) => {
-                reject(error);
-              }
-            );
-          });
-        } else {
-          lat = config.Default_Location.lat;
-          lon = config.Default_Location.lon;
-        }
+        // Use default position from backend (configured by --location flag)
+        const position = await getDefaultPosition();
+        console.log('Using configured default position:', position);
+        lat = position.lat;
+        lon = position.lon;
       } catch (geoError) {
         setError('Impossible d\'obtenir votre position.');
         setLoadingPharmacies(false);

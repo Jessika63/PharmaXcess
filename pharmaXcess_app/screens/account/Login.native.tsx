@@ -19,6 +19,7 @@ import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { CustomPicker } from '../../components';
 import createStyles from '../../styles/Login.style';
+import config from '../../config';
 
 type LoginProps = {
     navigation: StackNavigationProp<any, any>;
@@ -43,6 +44,37 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     const { login, isLoading: authLoading, authError, clearAuthError } = useAuth();
     const { t } = useTranslation('common');
     const styles = createStyles(colors, fontScale);
+
+    // Check if error is "already logged in"
+    const isAlreadyLoggedInError = (msg: string) => msg?.toLowerCase().includes('already logged in');
+
+    // Handle force logout when stuck with another session
+    const handleForceLogout = useCallback(async () => {
+        try {
+            const base = config.backendUrl?.replace(/\/$/, '') || '';
+            if (!base) {
+                Alert.alert('Erreur', 'URL backend non configurée');
+                return;
+            }
+
+            const res = await fetch(`${base}/logout`, { 
+                method: 'POST',
+                credentials: 'include' 
+            });
+
+            if (res.ok) {
+                Alert.alert('Succès', 'Session déconnectée. Veuillez réessayer de vous connecter.');
+                setErrors({});
+                setErrorStatus(null);
+                if (clearAuthError) clearAuthError();
+            } else {
+                Alert.alert('Erreur', 'Impossible de déconnecter la session actuelle');
+            }
+        } catch (error) {
+            console.warn('Logout error:', error);
+            Alert.alert('Erreur', 'Erreur lors de la déconnexion');
+        }
+    }, [clearAuthError]);
 
     // Form state
     const [formData, setFormData] = useState<FormData>({
@@ -186,13 +218,27 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
                 {/* General error message */}
                 { (errors.general || authError?.message) && (
-                    <Text 
-                        style={styles.errorText}
-                        accessibilityRole="alert"
-                        accessibilityLiveRegion="assertive"
-                    >
-                        {errors.general || authError?.message}
-                    </Text>
+                    <View>
+                        <Text 
+                            style={styles.errorText}
+                            accessibilityRole="alert"
+                            accessibilityLiveRegion="assertive"
+                        >
+                            {errors.general || authError?.message}
+                        </Text>
+                        
+                        {/* Show logout button if already logged in error */}
+                        {isAlreadyLoggedInError(errors.general || authError?.message || '') && (
+                            <TouchableOpacity 
+                                style={[styles.loginButton, { marginTop: 12, backgroundColor: colors.error }]}
+                                onPress={handleForceLogout}
+                                accessibilityRole="button"
+                                accessibilityLabel="Forcer la déconnexion"
+                            >
+                                <Text style={styles.buttonText}>Forcer la déconnexion</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 )}
                 {/* If the backend indicated 401 (not found/wrong password), show a small inline link to SignUp */}
                 { (errors.general ? errorStatus === 401 : authError?.status === 401) && (

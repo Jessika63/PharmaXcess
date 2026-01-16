@@ -90,10 +90,19 @@ def handle_deploy_back():
     # Convert .env to Unix before copying
     convert_env_to_unix()
 
+    colored_print("Preparing remote folder (removing old backend/launch_files)...", "blue")
+    ssh_cleanup_cmd = (
+        f"cd {remote_path} && "
+        "sudo rm -rf backend launch_files"
+    )
+    subprocess.run(["ssh", remote, ssh_cleanup_cmd], check=True)
+
     colored_print("Sending files to VM...", "blue")
-    scp_cmd = ["scp", "-i", os.path.expanduser("~/.ssh/id_rsa"), "-r",
-               "launch.py", "launch_config.json", "backend", "launch_files",
-               f"{remote}:{remote_path}"]
+    scp_cmd = [
+        "scp", "-i", os.path.expanduser("~/.ssh/id_rsa"), "-r",
+        "launch.py", "launch_config.json", "backend", "launch_files",
+        f"{remote}:{remote_path}"
+    ]
     subprocess.run(scp_cmd, check=True)
 
     colored_print("SSH connection and .env modification on VM...", "blue")

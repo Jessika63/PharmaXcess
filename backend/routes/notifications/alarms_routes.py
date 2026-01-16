@@ -3,6 +3,11 @@ from flask import Blueprint, request, jsonify
 import json
 from datetime import datetime, date
 from db_app import get_app_connection
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
 
 alarms_bp = Blueprint('alarms', __name__, url_prefix='/alarms')
 
@@ -28,9 +33,19 @@ def get_alarms(user_id):
     - Success: Returns a JSON array containing all alarms and an HTTP status code 200. (Response)
     - Failure: Returns a JSON object with an error message and an HTTP status code 500. (Response)
     """
+    # ensure requester has access to the target user_id
+    current_user_id, error_response, status = get_current_user_id()
+    if error_response:
+        return error_response, status
+
     try:
         connection = get_app_connection()
         with connection.cursor() as cursor:
+            condition = profile_target_access_condition('id')
+            cursor.execute(f"SELECT id FROM utilisateurs WHERE {condition}", (user_id, current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Not authorized to view alarms for this user'}), 403
+
             sql = """
                 SELECT id, utilisateur_id, medicine_name, time, days, sound,
                        is_active, dosage, next_alarm, created_at, updated_at
@@ -88,14 +103,23 @@ def create_alarm():
     """
 
     try:
+        current_user_id, error_response, status = get_current_user_id()
+        if error_response:
+            return error_response, status
+
         data = request.get_json()
         required_fields = ['utilisateur_id', 'medicine_name', 'time', 'days', 'sound', 'dosage']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
-
+        # ensure provided utilisateur_id is accessible by current user
         connection = get_app_connection()
         with connection.cursor() as cursor:
+            condition = profile_target_access_condition('id')
+            cursor.execute(f"SELECT id FROM utilisateurs WHERE {condition}", (data['utilisateur_id'], current_user_id, current_user_id))
+            if not cursor.fetchone():
+                return jsonify({'error': 'Target user not found or not accessible'}), 403
+
             sql = """
                 INSERT INTO alarmes
                 (utilisateur_id, medicine_name, time, days, sound, is_active, dosage, next_alarm)
@@ -159,14 +183,19 @@ def update_alarm(alarm_id):
     """
 
     try:
+        current_user_id, error_response, status = get_current_user_id()
+        if error_response:
+            return error_response, status
+
         data = request.get_json()
 
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check if alarm exists
-            cursor.execute("SELECT id FROM alarmes WHERE id = %s", (alarm_id,))
+            # Check if alarm exists and belongs to an accessible profile
+            condition = profile_access_condition('a.utilisateur_id')
+            cursor.execute(f"SELECT id FROM alarmes a WHERE a.id = %s AND {condition}", (alarm_id, current_user_id, current_user_id))
             if not cursor.fetchone():
-                return jsonify({'error': 'Alarm not found'}), 404
+                return jsonify({'error': 'Alarm not found or not accessible'}), 404
 
             sql = """
                 UPDATE alarmes
@@ -225,12 +254,17 @@ def delete_alarm(alarm_id):
     """
 
     try:
+        current_user_id, error_response, status = get_current_user_id()
+        if error_response:
+            return error_response, status
+
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check if alarm exists
-            cursor.execute("SELECT id FROM alarmes WHERE id = %s", (alarm_id,))
+            # Check if alarm exists and belongs to an accessible profile
+            condition = profile_access_condition('a.utilisateur_id')
+            cursor.execute(f"SELECT id FROM alarmes a WHERE a.id = %s AND {condition}", (alarm_id, current_user_id, current_user_id))
             if not cursor.fetchone():
-                return jsonify({'error': 'Alarm not found'}), 404
+                return jsonify({'error': 'Alarm not found or not accessible'}), 404
 
             cursor.execute("DELETE FROM alarmes WHERE id = %s", (alarm_id,))
             connection.commit()
@@ -265,13 +299,18 @@ def toggle_alarm(alarm_id):
     """
 
     try:
+        current_user_id, error_response, status = get_current_user_id()
+        if error_response:
+            return error_response, status
+
         connection = get_app_connection()
         with connection.cursor() as cursor:
-            # Check if alarm exists and get current status
-            cursor.execute("SELECT is_active FROM alarmes WHERE id = %s", (alarm_id,))
+            # Check if alarm exists and belongs to an accessible profile
+            condition = profile_access_condition('a.utilisateur_id')
+            cursor.execute(f"SELECT is_active FROM alarmes a WHERE a.id = %s AND {condition}", (alarm_id, current_user_id, current_user_id))
             result = cursor.fetchone()
             if not result:
-                return jsonify({'error': 'Alarm not found'}), 404
+                return jsonify({'error': 'Alarm not found or not accessible'}), 404
 
             new_status = not result['is_active']
 

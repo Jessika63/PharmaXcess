@@ -186,9 +186,9 @@ if __name__ == "__main__":
                 env_configs, backend_folder, db_configs
             )
             handle_back(
-                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
             )
-            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
+            handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
             if mobile_app_process:
                 active_processes.append(mobile_app_process)
@@ -205,18 +205,18 @@ if __name__ == "__main__":
                     env_configs, backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
                 )
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:
                     active_processes.append(mobile_app_process)
             if args.back:
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
                 )
             if args.front:
-                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo, location=args.location)
+                handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             if args.app:
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
                 if mobile_app_process:
