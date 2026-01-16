@@ -125,11 +125,9 @@ def test_directions_api_error(client, mocker):
         - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
     mocker.patch('requests.post', side_effect=Exception('API error'))
-    mocker.patch.dict('os.environ', {'OPENROUTESERVICE_API_KEY': 'dummy'})
-
+    # os.environ patch is not enough because ORS_API_KEY is read at import time
+    mocker.patch('routes.get_directions.ORS_API_KEY', 'dummy') 
 
     resp = client.get('/get_direction?origin=1,2&destination=3,4&mode=driving')
     assert resp.status_code == 500
-    assert b'API error' in resp.data
-
     assert b'API error' in resp.data
