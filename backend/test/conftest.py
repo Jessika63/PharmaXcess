@@ -8,6 +8,9 @@ from unittest.mock import MagicMock
 sys.modules["cv2"] = MagicMock()
 sys.modules["pyzbar"] = MagicMock()
 sys.modules["pyzbar.pyzbar"] = MagicMock()
+sys.modules["doctr"] = MagicMock()
+sys.modules["doctr.models"] = MagicMock()
+sys.modules["doctr.io"] = MagicMock()
 
 # Set CORS_SECRET_KEY before importing app module
 os.environ.setdefault('CORS_SECRET_KEY', 'test_secret_key_default')
