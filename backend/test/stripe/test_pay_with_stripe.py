@@ -230,6 +230,7 @@ def test_create_payment_medicine_file_not_found(client, monkeypatch):
     Return Value:
         - None: This test function does not return a value but makes assertions about the response. (NoneType)
     """
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_valid_key")
     monkeypatch.setattr("os.path.exists", lambda x: False)
     response = client.post('/create-payment-intent', json={'drug_id': 1})
     assert response.status_code == 404
