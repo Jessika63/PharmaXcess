@@ -1,13 +1,32 @@
-
 import config from '../../config';
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom'; 
+import React, { useEffect} from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; 
 import { FaCreditCard } from 'react-icons/fa'; 
 
 
 const PaymentSuccess = () => {
   const location = useLocation();
+  const navigate = useNavigate(); 
   const paymentIntent = location.state?.paymentIntent;
+  const items = location.state?.items; 
+
+  // Automatic redirection to Medication Delivery page
+  useEffect(() => { 
+    const timer = setTimeout(() => { 
+      navigate('/medication-delivery', { 
+        state: {
+          cartItems: items, 
+          paymentId: paymentIntent?.id
+        }
+      });
+    }, 5000); 
+
+    return () => clearTimeout(timer); 
+  }, [navigate, items, paymentIntent]); 
+
+
+
+
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background_color">
@@ -41,6 +60,11 @@ const PaymentSuccess = () => {
             Référence: {paymentIntent.id}
           </p>
         )}
+        {/* Redirect message  */}
+
+        <p className="text-lg text-gray-500 mt-8">
+          Redirection vers la délivrance des médicaments...
+        </p>
       </div>
     </div>
   );

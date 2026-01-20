@@ -13,6 +13,7 @@ import PaymentError from './components/pages/PaymentError';
 import DocumentsFlow from './components/pages/DocumentsFlow';
 import DirectionQRPage from './components/pages/MapQrCodePage';
 import Cart from './components/pages/Cart';
+import MedicationDelivery from './components/pages/MedicationDelivery'; 
 import { CartProvider } from './context/CartContext';
 
 function AppRoutes() {
@@ -21,9 +22,7 @@ function AppRoutes() {
             <Router>
                 <Routes>
                     <Route path="/" element={<App />} />
-
                     <Route path="/documents-flow" element={<DocumentsFlow />} />
-
                     <Route path="/documents-checking" element={<DocumentsChecking />} />
                     <Route path="/drug-stores-available" element={<DrugStoresAvailable />} />
                     <Route path="/insufficient-stock" element={<InsufficientStock />} />
@@ -35,6 +34,7 @@ function AppRoutes() {
                     <Route path="/payment-error" element={<PaymentError />} />
                     <Route path="/direction-qr" element={<DirectionQRPage />} />
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/medication-delivery" element={<MedicationDelivery />} />
                 </Routes>
             </Router>
         </CartProvider>
