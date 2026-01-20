@@ -310,7 +310,7 @@ function StartingPage() {
             ref={prescriptionButtonRef}
             tabIndex={0}
             className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
+              ${config.buttonColors.mainGradient} ${config.textColors.black} ${config.fontSizes.xl}
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 0 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
@@ -327,7 +327,7 @@ function StartingPage() {
             ref={nonPrescriptionButtonRef}
             tabIndex={0}
             className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.xl}
+              ${config.buttonColors.mainGradient} ${config.textColors.black} ${config.fontSizes.xl} 
               ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
               ${focusedIndex === 1 ? config.scaleEffects.focus : ''} pointer-events-auto`}
           >
