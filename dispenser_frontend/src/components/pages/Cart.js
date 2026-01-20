@@ -28,16 +28,18 @@ function Cart() {
         if (cartItems.length === 0) return;
 
         try {
+            // For the moment, we handle the first item in the cart
+            // Pour l'instant, on traite le premier article du panier
+            // TODO: Modify the backend to support multiple items 
+            const firstItem = cartItems[0]; 
+
+            
             // Create Payment Intent on the backend
             const paymentResponse = await fetch(`${config.backendUrl}/create-payment-intent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    amount: Math.round(total * 100), // in cents
-                    items: cartItems.map(item => ({
-                        drug_id: item.id,
-                        quantity: item.quantity
-                    }))
+                    drug_id: firstItem.id
                 })
             });
 
@@ -205,30 +207,73 @@ function Cart() {
                 </div>
             )}
 
-            {/* Payment Modal */}
+            {/* Payment Modal - New design */} 
+
             {paymentModalOpen && clientSecret && (
-                <ModalStandard onClose={() => setPaymentModalOpen(false)}>
-                    <div className="p-8">
-                        <h2 className={`${config.fontSizes.xxl} font-bold mb-8`}>
-                            Paiement - €{total.toFixed(2)}
-                        </h2>
-                        <ElementsWrapper clientSecret={clientSecret}>
-                            <PaymentForm
-                                clientSecret={clientSecret}
-                                amount={total * 100}
-                                onSuccess={handlePaymentSuccess}
-                                onError={(error) => {
-                                    navigate('/payment-error', {
-                                        state: {
-                                            errorMessage: error.message,
-                                            from: '/cart'
-                                        }
-                                    });
-                                }}
-                            />
-                        </ElementsWrapper>
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    {/* Overlay semi-transparent */}
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50"
+                        onClick={() => setPaymentModalOpen(false)}
+                    ></div>
+                    
+                    {/* Modal content - fond solide rose pâle */}
+                    <div className="relative bg-pink-50 rounded-2xl shadow-2xl max-w-2xl w-[90%] max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setPaymentModalOpen(false)}
+                                    className="flex items-center text-black hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-pink-100"
+                                >
+                                    <config.icons.arrowLeft className="text-xl" />
+                                </button>
+                                <h1 className="text-2xl font-semibold text-black">Paiement</h1>
+                            </div>
+                            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8">
+                            {/* Résumé */}
+                            <div className="bg-white rounded-xl p-6 mb-6">
+                                <h3 className="text-lg font-bold text-black mb-4">Résumé de la commande</h3>
+                                <div className="space-y-2">
+                                    {cartItems.map((item) => (
+                                        <div key={item.id} className="flex justify-between text-gray-600">
+                                            <span>{item.label} x{item.quantity}</span>
+                                            <span>{(item.price * item.quantity).toFixed(2)}€</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between">
+                                    <span className="text-xl font-bold text-black">Total</span>
+                                    <span className="text-2xl font-bold text-black">{total.toFixed(2)}€</span>
+                                </div>
+                            </div>
+
+                            {/* Formulaire de paiement */}
+                            <div className="bg-white rounded-xl p-6">
+                                <h3 className="text-lg font-bold text-black mb-4">Informations de paiement</h3>
+                                <ElementsWrapper clientSecret={clientSecret}>
+                                    <PaymentForm
+                                        clientSecret={clientSecret}
+                                        amount={total * 100}
+                                        onSuccess={handlePaymentSuccess}
+                                        onError={(error) => {
+                                            navigate('/payment-error', {
+                                                state: {
+                                                    errorMessage: error.message,
+                                                    from: '/cart'
+                                                }
+                                            });
+                                        }}
+                                    />
+                                </ElementsWrapper>
+                            </div>
+                        </div>
                     </div>
-                </ModalStandard>
+                </div>
             )}
 
             {/* Inactivity Modal */}

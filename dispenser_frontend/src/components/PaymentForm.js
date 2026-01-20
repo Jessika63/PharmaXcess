@@ -78,19 +78,22 @@ const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
       <button
         type="submit"
         disabled={!stripe || processing}
-        className={`w-full py-4 px-6 rounded-lg font-bold text-white
+        className={`w-full py-4 px-6 rounded-full font-bold text-white
           ${!stripe || processing
             ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-500 hover:bg-green-600'}
-          transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400`}
+            : 'bg-black hover:scale-105'} 
+          transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300`} 
+
+
       >
         {processing ? (
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-            Traitement...
+            Traitement en cours...
           </div>
         ) : (
-          `Payer €${(amount / 100).toFixed(2)}`
+          `PAYER ${(amount / 100).toFixed(2)}€` 
+
         )}
       </button>
     </form>
