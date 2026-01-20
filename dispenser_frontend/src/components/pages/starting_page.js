@@ -317,7 +317,7 @@ function StartingPage() {
         onMouseEnter={() => setHoveredCard(0)} 
         onMouseLeave={() => setHoveredCard(null)} 
         className={`flex-1 max-w-md h-64 flex flex-col items-center justify-center p-8 
-          ${config.borderRadiux.xl} ${config.shadows.md} 
+            ${config.borderRadius.xl} ${config.shadows.md} 
           bg-white ${config.textColors.black}
           transition-transform duration-300 ease-in-out 
           ${config.focusStates.ring} cursor-pointer`}
