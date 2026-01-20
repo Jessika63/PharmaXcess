@@ -25,7 +25,9 @@ import {
   FaHome,
   FaQrcode,
   FaInfoCircle,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaShoppingCart
+
 } from 'react-icons/fa';
 import logo from './assets/logo.png';
 
@@ -187,6 +189,8 @@ const config = {
     prescription: FaPrescriptionBottle,
     pills: FaPills,
     filePrescription: FaFilePrescription,
+    cart: FaShoppingCart,
+
 
     // Document icons
     idCard: FaIdCard,

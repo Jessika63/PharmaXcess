@@ -7,7 +7,10 @@ function StartingPage() {
   const prescriptionButtonRef = useRef(null);
   const nonPrescriptionButtonRef = useRef(null);
 
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [focusedIndex, setFocusedIndex] = useState(null); 
+  const [hoveredCard, setHoveredCard] = useState(null); 
+
+
   const [vpnStatus, setVpnStatus] = useState({
     loading: true,
     isVPN: false,
@@ -201,10 +204,11 @@ function StartingPage() {
 
     if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
       event.preventDefault();
-      setFocusedIndex((prevIndex) => (prevIndex + 1) % 2);
+      setFocusedIndex((prevIndex) => prevIndex === null ? 0 : (prevIndex + 1) % 2);
     } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
       event.preventDefault();
-      setFocusedIndex((prevIndex) => (prevIndex - 1 + 2) % 2);
+      setFocusedIndex((prevIndex) => prevIndex === null ? 1 : (prevIndex - 1 + 2) % 2); 
+
     } else if (event.key === "Enter") {
       event.preventDefault();
       if (focusedIndex === 0) {
@@ -217,7 +221,7 @@ function StartingPage() {
 
   useEffect(() => {
     const refs = [prescriptionButtonRef, nonPrescriptionButtonRef];
-    if (refs[focusedIndex] && refs[focusedIndex].current) {
+    if (focusedIndex !== null && refs[focusedIndex] && refs[focusedIndex].current) {
       refs[focusedIndex].current.focus();
     }
   }, [focusedIndex]);
@@ -292,50 +296,74 @@ function StartingPage() {
 
   // Main page content
   return (
-    <div className={`bg-background_color w-full min-h-screen flex flex-col justify-center items-center overflow-hidden`}>
-      {/* Header */}
-      <div className="w-4/5 h-40 flex justify-center items-center mb-12">
-        {/* Logo */}
-        <div className="flex justify-center items-center w-full">
-          <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-96 h-24" />
-        </div>
+    <div className={`bg-background_color w-full min-h-screen flex flex-col items-center overflow-hidden pt-12`}>
+      {/* Logo */} 
+      <div className="flex justify-center items-center mb-8">
+        <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-72 h-auto" />
       </div>
 
-      {/* Container for centering both buttons */}
-      <div className={`flex flex-col items-center ${config.spacing.xxl} w-full`}>
+      {/* Welcome Text and Subtitle */}
+      <h1 className="text-4xl font-bold text-black mb-2">Bienvenue</h1>
+      <p className="text-xl font-semibold text-black mb-12">Choisissez votre service</p>
 
-        {/* Button 'With Prescription Drugs' */}
-        <Link to="/documents-flow" className="w-full flex justify-center pointer-events-none">
-          <div
-            ref={prescriptionButtonRef}
-            tabIndex={0}
-            className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.black} ${config.fontSizes.xl}
-              ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
-              ${focusedIndex === 0 ? config.scaleEffects.focus : ''} pointer-events-auto`}
-          >
-            <div className="flex items-center ml-[15%]">
-              <config.icons.prescription className="mr-6" />
-              Médicaments avec ordonnance
-            </div>
-          </div>
-        </Link>
+      {/* Container for both cards - side by side */}
+      <div className="flex flex-row justify-center items-stretch gap-8 w-full px-12"> 
 
-        {/* Button 'Without Prescription Drugs' */}
-        <Link to="/non-prescription-drugs" className="w-full flex justify-center pointer-events-none">
-          <div
-            ref={nonPrescriptionButtonRef}
-            tabIndex={0}
-            className={`w-2/5 h-40 flex items-center ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.black} ${config.fontSizes.xl} 
-              ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
-              ${focusedIndex === 1 ? config.scaleEffects.focus : ''} pointer-events-auto`}
-          >
-            <div className="flex items-center ml-[15%]">
-              <config.icons.pills className="mr-6" />
-              Médicaments sans ordonnance
-            </div>
-          </div>
+      {/* Card 'With Prescription' */} 
+      <Link 
+        to="/documents-flow" 
+        ref={prescriptionButtonRef}
+        tabIndex={0}
+        onMouseEnter={() => setHoveredCard(0)} 
+        onMouseLeave={() => setHoveredCard(null)} 
+        className={`flex-1 max-w-md h-64 flex flex-col items-center justify-center p-8 
+          ${config.borderRadiux.xl} ${config.shadows.md} 
+          bg-white ${config.textColors.black}
+          transition-transform duration-300 ease-in-out 
+          ${config.focusStates.ring} cursor-pointer`}
+        style={{ transform: hoveredCard === 0 || focusedIndex === 0 ? 'scale(1.05)' : 'scale(1)' }} 
+      >
+        {/* Icon in gray circle */} 
+        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-6"> 
+          <config.icons.filePrescription className="text-2xl text-gray-600" /> 
+        </div>
+        {/* Title  */}
+        <p className="text-lg font-semibold text-center mb-2"> 
+          Vous avez une ordonnance<br />médicale à traiter 
+        </p> 
+        {/* Subtitle  */}
+        <p className="text-sm text-gray-500"> 
+          Continuer avec ordonnance 
+        </p> 
+      </Link>
+
+      {/* Card 'Without Prescription'  */}
+      <Link 
+        to="/non-prescription-drugs" 
+        ref={nonPrescriptionButtonRef}
+        tabIndex={0}
+        onMouseEnter={() => setHoveredCard(1)}
+        onMouseLeave={() => setHoveredCard(null)}
+        className={`flex-1 max-w-md h-64 flex flex-col items-center justify-center p-8 
+          ${config.borderRadius.xl} ${config.shadows.md}
+          bg-white ${config.textColors.black}
+          transition-transform duration-300 ease-in-out
+          ${config.focusStates.ring} cursor-pointer`}
+        style={{ transform: hoveredCard === 1 || focusedIndex === 1 ? 'scale(1.05)' : 'scale(1)' }}
+      >
+        {/* Icon in gray circle */}
+        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-6">
+          <config.icons.cart className="text-2xl text-gray-600"/>
+        </div>
+        {/* Title  */}
+        <p className="text-lg font-semibold text-center mb-2"> 
+          Achat libre de médicaments<br />disponibles
+        </p>
+        {/* Subtitle  */}
+        <p className="text-sm text-gray-500"> 
+          Continuer sans ordonnance
+        </p>
+
         </Link>
       </div>
     </div>
