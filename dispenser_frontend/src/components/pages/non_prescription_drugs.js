@@ -606,43 +606,140 @@ const applyFilter = (filter) => {
             </div>
 
             {isModalOpen && selectedDrug && (
-                <ModalStandard onClose={closeModal}>
-                    <button
-                        ref={backButtonRef}
-                        className={`w-40 h-20 absolute top-4 left-4 ${config.fontSizes.lg} ${config.textColors.white}
-                            ${config.buttonColors.red} ${config.borderRadius.md} ${config.padding.button}
-                            ${config.buttonColors.redHover} ${config.focusStates.outline} ${config.transitions.default}
-                            ${modalFocusIndex === 0 ? config.scaleEffects.focus : ''}`}
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    {/* Semi-transparent overlay */}
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50"
+
                         onClick={closeModal}
-                    >
-                        <config.icons.times className="mr-2" />
-                        Fermer
-                    </button>
-                    <div className={`${config.padding.modal} text-center ${config.fontSizes.xxl} ${config.textColors.primary}`}>
-                        <h2>{selectedDrug.label} (Reste: {selectedDrug.size})</h2>
-                    </div>
-                    <button
-                        ref={payButtonRef}
-                        className={`w-1/3 h-32 mx-auto mt-16 py-3 font-semibold
-                            ${selectedDrug.size > 0 ? config.buttonColors.green : config.buttonColors.red}
-                            ${config.textColors.white} ${config.borderRadius.sm} ${config.shadows.md}
-                            ${config.transitions.default} ${config.fontSizes.xl}
-                            ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
-                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } })}
-                    >
-                        {selectedDrug.size > 0 ? (
-                            <>
-                                <config.icons.money className="mr-2" />
-                                Payer
-                            </>
-                        ) : (
-                            <>
-                                <config.icons.timesCircle className="mr-2" />
-                                Stock indisponible - Options de retrait
-                            </>
-                        )}
-                    </button>
-                </ModalStandard>
+                    ></div> 
+                    
+                    {/* Modal content - solid background pink */}
+                    <div className="relative bg-pink-50 rounded-2xl shadow-2xl max-w-7xl w-[95%] max-h-[95vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
+                            <div className="flex items-center gap-4"> 
+                                <button
+                                    ref={backButtonRef}
+                                    onClick={closeModal}
+                                    className={`flex items-center text-black hover:text-gray-600 transition-colors p-3 rounded-full hover:bg-pink-100
+                                        ${modalFocusIndex === 0 ? 'scale-105 bg-pink-100' : ''}`}
+                                >
+                                    <config.icons.arrowLeft className="text-2xl" /> 
+                                </button>
+                                <h1 className="text-3xl font-semibold text-black">Choix du médicament</h1> 
+                            </div> 
+                            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-12" />
+                        </div> 
+
+
+                        {/* Content */}
+                        <div className="p-10"> 
+                            <div className="flex gap-12"> 
+                                {/* Left side - Product card */}
+                                <div className="bg-white rounded-2xl p-8 flex-1"> 
+                                    {/* Drug name and category */}
+                                    <h2 className="text-3xl font-bold text-black mb-2">{selectedDrug.label}</h2> 
+                                    <p className="text-lg text-gray-500 mb-6">{categories[selectedDrug.category] || 'Médicament'}</p>
+
+                                    {/* Description */}
+                                    <div className="mb-6"> 
+                                        <h3 className="text-lg font-bold text-black mb-2">Description</h3>
+                                        <p className="text-base text-gray-600">{selectedDrug.description || 'Description non disponible'}</p> 
+                                    </div> 
+
+
+                                    {/* Product info */}
+                                    <div className="mb-8"> 
+                                        <h3 className="text-lg font-bold text-black mb-3">Informations produit</h3>
+                                        <div className="space-y-2 text-base">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Forme :</span>
+                                                <span className="text-black">{selectedDrug.forme || 'Comprimés'}</span> 
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Dosage :</span>
+                                                <span className="text-black">{selectedDrug.dosage || 'Non spécifié'}</span>
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Présentation :</span>
+                                                <span className="text-black">{selectedDrug.presentation || `Boîte de ${selectedDrug.size} comprimés`}</span>
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Laboratoire :</span>
+                                                <span className="text-black">{selectedDrug.laboratoire || 'Non spécifié'}</span>
+                                            </div> 
+
+                                        </div> 
+
+                                    </div> 
+
+
+                                    {/* Add to cart button */}
+                                    <button
+                                        ref={payButtonRef}
+                                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } })}
+                                        className={`w-full py-4 rounded-full text-lg font-semibold flex items-center justify-center gap-3
+                                            transition-transform duration-300 hover:scale-105
+                                            ${selectedDrug.size > 0 
+                                                ? 'bg-black text-white' 
+                                                : 'bg-gray-400 text-white'}
+                                            ${modalFocusIndex === 1 ? 'scale-105' : ''}`}
+                                    >
+                                        {selectedDrug.size > 0 ? ( 
+                                            <> 
+                                                AJOUTER AU PANIER 
+                                                <config.icons.cart className="text-xl" /> 
+                                            </> 
+                                        ) : ( 
+                                            'VOIR LES OPTIONS DISPONIBLES'
+                                        )} 
+                                    </button>
+                                </div> 
+
+
+                                {/* Right side - Price and info */}
+                                <div className="flex-1"> 
+                                    {/* Price and stock */}
+                                    <div className="mb-8"> 
+                                        <p className="text-5xl font-bold text-black">{selectedDrug.price ? `${selectedDrug.price.toFixed(2)}€` : 'Prix non défini'}</p>
+                                        <p className={`text-xl mt-2 ${selectedDrug.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}
+                                        </p> 
+                                    </div> 
+
+
+                                    {/* Usage advice */} 
+                                    <div className="mb-8"> 
+                                        <h3 className="text-xl font-bold text-black mb-3">Conseil d'utilisation</h3>
+                                        <ul className="text-base text-gray-600 space-y-2"> 
+                                            <li>Adultes : 1 comprimé toutes les 6 heures</li> 
+                                            <li>Maximum 4 comprimés par jour</li>
+                                            <li>A prendre avec un verre d'eau</li> 
+                                            <li>Peut être pris pendant ou hors des repas</li>
+                                        </ul> 
+                                    </div>
+
+                                    {/* Precautions */}
+                                    <div> 
+                                        <h3 className="text-xl font-bold text-black mb-3">Précautions</h3>
+                                        <ul className="text-base text-gray-600 space-y-2"> 
+                                            <li>Ne pas dépasser la dose recommandée</li>
+                                            <li>Déconseillé en cas d'allergie au paracétamol</li>
+                                            <li>Consulter un médecin si les symptômes persistent</li>
+                                            <li>Tenir hors de portée des enfants</li>
+                                        </ul> 
+                                    </div> 
+                                </div> 
+                            </div> 
+                        </div> 
+                    </div> 
+                </div> 
+
+
             )}
 
             {paymentModalOpen && clientSecret && (
