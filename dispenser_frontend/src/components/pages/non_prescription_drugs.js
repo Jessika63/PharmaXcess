@@ -491,106 +491,86 @@ const applyFilter = (filter) => {
     }
 
     return (
-        <div className={`w-full h-screen flex flex-col items-center ${config.padding.container} bg-background_color`}>
-            <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-2">
-                <Link
-                to="/"
-                ref={goBackMainButtonRef}
-                className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button}
-                    ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
-                    ${config.focusStates.outline} flex items-center ${focusedIndex === -2 ? config.scaleEffects.focus : ''}`}>
-                    <config.icons.arrowLeft className="mr-3" />
-                        Retour
-                </Link>
+        
+        <div className={`w-full min-h-screen flex flex-col bg-background_color`}>
+            {/* Header */}
+            <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
+                <div className="flex items-center gap-4"> 
+                    <Link
+                        to="/"
+                        ref={goBackMainButtonRef}
+                        className={`flex items-center text-black hover:text-gray-600 transition-colors ${focusedIndex === -2 ? 'scale-105' : ''}`}
+                    >
+                        <config.icons.arrowLeft className="text-xl" /> 
+                    </Link> 
+                    <h1 className="text-3xl font-semibold text-black">Catalogue des médicaments</h1>
+                </div> 
+                <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" /> 
+            </div> 
+            {/* Filter and Sort Bar */}
+            <div className="w-full px-8 py-4 flex items-center gap-6"> 
+                {/* Filter dropdown */}
+                <div className="flex flex-col"> 
+                    <label className="text-xs text-gray-500 mb-1">Filtrer</label>
+                    <div className="relative"> 
+                        <select
+                            ref={searchButtonRef}
+                            value={selectedFilter || ''}
+                            onChange={(e) => applyFilter(e.target.value || null)}
+                            className={`appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
+                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[200px] cursor-pointer
+                                ${focusedIndex === -1 ? 'ring-2 ring-pink-300' : ''}`}
+                        >
+                            <option value="">Tous les types</option> 
+                            <option value="A-G">A - G</option>
+                            <option value="H-P">H - P</option>
+                            <option value="Q-Z">Q - Z</option>
+                            {Object.entries(categories).map(([key, value]) => (
+                                <option key={key} value={key}>{value}</option>
+                            ))} 
+                        </select>
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /> 
+                            </svg> 
+                        </div> 
+                    </div> 
+                </div> 
+                {/* Sort dropdown */} 
+                <div className="flex flex-col"> 
+                    <label className="text-xs text-gray-500 mb-1">Trier</label> 
+                    <div className="relative">
+                        <select
+                            className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
+                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[250px] cursor-pointer"
+                        >
+                            <option>Trier par ordre alphabétique</option>
+                            <option>Trier par prix croissant</option>
+                            <option>Trier par prix décroissant</option>
+                        </select>
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /> 
+                            </svg> 
+                        </div> 
+                    </div> 
+                </div> 
+                {/* Spacer */}
+                <div className="flex-grox"></div> 
 
-                <div className="flex-grow flex justify-center pr-16">
-                    <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-116 h-28" />
-                </div>
-            </div>
-
-            {isSearchMenuOpen && (
-                <div className={`absolute top-8 left-[80%] ${config.buttonColors.mainGradient} ${config.shadows.md} ${config.borderRadius.sm} ${config.padding.modal} w-64`}>
-                    <p className="font-bold flex items-center">
-                        <config.icons.filter className="mr-2" />
-                        Filtrer par :
-                    </p>
-
-                    {searchMenuOptions.map((option, index) => {
-                        // Determine the option type
-                        let onClickHandler;
-                        let displayText;
-                        let icon = null;
-
-                        if (["A-G", "H-P", "Q-Z"].includes(option)) {
-                            // Alphabetical filters
-                            onClickHandler = () => applyFilter(option);
-                            displayText = option.replace('-', ' - ');
-                        }
-                        else if (option === "Reset") {
-                            // Reset
-                            onClickHandler = () => applyFilter(null);
-                            displayText = "Réinitialiser";
-                            icon = <config.icons.sync className="mr-2" />;
-                        }
-                        else if (option === "Close") {
-                            // Close - only close the menu, no filter
-                            onClickHandler = () => {
-                                setIsSearchMenuOpen(false);
-                                setFocusedIndex(0);
-                            };
-                            displayText = "Fermer";
-                            icon = <config.icons.times className="mr-2" />;
-                        }
-                        else {
-                            // Categories (value from categories)
-                            const categoryKey = Object.keys(categories).find(
-                                key => categories[key] === option
-                            );
-                            onClickHandler = () => applyFilter(categoryKey);
-                            displayText = option;
-                        }
-
-                        return (
-                            <button
-                                onClick={onClickHandler}
-                                key={option}
-                                ref={el => (searchMenuRefs.current[index] = el)}
-                                tabIndex={focusedIndexSearch === index ? 0 : -1}
-                                className={`block w-full text-left py-2 ${
-                                    focusedIndexSearch === index ? config.scaleEffects.focus : ""
-                                } ${icon ? "flex items-center" : ""}`}
-                            >
-                                {icon}
-                                {displayText}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            <div className={`flex items-center ${config.buttonColors.buttonBackground} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md}`}>
-                <span className={`${config.fontSizes.md} ${config.textColors.black}`}>
-                    Voici la liste des médicaments disponibles à la vente :
-                </span>
-                <button
-                    ref={searchButtonRef}
-                    onClick={toggleFilterMenu}
-                    className={
-                        `ml-4 flex items-center gap-2 ${config.textColors.primary} ${config.fontSizes.sm}
-                        ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.sm}
-                        ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
-                        ${focusedIndex == -1 ? config.scaleEffects.focus : ""}`
-                    }>
-                    <config.icons.search className={config.fontSizes.md} />
-                    Rechercher
+                {/* Cart button */}
+                <button className="flex items-center gap-2 bg-white border border-gray -200 rounded-lg px-4 py-2 text-sm text-gray-700
+                    hover:bg-gray-50 transition-colors"> 
+                    <span>PANIER</span>
+                    <config.icons.cart className="text-lg" /> 
                 </button>
             </div>
-
+            {/* Drugs grid container */}
             <div
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+                className="flex-1 px-8 py-4 overlow-y-auto" 
                 ref={drugsListRef}
             >
-                <div className={config.layout.buttonGrid3}>
+                <div className="grid grid-cols-4 gap-4"> 
                     {filteredDrugs.map((item, index) => (
                         <button
                             key={item.id}
@@ -598,16 +578,31 @@ const applyFilter = (filter) => {
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
                             type="button"
-                            className={`h-24 flex items-center justify-center ${config.fontSizes.xl} ${config.textColors.primary}
-                                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} cursor-pointer
-                                ${config.transitions.default} ${index === focusedIndex ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+                            className={`bg-white rounded-xl p-5 text-left cursor-pointer
+                                transition-transform duration-300 hover:scale-105 
+                                ${index === focusedIndex ? 'scale-105 ring-2 ring-pink-300' : ''}`} 
                             onClick={() => openModal(item)}
                         >
-                            {item.label}
+                            {/* Drug name */} 
+                            <h3 className="text-lg font-bold text-black mb-1">
+                                {item.label}
+                            </h3>
+                            {/* Description */}
+                            <p className="text-sm text-gray-500 mb-6">
+                                {item.description || categories[item.category] || 'Médicament disponible'}
+                            </p>
+                            {/* Price and stock */}
+                            <div className="flex justify-between items-end">
+                                <span className="text-lg font-bold text-black">
+                                    {item.price ? `${item.price.toFixed(2)}€` : 'Prix non défini'}
+                                </span>
+                                <span className={`text-sm ${item.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {item.size > 0 ? 'En stock' : 'Non disponible'}
+                                </span>
+                            </div>
                         </button>
                     ))}
                 </div>
-
             </div>
 
             {isModalOpen && selectedDrug && (
