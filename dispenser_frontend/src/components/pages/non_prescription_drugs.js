@@ -11,6 +11,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import PaymentForm from '../PaymentForm';
 import { Elements } from '@stripe/react-stripe-js';
 import ElementsWrapper from '../ElementsWrapper';
+import { useCart } from '../../context/CartContext';
 
 const categories = {
     painKiller: "Anti-douleur",
@@ -40,6 +41,8 @@ function NonPrescriptionDrugs() {
     const [drugsItems, setDrugsItems] = useState([]);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const navigate = useNavigate();
+    const { addToCart, getCartCount } = useCart(); 
+
 
     const searchButtonRef = useRef(null);
 
@@ -556,13 +559,23 @@ const applyFilter = (filter) => {
                     </div> 
                 </div> 
                 {/* Spacer */}
-                <div className="flex-grox"></div> 
+                <div className="flex-grow"></div> 
 
                 {/* Cart button */}
-                <button className="flex items-center gap-2 bg-white border border-gray -200 rounded-lg px-4 py-2 text-sm text-gray-700
-                    hover:bg-gray-50 transition-colors"> 
+                <button 
+                    onClick={() => navigate('/cart')}
+                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700
+                        hover:bg-gray-50 transition-colors relative"
+                > 
                     <span>PANIER</span>
-                    <config.icons.cart className="text-lg" /> 
+                    <config.icons.cart className="text-lg" />
+                    {getCartCount() > 0 && ( 
+                        <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {getCartCount()} 
+                        </span> 
+                    )} 
+
+
                 </button>
             </div>
             {/* Drugs grid container */}
@@ -681,7 +694,15 @@ const applyFilter = (filter) => {
                                     {/* Add to cart button */}
                                     <button
                                         ref={payButtonRef}
-                                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } })}
+                                        onClick={() => {
+                                            if (selectedDrug.size > 0) {
+                                                addToCart(selectedDrug);
+                                                closeModal();
+                                                navigate('/cart');
+                                            } else {
+                                                navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
+                                            }
+                                        }}
                                         className={`w-full py-4 rounded-full text-lg font-semibold flex items-center justify-center gap-3
                                             transition-transform duration-300 hover:scale-105
                                             ${selectedDrug.size > 0 
