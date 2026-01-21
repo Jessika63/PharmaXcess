@@ -13,7 +13,8 @@ import PaymentError from './components/pages/PaymentError';
 import DocumentsFlow from './components/pages/DocumentsFlow';
 import DirectionQRPage from './components/pages/MapQrCodePage';
 import Cart from './components/pages/Cart';
-import MedicationDelivery from './components/pages/MedicationDelivery'; 
+import MedicationDelivery from './components/pages/MedicationDelivery';
+import NearbyPharmacies from './components/pages/nearby_pharmacies';
 import { CartProvider } from './context/CartContext';
 
 function AppRoutes() {
@@ -35,6 +36,7 @@ function AppRoutes() {
                     <Route path="/direction-qr" element={<DirectionQRPage />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/medication-delivery" element={<MedicationDelivery />} />
+                    <Route path="/nearby-pharmacies" element={<NearbyPharmacies />} />
                 </Routes>
             </Router>
         </CartProvider>
