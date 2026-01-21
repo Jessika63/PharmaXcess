@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../../App.css';
 import config from '../../config';
@@ -22,22 +22,10 @@ function NearbyPharmacies() {
   const [loadingPharmacies, setLoadingPharmacies] = useState(true);
   const [error, setError] = useState(null);
   const [pharmaciesFetched, setPharmaciesFetched] = useState(false);
-  const [transportModalOpen, setTransportModalOpen] = useState(false);
-  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
-  const [focusedTransportIndex, setFocusedTransportIndex] = useState(0);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
 
-  const transportModes = useMemo(() => [
-    { mode: 'foot', label: 'À pied', icon: <config.icons.walking /> },
-    { mode: 'bicycle', label: 'Vélo', icon: <config.icons.bicycle /> },
-    { mode: 'transit', label: 'Transports', icon: <config.icons.bus /> },
-    { mode: 'car', label: 'Voiture', icon: <config.icons.car /> },
-  ], []);
-
-  const transportElements = transportModes.length + 1;
   const cardRefs = useRef([]);
   const goBackButtonRef = useRef(null);
-  const transportCloseButtonRef = useRef(null);
   const pharmaciesCache = useRef({});
 
   useInactivityRedirect(() => setShowInactivityModal(true));
@@ -122,8 +110,6 @@ function NearbyPharmacies() {
 
   // Keyboard navigation for pharmacies list
   useEffect(() => {
-    if (transportModalOpen) return;
-
     const handleKeyDown = (event) => {
       if (["ArrowDown", "ArrowUp", "Tab"].includes(event.key)) {
         event.stopPropagation();
@@ -144,7 +130,8 @@ function NearbyPharmacies() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [transportModalOpen, pharmaciesList.length, selectedPharmacyIndex]);
+  }, [pharmaciesList.length, selectedPharmacyIndex]); 
+
 
   // Scroll to selected pharmacy
   useEffect(() => {
@@ -156,58 +143,17 @@ function NearbyPharmacies() {
     }
   }, [selectedPharmacyIndex]);
 
-  // Keyboard navigation for transport modal
-  useEffect(() => {
-    if (!transportModalOpen) return;
-
-    let justOpened = true;
-    const timeout = setTimeout(() => {
-      justOpened = false;
-    }, 100);
-
-    const handleTransportKeyDown = (event) => {
-      if (["ArrowLeft", "ArrowRight", "Enter", "Escape"].includes(event.key)) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (event.key === "ArrowRight") {
-          setFocusedTransportIndex((prev) => (prev + 1) % transportElements);
-        } else if (event.key === "ArrowLeft") {
-          setFocusedTransportIndex((prev) => (prev - 1 + transportElements) % transportElements);
-        } else if (event.key === "Enter" && !justOpened) {
-          if (focusedTransportIndex < transportModes.length) {
-            handleTransportSelect(transportModes[focusedTransportIndex].mode);
-          } else {
-            setTransportModalOpen(false);
-          }
-        } else if (event.key === "Escape") {
-          setTransportModalOpen(false);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleTransportKeyDown);
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener("keydown", handleTransportKeyDown);
-    };
-  }, [transportModalOpen, focusedTransportIndex, transportModes.length, transportElements]);
-
   const handlePharmacySelect = (pharmacy) => {
-    setSelectedPharmacy(pharmacy);
-    setFocusedTransportIndex(0);
-    setTimeout(() => {
-      setTransportModalOpen(true);
-    }, 50);
-  };
+    const dist = calculateDistance(userCoords, pharmacy); 
+    navigate('/transport-mode', { 
+      state: {
+        pharmacy,
+        drug, 
+        distance: dist, 
+        userCoords
+      }
+    });
 
-  const handleTransportSelect = (mode) => {
-    if (mode === 'close') {
-      setTransportModalOpen(false);
-      return;
-    }
-    setTransportModalOpen(false);
-    navigate(`/directions-map?lat=${selectedPharmacy.latitude}&lon=${selectedPharmacy.longitude}&name=${encodeURIComponent(selectedPharmacy.name)}&transport=${mode}`);
   };
 
   const calculateDistance = (userCoords, pharmacy) => {
@@ -329,59 +275,6 @@ function NearbyPharmacies() {
           </div>
         )}
       </div>
-
-      {/* Transport Modal */}
-      {transportModalOpen && selectedPharmacy && (
-        <ModalStandard onClose={() => setTransportModalOpen(false)}>
-          <div className="flex flex-col items-center">
-            <button
-              ref={transportCloseButtonRef}
-              className={`absolute top-4 right-4 ${config.padding.button} ${config.buttonColors.red} ${config.borderRadius.md}
-                ${config.fontSizes.sm} ${config.shadows.md} ${config.buttonColors.redHover} ${config.transitions.default}
-                ${config.focusStates.ring} ${focusedTransportIndex === transportModes.length ? 'ring-4 ring-pink-300 scale-110' : ''}`}
-              tabIndex={focusedTransportIndex === transportModes.length ? 0 : -1}
-              onClick={() => handleTransportSelect('close')}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleTransportSelect('close');
-                }
-              }}
-            >
-              <config.icons.times className="mr-2" />
-              Fermer
-            </button>
-
-            <div className={`${config.fontSizes.md} font-bold mb-4`}>
-              Choisissez le mode de transport
-            </div>
-            <div className="flex flex-row gap-6">
-              {transportModes.map((t, idx) => (
-                <button
-                  key={t.mode}
-                  className={`flex flex-col items-center ${config.padding.button} ${config.borderRadius.md}
-                    ${config.fontSizes.sm} font-semibold border-2 ${config.transitions.default}
-                    ${config.focusStates.outline} ${focusedTransportIndex === idx ?
-                    'border-pink-500 ring-4 ring-pink-300 scale-110 bg-white' : 'border-gray-300 bg-gray-100'}`}
-                  tabIndex={focusedTransportIndex === idx ? 0 : -1}
-                  onClick={() => handleTransportSelect(t.mode)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleTransportSelect(t.mode);
-                    }
-                  }}
-                >
-                  <span className={`${config.fontSizes.xl} mb-2`}>
-                    {t.icon}
-                  </span>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </ModalStandard>
-      )}
 
       {/* Inactivity Modal */}
       {showInactivityModal && (

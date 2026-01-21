@@ -15,6 +15,7 @@ import DirectionQRPage from './components/pages/MapQrCodePage';
 import Cart from './components/pages/Cart';
 import MedicationDelivery from './components/pages/MedicationDelivery';
 import NearbyPharmacies from './components/pages/nearby_pharmacies';
+import TransportMode from './components/pages/transport_mode';
 import { CartProvider } from './context/CartContext';
 
 function AppRoutes() {
@@ -37,6 +38,8 @@ function AppRoutes() {
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/medication-delivery" element={<MedicationDelivery />} />
                     <Route path="/nearby-pharmacies" element={<NearbyPharmacies />} />
+                    <Route path="/transport-mode" element={<TransportMode />} /> 
+
                 </Routes>
             </Router>
         </CartProvider>
