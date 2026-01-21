@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; 
 import '../../App.css'
 import config from '../../config';
 import ModalStandard from '../modal_standard';
@@ -12,6 +12,11 @@ import { getDefaultPosition } from '../../utils/positionUtils';
 function InsufficientStock() {
 
   const navigate = useNavigate()
+  const location = useLocation(); 
+
+  // Get medication information from navigation
+  const drug = location.state?.drug || { label: 'Médicament', price: 0 }; 
+  
   const retryButtonRef = useRef(null);
   const cancelButtonRef = useRef(null);
   const goBackButtonRef = useRef(null);
@@ -360,70 +365,84 @@ function InsufficientStock() {
     }
 
     return (
-      <div className={`bg-background_color min-h-screen w-full flex flex-col items-center justify-center`}>
-        {/* Go Back Button */}
-        <div className="w-4/5 flex items-center mt-6 mb-2">
-          <button
-            ref={goBackButtonRef}
-            tabIndex={0}
-            className={
-              `${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.lg}
-              ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${config.focusStates.outline}
-              flex items-center ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
-            }
-            onClick={() => navigate('/non-prescription-drugs')}
-          >
-            <config.icons.arrowLeft className="mr-3" />
-              Retour
-          </button>
+      <div className="w-full min-h-screen flex flex-col bg-background_color">
+        {/* Header */}
+        <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/non-prescription-drugs"
+              ref={goBackButtonRef}
+              className={`flex items-center text-black hover:text-gray-600 transition-colors
+                ${focusedIndex === 0 ? 'scale-105' : ''}`}
+            >
+              <config.icons.arrowLeft className="text-xl" />
+            </Link>
+            <h1 className="text-3xl font-semibold text-black">Médicament non disponible</h1>
+          </div>
+          <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
         </div>
 
-        {/* Header */}
-        <div className="w-4/5 h-28 flex justify-center items-center mb-4 mt-2">
-          <div className="flex justify-center items-center w-full">
-            <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-80 h-20" />
+        {/* Medication Info Card */}
+        <div className="px-8 py-8 flex justify-center mt-8">
+          <div className="bg-white rounded-xl p-6 flex justify-between items-center max-w-xl w-full">
+            <span className="text-xl font-semibold text-black">{drug.label}</span>
+            <span className="text-xl font-semibold text-black">
+              {drug.price ? `${drug.price.toFixed(2)} € / unité` : ''}
+            </span> 
           </div>
         </div>
 
-        {/* Information Message */}
-        <div className={`w-3/4 bg-background_color ${config.padding.modal} ${config.borderRadius.md} text-center mb-4`}>
-          <p className={`${config.fontSizes.md} ${config.textColors.primary}`}>
-            Le stock est insuffisant pour ce médicament.<br />
-            Que souhaitez-vous faire ?
-          </p>
-        </div>
+        {/* Options Cards */}
+        <div className="flex-1 px-8 py-6 flex items-center justify-center">
+          <div className="flex gap-8 max-w-5xl w-full">
+            {/* Commander et récupérer plus tard */}
+            <div 
+              className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[350px]
+                transition-transform duration-300 hover:scale-105
+                ${focusedIndex === 1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            >
+              <h2 className="text-3xl font-bold text-black mb-6">
+                Commander et récupérer plus tard
+              </h2>
+              <p className="text-xl text-gray-600 mb-10 flex-1">
+                Vous serez contacté lorsque le médicament sera disponible
+              </p>
+              <button
+                ref={retryButtonRef}
+                tabIndex={0}
+                onClick={() => navigate('/preorder', { state: { drug } })}
+                className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
+                  hover:scale-105 transition-transform duration-300
+                  ${focusedIndex === 1 ? 'scale-105' : ''}`}
+              >
+                COMMANDER
+              </button>
+            </div>
 
-        {/* Buttons Container */}
-        <div className={`flex flex-col items-center ${config.spacing.sm} w-full max-w-xl`}>
-          {/* Preorder Button */}
-          <button
-            ref={retryButtonRef}
-            tabIndex={0}
-            onClick={() => navigate('/preorder')}
-            className={`w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md} cursor-pointer
-              ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.ring}
-              ${config.scaleEffects.hover} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
-          >
-            <config.icons.clock className="mr-4" />
-              Précommander ou récupérer plus tard
-          </button>
-
-          {/* Other Pharmacy Button */}
-          <button
-            ref={cancelButtonRef}
-            tabIndex={0}
-            onClick={openPharmaciesModal}
-            className={`
-              w-full h-24 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary} ${config.fontSizes.md}
-              ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.focusStates.outline}
-              ${config.scaleEffects.hover} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`
-            }
-          >
-            <config.icons.mapMarker className="mr-4" />
-              Aller dans une autre pharmacie
-          </button>
+            {/* Trouver une pharmacie proche */}
+            <div 
+              className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[350px]
+                transition-transform duration-300 hover:scale-105
+                ${focusedIndex === 2 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            >
+              <h2 className="text-3xl font-bold text-black mb-6">
+                Trouver une pharmacie proche
+              </h2>
+              <p className="text-xl text-gray-600 mb-10 flex-1">
+                Localiser les pharmacies ayant ce médicament en stock
+              </p>
+              <button
+                ref={cancelButtonRef}
+                tabIndex={0}
+                onClick={openPharmaciesModal}
+                className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
+                  hover:scale-105 transition-transform duration-300
+                  ${focusedIndex === 2 ? 'scale-105' : ''}`}
+              >
+                VOIR LES PHARMACIES
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Pharmacies Modal */}

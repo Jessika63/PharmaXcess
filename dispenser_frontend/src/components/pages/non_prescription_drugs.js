@@ -388,7 +388,7 @@ const applyFilter = (filter) => {
         // Stock check
         const size = parseInt(selectedDrug?.size) || 0;
         if (size <= 0) {
-            navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
+            navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
             return;
         }
 
@@ -700,7 +700,7 @@ const applyFilter = (filter) => {
                                                 closeModal();
                                                 navigate('/cart');
                                             } else {
-                                                navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
+                                                navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
                                             }
                                         }}
                                         className={`w-full py-4 rounded-full text-lg font-semibold flex items-center justify-center gap-3
