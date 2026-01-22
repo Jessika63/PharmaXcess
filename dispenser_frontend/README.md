@@ -108,6 +108,12 @@ Utility functions and hooks:
 - **Leaflet 1.9.4** - Interactive maps
 - **React Leaflet 4.2.1** - React wrapper for Leaflet
 - **Tailwind CSS 3.3.0** - Utility-first CSS framework
+- **@mapbox/polyline 1.2.1** - Polyline decoding
+- **@react-google-maps/api 2.20.7** - Google Maps integration
+- **@stripe/react-stripe-js 3.9.0** & **@stripe/stripe-js 7.8.0** - Stripe payment integration
+- **web-vitals 2.1.4** - Performance metrics
+- **brace-expansion 4.0.1** - String expansion utility
+- **Testing Libraries** - Jest DOM, React Testing Library, User Event
 
 #### If you need to modify dependencies
 
