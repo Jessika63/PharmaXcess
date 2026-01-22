@@ -166,7 +166,6 @@ def add_list():
     if err:
         return err, code
 
-    # cumulative-safe validation
     temp_quantities = {}
     for item in items:
         med_id = int(item["id"])
