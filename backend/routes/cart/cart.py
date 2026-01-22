@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import os
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 cart_bp = Blueprint("cart", __name__)
 
@@ -13,54 +13,73 @@ JSON_PATH = os.path.join(BASE_DIR, "medicine_available.json")
 # In-memory carts storage
 # =========================
 carts = {}
-# cart_id -> {
-#   status: OPEN | VALIDATED | CLOSED,
-#   items: [],
-#   total: float,
-#   created_at,
-#   updated_at
-# }
+CART_EXPIRATION = timedelta(hours=1)
 
 # =========================
 # Helpers
 # =========================
 def load_stock():
-    if not os.path.exists(JSON_PATH):
-        raise FileNotFoundError("medicine_available.json not found")
     with open(JSON_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+        return json.load(f)["medicine"]
 
 def get_med_by_id(med_id):
-    data = load_stock()
-    for m in data.get("medicine", []):
+    for m in load_stock():
         if int(m["id"]) == int(med_id):
             return m
     return None
 
 def recalculate_cart(cart):
-    total = 0.0
-    for it in cart["items"]:
-        total += float(it["price"]) * int(it["quantity"])
-    cart["total"] = round(total, 2)
+    cart["total"] = round(
+        sum(float(it["price"]) * int(it["quantity"]) for it in cart["items"]),
+        2
+    )
     cart["updated_at"] = datetime.utcnow().isoformat()
 
-def check_stock(med_id, qty):
-    med = get_med_by_id(med_id)
-    if not med:
-        return False, "Medicament introuvable"
-    if qty <= 0:
-        return False, "Quantité invalide"
-    if int(med.get("size", 0)) < qty:
-        return False, f"Stock insuffisant (disponible: {med.get('size')})"
-    return True, ""
+def cleanup_expired_carts():
+    now = datetime.utcnow()
+    to_delete = []
 
-def get_cart_or_404(cart_id):
+    for cart_id, cart in carts.items():
+        if cart["status"] == "VALIDATED":
+            validated_at = datetime.fromisoformat(cart["validated_at"])
+            if now - validated_at > CART_EXPIRATION:
+                to_delete.append(cart_id)
+
+    for cart_id in to_delete:
+        del carts[cart_id]
+
+def get_open_cart_or_error(cart_id):
+    cleanup_expired_carts()
+
     cart = carts.get(cart_id)
     if not cart:
         return None, jsonify({"error": "Cart not found"}), 404
+
     if cart["status"] != "OPEN":
         return None, jsonify({"error": "Cart is not editable"}), 400
+
     return cart, None, None
+
+def check_stock(cart, med_id, qty_to_add):
+    med = get_med_by_id(med_id)
+    if not med:
+        return False, "Medication not found"
+
+    already_in_cart = 0
+    for it in cart["items"]:
+        if it["id"] == int(med_id):
+            already_in_cart = it["quantity"]
+            break
+
+    available = int(med["size"]) - already_in_cart
+
+    if available < qty_to_add:
+        return False, (
+            f"{med['label']} (ID={med_id}) is out of stock "
+            f"(available: {available})"
+        )
+
+    return True, ""
 
 # =========================
 # Routes
@@ -69,14 +88,15 @@ def get_cart_or_404(cart_id):
 # POST /cart/init
 @cart_bp.route("/cart/init", methods=["POST"])
 def init_cart():
-    cart_id = uuid.uuid4().hex[:8]
+    cart_id = uuid.uuid4().hex[:10]
 
     carts[cart_id] = {
         "status": "OPEN",
         "items": [],
         "total": 0.0,
         "created_at": datetime.utcnow().isoformat(),
-        "updated_at": None
+        "updated_at": None,
+        "validated_at": None
     }
 
     return jsonify({"cart_id": cart_id}), 201
@@ -85,9 +105,12 @@ def init_cart():
 # GET /cart/<cart_id>
 @cart_bp.route("/cart/<cart_id>", methods=["GET"])
 def get_cart(cart_id):
+    cleanup_expired_carts()
+
     cart = carts.get(cart_id)
     if not cart:
         return jsonify({"error": "Cart not found"}), 404
+
     return jsonify(cart), 200
 
 
@@ -95,32 +118,31 @@ def get_cart(cart_id):
 @cart_bp.route("/cart/add", methods=["POST"])
 def add_item():
     data = request.get_json(force=True)
-
     cart_id = data.get("cart_id")
     med_id = data.get("id")
     qty = int(data.get("quantity", 1))
 
     if not cart_id or med_id is None:
-        return jsonify({"error": "cart_id and id are required"}), 400
+        return jsonify({"error": "cart_id and id required"}), 400
 
-    cart, err, code = get_cart_or_404(cart_id)
+    cart, err, code = get_open_cart_or_error(cart_id)
     if err:
         return err, code
 
-    ok, msg = check_stock(med_id, qty)
+    ok, msg = check_stock(cart, med_id, qty)
     if not ok:
         return jsonify({"error": msg}), 400
 
     med = get_med_by_id(med_id)
 
     for it in cart["items"]:
-        if it["id"] == int(med_id):
+        if it["id"] == med["id"]:
             it["quantity"] += qty
             recalculate_cart(cart)
             return jsonify(cart), 200
 
     cart["items"].append({
-        "id": int(med["id"]),
+        "id": med["id"],
         "label": med["label"],
         "price": float(med["price"]),
         "quantity": qty
@@ -134,33 +156,39 @@ def add_item():
 @cart_bp.route("/cart/add-list", methods=["POST"])
 def add_list():
     data = request.get_json(force=True)
-
     cart_id = data.get("cart_id")
     items = data.get("items")
 
     if not cart_id or not isinstance(items, list):
         return jsonify({"error": "cart_id and items list required"}), 400
 
-    cart, err, code = get_cart_or_404(cart_id)
+    cart, err, code = get_open_cart_or_error(cart_id)
     if err:
         return err, code
 
-    for it in items:
-        ok, msg = check_stock(it["id"], int(it.get("quantity", 1)))
+    # cumulative-safe validation
+    temp_quantities = {}
+    for item in items:
+        med_id = int(item["id"])
+        qty = int(item.get("quantity", 1))
+        temp_quantities[med_id] = temp_quantities.get(med_id, 0) + qty
+
+    for med_id, qty in temp_quantities.items():
+        ok, msg = check_stock(cart, med_id, qty)
         if not ok:
             return jsonify({"error": msg}), 400
 
-    for it in items:
-        med = get_med_by_id(it["id"])
-        qty = int(it.get("quantity", 1))
+    for item in items:
+        med = get_med_by_id(item["id"])
+        qty = int(item.get("quantity", 1))
 
-        for existing in cart["items"]:
-            if existing["id"] == int(it["id"]):
-                existing["quantity"] += qty
+        for it in cart["items"]:
+            if it["id"] == med["id"]:
+                it["quantity"] += qty
                 break
         else:
             cart["items"].append({
-                "id": int(med["id"]),
+                "id": med["id"],
                 "label": med["label"],
                 "price": float(med["price"]),
                 "quantity": qty
@@ -174,54 +202,42 @@ def add_list():
 @cart_bp.route("/cart/remove", methods=["POST"])
 def remove_item():
     data = request.get_json(force=True)
-
     cart_id = data.get("cart_id")
     med_id = data.get("id")
     qty = int(data.get("quantity", 1))
 
-    if not cart_id or med_id is None:
-        return jsonify({"error": "cart_id and id required"}), 400
-
-    cart, err, code = get_cart_or_404(cart_id)
+    cart, err, code = get_open_cart_or_error(cart_id)
     if err:
         return err, code
 
-    for i, it in enumerate(cart["items"]):
+    for it in cart["items"]:
         if it["id"] == int(med_id):
-            if qty >= it["quantity"]:
-                cart["items"].pop(i)
-            else:
-                it["quantity"] -= qty
+            it["quantity"] -= qty
+            if it["quantity"] <= 0:
+                cart["items"].remove(it)
             recalculate_cart(cart)
             return jsonify(cart), 200
 
-    return jsonify({"error": "Item not found in cart"}), 404
+    return jsonify({"error": "Item not in cart"}), 404
 
 
 # POST /cart/remove-list
 @cart_bp.route("/cart/remove-list", methods=["POST"])
 def remove_list():
     data = request.get_json(force=True)
-
     cart_id = data.get("cart_id")
     items = data.get("items")
 
-    if not cart_id or not isinstance(items, list):
-        return jsonify({"error": "cart_id and items list required"}), 400
-
-    cart, err, code = get_cart_or_404(cart_id)
+    cart, err, code = get_open_cart_or_error(cart_id)
     if err:
         return err, code
 
     for rem in items:
-        for i, it in enumerate(cart["items"]):
+        for it in list(cart["items"]):
             if it["id"] == int(rem["id"]):
-                qty = int(rem.get("quantity", 1))
-                if qty >= it["quantity"]:
-                    cart["items"].pop(i)
-                else:
-                    it["quantity"] -= qty
-                break
+                it["quantity"] -= int(rem.get("quantity", 1))
+                if it["quantity"] <= 0:
+                    cart["items"].remove(it)
 
     recalculate_cart(cart)
     return jsonify(cart), 200
@@ -233,16 +249,11 @@ def cancel_cart():
     data = request.get_json(force=True)
     cart_id = data.get("cart_id")
 
-    cart = carts.get(cart_id)
-    if not cart:
+    if cart_id not in carts:
         return jsonify({"error": "Cart not found"}), 404
 
-    cart["status"] = "CLOSED"
-    cart["items"].clear()
-    cart["total"] = 0.0
-    cart["updated_at"] = datetime.utcnow().isoformat()
-
-    return jsonify({"message": "Cart cancelled"}), 200
+    del carts[cart_id]
+    return jsonify({"message": "Cart cancelled and deleted"}), 200
 
 
 # POST /cart/validate
@@ -255,11 +266,15 @@ def validate_cart():
     if not cart:
         return jsonify({"error": "Cart not found"}), 404
 
+    if cart["status"] != "OPEN":
+        return jsonify({"error": "Cart already validated"}), 400
+
     if not cart["items"]:
         return jsonify({"error": "Cart is empty"}), 400
 
     cart["status"] = "VALIDATED"
-    cart["updated_at"] = datetime.utcnow().isoformat()
+    cart["validated_at"] = datetime.utcnow().isoformat()
+    cart["updated_at"] = cart["validated_at"]
 
     return jsonify({
         "message": "Cart validated",
