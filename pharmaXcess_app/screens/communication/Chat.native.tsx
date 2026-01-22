@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Button } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,8 +7,10 @@ import createStyles from '../../styles/ProfileChat.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
+import { useAuth } from '../../context/AuthContext';
 import config from '../../config';
 import { canUserPerformAction, getDefaultPermissions } from '../../utils/profileValidation';
+import { useNavigation } from '@react-navigation/native';
 
 type Message = {
     id: string;
@@ -38,7 +40,9 @@ export default function Chat(): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
     const { currentProfile } = useProfile();
+    const { user } = useAuth();
     const styles = createStyles(colors, fontScale);
+    const navigation = useNavigation();
     
     // Default chats for the main profile (empty to avoid fake discussions)
     const defaultChats: ChatItem[] = [];
@@ -60,10 +64,15 @@ export default function Chat(): React.JSX.Element {
 
     const safeCurrentProfile = ensureProfilePermissions(currentProfile);
     
-    // Retrieve chats for the current profile or default to main profile chats 
+    // Retrieve chats for the current profile or default to main profile 
     const currentChats = currentProfile 
-        ? (profileChatsData[currentProfile.id] || (currentProfile.isMain ? defaultChats : []))
-        : []; 
+        ? (profileChatsData[currentProfile.id] || (currentProfile.isMain ? defaultChats : [])).map(chat => ({
+            ...chat,
+            messages: chat.messages || []
+        }))
+        : [];
+
+    console.log('🔍 Transformed currentChats:', currentChats);
         
     // Chat interface states
     const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
@@ -74,7 +83,7 @@ export default function Chat(): React.JSX.Element {
     const [newTicket, setNewTicket] = useState<ChatItem>({
         id: '',
         title: '',
-        name: '',
+        name: user?.name,
         question: '',
         date: '',
         messages: [],
@@ -188,6 +197,37 @@ export default function Chat(): React.JSX.Element {
         // Reset selected chat when switching profiles 
         setSelectedChat(null); 
     }, [currentProfile?.id]); 
+
+    // Fetch discussions from backend
+    useEffect(() => {
+        const fetchDiscussionsFromBackend = async () => {
+            try {
+                if (!currentProfile?.id) return;
+
+                const response = await fetch(`${config.backendUrl}/discussions/user/${currentProfile.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error fetching discussions: ${response.statusText}`);
+                }
+
+                const discussions = await response.json();
+                setProfileChatsData(prev => ({
+                    ...prev,
+                    [currentProfile.id]: discussions,
+                }));
+            } catch (error) {
+                console.error('Error fetching discussions from backend:', error);
+            }
+        };
+
+        fetchDiscussionsFromBackend();
+    }, [currentProfile?.id]);
 
     // Utility function to update chats for the current profile 
     const updateCurrentProfileChats = async (updater: (chats: ChatItem[]) => ChatItem[]) => { 
@@ -305,7 +345,7 @@ export default function Chat(): React.JSX.Element {
                     return;
                 }
             } catch (e) {
-                console.warn('Failed to send message to backend', e);
+                console.warn('Failed to send message to backend');
             }
         }
 
@@ -353,9 +393,9 @@ export default function Chat(): React.JSX.Element {
         }
     };
 
-    // Function to get unread messages count
-    const getUnreadCount = (messages: Message[]): number => {
-        return messages.filter(msg => !msg.isRead && msg.sender === 'support').length;
+    // Ensure messages is always an array before accessing length
+    const getUnreadCount = (messages: Message[] = []): number => {
+        return (messages || []).filter(msg => !msg.isRead && msg.sender === 'support').length;
     };
 
     const handleAddTicket = async (): Promise<void> => {
@@ -392,6 +432,7 @@ export default function Chat(): React.JSX.Element {
             messages: [initialMessage],
             status: 'open',
             lastActivity: currentDateTime,
+            name: safeCurrentProfile?.name || user?.email,
         };
 
         // If this is a server profile, create discussion on backend
@@ -451,7 +492,7 @@ export default function Chat(): React.JSX.Element {
         setNewTicket({ 
             id: '', 
             title: '', 
-            name: '', 
+            name: safeCurrentProfile?.name || user?.email,
             question: '', 
             date: '',
             messages: [],
@@ -623,6 +664,76 @@ export default function Chat(): React.JSX.Element {
             )}
         </KeyboardAvoidingView>
     );
+
+    const createDiscussion = async () => {
+        console.log('Creating discussion with payload:', {
+            utilisateur_id: Number(currentProfile.id),
+            subject: newTicket.title,
+            name: user?.name,
+            question: newTicket.question,
+            flag: null,
+            region: (currentProfile as any).region || 'all',
+        });
+
+        try {
+            const response = await fetch(`${config.backendUrl}/discussions/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    utilisateur_id: Number(currentProfile.id),
+                    subject: newTicket.title,
+                    name: user?.name,
+                    question: newTicket.question,
+                    flag: null,
+                    region: (currentProfile as any).region || 'all',
+                }),
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                console.error('Error creating discussion:', response.statusText);
+                throw new Error(`Error creating discussion: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('Discussion created successfully:', data);
+            // Optionally refresh discussions
+            await loadChats();
+        } catch (error) {
+            console.error('Error creating discussion:', error);
+        }
+    };
+
+    const addMessage = async (discussionId: string, message: string) => {
+        try {
+            const payload = {
+                auteur_id: Number(currentProfile.id),
+                message: message,
+            };
+
+            const response = await fetch(`${config.backendUrl}/messages/add/${discussionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error adding message: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('Message added:', data);
+            // Optionally refresh messages
+            await loadChats();
+        } catch (error) {
+            console.error('Error adding message:', error);
+        }
+    };
+
+    const navigateToCreateTicket = () => {
+        navigation.navigate('CreateTicket');
+    };
 
     return (
         <View style={styles.container}>

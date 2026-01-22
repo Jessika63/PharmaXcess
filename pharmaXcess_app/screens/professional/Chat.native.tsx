@@ -17,6 +17,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfessionalChat.style';
+import fetchWithTimeout from '../../utils/fetchWithTimeout';
+import { useUser } from '../../context/UserContext';
 
 type Message = { 
   id: string; 
@@ -43,6 +45,8 @@ export default function Chat(): React.JSX.Element {
   const { colors } = useTheme();
   const { fontScale } = useFontScale();
   const styles = createStyles(colors, fontScale);
+  const { user: authUser } = useAuth();
+  const { user } = useUser();
 
   // States
   const [activeTab, setActiveTab] = useState<'unassigned' | 'assigned'>('unassigned');
@@ -50,106 +54,109 @@ export default function Chat(): React.JSX.Element {
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [ticketToAssign, setTicketToAssign] = useState<Ticket | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const { user } = useAuth();
 
   // Mock data - non-assigned tickets 
-  const [unassignedTickets, setUnassignedTickets] = useState<Ticket[]>([
-    {
-      id: '1',
-      title: 'Problème de prescription',
-      patientName: 'Jean Dupont',
-      patientId: 'P001',
-      question: 'Je n\'arrive pas à renouveler ma prescription sur l\'application. Pouvez-vous m\'aider ?',
-      createdAt: '2024-10-24 09:30',
-      status: 'unassigned',
-      messages: [
-        {
-          id: 'm1',
-          text: 'Je n\'arrive pas à renouveler ma prescription sur l\'application. Pouvez-vous m\'aider ?',
-          sender: 'user',
-          timestamp: '2024-10-24 09:30',
-          isRead: true
-        }
-      ],
-      lastActivity: '2024-10-24 09:30',
-    },
-    {
-      id: '2',
-      title: 'Question sur les effets secondaires',
-      patientName: 'Marie Curie',
-      patientId: 'P002',
-      question: 'Mon nouveau médicament me donne des nausées. Est-ce normal ?',
-      createdAt: '2024-10-24 10:15',
-      status: 'unassigned',
-      messages: [
-        {
-          id: 'm2',
-          text: 'Mon nouveau médicament me donne des nausées. Est-ce normal ?',
-          sender: 'user',
-          timestamp: '2024-10-24 10:15',
-          isRead: true
-        }
-      ],
-      lastActivity: '2024-10-24 10:15',
-    },
-    {
-      id: '3',
-      title: 'Horaires de pharmacie',
-      patientName: 'Pierre Martin',
-      patientId: 'P003',
-      question: 'Quels sont vos horaires d\'ouverture pendant les fêtes ?',
-      createdAt: '2024-10-24 11:00',
-      status: 'unassigned',
-      messages: [
-        {
-          id: 'm3',
-          text: 'Quels sont vos horaires d\'ouverture pendant les fêtes ?',
-          sender: 'user',
-          timestamp: '2024-10-24 11:00',
-          isRead: true
-        }
-      ],
-      lastActivity: '2024-10-24 11:00',
-    }
-  ]);
+  const [unassignedTickets, setUnassignedTickets] = useState<Ticket[]>([]);
 
   // Mock data - assigned tickets
-  const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([
-    {
-      id: '4',
-      title: 'Livraison de médicaments',
-      patientName: 'Sophie Blanc',
-      patientId: 'P004',
-      question: 'Est-il possible de me livrer mes médicaments à domicile ?',
-      createdAt: '2024-10-23 14:20',
-      status: 'assigned',
-      assignedTo: 'Pharmacien',
-      messages: [
-        {
-          id: 'm4',
-          text: 'Est-il possible de me livrer mes médicaments à domicile ?',
-          sender: 'user',
-          timestamp: '2024-10-23 14:20',
-          isRead: true
-        },
-        {
-          id: 'm5',
-          text: 'Bonjour Sophie, oui nous proposons un service de livraison. Je peux organiser cela pour vous.',
-          sender: 'support',
-          timestamp: '2024-10-23 14:45',
-          isRead: true
-        },
-        {
-          id: 'm6',
-          text: 'Parfait ! Combien cela coûte-t-il ?',
-          sender: 'user',
-          timestamp: '2024-10-23 15:10',
-          isRead: false
+  const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([]);
+
+  // Effects
+  useEffect(() => {
+    const fetchUnassignedTickets = async () => {
+        try {
+            const sector = 'pharmacien'; // Replace with the actual sector dynamically if available
+            const region = 'all'; // Replace with the actual region dynamically if available
+            const response = await fetchWithTimeout(`${config.backendUrl}/discussions/open?sector=${sector}&region=${region}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error fetching unassigned tickets: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            setUnassignedTickets(data.open_discussions);
+            console.log('Unassigned tickets fetched:', data.open_discussions);
+        } catch (error) {
+            console.error('Error fetching unassigned tickets:', error);
         }
-      ],
-      lastActivity: '2024-10-23 15:10',
-    }
-  ]);
+    };
+
+    fetchUnassignedTickets();
+  }, []);
+
+  useEffect(() => {
+        const fetchAssignedTickets = async () => {
+            try {
+                if (!user) {
+                    console.error('User is not logged in. Cannot fetch assigned tickets.');
+                    return;
+                }
+
+                const professionalId = user.id; // Use the logged-in user's ID dynamically
+                const response = await fetchWithTimeout(`${config.backendUrl}/discussions/professional/${professionalId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error fetching assigned tickets: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                setAssignedTickets(data);
+                console.log('Assigned tickets fetched:', data);
+            } catch (error) {
+                console.error('Error fetching assigned tickets:', error);
+            }
+        };
+
+        fetchAssignedTickets();
+    }, [user]); // Trigger the effect when the user changes
+
+  useEffect(() => {
+    const fetchUserDiscussions = async () => {
+      try {
+        if (!user) {
+          console.error('User is not logged in. Please log in to access discussions.');
+          return;
+        }
+
+        const utilisateurId = user.id; // Dynamically get the user ID from the context
+        if (!utilisateurId) {
+          console.error('User ID is not available');
+          return;
+        }
+
+        const response = await fetchWithTimeout(`${config.backendUrl}/discussions/user/${utilisateurId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error fetching user discussions: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setUnassignedTickets(data); // Assuming unassignedTickets is used for user discussions
+      } catch (error) {
+        console.error('Error fetching user discussions:', error);
+      }
+    };
+
+    fetchUserDiscussions();
+  }, [user]);
 
   // Functions
   const handleTicketPress = async (ticket: Ticket) => {
@@ -219,45 +226,64 @@ export default function Chat(): React.JSX.Element {
     }
   };
 
-  const handleAssignTicket = () => {
-    if (!ticketToAssign) return;
-
-    // Try to assign on backend if possible
-    if (config.backendUrl && user?.id) {
-      (async () => {
-        try {
-          const base = config.backendUrl.replace(/\/$/, '');
-          const res = await fetch(`${base}/discussions/update/${ticketToAssign.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ professionnel_id: Number(user.id), statut: 'en_cours' })
-          });
-          if (!res.ok) console.warn('Assign request failed', await res.text());
-        } catch (e) {
-          console.warn('Failed to call assign API', e);
+  const handleAssignTicket = async () => {
+        if (!ticketToAssign || !user) {
+            Alert.alert('Erreur', 'Utilisateur non connecté ou ticket non valide.');
+            return;
         }
-      })();
-    }
 
-    const assignedTicket: Ticket = {
-      ...ticketToAssign,
-      status: 'assigned',
-      assignedTo: user?.prenom ? `${user.prenom} ${user.nom}` : 'Pharmacien',
+        try {
+            console.log('Assigning ticket with payload:', {
+            professionnel_id: user.id,
+        });
+
+            const response = await fetch(`${config.backendUrl}/discussions/update/${ticketToAssign.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ professionnel_id: user.id }),
+            });
+
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                console.error('Failed to assign ticket:', await response.text());
+                throw new Error(`Failed to assign ticket: ${response.statusText}`);
+            }
+
+            const assignedTicket: Ticket = {
+                ...ticketToAssign,
+                status: 'assigned',
+                assignedTo: user?.prenom ? `${user.prenom} ${user.nom}` : 'Pharmacien',
+            };
+
+            // Move ticket from unassigned to assigned (local update)
+            setUnassignedTickets(prev => prev.filter(t => t.id !== ticketToAssign.id));
+            setAssignedTickets(prev => [assignedTicket, ...(prev || [])]);
+
+            // Close modal
+            setShowAssignmentModal(false);
+            setTicketToAssign(null);
+
+            Alert.alert('Succès', 'Le ticket vous a été assigné.');
+        } catch (error) {
+            console.error('Error assigning ticket:', error);
+            Alert.alert('Erreur', 'Impossible d\'assigner le ticket.');
+        }
     };
-
-    // Move ticket from unassigned to assigned (local update)
-    setUnassignedTickets(prev => prev.filter(t => t.id !== ticketToAssign.id));
-    setAssignedTickets(prev => [assignedTicket, ...prev]);
-
-    // Close modal
-    setShowAssignmentModal(false);
-    setTicketToAssign(null);
-
-    Alert.alert('Succès', 'Le ticket vous a été assigné.');
-  };
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedTicket) return;
+    
+    // Prevent sending messages if ticket is closed
+    if (selectedTicket.status === 'closed') {
+      Alert.alert(
+        'Discussion fermée',
+        'Impossible d\'envoyer un message dans une discussion fermée.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     const now = new Date().toLocaleString('fr-FR');
 
@@ -321,6 +347,8 @@ export default function Chat(): React.JSX.Element {
                           setAssignedTickets(prev => prev.map(t => 
                             t.id === discussionIdToClose ? { ...t, status: 'closed' } : t
                           ));
+                          // Mettre à jour aussi selectedTicket pour que l'UI réagisse tout de suite
+                          setSelectedTicket(prev => prev && prev.id === discussionIdToClose ? { ...prev, status: 'closed' } : prev);
                         }
                       } catch (e) {
                         console.warn('Error calling close discussion API', e);
@@ -351,7 +379,7 @@ export default function Chat(): React.JSX.Element {
       ticket.id === selectedTicket.id 
         ? {
             ...ticket,
-            messages: [...ticket.messages, message],
+            messages: [...(ticket.messages || []), message],
             lastActivity: message.timestamp
           }
         : ticket
@@ -361,13 +389,16 @@ export default function Chat(): React.JSX.Element {
   };
 
   // Load open and professional discussions from backend on mount
+  // --- Polling automatique pour rafraîchir les discussions toutes les 5 secondes ---
   useEffect(() => {
     if (!config.backendUrl) return;
     const base = config.backendUrl.replace(/\/$/, '');
 
-    // Fetch open discussions for pharmacists by default (region=all)
-    (async () => {
+    let isMounted = true;
+
+    const fetchDiscussions = async () => {
       try {
+        // Unassigned
         const res = await fetch(`${base}/discussions/open?sector=pharmacien&region=all`);
         if (res.ok) {
           const json = await res.json();
@@ -382,8 +413,6 @@ export default function Chat(): React.JSX.Element {
             messages: [],
             lastActivity: d.date_creation || ''
           }));
-
-          // Enrich each ticket with the first message (to get auteur_name and question)
           const enrich = async (tickets: typeof rawList) => {
             return await Promise.all(tickets.map(async (t) => {
               try {
@@ -395,24 +424,18 @@ export default function Chat(): React.JSX.Element {
                     return { ...t, patientName: first.auteur_name || t.patientName, question: first.message || t.question };
                   }
                 }
-              } catch (e) {
-                // ignore per-ticket failures
-              }
+              } catch (e) {}
               return t;
             }));
           };
-
           const enriched = await enrich(rawList);
-          setUnassignedTickets(enriched);
+          if (isMounted) setUnassignedTickets(enriched);
         }
       } catch (e) {
-        console.warn('Failed to load open discussions', e);
+        if (isMounted) console.warn('Failed to load open discussions', e);
       }
-    })();
-
-    // If professional user, fetch assigned/owned discussions
-    if (user?.id) {
-      (async () => {
+      // Assigned
+      if (user?.id) {
         try {
           const res = await fetch(`${base}/discussions/professional/${user.id}`);
           if (res.ok) {
@@ -428,7 +451,6 @@ export default function Chat(): React.JSX.Element {
               messages: [],
               lastActivity: d.date_creation || ''
             }));
-
             const enrichAssigned = async (tickets: typeof rawMapped) => {
               return await Promise.all(tickets.map(async (t) => {
                 try {
@@ -440,21 +462,25 @@ export default function Chat(): React.JSX.Element {
                       return { ...t, patientName: first.auteur_name || t.patientName, question: first.message || t.question };
                     }
                   }
-                } catch (e) {
-                  // ignore
-                }
+                } catch (e) {}
                 return t;
               }));
             };
-
             const enrichedAssigned = await enrichAssigned(rawMapped);
-            setAssignedTickets(enrichedAssigned);
+            if (isMounted) setAssignedTickets(enrichedAssigned);
           }
         } catch (e) {
-          console.warn('Failed to load professional discussions', e);
+          if (isMounted) console.warn('Failed to load professional discussions', e);
         }
-      })();
-    }
+      }
+    };
+
+    fetchDiscussions();
+    const interval = setInterval(fetchDiscussions, 5000); // 5 secondes
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [user?.id]);
 
   const getStatusColor = (status: string): string => {
@@ -475,7 +501,8 @@ export default function Chat(): React.JSX.Element {
     }
   };
 
-  const getUnreadCount = (messages: Message[]): number => {
+  const getUnreadCount = (messages: Message[] | undefined): number => {
+    if (!messages) return 0; // Handle undefined messages
     return messages.filter(msg => !msg.isRead && msg.sender === 'user').length;
   };
 
@@ -564,28 +591,37 @@ export default function Chat(): React.JSX.Element {
         contentContainerStyle={{ padding: 20 }}
       />
 
-      <View style={styles.messageInputContainer}>
-        <TextInput
-          style={styles.messageInput}
-          placeholder="Tapez votre réponse..."
-          placeholderTextColor={colors.infoText}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          multiline
-          maxLength={500}
-        />
-        <TouchableOpacity 
-          style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
-          onPress={handleSendMessage}
-          disabled={!newMessage.trim()}
-        >
-          <Ionicons 
-            name="send" 
-            size={20} 
-            color={newMessage.trim() ? colors.iconPrimary : colors.inputBorder} 
+      {selectedTicket?.status === 'closed' ? (
+        <View style={[styles.messageInputContainer, { justifyContent: 'center', alignItems: 'center', flexDirection: 'column', paddingVertical: 20 }]}>
+            <Ionicons name="lock-closed" size={32} color={colors.infoTextSecondary} style={{ marginBottom: 10 }} />
+            <Text style={[styles.messageText, { textAlign: 'center', marginBottom: 8, color: colors.iconPrimary }]}>Cette discussion est fermée</Text>
+            <Text style={[styles.messageText, { textAlign: 'center', color: colors.iconPrimary }]}>Ouvrir un nouveau ticket</Text>
+        </View>
+      ) : (
+        <View style={styles.messageInputContainer}>
+          <TextInput
+            style={[styles.messageInput, selectedTicket?.status === 'closed' && styles.messageInputDisabled]}
+            placeholder={selectedTicket?.status === 'closed' ? 'Discussion fermée' : 'Tapez votre réponse...'}
+            placeholderTextColor={colors.infoText}
+            value={newMessage}
+            onChangeText={setNewMessage}
+            multiline
+            maxLength={500}
+            editable={selectedTicket?.status !== 'closed'}
           />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity 
+            style={[styles.sendButton, (!newMessage.trim() || selectedTicket?.status === 'closed') && styles.sendButtonDisabled]} 
+            onPress={handleSendMessage}
+            disabled={!newMessage.trim() || selectedTicket?.status === 'closed'}
+          >
+            <Ionicons 
+              name="send" 
+              size={20} 
+              color={(newMessage.trim() && selectedTicket?.status !== 'closed') ? colors.iconPrimary : colors.inputBorder} 
+            />
+          </TouchableOpacity>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 
