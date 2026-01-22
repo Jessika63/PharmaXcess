@@ -17,6 +17,7 @@ L'application fournira plusieurs fonctionnalités, incluant :
 - Suivre les traitements
 - Recevoir des alertes pour les prises de médicaments
 - Et maintenir un dossier de santé patient
+- Discuter avec un professionel de santé
 
 ## Backend
 
