@@ -7,10 +7,10 @@ PharmaXcess est une solution complète conçue pour faciliter l'accès aux pharm
 
 ```mermaid
 graph TD
-    User[Utilisateur / Patient] -->|Utilise| MobileApp[App Mobile (React Native)]
-    Pharmacist[Pharmacien] -->|Utilise| WebPortal[Portail Distributeur (React JS)]
+    User[Utilisateur / Patient] -->|Utilise| MobileApp["App Mobile (React Native)"]
+    Pharmacist[Pharmacien] -->|Utilise| WebPortal["Portail Distributeur (React JS)"]
     
-    MobileApp -->|Requêtes API| Backend[Backend API (Flask)]
+    MobileApp -->|Requêtes API| Backend["Backend API (Flask)"]
     WebPortal -->|Requêtes API| Backend
     
     Backend -->|Requêtes| Database[(Base de données)]
