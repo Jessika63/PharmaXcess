@@ -58,7 +58,7 @@ General project documentation is available in the root `Readme.md`.
 
 ### /pages directory
 
-Every screen from the app is organized inside the 'pages' directory:
+Every screen from the app is organized inside the 'src/components/pages' directory:
 
 - **starting_page.js** => Main landing page with the PharmaXcess logo and navigation options
 - **documents_checking.js** => Page for scanning the 3 required documents: ID, insurance card, and prescription. Uses camera_component and modal_camera for display
@@ -67,6 +67,10 @@ Every screen from the app is organized inside the 'pages' directory:
 - **drug_stores_available.js** => Displays all pharmacies around the user's location with distance calculations
 - **DirectionsMapPage.js** => Interactive map showing route to selected pharmacy with different transport modes (walking, cycling, transit, car)
 - **preorder.js** => Page for preordering medications when stock is insufficient
+- **DocumentsFlow.js** => Manages the multi-step document verification process (ID, Vitale, Prescription)
+- **MapQrCodePage.js** => Displays a QR code for users to open the map/itinerary on their mobile device
+- **PaymentError.js** => Screen displayed when a payment fails
+- **PaymentSuccess.js** => Screen displayed when a payment is successful, showing order details
 
 ### /components directory
 
