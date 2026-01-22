@@ -21,12 +21,12 @@ L'étape de test exécute la suite de tests automatisés pour vérifier la corre
 - **Tests Backend** :
     - Tests unitaires
     - Tests d'intégration
-    - Commande : `pytest` (ou équivalent)
+    - Commande : `pytest` (ou équivalent) ou `python launch.py --test`
 
 ### 3. Deploy (Déploiement)
 L'étape de déploiement déploie l'application vers l'environnement cible (Staging/Production).
 
-- **Cible** : [VPS]
+- **Cible** : Raspberry Pi
 - **Étapes** :
     - Construction des images Docker
     - Push vers le registre de conteneurs
@@ -41,5 +41,5 @@ Le pipeline nécessite que les secrets/variables d'environnement suivants soient
 - `DEPLOY_TOKEN` : Identifiants pour le déploiement
 
 ## Surveillance & Notifications
-- Le statut du build est rapporté à [GitHub/GitLab/Slack].
+- Le statut du build est rapporté à GitHub.
 - Les builds échoués déclenchent une alerte à l'équipe de développement.

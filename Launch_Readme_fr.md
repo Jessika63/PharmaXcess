@@ -1,13 +1,13 @@
 # Lancement
 
-Vous pouvez lancer à la fois la partie backend et la partie frontend avec le **script de lancement**
+Vous pouvez lancer à la fois la partie backend et la partie frontend avec le **script de lancement** (`launch.py`)
 
 Avec ce **script de lancement**, vous pouvez lancer :
 
 - quelques **vérifications** pour vous assurer que tout fonctionnera.
 - le **backend** qui lance également la base de données.
 - le **frontend** pour accéder au site web.
-- le **test backend** pour voir si toutes les routes backend fonctionnent.
+- le **test backend** pour voir si toutes les routes backend fonctionnent (`python launch.py --test`).
 - une **mise à jour** de la base de données pour mettre à jour la base de données.
 - exporter le **dump** de la base de données
 

@@ -25,7 +25,7 @@ Vous pouvez trouver toutes les informations **Backend** [dans ce readme](backend
 
 ## Frontend Distributeur (Dispenser Frontend)
 
-Vous pouvez trouver toutes les informations **Dispenser Frontend** [dans ce readme](dispenser_frontend/README_fr.md)
+Vous pouvez trouver toutes les informations du **Frontend Distributeur** [dans ce readme](dispenser_frontend/README_fr.md)
 
 ## App
 
@@ -39,7 +39,17 @@ Vous pouvez trouver toutes les informations **Documentation** [dans ce readme](d
 
 ### Lancement (Launch)
 
-Vous pouvez trouver toutes les informations **Lancement** [dans ce readme](Launch_Readme_fr.md)
+Vous pouvez trouver toutes les informations sur le **script de lancement** (`launch.py`) [dans ce readme](Launch_Readme_fr.md)
+
+### Tests
+
+Le script `launch.py` permet également de lancer les tests backend.
+
+Vous pouvez lancer les tests backend avec la commande :
+
+```bash
+python launch.py --test
+```
 
 ### Pre-commit
 

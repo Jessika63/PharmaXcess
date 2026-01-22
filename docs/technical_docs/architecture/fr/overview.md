@@ -65,5 +65,5 @@ graph TD
 ## Stack Technologique
 - **Frontend** : React Native (Mobile), React JS (Web)
 - **Backend** : Python (Flask)
-- **Base de données** : [Spécifier la base de données, ex: PostgreSQL, SQLite, MongoDB]
+- **Base de données** : MySQL
 - **Documentation** : Markdown, Diagrammes Mermaid
