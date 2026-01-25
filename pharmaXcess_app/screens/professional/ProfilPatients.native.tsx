@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -145,6 +145,44 @@ export default function ProfilPatients(): React.JSX.Element {
 
   // Patients list must come from backend for professionals; start empty
   const [patients, setPatients] = useState<Patient[]>([]);
+
+  // Charger les patients suivis à la connexion (ou au montage)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${config.backendUrl.replace(/\/$/, '')}/followed_patients`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setPatients(data.map((p) => ({
+              id: String(p.id || p.user_id || p.utilisateur_id || p.telephone || 'unknown'),
+              firstName: p.prenom || p.firstName || p.nom || '',
+              lastName: p.nom || p.lastName || '',
+              age: p.age ? Number(p.age) : (p.date_de_naissance ? new Date().getFullYear() - new Date(p.date_de_naissance).getFullYear() : 0),
+              dateOfBirth: p.date_de_naissance || p.dateOfBirth || '',
+              phone: p.telephone || '',
+              email: p.email || '',
+              address: p.adresse || '',
+              weight: (p.poids && String(p.poids)) || 'Non renseigné',
+              height: (p.taille && String(p.taille)) || 'Non renseigné',
+              bloodType: p.groupe_sanguin || 'Non renseigné',
+              socialSecurityNumber: p.numero_securite_sociale || 'Non renseigné',
+              medicalHistory: p.medical_history || p.diseases || [],
+              allergies: p.allergies || [],
+              currentMedications: p.currentMedications || p.traitements || [],
+              hospitalizations: p.hospitalisations || [],
+              doctors: p.doctors || [],
+              emergencyContact: p.emergencyContact || { name: '', phone: '', relationship: '' }
+            })));
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
   
 
   const requestCameraPermission = async () => {
@@ -193,6 +231,16 @@ export default function ProfilPatients(): React.JSX.Element {
               doctors: p.doctors || [],
               emergencyContact: p.emergencyContact || { name: '', phone: '', relationship: '' }
             };
+
+            // Ajout du patient à la liste suivie côté backend
+            try {
+              await fetch(`${config.backendUrl.replace(/\/$/, '')}/followed_patients`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ patient_id: p.id || p.user_id || p.utilisateur_id })
+              });
+            } catch (e) { /* ignore */ }
 
             const existing = patients.find(pt => pt.id === mapped.id);
             if (existing) {
@@ -300,88 +348,52 @@ export default function ProfilPatients(): React.JSX.Element {
   const getDetailedData = (patient: Patient, section: SectionType): DetailedItem[] => {
     switch (section) {
       case 'maladies':
-        return [
-          {
-            id: '1',
-            title: 'Hypertension artérielle',
-            description: 'Pression artérielle élevée de manière chronique.',
-            date: '01/01/2020',
-            severity: 'Modérée',
-            notes: 'Contrôlée par médicaments. Surveillance régulière nécessaire.'
-          },
-          {
-            id: '2',
-            title: 'Diabète type 2',
-            description: 'Trouble métabolique caractérisé par une hyperglycémie.',
-            date: '15/06/2018',
-            severity: 'Sévère',
-            notes: 'Nécessite un suivi strict du régime alimentaire et de la glycémie.'
-          }
-        ];
+        return patient.medicalHistory?.map((maladie) => ({
+          id: maladie.id?.toString() ?? '',
+          title: maladie.title ?? '',
+          description: maladie.description ?? '',
+          date: maladie.date ?? '',
+          severity: maladie.severity ?? '',
+          notes: maladie.notes ?? ''
+        })) || [];
       case 'traitements':
-        return [
-          {
-            id: '1',
-            title: 'Metformine 850mg',
-            description: 'Antidiabétique oral pour le contrôle de la glycémie.',
-            date: 'Depuis le 15/06/2018',
-            notes: 'À prendre 2 fois par jour avec les repas.'
-          },
-          {
-            id: '2',
-            title: 'Ramipril 5mg',
-            description: 'Inhibiteur de l\'enzyme de conversion pour l\'hypertension.',
-            date: 'Depuis le 01/01/2020',
-            notes: 'À prendre le matin à jeun.'
-          }
-        ];
+        return patient.currentMedications?.map((traitement) => ({
+          id: traitement.id?.toString() ?? '',
+          title: traitement.title ?? '',
+          description: traitement.description ?? '',
+          date: traitement.date ?? '',
+          notes: traitement.notes ?? ''
+        })) || [];
       case 'hospitalisations':
-        return patient.hospitalizations.map((hospitalization) => ({
-          id: hospitalization.id,
-          title: hospitalization.reason,
-          description: `Hôpital: ${hospitalization.hospital}\nService: ${hospitalization.service}\nMédecin: ${hospitalization.doctor}`,
-          date: hospitalization.date,
+        return patient.hospitalizations?.map((hospitalization) => ({
+          id: hospitalization.id?.toString() ?? '',
+          title: hospitalization.reason ?? '',
+          description: `Hôpital: ${hospitalization.hospital ?? ''}\nService: ${hospitalization.service ?? ''}\nMédecin: ${hospitalization.doctor ?? ''}`,
+          date: hospitalization.date ?? '',
           notes: hospitalization.duration ? `Durée: ${hospitalization.duration}` : undefined
-        }));
+        })) || [];
       case 'allergies':
-        return [
-          {
-            id: '1',
-            title: 'Pénicilline',
-            description: 'Réaction allergique aux antibiotiques à base de pénicilline.',
-            severity: 'Sévère',
-            notes: 'Éviter tous les dérivés de la pénicilline. Porter un bracelet d\'allergie.'
-          },
-          {
-            id: '2',
-            title: 'Arachides',
-            description: 'Allergie alimentaire aux cacahuètes et dérivés.',
-            severity: 'Modérée',
-            notes: 'Lire attentivement les étiquettes alimentaires.'
-          }
-        ];
+        return patient.allergies?.map((allergy) => ({
+          id: allergy.id?.toString() ?? '',
+          title: allergy.title ?? '',
+          description: allergy.description ?? '',
+          severity: allergy.severity ?? '',
+          notes: allergy.notes ?? ''
+        })) || [];
       case 'antecedents':
-        return [
-          {
-            id: '1',
-            title: 'Diabète familial',
-            description: 'Antécédents de diabète type 2 dans la famille.',
-            notes: 'Père et grand-père paternel diabétiques. Surveillance glycémique recommandée.'
-          },
-          {
-            id: '2',
-            title: 'Maladies cardiovasculaires',
-            description: 'Antécédents familiaux de problèmes cardiaques.',
-            notes: 'Mère décédée d\'un infarctus à 65 ans. Oncle maternel avec AVC à 58 ans.'
-          }
-        ];
+        return (patient.familyHistory as any[] | undefined)?.map((antecedent) => ({
+          id: antecedent.id?.toString() ?? '',
+          title: antecedent.title ?? '',
+          description: antecedent.description ?? '',
+          notes: antecedent.notes ?? ''
+        })) || [];
       case 'medecins':
-        return patient.doctors.map((doctor) => ({
-          id: doctor.id,
-          title: doctor.name,
-          description: `Spécialité: ${doctor.specialty}\nEmail: ${doctor.email}\nTéléphone: ${doctor.phone}`,
-          notes: `Adresse: ${doctor.address}`
-        }));
+        return patient.doctors?.map((doctor) => ({
+          id: doctor.id?.toString() ?? '',
+          title: doctor.name ?? '',
+          description: `Spécialité: ${doctor.specialty ?? ''}\nEmail: ${doctor.email ?? ''}\nTéléphone: ${doctor.phone ?? ''}`,
+          notes: `Adresse: ${doctor.address ?? ''}`
+        })) || [];
       default:
         return [];
     }
@@ -432,20 +444,21 @@ export default function ProfilPatients(): React.JSX.Element {
       emergencyContactPhone: 'Contact d\'urgence (téléphone)',
     };
 
+    const safe = (v: any) => (v === undefined || v === null || v === '' ? 'Non renseigné' : v);
     return [
-      { key: 'email', label: labels.email, value: patient.email },
-      { key: 'lastName', label: labels.lastName, value: patient.lastName },
-      { key: 'firstName', label: labels.firstName, value: patient.firstName },
-      { key: 'dateOfBirth', label: labels.dateOfBirth, value: patient.dateOfBirth },
-      { key: 'age', label: labels.age, value: `${patient.age} ans` },
-      { key: 'weight', label: labels.weight, value: patient.weight },
-      { key: 'height', label: labels.height, value: patient.height },
-      { key: 'bloodType', label: labels.bloodType, value: patient.bloodType },
-      { key: 'phone', label: labels.phone, value: patient.phone },
-      { key: 'socialSecurityNumber', label: labels.socialSecurityNumber, value: patient.socialSecurityNumber },
-      { key: 'address', label: labels.address, value: patient.address },
-      { key: 'emergencyContactName', label: labels.emergencyContactName, value: patient.emergencyContact.name },
-      { key: 'emergencyContactPhone', label: labels.emergencyContactPhone, value: patient.emergencyContact.phone },
+      { key: 'email', label: labels.email, value: safe(patient.email) },
+      { key: 'lastName', label: labels.lastName, value: safe(patient.lastName) },
+      { key: 'firstName', label: labels.firstName, value: safe(patient.firstName) },
+      { key: 'dateOfBirth', label: labels.dateOfBirth, value: safe(patient.dateOfBirth) },
+      { key: 'age', label: labels.age, value: patient.age === undefined || patient.age === null || patient.age === '' ? 'Non renseigné' : `${patient.age} ans` },
+      { key: 'weight', label: labels.weight, value: safe(patient.weight) },
+      { key: 'height', label: labels.height, value: safe(patient.height) },
+      { key: 'bloodType', label: labels.bloodType, value: safe(patient.bloodType) },
+      { key: 'phone', label: labels.phone, value: safe(patient.phone) },
+      { key: 'socialSecurityNumber', label: labels.socialSecurityNumber, value: safe(patient.socialSecurityNumber) },
+      { key: 'address', label: labels.address, value: safe(patient.address) },
+      { key: 'emergencyContactName', label: labels.emergencyContactName, value: safe(patient.emergencyContact?.name) },
+      { key: 'emergencyContactPhone', label: labels.emergencyContactPhone, value: safe(patient.emergencyContact?.phone) },
     ];
   };
 

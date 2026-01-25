@@ -13,7 +13,7 @@ from helpers.env_functions.load_env_file import load_env_file
 
 from .handle_down import remove_volume
 
-def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False, location='paris'):
+def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no_cache=False, location='lyon'):
     """
     Objective:
     Orchestrates backend operations including environment verification, Docker container management, database import for multiple databases, and backend readiness verification.
@@ -28,7 +28,7 @@ def handle_back(backend_folder, db_configs, back_app_container_name, volumes, no
     - back_app_container_name (str): Name of the backend application Docker container.
     - volumes (List[str]): List of Docker volumes to optionally remove when no_cache=True.
     - no_cache (bool): If True, rebuild Docker images without cache and remove volumes. Defaults to False.
-    - location (str): Default location for the backend ('paris' or 'lyon'). Defaults to 'paris'.
+    - location (str): Default location for the backend ('paris' or 'lyon'). Defaults to 'lyon'.
 
     Behavior:
     - Changes the working directory to the backend folder.
