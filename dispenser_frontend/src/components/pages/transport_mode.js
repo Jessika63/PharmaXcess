@@ -84,7 +84,10 @@ function TransportMode() {
   }, [focusedIndex]);
 
   const handleTransportSelect = (mode) => {
-    navigate(`/directions-map?lat=${pharmacy.latitude}&lon=${pharmacy.longitude}&name=${encodeURIComponent(pharmacy.name)}&transport=${mode}`);
+    const selected = transportModes.find(t => t.mode === mode);
+    const estimate = selected ? selected.getTime(distance) : null;
+    const qs = `lat=${pharmacy.latitude}&lon=${pharmacy.longitude}&name=${encodeURIComponent(pharmacy.name)}&transport=${mode}${estimate ? `&estimate=${estimate}` : ''}`;
+    navigate(`/directions-map?${qs}`); 
   };
 
   // Calculate walking time for pharmacy card
