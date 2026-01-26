@@ -9,10 +9,20 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Linking,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Camera, CameraView } from 'expo-camera';
+import qrApi from '../../utils/api/qr';
+// File handling and sharing
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import config from '../../config';
+import logger from '../../utils/logger';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import createStyles from '../../styles/ProfilPatients.style';
@@ -127,243 +137,15 @@ export default function ProfilPatients(): React.JSX.Element {
 
   // Mock currentDoctorId - in real app, this would come from auth context
   const currentDoctorId = 'DR001';
+  // In production the documents list must come from backend; start empty and populate via API
+  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([]);
 
-  // Mock data for professional documents
-  const [professionalDocuments, setProfessionalDocuments] = useState<ProfessionalDocument[]>([
-    {
-      id: 'PDOC001',
-      name: 'Résultats analyses sanguines - Jean Dupont',
-      type: 'Analyses biologiques',
-      dateAdded: '28/10/2023',
-      size: '1.8 MB',
-      uri: 'documents/analyses_jean_dupont.pdf',
-      doctorId: 'DR001',
-      patientId: 'P001'
-    },
-    {
-      id: 'PDOC002',
-      name: 'Ordonnance Metformine - Jean Dupont',
-      type: 'Prescription',
-      dateAdded: '15/10/2023',
-      size: '0.5 MB',
-      uri: 'documents/ordonnance_jean_dupont.pdf',
-      doctorId: 'DR001',
-      patientId: 'P001'
-    },
-    {
-      id: 'PDOC003',
-      name: 'Compte-rendu consultation - Marie Curie',
-      type: 'Compte-rendu médical',
-      dateAdded: '20/10/2023',
-      size: '1.2 MB',
-      uri: 'documents/consultation_marie_curie.pdf',
-      doctorId: 'DR001',
-      patientId: 'P002'
-    }
-  ]);
+  // Consultation notes should come from backend; start empty
+  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([]);
 
-  // Mock data for consultation notes
-  const [consultationNotes, setConsultationNotes] = useState<ConsultationNote[]>([
-    {
-      id: 'NOTE001',
-      patientId: 'P001',
-      doctorId: 'DR001',
-      consultationDate: '28/10/2023',
-      content: 'Patient présente une amélioration de sa glycémie. Poids stable. Recommandation de poursuivre le traitement actuel et surveiller la tension artérielle.',
-      createdAt: '28/10/2023 14:30'
-    },
-    {
-      id: 'NOTE002',
-      patientId: 'P001',
-      doctorId: 'DR001',
-      consultationDate: '15/10/2023',
-      content: 'Consultation de contrôle diabète. HbA1c à 7.2%. Ajustement posologie Metformine. Patient motivé pour changements alimentaires.',
-      createdAt: '15/10/2023 10:15'
-    },
-    {
-      id: 'NOTE003',
-      patientId: 'P002',
-      doctorId: 'DR001',
-      consultationDate: '20/10/2023',
-      content: 'Première consultation pour migraines. Fréquence: 3-4 épisodes/mois. Prescrit Sumatriptan. RDV de suivi dans 1 mois.',
-      createdAt: '20/10/2023 16:45'
-    }
-  ]);
-
-  // Mock data - patients
-  const [patients, setPatients] = useState<Patient[]>([
-    {
-      id: 'P001',
-      firstName: 'Jean',
-      lastName: 'Dupont',
-      age: 45,
-      dateOfBirth: '15/03/1979',
-      phone: '06 12 34 56 78',
-      email: 'jean.dupont@email.com',
-      address: '123 Rue de la Paix, 75001 Paris',
-      weight: '75 kg',
-      height: '1m78',
-      bloodType: 'A+',
-      socialSecurityNumber: '1 79 03 75 001 234 56',
-      medicalHistory: ['Hypertension artérielle', 'Diabète type 2'],
-      allergies: ['Pénicilline', 'Arachides'],
-      currentMedications: ['Metformine 850mg', 'Ramipril 5mg'],
-      hospitalizations: [
-        {
-          id: 'H001',
-          reason: 'Chirurgie cardiaque',
-          hospital: 'Hôpital Pitié-Salpêtrière',
-          service: 'Cardiologie',
-          doctor: 'Dr. Martin',
-          date: '15/06/2022',
-          duration: '5 jours'
-        },
-        {
-          id: 'H002',
-          reason: 'Contrôle diabète',
-          hospital: 'Clinique Saint-Louis',
-          service: 'Endocrinologie',
-          doctor: 'Dr. Dubois',
-          date: '12/03/2023',
-          duration: '2 jours'
-        }
-      ],
-      doctors: [
-        {
-          id: 'D001',
-          name: 'Dr. Martin Dubois',
-          specialty: 'Médecine générale',
-          phone: '01 45 67 89 12',
-          email: 'martin.dubois@medical.fr',
-          address: 'Cabinet médical Saint-Antoine, 15 rue de la Santé, 75014 Paris'
-        },
-        {
-          id: 'D002',
-          name: 'Dr. Sophie Lemaire',
-          specialty: 'Cardiologie',
-          phone: '01 56 09 20 00',
-          email: 'sophie.lemaire@hopital-pompidou.fr',
-          address: 'Hôpital Européen Georges Pompidou, 20 rue Leblanc, 75015 Paris'
-        }
-      ],
-      emergencyContact: {
-        name: 'Marie Dupont',
-        phone: '06 98 76 54 32',
-        relationship: 'Épouse'
-      }
-    },
-    {
-      id: 'P002',
-      firstName: 'Marie',
-      lastName: 'Curie',
-      age: 38,
-      dateOfBirth: '22/08/1986',
-      phone: '06 87 65 43 21',
-      email: 'marie.curie@email.com',
-      address: '456 Avenue de la Science, 75005 Paris',
-      weight: '62 kg',
-      height: '1m65',
-      bloodType: 'O-',
-      socialSecurityNumber: '2 86 08 75 005 678 90',
-      medicalHistory: ['Migraine chronique', 'Anémie'],
-      allergies: ['Aspirine'],
-      currentMedications: ['Sumatriptan 50mg', 'Fer sulfate'],
-      hospitalizations: [
-        {
-          id: 'H003',
-          reason: 'Traitement de l\'anémie',
-          hospital: 'Hôpital Cochin',
-          service: 'Hématologie',
-          doctor: 'Dr. Laurent',
-          date: '08/09/2023',
-          duration: '3 jours'
-        }
-      ],
-      doctors: [
-        {
-          id: 'D003',
-          name: 'Dr. Claire Laurent',
-          specialty: 'Hématologie',
-          phone: '01 58 41 25 00',
-          email: 'claire.laurent@hopital-cochin.fr',
-          address: 'Hôpital Cochin, 27 rue du Faubourg Saint-Jacques, 75014 Paris'
-        },
-        {
-          id: 'D004',
-          name: 'Dr. Michel Petit',
-          specialty: 'Neurologie',
-          phone: '01 42 16 00 00',
-          email: 'michel.petit@pitie-salpetriere.fr',
-          address: 'Hôpital Pitié-Salpêtrière, 47-83 Boulevard de l\'Hôpital, 75013 Paris'
-        }
-      ],
-      emergencyContact: {
-        name: 'Pierre Curie',
-        phone: '06 11 22 33 44',
-        relationship: 'Époux'
-      }
-    },
-    {
-      id: 'P003',
-      firstName: 'Pierre',
-      lastName: 'Martin',
-      age: 62,
-      dateOfBirth: '10/12/1962',
-      phone: '06 55 44 33 22',
-      email: 'pierre.martin@email.com',
-      address: '789 Boulevard Saint-Germain, 75006 Paris',
-      weight: '82 kg',
-      height: '1m75',
-      bloodType: 'B+',
-      socialSecurityNumber: '1 62 12 75 006 789 01',
-      medicalHistory: ['Arthrose', 'Cholestérol élevé'],
-      allergies: ['Aucune allergie connue'],
-      currentMedications: ['Atorvastatine 20mg', 'Glucosamine'],
-      hospitalizations: [
-        {
-          id: 'H004',
-          reason: 'Prothèse de hanche',
-          hospital: 'Hôpital Saint-Antoine',
-          service: 'Orthopédie',
-          doctor: 'Dr. Rousseau',
-          date: '20/01/2023',
-          duration: '7 jours'
-        },
-        {
-          id: 'H005',
-          reason: 'Bilan cardiologique',
-          hospital: 'Clinique du Faubourg',
-          service: 'Cardiologie',
-          doctor: 'Dr. Moreau',
-          date: '05/11/2023',
-          duration: '1 jour'
-        }
-      ],
-      doctors: [
-        {
-          id: 'D005',
-          name: 'Dr. Jean Rousseau',
-          specialty: 'Orthopédie',
-          phone: '01 49 28 20 00',
-          email: 'jean.rousseau@st-antoine.fr',
-          address: 'Hôpital Saint-Antoine, 184 rue du Faubourg Saint-Antoine, 75012 Paris'
-        },
-        {
-          id: 'D006',
-          name: 'Dr. Anne Moreau',
-          specialty: 'Cardiologie',
-          phone: '01 45 75 43 21',
-          email: 'anne.moreau@clinique-faubourg.fr',
-          address: 'Clinique du Faubourg, 8 rue de la Roquette, 75011 Paris'
-        }
-      ],
-      emergencyContact: {
-        name: 'Sophie Martin',
-        phone: '06 77 88 99 00',
-        relationship: 'Fille'
-      }
-    }
-  ]);
+  // Patients list must come from backend for professionals; start empty
+  const [patients, setPatients] = useState<Patient[]>([]);
+  
 
   const requestCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -384,47 +166,127 @@ export default function ProfilPatients(): React.JSX.Element {
     setShowScanner(false);
     
     try {
-      // Try to parse QR code data as JSON
-      const patientData = JSON.parse(data);
-      
-      // Check if it's a valid patient QR code
-      if (patientData.type === 'patient_profile' && patientData.patientId) {
-        // Find existing patient or create new one
-        const existingPatient = patients.find(p => p.id === patientData.patientId);
-        
-        if (existingPatient) {
-          setSelectedPatient(existingPatient);
-        } else {
-          // Create new patient from QR data
-        const newPatient: Patient = {
-          id: patientData.id,
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
-          age: patientData.age,
-          dateOfBirth: patientData.dateOfBirth,
-          phone: patientData.phone,
-          email: patientData.email,
-          address: patientData.address,
-          weight: patientData.weight || 'Non renseigné',
-          height: patientData.height || 'Non renseigné',
-          bloodType: patientData.bloodType || 'Non renseigné',
-          socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
-          medicalHistory: patientData.medicalHistory || [],
-          allergies: patientData.allergies || [],
-          currentMedications: patientData.currentMedications || [],
-          hospitalizations: patientData.hospitalizations || [],
-          doctors: patientData.doctors || [],
-          emergencyContact: patientData.emergencyContact || {
-            name: '',
-            phone: '',
-            relationship: ''
+      // Prefer server-side parsing: send raw QR content to backend
+      (async () => {
+        try {
+          const res = await qrApi.readProfileQrContent(data, 'medecin');
+          if (res.ok && res.data && res.data.profile) {
+            const p = res.data.profile;
+            // Map backend fields to local Patient type conservatively
+            const mapped: Patient = {
+              id: String(p.id || p.user_id || p.utilisateur_id || (p.telephone || 'unknown')),
+              firstName: p.prenom || p.firstName || p.nom || '',
+              lastName: p.nom || p.lastName || '',
+              age: p.age ? Number(p.age) : (p.date_of_birth ? new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : 0),
+              dateOfBirth: p.date_de_naissance || p.dateOfBirth || p.dateOfBirth || '',
+              phone: p.telephone || p.phone || '',
+              email: p.email || '',
+              address: p.adresse || p.address || '',
+              weight: (p.poids && String(p.poids)) || 'Non renseigné',
+              height: (p.taille && String(p.taille)) || 'Non renseigné',
+              bloodType: p.groupe_sanguin || p.bloodType || 'Non renseigné',
+              socialSecurityNumber: p.numero_securite_sociale || p.socialSecurityNumber || 'Non renseigné',
+              medicalHistory: p.medical_history || p.diseases || [],
+              allergies: p.allergies || [],
+              currentMedications: p.currentMedications || p.traitements || [],
+              hospitalizations: p.hospitalisations || [],
+              doctors: p.doctors || [],
+              emergencyContact: p.emergencyContact || { name: '', phone: '', relationship: '' }
+            };
+
+            const existing = patients.find(pt => pt.id === mapped.id);
+            if (existing) {
+              setSelectedPatient(existing);
+            } else {
+              setPatients(prev => [mapped, ...prev]);
+              setSelectedPatient(mapped);
+            }
+            return;
           }
-        };          setPatients(prev => [newPatient, ...prev]);
-          setSelectedPatient(newPatient);
+
+          // If server didn't return a profile, fallback to local parsing
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const existingPatient = patients.find(p => p.id === patientData.patientId);
+              if (existingPatient) {
+                setSelectedPatient(existingPatient);
+              } else {
+                const newPatient: Patient = {
+                  id: patientData.id,
+                  firstName: patientData.firstName,
+                  lastName: patientData.lastName,
+                  age: patientData.age,
+                  dateOfBirth: patientData.dateOfBirth,
+                  phone: patientData.phone,
+                  email: patientData.email,
+                  address: patientData.address,
+                  weight: patientData.weight || 'Non renseigné',
+                  height: patientData.height || 'Non renseigné',
+                  bloodType: patientData.bloodType || 'Non renseigné',
+                  socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                  medicalHistory: patientData.medicalHistory || [],
+                  allergies: patientData.allergies || [],
+                  currentMedications: patientData.currentMedications || [],
+                  hospitalizations: patientData.hospitalizations || [],
+                  doctors: patientData.doctors || [],
+                  emergencyContact: patientData.emergencyContact || {
+                    name: '',
+                    phone: '',
+                    relationship: ''
+                  }
+                };
+                setPatients(prev => [newPatient, ...prev]);
+                setSelectedPatient(newPatient);
+                return;
+              }
+            }
+          } catch (e) {
+            // not JSON or fallback failed
+          }
+
+          Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
+        } catch (err: any) {
+          console.error('Scan error:', err);
+          // Try local parse as last resort
+          try {
+            const patientData = JSON.parse(data);
+            if (patientData.type === 'patient_profile' && patientData.patientId) {
+              const newPatient: Patient = {
+                id: patientData.id,
+                firstName: patientData.firstName,
+                lastName: patientData.lastName,
+                age: patientData.age,
+                dateOfBirth: patientData.dateOfBirth,
+                phone: patientData.phone,
+                email: patientData.email,
+                address: patientData.address,
+                weight: patientData.weight || 'Non renseigné',
+                height: patientData.height || 'Non renseigné',
+                bloodType: patientData.bloodType || 'Non renseigné',
+                socialSecurityNumber: patientData.socialSecurityNumber || 'Non renseigné',
+                medicalHistory: patientData.medicalHistory || [],
+                allergies: patientData.allergies || [],
+                currentMedications: patientData.currentMedications || [],
+                hospitalizations: patientData.hospitalizations || [],
+                doctors: patientData.doctors || [],
+                emergencyContact: patientData.emergencyContact || {
+                  name: '',
+                  phone: '',
+                  relationship: ''
+                }
+              };
+              setPatients(prev => [newPatient, ...prev]);
+              setSelectedPatient(newPatient);
+              return;
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
         }
-      } else {
-        Alert.alert('QR Code invalide', 'Ce QR code ne correspond pas à un profil patient valide.');
-      }
+      })();
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de lire ce QR code. Assurez-vous qu\'il s\'agit d\'un QR code de profil patient.');
     }
@@ -618,7 +480,7 @@ export default function ProfilPatients(): React.JSX.Element {
       title: 'Antécédents familiaux',
       icon: 'people-outline',
       section: 'antecedents',
-      data: ['Diabète familial', 'Maladies cardiovasculaires']
+      data: ((patient as any).familyHistory && (patient as any).familyHistory.length > 0) ? (patient as any).familyHistory : ['Aucun antécédent familial']
     },
     {
       title: 'Médecins',
@@ -716,25 +578,146 @@ export default function ProfilPatients(): React.JSX.Element {
   };
 
   const handleViewDocument= (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      document.name,
-      `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
-      [
-        { text: 'Fermer', style: 'cancel'},
-        {
-          text: 'Télécharger', 
-          onPress: () => handleDownloadDocument(document) 
-        }
-      ]
-    );
+    (async () => {
+      Alert.alert(
+        document.name,
+        `Type: ${document.type}\nTaille: ${document.size}\nAjouté le: ${document.dateAdded}`,
+        [
+          { text: 'Fermer', style: 'cancel'},
+          {
+            text: 'Télécharger',
+            onPress: async () => {
+              handleDownloadDocument(document);
+            }
+          }
+        ]
+      );
+    })();
   };
 
-  const handleDownloadDocument = (document: ProfessionalDocument) => { 
-    Alert.alert( 
-      'Téléchargement', 
-      `Le document "${document.name}" sera téléchargé prochainement.`, 
-      [{ text: 'OK' }] 
-    );
+  const handleDownloadDocument = async (document: ProfessionalDocument) => {
+    try {
+      const filenameBase = document.name ? document.name.replace(/[^a-z0-9.\-_]/gi, '_') : `document_${document.id}`;
+      const filename = /\.[a-zA-Z0-9]+$/.test(filenameBase) ? filenameBase : `${filenameBase}.pdf`;
+
+      // Determine source URL or local uri
+      let source = document.uri || '';
+      if (!/^https?:\/\//.test(source) && !source.startsWith('file://')) {
+        // try constructing a backend URL (best-effort)
+        source = `${config.backendUrl.replace(/\/$/, '')}/documents/${document.patientId}/${document.id}`;
+      }
+
+      const cachePath = `${FileSystem.cacheDirectory}${filename}`;
+
+      // Download to cache first
+      const downloadRes = await FileSystem.downloadAsync(source, cachePath);
+
+      // Try to move to Downloads directory (Android)
+      // Note: DownloadDirectoryPath may be undefined on iOS or some environments
+      // Use (FileSystem as any) to access legacy constant without TS complaints
+      const downloadsDir = (FileSystem as any).DownloadDirectoryPath as string | undefined;
+      if (!downloadsDir) {
+        // If no direct Downloads directory is available (common in Expo Go), open URL in browser to let system download
+        if (/^https?:\/\//.test(source)) {
+          Linking.openURL(source).catch((err) => {
+            console.warn('[Download] Linking.openURL failed', err);
+          });
+          return;
+        }
+      }
+
+      if (downloadsDir) {
+        const targetPath = `${downloadsDir}/${filename}`;
+        try {
+          // On Android, request WRITE_EXTERNAL_STORAGE at runtime for older Android versions
+          if (Platform.OS === 'android') {
+            try {
+              const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                {
+                  title: 'Permission d\'écriture',
+                  message: 'L\'application a besoin d\'écrire dans Téléchargements pour sauvegarder le fichier.',
+                  buttonNeutral: 'Demander plus tard',
+                  buttonNegative: 'Annuler',
+                  buttonPositive: 'OK',
+                }
+              );
+              if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                console.warn('[Download] WRITE_EXTERNAL_STORAGE non accordée');
+              }
+            } catch (permErr) {
+              console.warn('[Download] Permission request failed', permErr);
+            }
+          }
+
+          // moveAsync may fail due to permission restrictions; attempt it
+          await FileSystem.moveAsync({ from: downloadRes.uri, to: targetPath });
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans Mes téléchargements: ${filename}`);
+          return;
+        } catch (err) {
+          // fallback to MediaLibrary / Sharing below
+          console.warn('[Download] Move to Downloads failed, falling back:', err);
+        }
+      }
+
+      // Try to save to media library (may prompt for permission)
+      try {
+        const perm = await MediaLibrary.requestPermissionsAsync();
+        if (perm.status === 'granted') {
+          const asset = await MediaLibrary.createAssetAsync(downloadRes.uri);
+          // Try to add to 'Download' album if possible
+          const albumName = 'Download';
+          let album = await MediaLibrary.getAlbumAsync(albumName);
+          if (!album) {
+            try {
+              album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
+            } catch (e) {
+              console.warn('[Download] createAlbumAsync failed', e);
+            }
+          } else {
+            try {
+              await MediaLibrary.addAssetsToAlbumAsync([asset], album.id, false);
+            } catch (e) {
+              console.warn('[Download] addAssetsToAlbumAsync failed', e);
+            }
+          }
+
+          Alert.alert('Téléchargement terminé', `Fichier enregistré dans la bibliothèque: ${filename}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('[Download] MediaLibrary save failed', e);
+      }
+
+      // Fallback: present share dialog so user can save manually (iOS / limited Android)
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(downloadRes.uri, { dialogTitle: `Enregistrer ${filename}` });
+        return;
+      }
+
+      // If sharing isn't available, try opening the document URL in the browser
+      try {
+        if (/^https?:\/\//.test(source)) {
+          Alert.alert(
+            'Téléchargement externe',
+            'Impossible d\'enregistrer automatiquement sur l\'appareil. Ouvrir le document dans le navigateur pour le télécharger dans le dossier Téléchargements ?',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Ouvrir', onPress: () => { Linking.openURL(source).catch((err) => { console.warn('[Download] Linking.openURL failed', err); }); } }
+            ]
+          );
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Last resort: notify user where the cached file is located
+      Alert.alert('Téléchargement', `Le fichier est disponible dans le cache: ${downloadRes.uri}`);
+    } catch (err: any) {
+      console.error('handleDownloadDocument error', err);
+      Alert.alert('Erreur', `Impossible de télécharger le document: ${String(err)}`);
+    }
   };
 
   // Functions for note management 

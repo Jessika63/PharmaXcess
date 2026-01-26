@@ -64,6 +64,58 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
       marginBottom: 16,
       borderRadius: 10,
     },
+    // New styles for AddOrdonnance preview screen
+    previewScreen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerBack: {
+      position: 'absolute',
+      top: 12,
+      left: 12,
+      zIndex: 20,
+    },
+    previewWrapper: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingTop: 0,
+      paddingBottom: 0,
+      marginTop: -80, // move preview further up
+      marginBottom: 24, // extra space below preview
+    },
+    previewImage: {
+      width: '100%',
+      height: undefined,
+      aspectRatio: 3 / 4,
+      maxWidth: 600,
+      borderRadius: 8,
+      resizeMode: 'contain',
+    },
+    bottomActionContainer: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 40, // lower buttons much closer to footer
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: 'transparent',
+      zIndex: 30,
+    },
+    footer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      padding: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
     buttonContainer: {
       position: 'absolute',
       bottom: 0,

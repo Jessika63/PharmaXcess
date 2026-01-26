@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type Hospitalization = { 
@@ -19,7 +20,7 @@ type Hospitalization = {
     department: string; 
     hospital: string; 
     doctor: string; 
-    medications: string; 
+    medications?: string;
 }; 
 
 type HospitalizationsProps = { 
@@ -34,29 +35,8 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
     const styles = createStyles(colors, fontScale);
     const modalStyles = createModalStyles(colors, fontScale);
 
-    // Hospitalizations predefined for the main profile 
-    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([
-        {
-            name: 'Opération de l\'appendice',
-            description: 'Appendicectomie en urgence suite à une appendicite aiguë.',
-            beginDate: '15/03/2022',
-            endDate: '18/03/2022',
-            department: 'Chirurgie digestive',
-            hospital: 'Hôpital Saint-Louis',
-            doctor: 'Dr. Martin',
-            medications: 'Antibiotiques, antalgiques, anti-inflammatoires',
-        },
-        {
-            name: 'Hospitalisation COVID-19',
-            description: 'Hospitalisation pour complications respiratoires liées au COVID-19.',
-            beginDate: '10/01/2021',
-            endDate: '25/01/2021',
-            department: 'Pneumologie',
-            hospital: 'Hôpital Bichat',
-            doctor: 'Dr. Durand',
-            medications: 'Oxygénothérapie, corticoïdes, anticoagulants',
-        },
-    ]);
+    // Start empty: hospitalizations will be loaded from backend/profile
+    const [hospitalizations, setHospitalizations] = useState<Hospitalization[]>([]);
 
     const [isModalVisible, setModalVisible] = useState<boolean>(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -110,8 +90,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             !newHospitalization.description ||
             !newHospitalization.department ||
             !newHospitalization.hospital ||
-            !newHospitalization.doctor ||
-            !newHospitalization.medications
+            !newHospitalization.doctor
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs pour ajouter une nouvelle hospitalisation.');
             return;
@@ -123,7 +102,57 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             endDate: `${selectedEndDay.toString().padStart(2, '0')}/${selectedEndMonth.toString().padStart(2, '0')}/${selectedEndYear}`,
         };
     
-        setHospitalizations([newHospitalizationData, ...hospitalizations]);
+        // Try to persist directly to backend for server profiles, otherwise fallback to local
+        (async () => {
+            const numericCandidate = Number(currentProfile?.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile?.id);
+            if (isServerProfile) {
+                const payload: any = {
+                    utilisateur_id: numericCandidate,
+                    type: newHospitalizationData.name,
+                    description: newHospitalizationData.description || null,
+                    dates: `${newHospitalizationData.beginDate} - ${newHospitalizationData.endDate}`,
+                    service: newHospitalizationData.department || null,
+                    hopital: newHospitalizationData.hospital || null,
+                    medecin: newHospitalizationData.doctor || null,
+                };
+                try {
+                    const res = await profileApi.createHospitalization(payload);
+                    if (res.ok) {
+                        const list = await profileApi.getHospitalizations();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = (list.data as any[]).map(h => {
+                                const datesRaw = h.dates || h.date || '';
+                                let begin = '';
+                                let end = '';
+                                if (datesRaw && typeof datesRaw === 'string') {
+                                    const parts = datesRaw.split(' - ');
+                                    if (parts.length === 2) {
+                                        begin = parts[0].trim();
+                                        end = parts[1].trim();
+                                    } else {
+                                        begin = datesRaw.trim();
+                                    }
+                                }
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
+                            });
+                            setHospitalizations(mapped);
+                            // done
+                            return;
+                        }
+                    } else {
+                        console.warn('createHospitalization failed', res);
+                        Alert.alert('Erreur serveur', res.error || `Statut ${res.status}`);
+                    }
+                } catch (e) {
+                    console.warn('createHospitalization error', e);
+                    Alert.alert('Erreur', "Impossible de contacter le serveur. L'hospitalisation sera ajoutée localement.");
+                }
+            }
+            // fallback to local update
+            setHospitalizations([newHospitalizationData, ...hospitalizations]);
+        })();
+
         setNewHospitalization({
             name: '',
             description: '',
@@ -132,7 +161,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             department: '',
             hospital: '',
             doctor: '',
-            medications: '',
         });
         setModalVisible(false);
         setSelectedBeginYear(2024);
@@ -171,8 +199,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             !editedHospitalization.description ||
             !editedHospitalization.department ||
             !editedHospitalization.hospital ||
-            !editedHospitalization.doctor ||
-            !editedHospitalization.medications
+            !editedHospitalization.doctor
         ) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
@@ -180,12 +207,57 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
         if (editingIndex !== null) {
             const updatedHospitalizations = [...hospitalizations];
-            updatedHospitalizations[editingIndex] = {
+            const updated = {
                 ...editedHospitalization,
                 beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
                 endDate: `${editSelectedEndDay.toString().padStart(2, '0')}/${editSelectedEndMonth.toString().padStart(2, '0')}/${editSelectedEndYear}`,
             };
-            setHospitalizations(updatedHospitalizations);
+
+            // If the original record has an id (came from backend), call PUT to update
+            const original = hospitalizations[editingIndex] as any;
+            const recordId = original && (original.id || original.hospitalisation_id || original.hospitalization_id);
+                    if (recordId) {
+                (async () => {
+                    const payload: any = {
+                        type: updated.name,
+                        description: updated.description,
+                        dates: `${updated.beginDate} - ${updated.endDate}`,
+                        service: updated.department,
+                        hopital: updated.hospital,
+                        medecin: updated.doctor,
+                    };
+                    const res = await profileApi.updateHospitalization(recordId, payload);
+                    if (res.ok) {
+                        const list = await profileApi.getHospitalizations();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = (list.data as any[]).map(h => {
+                                const datesRaw = h.dates || h.date || '';
+                                let begin = '';
+                                let end = '';
+                                if (datesRaw && typeof datesRaw === 'string') {
+                                    const parts = datesRaw.split(' - ');
+                                    if (parts.length === 2) {
+                                        begin = parts[0].trim();
+                                        end = parts[1].trim();
+                                    } else {
+                                        begin = datesRaw.trim();
+                                    }
+                                }
+                                return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
+                            });
+                            setHospitalizations(mapped);
+                        }
+                    } else {
+                        // backend failed -> local update
+                        updatedHospitalizations[editingIndex] = updated;
+                        setHospitalizations(updatedHospitalizations);
+                    }
+                })();
+            } else {
+                // local-only record
+                updatedHospitalizations[editingIndex] = updated;
+                setHospitalizations(updatedHospitalizations);
+            }
         }
 
         setEditModalVisible(false);
@@ -204,8 +276,34 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
-                        setHospitalizations(updatedHospitalizations);
+                        // Try backend deletion via hook; fallback to local removal
+                        (async () => {
+                            const success = await removeHospitalization(hospitalization);
+                            if (success) {
+                                const res = await profileApi.getHospitalizations();
+                                if (res.ok && Array.isArray(res.data)) {
+                                    const mapped = (res.data as any[]).map(h => {
+                                        const datesRaw = h.dates || h.date || '';
+                                        let begin = '';
+                                        let end = '';
+                                        if (datesRaw && typeof datesRaw === 'string') {
+                                            const parts = datesRaw.split(' - ');
+                                            if (parts.length === 2) {
+                                                begin = parts[0].trim();
+                                                end = parts[1].trim();
+                                            } else {
+                                                begin = datesRaw.trim();
+                                            }
+                                        }
+                                        return { id: h.id, name: h.type || h.name || '', description: h.description || '', beginDate: begin, endDate: end, department: h.service || '', hospital: h.hopital || h.hospital || '', doctor: h.medecin || '' } as Hospitalization;
+                                    });
+                                    setHospitalizations(mapped);
+                                }
+                            } else {
+                                const updatedHospitalizations = hospitalizations.filter((_, i) => i !== index);
+                                setHospitalizations(updatedHospitalizations);
+                            }
+                        })();
                     }
                 }
             ]
@@ -228,8 +326,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
             endDate: `${selectedEndDay.toString().padStart(2, '0')}/${selectedEndMonth.toString().padStart(2, '0')}/${selectedEndYear}`,
             department: newHospitalization.department || '',
             hospital: newHospitalization.hospital || '',
-            doctor: newHospitalization.doctor || '',
-            medications: newHospitalization.medications || ''
+            doctor: newHospitalization.doctor || ''
         };
 
         const success = await addHospitalization(JSON.stringify(hospitalizationData));
@@ -244,7 +341,6 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                 department: '',
                 hospital: '',
                 doctor: '',
-                medications: '',
             });
             setModalVisible(false);
             setSelectedBeginYear(2024);
@@ -303,6 +399,47 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
     // Determine if it's the main profile 
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
+    // Load hospitalizations from backend when opening the tab for a server-side profile
+    useEffect(() => {
+        const load = async () => {
+            if (!currentProfile) return;
+            const numericCandidate = Number(currentProfile.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+            if (!isServerProfile) return;
+
+            const res = await profileApi.getHospitalizations();
+            if (res.ok && Array.isArray(res.data)) {
+                const mapped = (res.data as any[]).map(h => {
+                    const datesRaw = h.dates || h.date || '';
+                    let begin = '';
+                    let end = '';
+                    if (datesRaw && typeof datesRaw === 'string') {
+                        const parts = datesRaw.split(' - ');
+                        if (parts.length === 2) {
+                            begin = parts[0].trim();
+                            end = parts[1].trim();
+                        } else {
+                            // fallback: single date stored
+                            begin = datesRaw.trim();
+                        }
+                    }
+                    return {
+                        id: h.id,
+                        name: h.type || h.name || '',
+                        description: h.description || '',
+                        beginDate: begin,
+                        endDate: end,
+                        department: h.service || '',
+                        hospital: h.hopital || h.hospital || '',
+                        doctor: h.medecin || ''
+                    } as Hospitalization;
+                });
+                setHospitalizations(mapped);
+            }
+        };
+        load();
+    }, [currentProfile?.id]);
 
     return ( 
         <View style={[styles.container, { flex: 1 }]}> 
@@ -367,10 +504,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                         <Text style={styles.bold}>Médecin: </Text>
                                         {hospitalization.doctor}
                                     </Text>
-                                    <Text style={styles.cardText}>
-                                        <Text style={styles.bold}>Traitements: </Text>
-                                        {hospitalization.medications}
-                                    </Text>
+
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -394,8 +528,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                             endDate: '',
                                             department: '',
                                             hospital: '',
-                                            doctor: '',
-                                            medications: ''
+                                            doctor: ''
                                         };
                                     }
                                     
@@ -446,12 +579,7 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                                                     {hospitalization.doctor}
                                                 </Text>
                                             )}
-                                            {hospitalization.medications && (
-                                                <Text style={styles.cardText}>
-                                                    <Text style={styles.bold}>Traitements: </Text>
-                                                    {hospitalization.medications}
-                                                </Text>
-                                            )}
+                                            
                                         </View>
                                     );
                                 })}
@@ -487,52 +615,71 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
 
             {/* Modal for adding a new hospitalization - same for all profiles */} 
             <Modal visible={isModalVisible} animationType="slide">
-                <View style={modalStyles.modalContainer}>
-                    <ScrollView
-                        contentContainerStyle={modalStyles.scrollContent}
-                        showsVerticalScrollIndicator={true}
-                        bounces={true}
-                    > 
-                        <Text style={modalStyles.modalTitle}>
-                            Ajouter une hospitalisation 
-                        </Text>
+                <ScrollView
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        backgroundColor: colors.background,
+                        padding: 20
+                    }}
+                    keyboardShouldPersistTaps="handled"
+                > 
+                    <Text style={[styles.cardText, { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }]}> 
+                        Ajouter une hospitalisation 
+                    </Text>
 
-                        <Text style={modalStyles.label}>Nom/Motif</Text>
-                        <TextInput 
-                            placeholder="Nom ou motif de l'hospitalisation" 
-                            value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
-                            onChangeText={(text) => {
-                                if (isMainProfile) {
-                                    setNewHospitalization({ ...newHospitalization, name: text })
-                                } else {
-                                    setNewHospitalizationSimple(text);
-                                    // For other profiles, also update newHospitalization.name for consistency
-                                    setNewHospitalization({ ...newHospitalization, name: text });
-                                }
-                            }}
-                            style={modalStyles.input}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Nom/Motif" 
+                        value={isMainProfile ? newHospitalization.name : newHospitalizationSimple}
+                        onChangeText={(text: string) => {
+                            if (isMainProfile) {
+                                setNewHospitalization({ ...newHospitalization, name: text })
+                            } else {
+                                setNewHospitalizationSimple(text);
+                                // For other profiles, also update for consistency
+                                setNewHospitalization({ ...newHospitalization, name: text });
+                            }
+                        }}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text
+                        }}
+                        placeholderTextColor={colors.text + '80'} 
+                    />
 
-                        <Text style={modalStyles.label}>Description</Text>
-                        <TextInput 
-                            placeholder="Description détaillée" 
-                            value={newHospitalization.description}
-                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, description: text })}
-                            style={modalStyles.inputMultiline}
-                            multiline
-                            numberOfLines={3}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Description" 
+                        value={newHospitalization.description}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, description: text })}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: colors.primary,
+                            borderRadius: 10,
+                            padding: 15,
+                            marginBottom: 15,
+                            fontSize: 16,
+                            color: colors.text,
+                            minHeight: 80
+                        }}
+                        multiline
+                        placeholderTextColor={colors.text + '80'} 
+                    />
 
-                        <Text style={modalStyles.label}>Date d'entrée</Text>
+                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
+                        Date d'entrée
+                    </Text>
+
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
                         <View style={{ flex: 1, marginRight: 5 }}> 
                             <CustomPicker 
                                 label="Jour" 
                                 selectedValue={selectedBeginDay} 
-                                onValueChange={(value) => setSelectedBeginDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
                                 placeholder="01"
                             />
                         </View>
@@ -540,8 +687,8 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Mois" 
                                 selectedValue={selectedBeginMonth} 
-                                onValueChange={(value) => setSelectedBeginMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
                                 placeholder="01"
                             />
                         </View>
@@ -549,21 +696,24 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Année" 
                                 selectedValue={selectedBeginYear} 
-                                onValueChange={(value) => setSelectedBeginYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
+                                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: i + 1920 }))}
                                 placeholder="2024"
                             />
                         </View>
                     </View>
 
-                    <Text style={[modalStyles.label]}>Date de sortie</Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}> 
+                    <Text style={[styles.cardText, { marginBottom: 10, fontWeight: 'bold' }]}>
+                        Date de sortie (optionnelle)
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}> 
                         <View style={{ flex: 1, marginRight: 5 }}> 
                             <CustomPicker 
                                 label="Jour" 
                                 selectedValue={selectedEndDay} 
-                                onValueChange={(value) => setSelectedEndDay(Number(value))}
-                                options={Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedEndDay(Number(value))}
+                                options={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
                                 placeholder="01"
                             />
                         </View>
@@ -571,8 +721,8 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Mois" 
                                 selectedValue={selectedEndMonth} 
-                                onValueChange={(value) => setSelectedEndMonth(Number(value))}
-                                options={Array.from({ length: 12 }, (_, i) => ({ label: (i + 1).toString(), value: (i + 1).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedEndMonth(Number(value))}
+                                options={Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
                                 placeholder="01"
                             />
                         </View>
@@ -580,91 +730,99 @@ export default function Hospitalizations ({ navigation }: HospitalizationsProps)
                             <CustomPicker 
                                 label="Année" 
                                 selectedValue={selectedEndYear} 
-                                onValueChange={(value) => setSelectedEndYear(Number(value))}
-                                options={Array.from({ length: 100 }, (_, i) => ({ label: (i + 1920).toString(), value: (i + 1920).toString() }))}
+                                onValueChange={(value: string | number) => setSelectedEndYear(Number(value))}
+                                options={Array.from({ length: 100 }, (_, i) => ({ label: `${i + 1920}`, value: i + 1920 }))}
                                 placeholder="2024"
                             />
                         </View>
                     </View>
 
-                        <Text style={modalStyles.label}>Service/Département</Text>
-                        <TextInput 
-                            placeholder="Service ou département"
-                            value={newHospitalization.department}
-                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, department: text })}
-                            style={modalStyles.input}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Service ou Département"
+                        value={newHospitalization.department}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, department: text })}
+                        style={modalStyles.input}
+                        placeholderTextColor={colors.inputBorder} 
+                    />
 
-                        <Text style={modalStyles.label}>Hôpital</Text>
-                        <TextInput 
-                            placeholder="Nom de l'hôpital"
-                            value={newHospitalization.hospital}
-                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, hospital: text })}
-                            style={modalStyles.input}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Hôpital"
+                        value={newHospitalization.hospital}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, hospital: text })}
+                        style={modalStyles.input}
+                        placeholderTextColor={colors.inputBorder} 
+                    />
 
-                        <Text style={modalStyles.label}>Médecin responsable</Text>
-                        <TextInput 
-                            placeholder="Nom du médecin responsable"
-                            value={newHospitalization.doctor}
-                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, doctor: text })}
-                            style={modalStyles.input}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Médecin responsable"
+                        value={newHospitalization.doctor}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, doctor: text })}
+                        style={modalStyles.input}
+                        placeholderTextColor={colors.inputBorder} 
+                    />
 
-                        <Text style={modalStyles.label}>Traitements</Text>
-                        <TextInput 
-                            placeholder="Traitements administrés"
-                            value={newHospitalization.medications}
-                            onChangeText={(text) => setNewHospitalization({ ...newHospitalization, medications: text })}
-                            style={modalStyles.inputMultiline}
-                            multiline
-                            numberOfLines={3}
-                            placeholderTextColor={colors.inputBorder} 
-                        />
+                    <TextInput 
+                        placeholder="Traitements (optionnel)" 
+                        value={newHospitalization.medications}
+                        onChangeText={(text: string) => setNewHospitalization({ ...newHospitalization, medications: text })}
+                        style={modalStyles.inputMultiline}
+                        multiline
+                        numberOfLines={2}
+                        placeholderTextColor={colors.inputBorder}
+                    />
 
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button} onPress={isMainProfile ? handleAddPress : handleAddSimpleHospitalization}>
-                                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                    <Text style={styles.buttonText}>Ajouter</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity 
-                                style={styles.button}
-                                onPress={() => {
-                                    setModalVisible(false);
-                                    // Reset all fields for both main and other profiles
-                                    setNewHospitalizationSimple('');
-                                    setNewHospitalization({
-                                        name: '',
-                                        description: '',
-                                        beginDate: '',
-                                        endDate: '',
-                                        department: '',
-                                        hospital: '',
-                                        doctor: '',
-                                        medications: '',
-                                    });
-                                    setSelectedBeginYear(2024);
-                                    setSelectedBeginMonth(1);
-                                    setSelectedBeginDay(1); 
-                                    setSelectedEndYear(2024);
-                                    setSelectedEndMonth(1);
-                                    setSelectedEndDay(1); 
-                                }}
-                            >
-                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
-                                    <Text style={styles.buttonText}>Annuler</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
-                </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}> 
+                        <TouchableOpacity 
+                            style={{ 
+                                flex: 1, 
+                                padding: 15, 
+                                borderRadius: 10, 
+                                backgroundColor: colors.secondary + '30',
+                                marginRight: 10,
+                                alignItems: 'center'
+                            }}
+                            onPress={() => {
+                                setModalVisible(false);
+                                setNewHospitalizationSimple('');
+                                setNewHospitalization({
+                                    name: '',
+                                    description: '',
+                                    beginDate: '',
+                                    endDate: '',
+                                    department: '',
+                                    hospital: '',
+                                    doctor: '',
+                                    medications: ''
+                                });
+                                setSelectedBeginDay(1);
+                                setSelectedBeginMonth(1);
+                                setSelectedBeginYear(2024);
+                                setSelectedEndDay(1);
+                                setSelectedEndMonth(1);
+                                setSelectedEndYear(2024);
+                            }}
+                        >
+                            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Annuler</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={{ 
+                                flex: 1, 
+                                padding: 15, 
+                                borderRadius: 10, 
+                                backgroundColor: colors.primary,
+                                marginLeft: 10, 
+                                alignItems: 'center'
+                            }}
+                            onPress={isMainProfile ? handleAddPress : handleAddSimpleHospitalization}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ajouter</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             </Modal>
 
+            
             {/* Editing modal for the main profile */} 
             {isMainProfile && ( 
                 <Modal visible={isEditModalVisible} animationType="slide">

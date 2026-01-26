@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authApi from '../utils/api/auth';
 
 type UserType = 'patient' | 'professional';
 
@@ -14,9 +15,13 @@ interface AuthContextType {
   user: User | null;
   userType: UserType | null;
   isLoading: boolean;
+  authError: { message?: string; status?: number } | null;
+  clearAuthError?: () => void;
   login: (email: string, password: string, userType?: UserType) => Promise<boolean>;
   register: (email: string, password: string, userType?: UserType, name?: string) => Promise<boolean>;
   logout: () => Promise<void>;
+    forgotPassword?: (email: string) => Promise<string | null>;
+    resetPassword?: (token: string, newPassword: string) => Promise<boolean>;
   setUserType: (type: UserType) => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -31,6 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserTypeState] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<{ message?: string; status?: number } | null>(null);
 
   useEffect(() => {
     checkAuthState();
@@ -38,16 +44,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthState = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('authToken');
-      const storedUserType = await AsyncStorage.getItem('userType');
-      
-      if (userData && token) {
-        setUser(JSON.parse(userData));
-        if (storedUserType) {
-          setUserTypeState(storedUserType as UserType);
-        }
-      }
+      // IMPORTANT: Do NOT auto-restore user from AsyncStorage to avoid automatic
+      // sign-in on app startup. Previously we restored a stored 'user' and this
+      // caused the app to appear already connected when the user opened the app
+      // after scanning a QR or returning to the app. To require an explicit
+      // login, we skip restoring the user and let the login flow set it.
+      // If you want to re-enable resume-from-storage in the future, add a
+      // secure server-side verification (e.g. call an endpoint to validate
+      // the session cookie) before trusting the local cache.
+      // Intentionally do nothing here.
     } catch (error) {
       console.error('Error checking auth state:', error);
     } finally {
@@ -55,37 +60,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string, userType?: UserType): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (email === 'test@example.com' && password === 'password') {
-        const userData: User = {
-          id: '1',
-          email: email,
-          name: 'Utilisateur Test',
-          userType: userType
-        };
-        
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('authToken', 'fake-jwt-token');
+  // translate known backend English errors to French for the UI
+  const translateBackendError = (errMsg?: string | null) => {
+    if (!errMsg) return 'Email ou mot de passe incorrect';
+    const map: Record<string, string> = {
+      'Email and password required': 'Email et mot de passe requis',
+      'Incorrect email or password': 'Email ou mot de passe incorrect',
+      'Missing fields': 'Champs manquants',
+      'An account already exists with this email': 'Un compte existe déjà avec cet email',
+      'Database constraint error': 'Erreur de contrainte en base de données',
+      'Email required': 'Email requis',
+      'Missing token or new password': 'Token ou nouveau mot de passe manquant',
+      'Invalid or expired token': 'Token invalide ou expiré',
+      'New password must be different': "Le nouveau mot de passe doit être différent de l'ancien",
+    };
+    return map[errMsg] || `Erreur: ${errMsg}`;
+  };
 
-        // Store user type if provided 
+  const login = async (email: string, password: string, userType?: UserType, force?: boolean): Promise<boolean> => {
+    try {
+      // Clear any previous auth error so UI doesn't show stale messages while attempting login
+      setAuthError(null);
+      setIsLoading(true);
+      // Call backend
+      const result = await authApi.login(email, password, force);
+
+      if (result.ok && result.data) {
+        // backend returns user_id and sets session cookie (credentials: include)
+        const userData: User = {
+          id: String(result.data.user_id || ''),
+          email: email,
+          name: (result.data.name as string) || undefined,
+          userType: userType,
+        };
+
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        // we don't use token-based auth here; session cookie is managed by backend
         if (userType) {
           await AsyncStorage.setItem('userType', userType);
-          setUserTypeState(userType); 
+          setUserTypeState(userType);
         }
-        
         setUser(userData);
+  // Clear any auth error on successful login
+  setAuthError(null);
         return true;
-      } else {
-        throw new Error('Identifiants invalides');
       }
+
+  const err = translateBackendError(result.error);
+  // Create an Error object and attach HTTP status so UI can react specifically (e.g., 401 -> offer signup)
+  const e: any = new Error(err);
+  e.status = result.status;
+  // Store auth error in context so UI survives navigation remounts
+  setAuthError({ message: err, status: result.status });
+  throw e;
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      // propagate the error so the calling screen can show a friendly message
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -94,30 +124,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string, userType?: UserType, name?: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const userData: User = {
-        id: Date.now().toString(),
-        email: email,
-        name: name || 'Nouvel utilisateur',
-        userType: userType
-      };
-      
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('authToken', 'fake-jwt-token');
-      
-      // Store user type if provided
-      if (userType) {
-        await AsyncStorage.setItem('userType', userType);
-        setUserTypeState(userType);
+      // call backend register endpoint
+      // backend expects nom/prenom/email/password — we'll try to split name
+      const prenom = name || '';
+      const nom = name || '';
+      const result = await authApi.register(nom, prenom, email, password);
+
+      if (result.ok) {
+        // Optionally auto-login after register (force=true to override any existing session)
+        const logged = await login(email, password, userType, true);
+        return logged;
       }
-      
-      setUser(userData);
-      return true;
+
+  const err = result.error || 'Registration failed';
+  // Throw so calling screen can display backend message (translated to French)
+  throw new Error(translateBackendError(err));
     } catch (error) {
-      console.error('Register error:', error);
-      return false;
+      // propagate the error up to the screen
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -125,13 +149,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // call backend logout to clear session if any
+      try {
+        await authApi.logout();
+      } catch (e) {
+        // Non-fatal
+        console.warn('Backend logout failed', e);
+      }
+
       await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('userType');
       setUser(null);
       setUserTypeState(null);
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  const forgotPassword = async (email: string): Promise<string | null> => {
+    // NOTE: do not toggle the global isLoading here because toggling it
+    // causes RootNavigation to unmount and remount navigation stacks which
+    // breaks navigation callbacks (Alert -> navigate). The screen should
+    // show its own local loading indicator instead.
+    try {
+      const result = await authApi.forgotPassword(email);
+      if (result.ok && result.data) {
+        // backend in dev returns the token in the response body
+        return (result.data.token as string) || null;
+      }
+  throw new Error(translateBackendError(result.error) || 'Impossible de générer le token');
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const result = await authApi.resetPassword(token, newPassword);
+      if (result.ok) return true;
+      const err = translateBackendError(result.error);
+      setAuthError({ message: err, status: result.status });
+      throw new Error(err);
+    } catch (e) {
+      // propagate the error so the calling screen can display the backend message
+      throw e;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,9 +212,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     userType,
     isLoading,
+    authError,
+    clearAuthError: () => setAuthError(null),
     login,
     register,
     logout,
+    forgotPassword,
+    resetPassword,
     setUserType,
     isAuthenticated: !!user,
   };

@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator   } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Camera, CameraView } from 'expo-camera';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import createStyles from '../../styles/MyPrescriptions.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
-import { useProfileData } from '../../hooks/useProfileData';
+// file system used in AddOrdonnance
+import ordonnancesApi from '../../utils/api/ordonnances';
 
 type Prescription = {
     name: string;
@@ -29,27 +29,10 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   const { currentProfile } = useProfile();
   const styles = createStyles(colors, fontScale);
 
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-    {
-      name: 'Ordonnance 1',
-      date: '01/01/2021',
-      doctor: 'Dr. Dupont',
-      medications: 'Paracétamol, Ibuprofène',
-    },
-    {
-      name: 'Ordonnance 2',
-      date: '01/01/2020',
-      doctor: 'Dr. Martin',
-      medications: 'Amoxicilline, Azithromycine',
-    },
-  ]);
+  // Start empty; prescriptions should come from backend/profile
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
 
-  // State to manage camera permissions, visibility, and photo capture
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraVisible, setCameraVisible] = useState<boolean>(false);
-  const [photo, setPhoto] = useState<string | null>(null);
-  // Reference to the camera view for taking pictures
-  const cameraRef = useRef<CameraView | null>(null);
+  // No inline camera in this screen; AddOrdonnance handles camera capture
 
   // For profile-based prescription management (simulated) 
   const [profilePrescriptionsData, setProfilePrescriptionsData] = useState<string[]>([]); 
@@ -90,65 +73,39 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   // Determine if it's the main profile
   const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
+  // camera permissions managed in AddOrdonnance
 
-  // Function to take a picture using the camera
-  const takePicture = async (): Promise<void> => {
-    if (cameraRef.current) {
-      const photoData = await cameraRef.current.takePictureAsync();
-      setPhoto(photoData.uri);
-      setCameraVisible(false);
-    } else {
-      Alert.alert('Erreur', 'La caméra n\'est pas disponible.');
-    }
-  };
-
-  // Function to validate the photo and add a new prescription
-  const handleValidatePhoto = async (): Promise<void> => {
-    if (isMainProfile) {
-      // For main profile: add to local state
-      const newPrescription: Prescription = {
-        name: `Ordonnance ${prescriptions.length + 1}`,
-        date: new Date().toLocaleDateString(),
-        doctor: `Dr. ${['Dupont', 'Martin'][Math.floor(Math.random() * 2)]}`,
-        medications: ['Paracétamol', 'Ibuprofène'][Math.floor(Math.random() * 2)],
-      };
-      setPrescriptions([...prescriptions, newPrescription]);
-    } else {
-      // For other profiles: add to profile data
-      const prescriptionData = {
-        name: `Ordonnance ${profilePrescriptionsData.length + 1}`,
-        date: new Date().toLocaleDateString(),
-        doctor: `Dr. ${['Dupont', 'Martin'][Math.floor(Math.random() * 2)]}`,
-        medications: ['Paracétamol', 'Ibuprofène'][Math.floor(Math.random() * 2)],
-      };
-      
-      const success = await handleAddPrescriptionToProfile(JSON.stringify(prescriptionData));
-      if (success) {
-        Alert.alert('Succès', 'Ordonnance ajoutée avec succès.');
-      } else {
-        Alert.alert('Erreur', 'Cette ordonnance est déjà enregistrée ou une erreur est survenue.');
+  // Fetch ordonnances from backend when profile changes (server profiles)
+  const fetchOrdonnances = async () => {
+    if (!currentProfile?.id) return;
+    const numericCandidate = Number(currentProfile.id);
+    const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+    if (!isServerProfile) return;
+    try {
+      const res = await ordonnancesApi.getOrdonnances(currentProfile.id);
+      if (res.ok && Array.isArray(res.data)) {
+        const mapped = res.data.map((o: any) => ({
+          name: o.description || `Ordonnance ${o.id}`,
+          date: o.date_prescription || o.date_ajout,
+          doctor: o.medecin_nom,
+          medications: Array.isArray(o.medicaments) ? o.medicaments.join(', ') : (typeof o.medicaments === 'string' ? o.medicaments : JSON.stringify(o.medicaments)),
+          id: o.id,
+          temp_image_id: o.temp_image_id || null,
+        }));
+        setPrescriptions(mapped as any);
       }
+    } catch (err) {
+      console.warn('Failed to fetch ordonnances', err);
     }
-    setPhoto(null);
   };
 
-  const handleCancelPhoto = (): void => {
-    setPhoto(null);
-  };
+  useEffect(() => {
+    fetchOrdonnances();
+  }, [currentProfile?.id]);
 
-  if (hasPermission === null) {
-    return <Text>Demande de permission de la caméra...</Text>
-  }
+  // camera handled in AddOrdonnance screen
 
-  if (hasPermission === false) {
-    return <Text>Accès à la caméra refusé</Text>
-  }
+  // no early return for camera permission here
 
   // Get the prescriptions to display based on profile
   const getCurrentPrescriptions = () => {
@@ -167,114 +124,137 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
   };
 
   const handleRemovePrescription = async (index: number) => {
-    if (isMainProfile) {
-      // For main profile: remove from local state
-      const updatedPrescriptions = prescriptions.filter((_, i) => i !== index);
-      setPrescriptions(updatedPrescriptions);
+    const numericCandidate = Number(currentProfile?.id);
+    const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile?.id);
+
+    if (isServerProfile && currentProfile?.id) {
+      // If we have an id attached to the prescription, call backend
+      const p: any = prescriptions[index];
+      if (p?.id) {
+        try {
+          const res = await ordonnancesApi.deleteOrdonnance(currentProfile.id, p.id);
+          if (res.ok) {
+            const updated = prescriptions.filter((_, i) => i !== index);
+            setPrescriptions(updated as any);
+          } else {
+            Alert.alert('Erreur', res.error || 'Suppression impossible');
+          }
+        } catch (err: any) {
+          console.error('Delete ordonnance error', err);
+          Alert.alert('Erreur', 'Suppression impossible');
+        }
+      }
     } else {
-      // For other profiles: remove from profile data
-      const prescriptionToRemove = profilePrescriptionsData[index];
-      await handleRemovePrescriptionFromProfile(prescriptionToRemove);
+      if (isMainProfile) {
+        const updatedPrescriptions = prescriptions.filter((_, i) => i !== index);
+        setPrescriptions(updatedPrescriptions);
+      } else {
+        const prescriptionToRemove = profilePrescriptionsData[index];
+        await handleRemovePrescriptionFromProfile(prescriptionToRemove);
+      }
     }
   };
+
+  // Fetch ordonnances from backend when profile changes (server profiles)
+  
+  // Also refresh when screen gains focus (e.g., after returning from detail/add screens)
+  useFocusEffect(
+    React.useCallback(() => {
+      (async () => {
+        if (!currentProfile?.id) return;
+        const numericCandidate = Number(currentProfile.id);
+        const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+        if (!isServerProfile) return;
+        try {
+          const res = await ordonnancesApi.getOrdonnances(currentProfile.id);
+          if (res.ok && Array.isArray(res.data)) {
+            const mapped = res.data.map((o: any) => ({
+              name: o.description || `Ordonnance ${o.id}`,
+              date: o.date_prescription || o.date_ajout,
+              doctor: o.medecin_nom,
+              medications: Array.isArray(o.medicaments) ? o.medicaments.join(', ') : (typeof o.medicaments === 'string' ? o.medicaments : JSON.stringify(o.medicaments)),
+              id: o.id,
+              temp_image_id: o.temp_image_id || null,
+            }));
+            setPrescriptions(mapped as any);
+          }
+        } catch (err) {
+          console.warn('Failed to fetch ordonnances on focus', err);
+        }
+      })();
+    }, [currentProfile?.id])
+  );
 
   const currentPrescriptions = getCurrentPrescriptions();
 
   return (
     <View style={styles.container}>
-      {cameraVisible ? (
-        // Display the camera view when the user wants to take a photo
-        <CameraView style={styles.camera} ref={cameraRef}>
-          <TouchableOpacity style={styles.button} onPress={takePicture}>
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-              <Text style={styles.buttonText}>Prendre une photo</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </CameraView>
-      ) : (
-        <>
-          <ScrollView contentContainerStyle={styles.prescriptionList}>
-            {/* Header for current profile */}
-            {currentProfile && (
-              <View style={[styles.prescriptionCard, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <Text style={[styles.prescriptionTitle, { color: colors.primary, fontWeight: 'bold' }]}>
-                      {getRelationshipText(currentProfile.relationship)}
-                    </Text>
-                    <Text style={[styles.prescriptionText, { color: colors.primary, opacity: 0.8 }]}>
-                      {currentProfile.name}
-                    </Text>
-                  </View>
-                  <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
-                </View>
-              </View>
-            )}
-
-            {/* Display prescriptions based on profile */}
-            {currentPrescriptions.length > 0 ? (
-              currentPrescriptions.map((prescription, index) => (
-                <View key={index} style={styles.prescriptionCard}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
-                      <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
-                      <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
-                      <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
-                    </View>
-                    {!isMainProfile && (
-                      <TouchableOpacity onPress={() => handleRemovePrescription(index)} style={{ padding: 8 }}>
-                        <Ionicons name="trash-outline" size={24} color="#FF4444" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              ))
-            ) : (
-              <View style={styles.prescriptionCard}>
-                <Text style={[styles.prescriptionText, { textAlign: 'center', fontStyle: 'italic', opacity: 0.6 }]}>
-                  {isMainProfile 
-                    ? "Aucune ordonnance trouvée" 
-                    : "Aucune ordonnance ajoutée pour ce profil"}
+      <ScrollView contentContainerStyle={styles.prescriptionList}>
+        {/* Header for current profile */}
+        {currentProfile && (
+          <View style={[styles.prescriptionCard, { marginBottom: 20, backgroundColor: colors.primary + '10' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={[styles.prescriptionTitle, { color: colors.primary, fontWeight: 'bold' }]}>
+                  {getRelationshipText(currentProfile.relationship)}
+                </Text>
+                <Text style={[styles.prescriptionText, { color: colors.primary, opacity: 0.8 }]}>
+                  {currentProfile.name}
                 </Text>
               </View>
-            )}
-            
-            {photo && (
-              // Display the photo preview when a photo is taken
-              <View style={styles.photoPreview}>
-                <Image source={{ uri: photo }} style={styles.image} />
-                <Text>Voulez-vous valider cette photo ou recommencer ?</Text>
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity style={styles.button} onPress={handleValidatePhoto}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                      <Text style={styles.buttonText}>Valider</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.button} onPress={handleCancelPhoto}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                      <Text style={styles.buttonText}>Recommencer</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </ScrollView>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(true)}>
-              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                <Text style={styles.buttonText}>Ajouter</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                <Text style={styles.buttonText}>Retour</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+            </View>
           </View>
-        </>
-      )}
+        )}
+
+        {/* Display prescriptions based on profile */}
+        {currentPrescriptions.length > 0 ? (
+          currentPrescriptions.map((prescription, index) => (
+            <TouchableOpacity
+              key={prescription.id ?? index}
+              style={[styles.prescriptionCard, { padding: 12 }]}
+              onPress={() => navigation.navigate('OrdonnanceDetail', { ordonnance: prescription, userId: currentProfile?.id })}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
+                  <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
+                  <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
+                  <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
+                </View>
+                {!isMainProfile && (
+                  <TouchableOpacity onPress={() => handleRemovePrescription(index)} style={{ padding: 8 }}>
+                    <Ionicons name="trash-outline" size={24} color="#FF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.prescriptionCard}>
+            <Text style={[styles.prescriptionText, { textAlign: 'center', fontStyle: 'italic', opacity: 0.6 }]}>
+              {isMainProfile 
+                ? "Aucune ordonnance trouvée" 
+                : "Aucune ordonnance ajoutée pour ce profil"}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddOrdonnance', { userId: currentProfile?.id })}>
+          <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+            <Text style={styles.buttonText}>Ajouter</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+          <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+            <Text style={styles.buttonText}>Retour</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
 
+      {/* Ordonnance details now open in a dedicated screen */}
+    </View>
   );
 }
