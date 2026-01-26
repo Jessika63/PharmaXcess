@@ -21,6 +21,38 @@ def get_followed_patients():
                 WHERE ps.professionnel_id = %s
             """, (current_user_id,))
             patients = cursor.fetchall()
+            # Pour chaque patient, aller chercher ses données médicales
+            for patient in patients:
+                patient_id = patient['id']
+
+                # Maladies
+                cursor.execute("SELECT * FROM maladies WHERE utilisateur_id = %s", (patient_id,))
+                patient['maladies'] = cursor.fetchall()
+
+                # Traitements (tous traitements liés à une maladie de ce patient)
+                cursor.execute("SELECT t.* FROM traitements t JOIN maladies m ON t.maladie_id = m.id WHERE m.utilisateur_id = %s", (patient_id,))
+                patient['traitements'] = cursor.fetchall()
+
+                # Hospitalisations
+                cursor.execute("SELECT * FROM hospitalisations WHERE utilisateur_id = %s", (patient_id,))
+                patient['hospitalisations'] = cursor.fetchall()
+
+                # Allergies
+                cursor.execute("SELECT * FROM allergies WHERE utilisateur_id = %s", (patient_id,))
+                patient['allergies'] = cursor.fetchall()
+
+                # Antécédents familiaux
+                cursor.execute("SELECT * FROM antecedents WHERE utilisateur_id = %s", (patient_id,))
+                patient['antecedents'] = cursor.fetchall()
+
+                # Médecins
+                cursor.execute("SELECT * FROM medecins WHERE utilisateur_id = %s", (patient_id,))
+                patient['medecins'] = cursor.fetchall()
+
+                # Documents
+                cursor.execute("SELECT id, title, filename, size, date_ajout, status FROM documents WHERE utilisateur_id = %s ORDER BY date_ajout DESC", (patient_id,))
+                patient['documents'] = cursor.fetchall()
+
         return jsonify(patients), 200
     finally:
         conn.close()
