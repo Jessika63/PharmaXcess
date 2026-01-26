@@ -119,37 +119,77 @@ def get_cart(cart_id):
 def add_item():
     data = request.get_json(force=True)
     cart_id = data.get("cart_id")
-    med_id = data.get("id")
-    qty = int(data.get("quantity", 1))
 
-    if not cart_id or med_id is None:
-        return jsonify({"error": "cart_id and id required"}), 400
+    try:
+        med_id = int(data.get("id"))
+        requested_qty = int(data.get("quantity", 1))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid id or quantity"}), 400
+
+    if not cart_id:
+        return jsonify({"error": "cart_id required"}), 400
 
     cart, err, code = get_open_cart_or_error(cart_id)
     if err:
         return err, code
 
-    ok, msg = check_stock(cart, med_id, qty)
-    if not ok:
-        return jsonify({"error": msg}), 400
-
     med = get_med_by_id(med_id)
+    if not med:
+        return jsonify({
+            "reason": "medicine_not_found",
+            "medicine_id": med_id
+        }), 404
+
+    already_in_cart = 0
+    for it in cart["items"]:
+        if it["id"] == med_id:
+            already_in_cart = it["quantity"]
+            break
+
+    available = max(0, int(med["size"]) - already_in_cart)
+    qty_to_add = min(requested_qty, available)
+
+    if qty_to_add == 0:
+        return jsonify({
+            "medicine_id": med_id,
+            "medicine_name": med["label"],
+            "requested": requested_qty,
+            "available": available,
+            "reason": "out_of_stock",
+        }), 400
 
     for it in cart["items"]:
-        if it["id"] == med["id"]:
-            it["quantity"] += qty
-            recalculate_cart(cart)
-            return jsonify(cart), 200
-
-    cart["items"].append({
-        "id": med["id"],
-        "label": med["label"],
-        "price": float(med["price"]),
-        "quantity": qty
-    })
+        if it["id"] == med_id:
+            it["quantity"] += qty_to_add
+            break
+    else:
+        cart["items"].append({
+            "id": med["id"],
+            "label": med["label"],
+            "price": float(med["price"]),
+            "quantity": qty_to_add
+        })
 
     recalculate_cart(cart)
+
+    if qty_to_add < requested_qty:
+        return jsonify({
+            "cart": cart,
+            "warning": {
+                "medicine_id": med_id,
+                "medicine_name": med["label"],
+                "requested": requested_qty,
+                "added": qty_to_add,
+                "available": available,
+                "reason": "exceed_stock",
+            }
+        }), 200
+
     return jsonify(cart), 200
+
+
+
+
 
 @cart_bp.route("/cart/add-list", methods=["POST"])
 def add_list():
