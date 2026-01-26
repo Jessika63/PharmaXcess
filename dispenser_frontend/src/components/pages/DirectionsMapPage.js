@@ -237,7 +237,7 @@ function DirectionsMapPage() {
   };
 
   // Prefer route duration from API (in seconds), fallback to `estimate` query param (minutes)
-  const estimateParam = searchParams.et('estimate'); 
+  const estimateParam = searchParams.get('estimate'); 
   const displayDuration = durationSec ? formatDuration(durationSec) : (estimateParam ? formatMinutes(estimateParam) : null);
   return (
     <>
