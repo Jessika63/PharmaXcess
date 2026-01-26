@@ -28,6 +28,13 @@ function Cart() {
     const handleProceedToPayment = async () => {
         if (cartItems.length === 0) return;
 
+        // If the cart was opened from the "COMMANDER" preorder flow,
+        // route the user to the preorder page instead of creating a payment. 
+        if (location.state?.checkoutLabel === 'COMMANDER') {
+            navigate('/preorder', { state: { items: cartItems } }); 
+            return; 
+        }
+
         try {
             // For the moment, we handle the first item in the cart
             // Pour l'instant, on traite le premier article du panier
