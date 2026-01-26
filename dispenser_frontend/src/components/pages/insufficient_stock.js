@@ -4,6 +4,7 @@ import '../../App.css'
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { useCart } from '../../context/CartContext';
 
 function InsufficientStock() {
 
@@ -18,6 +19,7 @@ function InsufficientStock() {
   const goBackButtonRef = useRef(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const { addToCart } = useCart();
 
   useInactivityRedirect(() => setShowInactivityModal(true));
 
@@ -102,7 +104,11 @@ function InsufficientStock() {
               <button
                 ref={retryButtonRef}
                 tabIndex={0}
-                onClick={() => navigate('/preorder', { state: { drug } })}
+                onClick={() => {
+                  // Add selected drug to cart and navigate to cart with custom checkout label
+                  addToCart(drug); 
+                  navigate('/cart', { state: { checkoutLabel: 'COMMANDER' } });
+                }}
                 className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
                   hover:scale-105 transition-transform duration-300
                   ${focusedIndex === 1 ? 'scale-105' : ''}`}

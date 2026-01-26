@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; 
 import { loadStripe } from '@stripe/stripe-js';
 import { FaMinus, FaPlus, FaTrash, FaShoppingCart } from 'react-icons/fa';
 import config from '../../config';
@@ -13,6 +13,7 @@ const stripePromise = loadStripe('pk_test_51Rsl1CLfU2UU0K5QVl6iyAUF5YuvHw648nWON
 
 function Cart() {
     const navigate = useNavigate();
+    const location = useLocation(); 
     const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
     
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -199,7 +200,7 @@ function Cart() {
                                     className="w-full bg-black text-white py-4 rounded-full text-lg font-semibold
                                         hover:scale-105 transition-transform duration-300"
                                 >
-                                    PROCÉDER AU PAIEMENT
+                                    {location.state?.checkoutLabel || 'PROCÉDER AU PAIEMENT'}
                                 </button>
                             </div>
                         </div>
