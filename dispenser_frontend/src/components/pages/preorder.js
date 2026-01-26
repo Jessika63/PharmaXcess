@@ -140,13 +140,14 @@ function Preorder() {
                   body: formData,
                 });
                 const data = await response.json();
-                if (data.success) {
-                  setSuccess(true);
-                  // optional: do something with profile
-                } else {
-                  // keep scanning; show error only occasionally
-                  setError(data.error || 'Aucun QR code détecté');
-                }
+                    if (data.success) {
+                      // navigate to success confirmation page with profile data
+                      navigate('/preorder-success', { state: { profile: data.profile } });
+                      return;
+                    } else {
+                      // keep scanning; show error only occasionally
+                      setError(data.error || 'Aucun QR code détecté');
+                    }
               } catch (err) {
                 console.error(err);
                 setError('Erreur lors de la lecture du QR code.');
