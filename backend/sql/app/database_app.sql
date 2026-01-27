@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS ordonnances (
     date_prescription DATE,
     date_expiration DATE,
     medicaments JSON,
-    statut ENUM('active', 'expiree', 'utilisee') DEFAULT 'active',
+    statut ENUM('non_verifiee', 'active', 'expiree', 'utilisee') DEFAULT 'active',
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 

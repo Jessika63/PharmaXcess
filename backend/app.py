@@ -209,6 +209,10 @@ def register_blueprints():
     from routes.profile.sub_profiles import sub_profile_bp
     from routes.ordonnances.ordonnance_create import ordonnances_bp
     from routes.medicine.get_medical_advice import get_medical_advice_bp
+    from routes.ordonnances.ordonnance_create_from_ocr import ordonnance_ocr_create_bp
+    from routes.ordonnances.get_non_verified_ordonnances import get_non_verified_ordonnances_bp
+    from routes.ordonnances.verify_ordonnance import verify_ordonnance_bp
+
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -265,6 +269,10 @@ def register_blueprints():
     app.register_blueprint(ordonnances_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(get_medical_advice_bp)
+    app.register_blueprint(ordonnance_ocr_create_bp)
+    app.register_blueprint(get_non_verified_ordonnances_bp)
+    app.register_blueprint(verify_ordonnance_bp)
+
 
 
 register_blueprints()
