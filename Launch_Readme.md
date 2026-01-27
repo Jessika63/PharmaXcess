@@ -7,9 +7,13 @@ With this **launching script** you can launch:
 - some **verification** to make sure everything will works.
 - the **backend** that launch also the database.
 - the **frontend** to access to the website.
+- the **mobile app** to test on mobile.
 - the **backend test** to see if every backend root is work.
 - an **update** of the database to update the database.
-- export the database **dump**
+- export the database **dump**.
+- see **logs** of different parts.
+- manage **build and installation** of dependencies.
+- manage **deployment** and operations on the remote server.
 
 Or you can also **stop** every containers, remove them, remove all images and volumes.
 
@@ -27,13 +31,19 @@ You can install all prerequisites with [this script](./prerequisites/install_pre
 
 ## Launching option
 
-### Verification, Backend & Frontend
+### Verification, Backend, Frontend & Mobile App
 
-To launch the verification, the backend and the frontend at the same time you need to use this command:
+To launch the verification, the backend, the frontend and the mobile app at the same time you need to use this command:
 
 ```bash
 python launch.py --all
 ```
+
+This command will launch in order:
+1. Verifications
+2. Backend (and database)
+3. Frontend
+4. Mobile App
 
 ### The verification
 
@@ -90,6 +100,60 @@ python launch.py --dump
 ```
 
 Be sure to combine this flag with the backend flag
+
+### Mobile App only
+
+To launch the mobile app only you need to use this command:
+
+```bash
+python launch.py --app
+```
+
+### Advanced Operations
+
+To launch verification, backend, frontend, mobile app and tests in sequence:
+
+```bash
+python launch.py --combo
+```
+
+To restart the application (stop everything then launch everything):
+
+```bash
+python launch.py --restart
+```
+
+### See Logs
+
+To see logs for a specific part or everything:
+
+```bash
+python launch.py --see-log every
+```
+
+Available options are: `back`, `front`, `app`, `every`.
+
+### Build & Install Options
+
+You can force rebuild or dependency installation:
+
+- `--no-cache-back`: Build Backend without Docker cache.
+- `--no-cache-front`: Build Frontend without Docker cache.
+- `--no-cache-app`: Install mobile app dependencies without cache.
+- `--install-front`: Install frontend dependencies with npm.
+- `--install-app`: Install mobile app dependencies with npm.
+- `--build-test`: Build Test Docker images before running.
+- `--sudo`: Use sudo for npm commands (frontend/app).
+- `--tunnel`: Start Expo in tunnel mode for mobile app.
+- `--origins`: List registered frontend origins.
+
+### Server Operations
+
+These commands are used for deployment on the remote server (VM):
+
+- `--deploy-back`: Deploy backend to remote server.
+- `--exec-server [files...]`: Transfer and execute Python files on the remote server.
+- `--clean-server`: Clean Docker and fully update the remote server.
 
 ### Stop everything
 

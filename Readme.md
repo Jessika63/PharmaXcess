@@ -17,7 +17,7 @@ The application will provide several features, including:
 - Validating prescriptions
 - Tracking treatments
 - Receiving alerts for medication schedules
-- And maintaining a patient health record
+- Maintaining a patient health record
 
 ## Backend
 

@@ -24,6 +24,9 @@ pytest
 
 # Run specific test file
 pytest tests/test_backend.py
+
+# Via the launch script (recommended to include environment configuration)
+python launch.py --test
 ```
 
 ## Frontend Testing

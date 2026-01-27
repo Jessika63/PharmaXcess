@@ -16,7 +16,7 @@ L'application fournira plusieurs fonctionnalités, incluant :
 - Valider des ordonnances
 - Suivre les traitements
 - Recevoir des alertes pour les prises de médicaments
-- Et maintenir un dossier de santé patient
+- Maintenir un dossier de santé patient
 - Discuter avec un professionel de santé
 
 ## Backend
