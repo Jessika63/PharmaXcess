@@ -149,86 +149,75 @@ const handlePhotoCaptured = async (base64Image) => {
 };
 
   return (
-    <div className="w-full h-full flex flex-col items-center bg-background_color">
-      <div className="w-4/5 flex justify-between items-center mt-8 mb-6">
-        <button
-          className={`
-            px-6 py-3 ${config.borderRadius.lg} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.md} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-          onClick={() => navigate("/")}
-        >
-          Retour
-        </button>
-
-        <button
-          className={`
-            px-6 py-3 ${config.borderRadius.lg} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.md} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-          onClick={() => navigate("/")}
-        >
-          Menu
-        </button>
+    <div style={{ backgroundColor: '#F8E6EA' }} className="w-full h-screen flex flex-col">
+      {/* Header matching the image */}
+      <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={goBackStep}
+            className="flex items-center text-black hover:text-gray-600 transition-colors"
+          >
+            <config.icons.arrowLeft className="text-xl" />
+          </button>
+          <h1 className="text-3xl font-semibold text-black">Scan ordonnance</h1>
+        </div>
+        <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
       </div>
 
-      <h2 className={`${config.fontSizes.xl} font-bold text-primary mb-8`}>
-        Scanner votre ordonnance
-      </h2>
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-8">
+        <h2 className="text-2xl text-black mb-12 text-center">
+          Choisissez la méthode pour scanner votre ordonnance
+        </h2>
 
-      <p className={`${config.fontSizes.md} text-gray-600 mb-4 text-center`}>
-        Scanner votre ordonnance papier
-      </p>
+        {/* Two cards side by side */}
+        <div className="flex gap-8 max-w-5xl w-full mb-8">
+          {/* Ordonnance Card */}
+          <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+              <config.icons.filePrescription className="text-3xl text-black" />
+            </div>
+            <h3 className="text-3xl font-bold text-black mb-6">Ordonnance</h3>
+            <p className="text-xl text-gray-600 mb-10 flex-1">
+              Scanner votre ordonnance
+            </p>
+            <button
+              onClick={() => openCamera('prescription')}
+              className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
+            >
+              CHOISIR
+            </button>
+          </div>
 
-      {/* Modification 1: Boutons en colonne au lieu de ligne */}
-      <div className="flex flex-col space-y-8 w-4/5 justify-center items-center">
-        <button
-          onClick={() => openCamera('prescription')}
-          className={`
-            w-2/5 h-40 flex flex-col items-center justify-center
-            ${config.borderRadius.xl} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.xl} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-        >
-          <config.icons.filePrescription className="text-4xl mb-2" />
-          Scanner l'ordonnance
-        </button>
+          {/* QR Code Card */}
+          <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+              <config.icons.qrCode className="text-3xl text-black" />
+            </div>
+            <h3 className="text-3xl font-bold text-black mb-6">QR code</h3>
+            <p className="text-xl text-gray-600 mb-10 flex-1">
+              Scanner le code qr de votre ordonnance
+            </p>
+            <button
+              onClick={() => openCamera('qr')}
+              className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
+            >
+              CHOISIR
+            </button>
+          </div>
+        </div>
 
-        <p className={`${config.fontSizes.md} text-gray-600 mb-4 text-center`}>
-          Ou scanner votre QR code d'ordonnance présent dans l'application mobile PharmaXcess
-        </p>
+        {/* Status messages */}
+        {loading && ( 
+          <p className="text-gray-700 font-medium animate-pulse mt-6"> 
+            Analyse en cours, veuillez patienter...
+          </p>
+        )}
 
-        <button
-          onClick={() => openCamera('qr')}
-          className={`
-            w-2/5 h-40 flex flex-col items-center justify-center
-            ${config.borderRadius.xl} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.xl} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-        >
-          <config.icons.qrCode className="text-4xl mb-2" />
-          Scan QR code
-        </button>
-      </div>
-
-      {/* Modification 1: Messages placés en dessous des boutons */}
-      {loading && (
-        <p className="text-gray-700 font-medium animate-pulse mt-6">
-          Analyse en cours, veuillez patienter...
-        </p>
-      )}
-
-      {error && (
-        <div className="text-red-600 font-semibold mt-6">L'ordonnance n'est pas reconnue, veuillez réessayer.</div>
-      )}
+        {error && ( 
+          <div className="text-red-600 font-semibold mt-6">L'ordonnance n'est pas reconnue, veuillez réessayer.</div> 
+        )}
+      </div> 
 
       {isModalOpen && showCamera && (
         <ModalCamera onClose={closeModal}>

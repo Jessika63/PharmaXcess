@@ -109,19 +109,21 @@ function DocumentsFlow({ stepsOrder }) {
     return (
         <PrescriptionProvider>
             <div className="w-full h-screen flex flex-col bg-background_color">
-                {/* Header: back arrow + title left, logo right (matches design) */}
-                <div className="w-full px-6 py-6 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="text-black flex items-center gap-3"
-                        >
-                            <config.icons.arrowLeft />
-                            <span className={`${config.fontSizes.lg} font-semibold`}>Vérifications</span>
-                        </button>
-                    </div>
-                    <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-8 mr-4" />
-                </div>
+                {/* Header: n'est PAS affiché si l'étape active est StepOrdonnance */}
+                {!(activeStepIndex !== null && steps[activeStepIndex].id === 'ordonnance') && (
+                  <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-4">
+                          <button
+                              onClick={() => navigate(-1)}
+                              className="flex items-center text-black hover:text-gray-600 transition-colors"
+                          >
+                              <config.icons.arrowLeft className="text-xl" />
+                          </button>
+                          <h1 className="text-3xl font-semibold text-black">Vérifications</h1>
+                      </div>
+                      <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+                  </div>
+                )}
                 <div className="flex-1 flex items-center justify-center">
                     {activeStepIndex !== null ? (
                         // Render the active step component
