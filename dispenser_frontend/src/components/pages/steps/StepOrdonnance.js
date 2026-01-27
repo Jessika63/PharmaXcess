@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CameraComponent from "../../camera_component";
 import ModalCamera from "../../modal_camera";
 import QrCameraScanner from "../../qr_camera_scanner";
@@ -15,6 +15,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const [error, setError] = useState("");
   const [scanType, setScanType] = useState(null); // 'qr' or 'prescription'
   const [showQRScanner, setShowQRScanner] = useState(false); // for displaying the QR scan page
+  const [showPrescriptionScanner, setShowPrescriptionScanner] = useState(false); // for displaying the prescription scan page 
   const [success, setSuccess] = useState(false); 
   const navigate = useNavigate();
   const { updatePrescriptionData } = usePrescription();
@@ -27,10 +28,10 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       setError("");
       setSuccess(false);
     } else { 
-      // For prescription, open the standard modal
-      setShowCamera(true); 
-      setIsModalOpen(true); 
+      // Display the prescription scan modal
+      setShowPrescriptionScanner(true); 
       setError("");
+      setSuccess(false);
     }
   };
 
@@ -253,8 +254,100 @@ const handlePhotoCaptured = async (base64Image) => {
             )}
           </div>
         </>
+      ) : showPrescriptionScanner ? (
+        // Scan Prescription Page
+        <>
+          {/* Header */}
+          <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowPrescriptionScanner(false)}
+                className="flex items-center text-black hover:text-gray-600 transition-colors"
+              >
+                <config.icons.arrowLeft className="text-xl" />
+              </button>
+              <h1 className="text-3xl font-semibold text-black">Scan ordonnance</h1>
+            </div>
+            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+          </div>
+
+          {/* Prescription Scanner Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-8">
+            <div className="flex flex-col items-center text-center max-w-3xl mb-8">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6">
+                <config.icons.filePrescription className="text-2xl" />
+              </div>
+              <p className="text-xl text-black mb-2">
+                Veuillez scanner votre ordonnance via le scanner
+              </p>
+              <p className="text-xl text-black">
+                présent sur la machine
+              </p>
+            </div>
+
+            {/* Embedded Camera Component */}
+            {!success && (
+              <div className="mt-6 mb-8">
+                <CameraComponent 
+                  onPhotoCapture={async (base64Image) => {
+                    try {
+                      setLoading(true);
+                      setError('');
+
+                      const byteString = atob(base64Image.split(",")[1]);
+                      const ab = new ArrayBuffer(byteString.length);
+                      const ia = new Uint8Array(ab);
+                      for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                      }
+                      const blob = new Blob([ab], { type: "image/jpeg" });
+
+                      const data = await extractPrescriptionText(blob);
+
+                      if (data.success) {
+                        setSuccess(true);
+                        setExtractedText(data.raw_text || "");
+                        
+                        updatePrescriptionData({
+                          medicaments: data.infos?.medicaments || [],
+                          scanType: 'prescription',
+                          hasQRCode: false,
+                          extractedText: data.raw_text || '',
+                          rawData: data.infos
+                        });
+
+                        setTimeout(() => {
+                          goToNextStep();
+                        }, 1000);
+                      } else {
+                        setError(data.error || "Erreur lors de l'analyse de l'ordonnance");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      setError("Erreur lors de l'analyse de l'ordonnance");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }} 
+                />
+              </div>
+            )}
+
+            {loading && (
+              <p className="text-gray-700 font-medium animate-pulse mt-2">Analyse en cours, veuillez patienter...</p>
+            )}
+
+            {error && (
+              <div className="text-red-600 font-semibold mt-2 max-w-md">{error}</div>
+            )}
+
+            {success && (
+              <div className="text-green-600 font-semibold mt-2 max-w-md">Ordonnance détectée avec succès !</div>
+            )}
+          </div>
+        </>
       ) : (
-        // Original choice page 
+        // Original Selection Page 
         <>
           {/* Header matching the image */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
