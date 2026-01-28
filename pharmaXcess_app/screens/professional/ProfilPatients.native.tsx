@@ -106,7 +106,6 @@ type Doctor = {
 
 type Patient = { 
   id: string; 
-  firstName: string; 
   lastName: string; 
   age: number; 
   dateOfBirth: string; 
@@ -218,8 +217,7 @@ export default function ProfilPatients(): React.JSX.Element {
               const dobFormatted = formatBirthDate(rawDob);
               return {
                 id: String(p.id || p.user_id || p.utilisateur_id || p.telephone || 'unknown'),
-                firstName: p.prenom || p.firstName || p.nom || '',
-                lastName: p.nom || p.lastName || '',
+                lastName: p.nom || p.name || p.lastName || '',
                 age,
                 dateOfBirth: dobFormatted,
                 phone: p.telephone || '',
@@ -284,8 +282,7 @@ export default function ProfilPatients(): React.JSX.Element {
             const dobFormatted = formatBirthDate(rawDob);
             const mapped: Patient = {
               id: String(p.id || p.user_id || p.utilisateur_id || p.telephone || 'unknown'),
-              firstName: p.prenom || p.firstName || p.nom || '',
-              lastName: p.nom || p.lastName || '',
+              lastName: p.nom || p.name || p.lastName || '',
               age,
               dateOfBirth: dobFormatted,
               phone: p.telephone || p.phone || '',
@@ -337,8 +334,7 @@ export default function ProfilPatients(): React.JSX.Element {
               } else {
                 const newPatient: Patient = {
                   id: patientData.id,
-                  firstName: patientData.firstName,
-                  lastName: patientData.lastName,
+                  lastName: patientData.name || patientData.lastName || '',
                   age: patientData.age,
                   dateOfBirth: patientData.dateOfBirth,
                   phone: patientData.phone,
@@ -377,8 +373,7 @@ export default function ProfilPatients(): React.JSX.Element {
             if (patientData.type === 'patient_profile' && patientData.patientId) {
               const newPatient: Patient = {
                 id: patientData.id,
-                firstName: patientData.firstName,
-                lastName: patientData.lastName,
+                lastName: patientData.name || patientData.lastName || '',
                 age: patientData.age,
                 dateOfBirth: patientData.dateOfBirth,
                 phone: patientData.phone,
@@ -416,7 +411,7 @@ export default function ProfilPatients(): React.JSX.Element {
   };
 
   const filteredPatients = patients.filter(patient => 
-    `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    `${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -608,7 +603,6 @@ export default function ProfilPatients(): React.JSX.Element {
     const labels: { [key: string]: string } = {
       email: 'Email',
       lastName: 'Nom',
-      firstName: 'Prénom',
       dateOfBirth: 'Date de naissance',
       age: 'Âge',
       weight: 'Poids',
@@ -625,7 +619,6 @@ export default function ProfilPatients(): React.JSX.Element {
     return [
       { key: 'email', label: labels.email, value: safe(patient.email) },
       { key: 'lastName', label: labels.lastName, value: safe(patient.lastName) },
-      { key: 'firstName', label: labels.firstName, value: safe(patient.firstName) },
       { key: 'dateOfBirth', label: labels.dateOfBirth, value: safe(patient.dateOfBirth) },
       { key: 'age', label: labels.age, value: patient.age === undefined || patient.age === null || patient.age === '' ? 'Non renseigné' : `${patient.age} ans` },
       { key: 'weight', label: labels.weight, value: safe(patient.weight) },
@@ -710,7 +703,7 @@ export default function ProfilPatients(): React.JSX.Element {
       >
         <View style={styles.patientInfo}>
           <Text style={styles.patientName}>
-            {item.firstName} {item.lastName}
+            {item.lastName}
           </Text>
           <Text style={styles.patientAge}>
             {ageAff} • Né(e) le {dobAff}
@@ -746,7 +739,7 @@ export default function ProfilPatients(): React.JSX.Element {
   const handleSimulateDocumentSelection = () => {
     const newDocument: ProfessionalDocument = { 
       id: `PDOC${Date.now()}`,
-      name: `Nouveau document - ${selectedPatient?.firstName} ${selectedPatient?.lastName}`,
+      name: `Nouveau document - ${selectedPatient?.lastName}`,
       type: 'Compte-rendu médical',
       dateAdded: new Date().toLocaleDateString('fr-FR'),
       size: '1.5 MB', 
@@ -1045,7 +1038,7 @@ export default function ProfilPatients(): React.JSX.Element {
             <Ionicons name="arrow-back" size={24} color={colors.headerText} />
           </TouchableOpacity>
           <Text style={styles.sectionTitle}>
-            Documents - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            Documents - {selectedPatient?.lastName}
           </Text>
         </View>
 
@@ -1122,7 +1115,7 @@ export default function ProfilPatients(): React.JSX.Element {
             <Ionicons name="arrow-back" size={24} color={colors.headerText} />
           </TouchableOpacity>
           <Text style={styles.sectionTitle}>
-            Notes - {selectedPatient?.firstName} {selectedPatient?.lastName}
+            Notes - {selectedPatient?.lastName}
           </Text>
         </View>
 
@@ -1182,7 +1175,7 @@ export default function ProfilPatients(): React.JSX.Element {
         <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
           <View style={prescriptionStyles.prescriptionCard}>
             <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
-              Ajouter un document - {selectedPatient?.firstName} {selectedPatient?.lastName}
+              Ajouter un document - {selectedPatient?.lastName}
             </Text>
             
             {!previewDocument ? (
@@ -1273,7 +1266,7 @@ export default function ProfilPatients(): React.JSX.Element {
         <ScrollView contentContainerStyle={prescriptionStyles.prescriptionList}>
           <View style={prescriptionStyles.prescriptionCard}>
             <Text style={[prescriptionStyles.prescriptionTitle, { textAlign: 'center', marginBottom: 20 }]}>
-              Ajouter une note - {selectedPatient?.firstName} {selectedPatient?.lastName}
+              Ajouter une note - {selectedPatient?.lastName}
             </Text>
             
             <Text style={[prescriptionStyles.prescriptionText, { marginBottom: 10 }]}>
@@ -1350,7 +1343,7 @@ export default function ProfilPatients(): React.JSX.Element {
             <Ionicons name="arrow-back" size={24} color={colors.headerText} />
           </TouchableOpacity>
           <Text style={styles.detailTitle}>
-            Profil de {selectedPatient?.firstName} {selectedPatient?.lastName}
+            Profil de {selectedPatient?.lastName}
           </Text>
         </View>
 
@@ -1363,12 +1356,12 @@ export default function ProfilPatients(): React.JSX.Element {
             >
               <View style={styles.profileImage}>
                 <Text style={styles.profileImageText}>
-                  {selectedPatient?.firstName?.[0]}{selectedPatient?.lastName?.[0]}
+                 {selectedPatient?.lastName?.[0]}
                 </Text>
               </View>
               <View style={styles.profileHeaderInfo}>
                 <Text style={styles.profileName}>
-                  {selectedPatient?.firstName} {selectedPatient?.lastName}
+                  {selectedPatient?.lastName}
                 </Text>
                 <Text style={styles.profileAge}>
                   {selectedPatient?.age} ans • ID: {selectedPatient?.id}
