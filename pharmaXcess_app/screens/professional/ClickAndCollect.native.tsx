@@ -9,9 +9,12 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
+import clickcollectApi from '../../utils/api/clickcollect';
+import ordonnancesApi from '../../utils/api/ordonnances';
 import Ionicons from '@expo/vector-icons/Ionicons'; 
 import createStyles from '../../styles/ClickAndCollect.style';
 
@@ -30,40 +33,77 @@ export default function ClickAndCollect(): React.JSX.Element {
   const styles = createStyles(colors, fontScale);
 
   // State for managing prescription requests 
-  const [requests, setRequests] = useState<PrescriptionRequest[]>([
-    {
-      id: '1',
-      patientName: 'Dubois',
-      patientFirstName: 'Marie',
-      requestTime: '14:30',
-      prescriptionImage: 'https://via.placeholder.com/400x600/CCCCCC/FFFFFF?text=Ordonnance+1',
-      status: 'pending',
-    },
-    {
-      id: '2',
-      patientName: 'Martin',
-      patientFirstName: 'Jean',
-      requestTime: '15:15',
-      prescriptionImage: 'https://via.placeholder.com/400x600/CCCCCC/FFFFFF?text=Ordonnance+2',
-      status: 'pending',
-    },
-    {
-      id: '3',
-      patientName: 'Laurent',
-      patientFirstName: 'Sophie',
-      requestTime: '16:00',
-      prescriptionImage: 'https://via.placeholder.com/400x600/CCCCCC/FFFFFF?text=Ordonnance+3',
-      status: 'pending',
-    },
-  ]);
+  const [requests, setRequests] = useState<PrescriptionRequest[]>([]);
+
+  // Load pending requests from backend on mount
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await clickcollectApi.getPendingRequests();
+        console.debug('[Professional ClickAndCollect] getPendingRequests response', res);
+        if (res.ok && Array.isArray(res.data?.orders)) {
+          const translateStatus = (s: any) => {
+            if (!s) return 'pending';
+            const st = String(s).toLowerCase();
+            if (st === 'en_attente' || st === 'pending') return 'pending';
+            if (st === 'valide' || st === 'approved' || st === 'approve') return 'approved';
+            if (st === 'refuse' || st === 'refused' || st === 'rejected') return 'rejected';
+            return 'pending';
+          };
+
+          const mapped: PrescriptionRequest[] = res.data.orders.map((o: any) => {
+            const rawStatus = o.status || o.statut || o.statut_fr || null;
+            const mappedStatus = translateStatus(rawStatus);
+            console.debug('[Professional ClickAndCollect] map order', { id: o.id, rawStatus, mappedStatus });
+            return {
+              id: String(o.id),
+              patientName: String(o.user_id || o.utilisateur_id || 'Utilisateur'),
+              patientFirstName: '',
+              requestTime: o.date_demande ? new Date(o.date_demande).toLocaleString() : '',
+              prescriptionImage: '',
+              status: mappedStatus as 'pending' | 'approved' | 'rejected',
+              userId: o.user_id || o.utilisateur_id || o.utilisateurId || null,
+            } as any;
+          });
+          setRequests(mapped);
+        }
+      } catch (e) {
+        console.error('[Professional ClickAndCollect] error loading pending requests', e);
+        // keep empty list on error
+      }
+    })();
+  }, []);
 
   const [selectedRequest, setSelectedRequest] = useState<PrescriptionRequest | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
+  const [selectedImageLoading, setSelectedImageLoading] = useState<boolean>(false);
 
   // Functions to handle request actions 
   const openRequestDetail = (request: PrescriptionRequest) => {
-    setSelectedRequest(request);
+    (async () => {
+      try {
+        setSelectedRequest(request);
+        setSelectedImageLoading(true);
+        console.debug('[Professional ClickAndCollect] fetching temp image for user', request.userId || request.patientName);
+        if (request.userId) {
+          const imgRes = await ordonnancesApi.getLastTempImage(request.userId);
+          console.debug('[Professional ClickAndCollect] getLastTempImage response', imgRes);
+          if (imgRes.ok && imgRes.data) {
+            const img = imgRes.data.image_base64 || imgRes.data.image_base64 || null;
+            const mime = imgRes.data.mime_type || 'image/jpeg';
+            const uri = img ? `data:${mime};base64,${img}` : (imgRes.data.filepath || null);
+            if (uri) {
+              setSelectedRequest(prev => prev ? ({ ...prev, prescriptionImage: uri }) : ({ ...request, prescriptionImage: uri } as any));
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Professional ClickAndCollect] error fetching image', e);
+      } finally {
+        setSelectedImageLoading(false);
+      }
+    })();
   };
 
   const closeRequestDetail = () => {
@@ -72,17 +112,24 @@ export default function ClickAndCollect(): React.JSX.Element {
 
   const handleApprove = () => {
     if (!selectedRequest) return;
-    
-    // Simulate sending QR code to patient 
-    Alert.alert(
-      'Demande approuvée',
-      `QR code envoyé à ${selectedRequest.patientFirstName} ${selectedRequest.patientName}`,
-      [{ text: 'OK', onPress: () => {
-        // Delete the request from the list 
-        setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
-        closeRequestDetail();
-      }}]
-    );
+    (async () => {
+      try {
+        console.info('[Professional ClickAndCollect] validateOrder request', { requestId: selectedRequest.id });
+        const res = await clickcollectApi.validateOrder(selectedRequest.id);
+        console.debug('[Professional ClickAndCollect] validateOrder response', res);
+        if (res.ok) {
+          Alert.alert('Demande approuvée', `QR code envoyé à ${selectedRequest.patientName}`);
+          setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+          closeRequestDetail();
+        } else {
+          console.warn('[Professional ClickAndCollect] validateOrder failed', res);
+          Alert.alert('Erreur', res.error || 'Impossible de valider la demande');
+        }
+      } catch (e: any) {
+        console.error('[Professional ClickAndCollect] validateOrder exception', e);
+        Alert.alert('Erreur', e?.message || String(e));
+      }
+    })();
   };
 
   const handleReject = () => {
@@ -91,18 +138,26 @@ export default function ClickAndCollect(): React.JSX.Element {
 
   const sendRejection = () => {
     if (!selectedRequest) return;
-    
-    Alert.alert(
-      'Demande refusée',
-      `Commentaire envoyé à ${selectedRequest.patientFirstName} ${selectedRequest.patientName}`,
-      [{ text: 'OK', onPress: () => {
-        // Delete the request from the list 
-        setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
-        setShowRejectModal(false);
-        setRejectComment('');
-        closeRequestDetail();
-      }}]
-    );
+    (async () => {
+      try {
+        console.info('[Professional ClickAndCollect] refuseOrder request', { requestId: selectedRequest.id, comment: rejectComment });
+        const res = await clickcollectApi.refuseOrder(selectedRequest.id, rejectComment || 'Refused');
+        console.debug('[Professional ClickAndCollect] refuseOrder response', res);
+        if (res.ok) {
+          Alert.alert('Demande refusée', `Commentaire envoyé à ${selectedRequest.patientName}`);
+          setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+          setShowRejectModal(false);
+          setRejectComment('');
+          closeRequestDetail();
+        } else {
+          console.warn('[Professional ClickAndCollect] refuseOrder failed', res);
+          Alert.alert('Erreur', res.error || 'Impossible de refuser la demande');
+        }
+      } catch (e: any) {
+        console.error('[Professional ClickAndCollect] refuseOrder exception', e);
+        Alert.alert('Erreur', e?.message || String(e));
+      }
+    })();
   };
 
   const renderRequestCard = ({ item }: { item: PrescriptionRequest }) => (
@@ -179,10 +234,23 @@ export default function ClickAndCollect(): React.JSX.Element {
                 </View>
 
                 <ScrollView style={styles.prescriptionContainer}>
-                  <Image
-                    source={{ uri: selectedRequest.prescriptionImage }}
-                    style={styles.prescriptionImage}
-                  />
+                  {selectedImageLoading ? (
+                    <View style={[styles.prescriptionImage, { justifyContent: 'center', alignItems: 'center' }]}>
+                      <ActivityIndicator size="large" color={colors.secondary} />
+                      <Text style={styles.loadingText}>Chargement de l'image...</Text>
+                    </View>
+                  ) : selectedRequest.prescriptionImage ? (
+                    <Image
+                      source={{ uri: selectedRequest.prescriptionImage }}
+                      style={styles.prescriptionImage}
+                    />
+                  ) : (
+                    <View style={[styles.prescriptionImage, { justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={styles.loadingText}>Image non disponible</Text>
+                    </View>
+                  )}
+
+                  <Text style={[styles.loadingText, { marginTop: 12 }]}>Vérifiez l'ordonnance : si elle est conforme, appuyez sur « Valider » pour générer et envoyer le QR au patient. Si elle est non conforme, appuyez sur « Refuser » et indiquez le motif.</Text>
                 </ScrollView>
 
                 <View style={styles.buttonContainer}>
