@@ -20,7 +20,7 @@ EPITECH_LYON = {
 DEFAULT_LOCATIONS = {
     "paris": EPITECH_PARIS,
     "lyon": EPITECH_LYON,
-    "default": EPITECH_PARIS  # Default fallback
+    "default": EPITECH_LYON  # Default fallback
 }
 
 # Get default location from environment variable (set by launch script)

@@ -125,7 +125,7 @@ def handle_deploy_back():
     ssh_back_cmd = (
         f"cd {remote_path} && "
         f"export $(grep -v '^#' backend/.env | xargs) && "
-        f"python3 launch.py --back --no-cache-back"
+        f"python3 launch.py --back --no-cache-back --location=lyon"
     )
     subprocess.run(["ssh", remote, ssh_back_cmd], check=True)
 

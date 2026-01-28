@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import platform
@@ -87,8 +86,9 @@ def setup_ngrok(mobile_app_folder):
                 ngrok_path, "http", "5000", "--log=stdout"
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-        # Poll the local API a few times to wait for ngrok to be ready
-        max_attempts = 10
+        # Poll the local API for up to 30 attempts (30s) to wait for ngrok to be ready
+        max_attempts = 30
+        ngrok_url = None
         for attempt in range(1, max_attempts + 1):
             try:
                 response = requests.get('http://localhost:4040/api/tunnels', timeout=2)
@@ -98,26 +98,55 @@ def setup_ngrok(mobile_app_folder):
                         if tunnel.get("proto") == "https":
                             ngrok_url = tunnel["public_url"]
                             colored_print(f"✓ Tunnel ngrok actif: {ngrok_url}", "green")
-                            return ngrok_url
-                # if API reachable but no https tunnel yet, continue polling
-            except Exception:
+                            break
+                if ngrok_url:
+                    break
+            except Exception as ex:
                 # API not ready yet
-                pass
-
+                if attempt == max_attempts:
+                    colored_print(f"[ERREUR] Impossible de contacter l'API ngrok après {max_attempts} tentatives: {ex}", "red")
             time.sleep(1)
 
-        # If we reach here, API didn't return a tunnel. Grab process output for debugging.
-        try:
-            out, err = proc.communicate(timeout=1)
-        except Exception:
-            out, err = (None, None)
+        # Teste la connectivité réelle à l'URL ngrok
+        if ngrok_url:
+            try:
+                test_response = requests.get(ngrok_url + "/", timeout=5)
+                if test_response.status_code == 200:
+                    colored_print(f"✓ Connectivité OK sur {ngrok_url}", "green")
+                    return ngrok_url
+                else:
+                    colored_print(f"[ERREUR] Réponse inattendue ({test_response.status_code}) sur {ngrok_url}", "red")
+            except Exception as e:
+                colored_print(f"[ERREUR] Impossible de joindre {ngrok_url} : {e}", "red")
 
-        colored_print("⚠ Impossible de récupérer l'URL ngrok via API", "yellow")
-        if out:
-            colored_print(f"ngrok stdout:\n{out}", "yellow")
-        if err:
-            colored_print(f"ngrok stderr:\n{err}", "yellow")
-        return None
+        # Si ngrok échoue, fallback automatique à localtunnel
+        colored_print("[INFO] Fallback automatique : lancement de localtunnel sur le port 5000...", "yellow")
+        try:
+            # Vérifie que localtunnel est installé
+            lt_path = shutil.which("lt") or shutil.which("npx")
+            if lt_path:
+                # Utilise npx si localtunnel n'est pas installé globalement
+                if shutil.which("lt"):
+                    lt_command = ["lt", "--port", "5000", "--print-requests"]
+                else:
+                    lt_command = ["npx", "localtunnel", "--port", "5000", "--print-requests"]
+                lt_proc = subprocess.Popen(lt_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                # Lecture de l'URL localtunnel dans la sortie
+                for i in range(30):
+                    line = lt_proc.stdout.readline()
+                    if "your url is:" in line:
+                        lt_url = line.split("your url is:")[-1].strip()
+                        colored_print(f"✓ Tunnel localtunnel actif: {lt_url}", "green")
+                        return lt_url
+                    time.sleep(1)
+                colored_print("[ERREUR] Impossible de récupérer l'URL localtunnel.", "red")
+                return None
+            else:
+                colored_print("[FATAL] localtunnel n'est pas installé. Installe-le avec 'npm install -g localtunnel' ou 'npx localtunnel'", "red")
+                return None
+        except Exception as e:
+            colored_print(f"[FATAL] Erreur lors du lancement de localtunnel: {e}", "red")
+            return None
 
     except Exception as e:
         colored_print(f"✗ Erreur démarrage ngrok: {e}", "red")
@@ -187,14 +216,19 @@ def handle_app(mobile_app_folder, install_app=False, sudo=False, no_cache=False,
 
     if env == "development":
         colored_print("⚙️ Mode développement détecté", "blue")
+        # Toujours lancer ngrok et mettre à jour l'URL backend, même en mode tunnel
         ngrok_url = setup_ngrok(mobile_app_folder)
         if ngrok_url:
             update_backend_urls(mobile_app_folder, ngrok_url)
         else:
             colored_print("⚠️ Échec de la configuration ngrok", "yellow")
+        if tunnel:
+            colored_print("✅ Tunnel mode activé (ngrok + Expo tunnel)", "blue")
 
     elif env == "production":
         colored_print("✅ Mode production détecté (pas de ngrok)", "blue")
+        if tunnel:
+            colored_print("📡 Expo PROD en mode TUNNEL (sans ngrok)", "green")
 
     else:
         colored_print("❌ Erreur : variable ENV doit être 'development' ou 'production'", "red")

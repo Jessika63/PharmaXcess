@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authApi from '../utils/api/auth';
+import { useUser } from './UserContext';
 
 type UserType = 'patient' | 'professional';
 
@@ -33,6 +34,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const { setUser: setUserInUserContext } = useUser();
+
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserTypeState] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,16 +84,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Clear any previous auth error so UI doesn't show stale messages while attempting login
       setAuthError(null);
-      setIsLoading(true);
+      // DO NOT set isLoading here - it would unmount the entire navigation stack
+      // The calling component (Login) should show its own loading state
+      console.log('⏳ Appel backend login...');
       // Call backend
       const result = await authApi.login(email, password, force);
 
       if (result.ok && result.data) {
+        console.log('✅ Backend OK - création userData');
         // backend returns user_id and sets session cookie (credentials: include)
         const userData: User = {
           id: String(result.data.user_id || ''),
           email: email,
-          name: (result.data.name as string) || undefined,
+          name: result.data.name || result.data.first_name + ' ' + result.data.last_name || email,
           userType: userType,
         };
 
@@ -101,23 +107,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUserTypeState(userType);
         }
         setUser(userData);
-  // Clear any auth error on successful login
-  setAuthError(null);
+        setUserInUserContext(userData); // Synchronize with UserContext
+        // Clear any auth error on successful login
+        setAuthError(null);
+        console.log('✅ Login réussi - retourne true');
         return true;
       }
 
-  const err = translateBackendError(result.error);
-  // Create an Error object and attach HTTP status so UI can react specifically (e.g., 401 -> offer signup)
-  const e: any = new Error(err);
-  e.status = result.status;
-  // Store auth error in context so UI survives navigation remounts
-  setAuthError({ message: err, status: result.status });
-  throw e;
+      console.log('❌ Backend erreur:', result.error);
+      const err = translateBackendError(result.error);
+      console.log('Erreur traduite:', err);
+      // Create an Error object and attach HTTP status so UI can react specifically (e.g., 401 -> offer signup)
+      const e: any = new Error(err);
+      e.status = result.status;
+      // Store auth error in context so UI survives navigation remounts
+      setAuthError({ message: err, status: result.status });
+      console.log('🔴 Lancement exception avec:', err);
+      throw e;
     } catch (error) {
+      console.log('🔴 Exception dans login catch:', error);
       // propagate the error so the calling screen can show a friendly message
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -184,18 +194,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (token: string, newPassword: string): Promise<boolean> => {
+    console.log('🔵 AuthContext.resetPassword appelé');
+    console.log('Token:', token?.substring(0, 10) + '...');
+    console.log('New password:', newPassword);
     try {
-      setIsLoading(true);
+      // DO NOT set isLoading here - it would unmount the entire navigation stack
+      // The calling component (ResetPassword) should show its own loading state
       const result = await authApi.resetPassword(token, newPassword);
-      if (result.ok) return true;
+      console.log('Réponse backend:', result);
+      if (result.ok) {
+        // Clear any auth error on successful reset
+        console.log('✅ Backend OK - retourne true');
+        setAuthError(null);
+        return true;
+      }
+      // Backend returned an error - translate and throw
+      console.log('❌ Backend erreur:', result.error);
       const err = translateBackendError(result.error);
+      console.log('Erreur traduite:', err);
       setAuthError({ message: err, status: result.status });
+      console.log('🔴 Lancement exception avec:', err);
       throw new Error(err);
-    } catch (e) {
-      // propagate the error so the calling screen can display the backend message
-      throw e;
-    } finally {
-      setIsLoading(false);
+    } catch (e: any) {
+      // If e is already an Error object with a message, re-throw it
+      // Otherwise create a new error with the caught value
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error(e?.message || String(e));
     }
   };
 

@@ -1,4 +1,3 @@
-
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
@@ -208,6 +207,7 @@ def register_blueprints():
     from routes.profile.documents import documents_bp
     from routes.profile.sub_profiles import sub_profile_bp
     from routes.ordonnances.ordonnance_create import ordonnances_bp
+    from routes.profile.followed_patients import followed_bp
     from routes.cart.cart import cart_bp
 
     # Save blueprints
@@ -265,6 +265,7 @@ def register_blueprints():
     app.register_blueprint(ordonnances_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(documents_bp)
+    app.register_blueprint(followed_bp)
 
 register_blueprints()
 
