@@ -213,6 +213,7 @@ def register_blueprints():
     from routes.ordonnances.get_non_verified_ordonnances import get_non_verified_ordonnances_bp
     from routes.ordonnances.verify_ordonnance import verify_ordonnance_bp
 
+    from routes.cart.cart import cart_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -267,6 +268,7 @@ def register_blueprints():
     app.register_blueprint(clickcollect_status_bp)
     app.register_blueprint(clickcollect_temp_images_bp)
     app.register_blueprint(ordonnances_bp)
+    app.register_blueprint(cart_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(get_medical_advice_bp)
     app.register_blueprint(ordonnance_ocr_create_bp)
