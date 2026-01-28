@@ -143,7 +143,7 @@ export default function Profile({ navigation }: ProfileProps): React.JSX.Element
             <View style={[styles.profileContainer, { marginBottom: 50 }]}>
                 <Image source={{ uri: getAvatarUrl() }} style={styles.profileImage} />
                 <Text style={styles.profileName}>
-                    {currentProfile?.name || user?.name || 'Utilisateur'}
+                    {currentProfile?.name || user?.name}
                 </Text>
             </View>
             

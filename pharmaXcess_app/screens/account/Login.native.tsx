@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -41,7 +41,7 @@ interface FormErrors {
 export default function Login({ navigation }: LoginProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
-    const { login, isLoading: authLoading, authError, clearAuthError } = useAuth();
+    const { login, authError, clearAuthError } = useAuth();
     const { t } = useTranslation('common');
     const styles = createStyles(colors, fontScale);
 
@@ -87,6 +87,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     const [errorStatus, setErrorStatus] = useState<number | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state
 
     // Refs for accessibility
     const emailInputRef = useRef<TextInput>(null);
@@ -95,6 +96,17 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
     // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Clear errors when component mounts so old errors don't persist from AuthContext
+    useEffect(() => {
+        if (clearAuthError) {
+            clearAuthError();
+        }
+        return () => {
+            // Optionally, you could also clear errors on unmount
+            // if you want a fresh state when coming back to login
+        };
+    }, [clearAuthError]);
 
     // Form validation
     const validateForm = useCallback((): boolean => {
@@ -145,31 +157,55 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
 
     // Handle login submission
     const handleLogin = useCallback(async () => {
+        console.log('========== LOGIN SUBMIT ==========');
+        console.log('Email:', formData.email);
+        console.log('Password:', formData.password);
+        console.log('UserType:', formData.userType);
+        
         if (!validateForm()) {
             // Announce validation errors to screen readers
             const errorMessages = Object.values(errors).join('. ');
+            console.log('❌ Validation locale échouée:', errors);
             AccessibilityInfo.announceForAccessibility(`Erreurs de validation: ${errorMessages}`);
             return;
         }
 
+        console.log('✅ Validation locale OK - Appel login...');
         setErrors({});
-    setErrorStatus(null);
+        setErrorStatus(null);
+        setIsSubmitting(true);
 
-            try {
-                // call AuthContext.login which now throws on failure with backend message
-                await login(formData.email, formData.password, formData.userType);
+        try {
+            // call AuthContext.login which now throws on failure with backend message
+            const success = await login(formData.email, formData.password, formData.userType);
+            console.log('Résultat login:', success);
+            if (success) {
+                console.log('✅ LOGIN RÉUSSI');
                 AccessibilityInfo.announceForAccessibility('Connexion réussie');
                 // Navigation will be handled by RootNavigation observing auth state
-            } catch (error: any) {
-                const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
-
-                // If backend returned 401 (not found / wrong password) show the backend message
-                // inline on the page instead of a popup to avoid interrupting the flow.
-                const status = error?.status;
-                setErrors({ general: errorMessage });
-                setErrorStatus(status || null);
-                AccessibilityInfo.announceForAccessibility(`Erreur de connexion: ${errorMessage}`);
+            } else {
+                console.log('❌ Login retourné false');
+                setErrors({ general: 'Échec de la connexion' });
             }
+        } catch (error: any) {
+            console.log('❌ EXCEPTION CATCHÉE dans Login:');
+            console.log('Type:', typeof error);
+            console.log('Message:', error?.message);
+            console.log('Status:', error?.status);
+            console.log('Objet complet:', error);
+            
+            const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+
+            // If backend returned 401 (not found / wrong password) show the backend message
+            // inline on the page instead of a popup to avoid interrupting the flow.
+            const status = error?.status;
+            setErrors({ general: errorMessage });
+            setErrorStatus(status || null);
+            console.log('📍 Message affiché sur Login:', errorMessage);
+            AccessibilityInfo.announceForAccessibility(`Erreur de connexion: ${errorMessage}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     }, [formData, validateForm, errors, login]);
 
     // Toggle password visibility
@@ -241,7 +277,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                     </View>
                 )}
                 {/* If the backend indicated 401 (not found/wrong password), show a small inline link to SignUp */}
-                { (errors.general ? errorStatus === 401 : authError?.status === 401) && (
+                { (errors.general && errorStatus === 401) && (
                     <TouchableOpacity onPress={() => navigation.navigate('SignUp')} accessibilityRole="button">
                         <Text style={[styles.registerLink, { marginTop: 8 }]}>Créer un compte</Text>
                     </TouchableOpacity>
@@ -358,20 +394,20 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                 <TouchableOpacity
                     style={[
                         styles.loginButton,
-                        authLoading && styles.buttonDisabled
+                        isSubmitting && styles.buttonDisabled
                     ]}
                     onPress={handleLogin}
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     accessibilityRole="button"
                     accessibilityLabel="Se connecter"
                     accessibilityHint="Appuyez pour vous connecter"
-                    accessibilityState={{ disabled: authLoading }}
+                    accessibilityState={{ disabled: isSubmitting }}
                 >
                     <LinearGradient
                         colors={[colors.primary, colors.secondary]}
                         style={styles.gradient}
                     >
-                        {authLoading ? (
+                        {isSubmitting ? (
                             <ActivityIndicator color={colors.text} size="small" />
                         ) : (
                             <Text style={styles.buttonText}>Se connecter</Text>
@@ -409,11 +445,6 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                         </Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* Loading overlay */}
-                {authLoading && (
-                    <View style={styles.loadingOverlay} />
-                )}
 
                 {/* Hidden accessibility announcement text */}
                 <Text
