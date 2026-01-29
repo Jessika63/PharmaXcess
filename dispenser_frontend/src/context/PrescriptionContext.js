@@ -17,7 +17,9 @@ export const PrescriptionProvider = ({ children }) => {
     extractedText: '',
     hasQRCode: false,
     scanTimestamp: null,
-    rawData: null
+    rawData: null,
+    carteIdentite: null, // Identity card data
+    carteVitale: null // Health card data
   });
 
   // Charger les données depuis localStorage au montage
@@ -53,7 +55,9 @@ export const PrescriptionProvider = ({ children }) => {
       extractedText: '',
       hasQRCode: false,
       scanTimestamp: null,
-      rawData: null
+      rawData: null,
+      carteIdentite: null,
+      carteVitale: null
     });
     localStorage.removeItem('prescriptionData');
   };

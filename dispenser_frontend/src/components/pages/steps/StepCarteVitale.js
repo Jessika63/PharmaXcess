@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CameraComponent from "../../camera_component";
 import config from "../../../config";
+import { usePrescription } from "../../../context/PrescriptionContext";
 
 function StepCarteVitale({ goToNextStep, goBackStep }) {
+  const { updatePrescriptionData } = usePrescription();
   const navigate = useNavigate();
 
   const [showCamera, setShowCamera] = useState(false); 
@@ -47,6 +49,17 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        // Save the carte vitale data
+        const carteData = {
+          extractedText: data.extracted_text || '',
+          numeroSecu: data.numero_secu || '',
+          nom: data.nom || '',
+          prenom: data.prenom || ''
+        };
+        
+        updatePrescriptionData({ carteVitale: carteData });
+        localStorage.setItem('carteVitale', JSON.stringify(carteData));
+        
         setSuccess(true);
         setTimeout(() => {
           goToNextStep();

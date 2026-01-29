@@ -4,8 +4,10 @@ import CameraComponent from '../../camera_component';
 import ModalCamera from '../../modal_camera';
 import config from '../../../config';
 import useInactivityRedirect from '../../../utils/useInactivityRedirect';
+import { usePrescription } from '../../../context/PrescriptionContext'; 
 
 function StepCarteIdentite({ goToNextStep, goBackStep }) {
+  const { updatePrescriptionData } = usePrescription(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [currentDocType, setCurrentDocType] = useState(null);
@@ -54,6 +56,17 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        // Save the data in context and localStorage 
+        const carteData = {
+          extractedText: data.extracted_text || '', 
+          nom: data.nom || '', 
+          prenom: data.prenom || '', 
+          dateNaissance: data.date_naissance || '', 
+          numeroIdentite: data.numeroIdentite || '' 
+        }; 
+
+        updatePrescriptionData({ carteIdentite: carteData }); 
+        localStorage.setItem('carteIdentite', JSON.stringify(carteData));
         setStatusSides(prev => {
           const updated = { ...prev, [currentDocType]: "valid" };
           if (updated.R === "valid" && updated.V === "valid") {
@@ -213,6 +226,20 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
                       const data = await response.json();
                       if (response.ok && data.success) {
+                        // Save the data in context and localStorage 
+                        const carteData = {
+                          extractedText: data.extracted_text || '', 
+                          nom: data.nom || '', 
+                          prenom: data.prenom || '', 
+                          dateNaissance: data.date_naissance || '', 
+                          numeroIdentite: data.numero_identite || '' 
+                        }; 
+
+                        updatePrescriptionData({ carteIdentite: carteData }); 
+
+
+                        localStorage.setItem('carteIdentite', JSON.stringify(carteData));
+                        
                         setStatusSides(prev => {
                           const updated = { ...prev, [currentDocType]: "valid" };
                           setTimeout(() => {

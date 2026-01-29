@@ -91,6 +91,20 @@ function DocumentsFlow({ stepsOrder }) {
         setActiveStepIndex(index);
     };
 
+    const restartFlow = () => { 
+        // Reinit all steps 
+        setSteps(prev => prev.map(s => ({ ...s, completed: false }))); 
+        setCurrentStepIndex(0); 
+        setActiveStepIndex(null);
+        setSelectedStepIndex(0); 
+        setHasQRCode(false);
+        // Clean localStorage 
+        localStorage.removeItem('prescriptionData');
+        localStorage.removeItem('medicaments');
+        localStorage.removeItem('carteIdentite');
+        localStorage.removeItem('carteVitale');
+    };
+
     const nextUncompletedIndex = findFirstUncompleted(steps); 
 
     const [selectedStepIndex, setSelectedStepIndex] = useState(nextUncompletedIndex === -1 ? 0 : nextUncompletedIndex);
@@ -131,6 +145,7 @@ function DocumentsFlow({ stepsOrder }) {
                         React.createElement(steps[activeStepIndex].component, {
                             goToNextStep,
                             goBackStep,
+                            restartFlow, 
                             setHasQRCode: steps[activeStepIndex].id === 'ordonnance' ? setHasQRCode : undefined
                         })
                     ) : (
