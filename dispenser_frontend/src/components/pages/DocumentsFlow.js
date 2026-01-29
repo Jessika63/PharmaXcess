@@ -110,8 +110,8 @@ function DocumentsFlow({ stepsOrder }) {
     return (
         <PrescriptionProvider>
             <div className="w-full h-screen flex flex-col bg-background_color">
-                {/* Header: isn't displayed if the active step is StepOrdonnance or StepCarteIdentite */}
-                {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite')) && (
+                {/* Header: isn't displayed if the active step is StepOrdonnance, StepCarteIdentite or StepCarteVitale */}
+                {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
                       <div className="flex items-center gap-4">
                           <button
