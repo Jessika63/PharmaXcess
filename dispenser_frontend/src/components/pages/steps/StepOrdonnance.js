@@ -14,7 +14,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const [extractedText, setExtractedText] = useState("");
   const [error, setError] = useState("");
   const [scanType, setScanType] = useState(null); // 'qr' or 'prescription'
-  const [showQRScanner, setShowQRScanner] = useState(false); // for displaying the QR scan page
+  const [showQRScanner, setShowQRScanner] = useState(false); // for displaying the QR scan page 
   const [showPrescriptionScanner, setShowPrescriptionScanner] = useState(false); // for displaying the prescription scan page 
   const [success, setSuccess] = useState(false); 
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
 
   const openCamera = (type) => {
     setScanType(type);
-    if (type === 'qr') { 
+    if (type === 'qr') {
       // Display the QR scan page instead of modal
       setShowQRScanner(true); 
       setError("");
@@ -274,34 +274,35 @@ const handlePhotoCaptured = async (base64Image) => {
           {/* Prescription Scanner Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-8">
             <div className="flex flex-col items-center text-center max-w-3xl mb-8">
-              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6">
-                <config.icons.filePrescription className="text-2xl" />
+              <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-8">
+                <config.icons.filePrescription className="text-4xl text-black" />
               </div>
-              <p className="text-xl text-black mb-2">
-                Veuillez scanner votre ordonnance via le scanner
+              <p className="text-2xl text-black mb-4 font-semibold">
+                Veuillez insérer votre ordonnance
               </p>
               <p className="text-xl text-black">
-                présent sur la machine
+                dans le scanner présent sur la machine
               </p>
             </div>
 
-            {/* Embedded Camera Component */}
-            {!success && (
-              <div className="mt-6 mb-8">
-                <CameraComponent 
-                  onPhotoCapture={async (base64Image) => {
-                    try {
-                      setLoading(true);
-                      setError('');
+            {/* Button to validate scan */}
+            {!success && !loading && (
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    setError('');
 
-                      const byteString = atob(base64Image.split(",")[1]);
-                      const ab = new ArrayBuffer(byteString.length);
-                      const ia = new Uint8Array(ab);
-                      for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
-                      }
-                      const blob = new Blob([ab], { type: "image/jpeg" });
-
+                    // Créer une image factice pour le backend actuel
+                    // En attendant l'intégration du vrai scanner
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    canvas.toBlob(async (blob) => {
                       const data = await extractPrescriptionText(blob);
 
                       if (data.success) {
@@ -321,28 +322,31 @@ const handlePhotoCaptured = async (base64Image) => {
                         }, 1000);
                       } else {
                         setError(data.error || "Erreur lors de l'analyse de l'ordonnance");
+                        setLoading(false);
                       }
-                    } catch (err) {
-                      console.error(err);
-                      setError("Erreur lors de l'analyse de l'ordonnance");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }} 
-                />
-              </div>
+                    }, 'image/jpeg');
+                  } catch (err) {
+                    console.error(err);
+                    setError("Erreur lors du scan de l'ordonnance");
+                    setLoading(false);
+                  }
+                }}
+                className="px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+              >
+                LANCER LE SCAN
+              </button>
             )}
 
             {loading && (
-              <p className="text-gray-700 font-medium animate-pulse mt-2">Analyse en cours, veuillez patienter...</p>
+              <p className="text-gray-700 font-medium text-xl animate-pulse mt-2">Scan en cours, veuillez patienter...</p>
             )}
 
             {error && (
-              <div className="text-red-600 font-semibold mt-2 max-w-md">{error}</div>
+              <div className="text-red-600 font-semibold text-lg mt-2 max-w-md">{error}</div>
             )}
 
             {success && (
-              <div className="text-green-600 font-semibold mt-2 max-w-md">Ordonnance détectée avec succès !</div>
+              <div className="text-green-600 font-semibold text-xl mt-2 max-w-md">Ordonnance scannée avec succès !</div>
             )}
           </div>
         </>
