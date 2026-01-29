@@ -60,6 +60,7 @@ function DocumentsFlow({ stepsOrder }) {
             }
             return s;
         }));
+        setHasQRCode(nextHasQRCode);
         if (currentStepIndex < steps.length - 1) {
             // Si on a un QR code, on saute l'étape "Carte d'Identité"
             if (nextHasQRCode && steps[currentStepIndex].id === 'ordonnance') {
