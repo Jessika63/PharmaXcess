@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { usePrescription } from "../../../context/PrescriptionContext";
+import { useCart } from "../../../context/CartContext";
 import config from "../../../config";
 
 function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
   const navigate = useNavigate();
   const { prescriptionData, updatePrescriptionData } = usePrescription();
+  const { addToCart } = useCart();
   const [medicaments, setMedicaments] = useState([]);
   const [selectedMedicaments, setSelectedMedicaments] = useState({});
 
@@ -45,16 +47,32 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
   };
 
   const handleConfirm = () => {
-    // Filtret the selected medicaments
-    const finalMedicaments = medicaments.filter((_, index) => selectedMedicaments[index]);
+    // Filter the selected medicaments
+    const selectedMeds = medicaments.filter((_, index) => selectedMedicaments[index]);
     
-    // Update prescription data with the final medicaments
-    updatePrescriptionData({
-      medicaments: finalMedicaments
+    // Add each selected medicament to the cart
+    selectedMeds.forEach(med => {
+      const quantity = med.quantity || 1;
+      // Add the medicament 'quantity' times
+      for (let i = 0; i < quantity; i++) {
+        addToCart({
+          id: med.id || `${med.nom}-${Date.now()}-${i}`,
+          nom: med.nom,
+          name: med.nom, // compatibility
+          posologie: med.posologie,
+          price: 0, // Price to be set in cart
+          description: med.posologie
+        });
+      }
     });
     
-    // Pass to the next step
-    goToNextStep();
+    // Update prescription data with selected medicaments
+    updatePrescriptionData({
+      medicaments: selectedMeds
+    });
+    
+    // Navigate to cart
+    navigate('/cart');
   };
 
   const handleRestart = () => {
