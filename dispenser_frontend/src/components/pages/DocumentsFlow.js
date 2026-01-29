@@ -35,18 +35,18 @@ function DocumentsFlow({ stepsOrder }) {
 
         // If a step was running (opened from overview), mark that specific step completed and return to overview
         if (activeStepIndex !== null) {
-            setSteps(prev => prev.map((s, i) => { 
-                if (i === activeStepIndex) return { ...s, completed: true };
+            setSteps(prev => prev.map((s, i) => {
+                if (i === activeStepIndex) return { ...s, completed: true }; 
                 if (nextHasQRCode && prev[activeStepIndex].id === 'ordonnance' && s.id === 'carte_identite') {
                     return { ...s, completed: true };
                 }
                 return s; 
-            }));
+            })); 
             setHasQRCode(nextHasQRCode);
             // after finishing, return to overview
             setActiveStepIndex(null);
             setCurrentStepIndex(prev => { 
-                const first = findFirstUncompleted(steps);
+                const first = findFirstUncompleted(steps); 
                 return first === -1 ? prev : first;
             });
             return; 
@@ -71,10 +71,10 @@ function DocumentsFlow({ stepsOrder }) {
     };
 
     const goBackStep = () => {
-        if (activeStepIndex !== null) {
+        if (activeStepIndex !== null) { 
             // if running a step, close it and return to overview
             setActiveStepIndex(null);
-            return;
+            return; 
         }
         if (currentStepIndex > 0) {
             // Si on revient en arrière depuis la carte_vitale et qu'on avait un QR code
@@ -94,7 +94,7 @@ function DocumentsFlow({ stepsOrder }) {
 
     const [selectedStepIndex, setSelectedStepIndex] = useState(nextUncompletedIndex === -1 ? 0 : nextUncompletedIndex);
 
-    // Keep selected step in sync when steps update (advance to next uncompleted) 
+    // Keep selected step in sync when steps update (advance to next uncompleted)
     useEffect(() => { 
         if (steps[selectedStepIndex]?.completed) {
             setSelectedStepIndex(nextUncompletedIndex === -1 ? 0 : nextUncompletedIndex);
@@ -109,8 +109,8 @@ function DocumentsFlow({ stepsOrder }) {
     return (
         <PrescriptionProvider>
             <div className="w-full h-screen flex flex-col bg-background_color">
-                {/* Header: n'est PAS affiché si l'étape active est StepOrdonnance */}
-                {!(activeStepIndex !== null && steps[activeStepIndex].id === 'ordonnance') && (
+                {/* Header: isn't displayed if the active step is StepOrdonnance or StepCarteIdentite */}
+                {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
                       <div className="flex items-center gap-4">
                           <button

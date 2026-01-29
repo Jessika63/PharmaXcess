@@ -161,7 +161,7 @@ const handlePhotoCaptured = async (base64Image) => {
 };
 
   return (
-    <div style={{ backgroundColor: '#F8E6EA' }} className="w-full h-screen flex flex-col">
+    <div className="w-full h-screen flex flex-col">
       {showQRScanner ? (
         // Scan QR Code Page
         <>
