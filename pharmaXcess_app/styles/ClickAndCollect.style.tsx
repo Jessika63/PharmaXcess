@@ -307,6 +307,12 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginBottom: 20,
         resizeMode: 'contain',
     },
+    qrImage: {
+        width: 220,
+        height: 220,
+        resizeMode: 'contain',
+        marginTop: 16,
+    },
 });
 
 export default createStyles;

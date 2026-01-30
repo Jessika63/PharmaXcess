@@ -15,6 +15,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import clickcollectApi from '../../utils/api/clickcollect';
 import ordonnancesApi from '../../utils/api/ordonnances';
+import { getInfos } from '../../utils/api/profile';
 import Ionicons from '@expo/vector-icons/Ionicons'; 
 import createStyles from '../../styles/ClickAndCollect.style';
 
@@ -34,6 +35,7 @@ export default function ClickAndCollect(): React.JSX.Element {
 
   // State for managing prescription requests 
   const [requests, setRequests] = useState<PrescriptionRequest[]>([]);
+  const [closedRequests, setClosedRequests] = useState<Set<string>>(new Set());
 
   // Load pending requests from backend on mount
   React.useEffect(() => {
@@ -51,20 +53,41 @@ export default function ClickAndCollect(): React.JSX.Element {
             return 'pending';
           };
 
-          const mapped: PrescriptionRequest[] = res.data.orders.map((o: any) => {
+          // Function to fetch user info by ID
+          const fetchUserName = async (userId: string | number): Promise<string> => {
+            try {
+              const res = await getInfos(userId);
+              if (res.ok && res.data) {
+                return res.data.nom || 'Utilisateur';
+              }
+            } catch (error) {
+              console.error('[ClickAndCollect] Error fetching user info:', error);
+            }
+            return 'Utilisateur';
+          };
+
+          const filteredOrders = res.data.orders.filter((o: any) => {
             const rawStatus = o.status || o.statut || o.statut_fr || null;
             const mappedStatus = translateStatus(rawStatus);
-            console.debug('[Professional ClickAndCollect] map order', { id: o.id, rawStatus, mappedStatus });
-            return {
-              id: String(o.id),
-              patientName: String(o.user_id || o.utilisateur_id || 'Utilisateur'),
-              patientFirstName: '',
-              requestTime: o.date_demande ? new Date(o.date_demande).toLocaleString() : '',
-              prescriptionImage: '',
-              status: mappedStatus as 'pending' | 'approved' | 'rejected',
-              userId: o.user_id || o.utilisateur_id || o.utilisateurId || null,
-            } as any;
+            return mappedStatus === 'pending';
           });
+
+          const mapped: PrescriptionRequest[] = await Promise.all(
+            filteredOrders.map(async (o: any) => {
+              const rawStatus = o.status || o.statut || o.statut_fr || null;
+              const mappedStatus = translateStatus(rawStatus);
+              const userName = await fetchUserName(o.user_id || o.utilisateur_id || '');
+              return {
+                id: String(o.id),
+                patientName: userName,
+                patientFirstName: '',
+                requestTime: o.date_demande ? new Date(o.date_demande).toLocaleString() : '',
+                prescriptionImage: '',
+                status: mappedStatus as 'pending' | 'approved' | 'rejected',
+                userId: o.user_id || o.utilisateur_id || o.utilisateurId || null,
+              } as any;
+            })
+          );
           setRequests(mapped);
         }
       } catch (e) {
@@ -81,12 +104,12 @@ export default function ClickAndCollect(): React.JSX.Element {
 
   // Functions to handle request actions 
   const openRequestDetail = (request: PrescriptionRequest) => {
-    (async () => {
-      try {
-        setSelectedRequest(request);
-        setSelectedImageLoading(true);
-        console.debug('[Professional ClickAndCollect] fetching temp image for user', request.userId || request.patientName);
-        if (request.userId) {
+    setSelectedRequest(request);
+    setSelectedImageLoading(true);
+    console.debug('[Professional ClickAndCollect] fetching temp image for user', request.userId || request.patientName);
+    if (request.userId) {
+      (async () => {
+        try {
           const imgRes = await ordonnancesApi.getLastTempImage(request.userId);
           console.debug('[Professional ClickAndCollect] getLastTempImage response', imgRes);
           if (imgRes.ok && imgRes.data) {
@@ -97,16 +120,26 @@ export default function ClickAndCollect(): React.JSX.Element {
               setSelectedRequest(prev => prev ? ({ ...prev, prescriptionImage: uri }) : ({ ...request, prescriptionImage: uri } as any));
             }
           }
+        } catch (e) {
+          console.error('[Professional ClickAndCollect] error fetching image', e);
+        } finally {
+          setSelectedImageLoading(false);
         }
-      } catch (e) {
-        console.error('[Professional ClickAndCollect] error fetching image', e);
-      } finally {
-        setSelectedImageLoading(false);
-      }
-    })();
+      })();
+    } else {
+      setSelectedImageLoading(false);
+    }
   };
 
   const closeRequestDetail = () => {
+    if (selectedImageLoading) {
+      console.debug('[Professional ClickAndCollect] Cannot close request detail, image is still loading.');
+      return;
+    }
+
+    if (selectedRequest) {
+      setClosedRequests(prev => new Set(prev).add(selectedRequest.id));
+    }
     setSelectedRequest(null);
   };
 
@@ -225,12 +258,11 @@ export default function ClickAndCollect(): React.JSX.Element {
                   <Text style={styles.detailTitle}>
                     {selectedRequest.patientFirstName} {selectedRequest.patientName}
                   </Text>
-                  <TouchableOpacity 
-                    style={styles.closeButton}
-                    onPress={closeRequestDetail}
-                  >
-                    <Ionicons name="close" size={24} color={colors.text} />
-                  </TouchableOpacity>
+                  {selectedRequest && !selectedImageLoading && (
+                    <TouchableOpacity onPress={closeRequestDetail} style={styles.closeButton}>
+                      <Ionicons name="close" size={24} color={colors.danger} />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 <ScrollView style={styles.prescriptionContainer}>
