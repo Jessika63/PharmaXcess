@@ -28,6 +28,12 @@ function Cart() {
     const handleProceedToPayment = async () => {
         if (cartItems.length === 0) return;
 
+        // If coming from verification, go to medication delivery
+        if (location.state?.fromVerification) {
+            navigate('/medication-delivery', { state: { cartItems: cartItems } });
+            return;
+        }
+
         // If the cart was opened from the "COMMANDER" preorder flow,
         // route the user to the preorder page instead of creating a payment. 
         if (location.state?.checkoutLabel === 'COMMANDER') {

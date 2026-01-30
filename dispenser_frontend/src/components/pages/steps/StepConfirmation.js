@@ -59,6 +59,7 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
           id: med.id || `${med.nom}-${Date.now()}-${i}`,
           nom: med.nom,
           name: med.nom, // compatibility
+          label: med.nom, // For display in cart
           posologie: med.posologie,
           price: 0, // Price to be set in cart
           description: med.posologie
@@ -71,8 +72,8 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
       medicaments: selectedMeds
     });
     
-    // Navigate to cart
-    navigate('/cart');
+    // Navigate to cart with verification flag
+    navigate('/cart', { state: { fromVerification: true, checkoutLabel: 'FINIR' } });
   };
 
   const handleRestart = () => {
