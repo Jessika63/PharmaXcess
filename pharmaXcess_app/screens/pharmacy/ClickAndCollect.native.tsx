@@ -1,40 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Alert, ScrollView, AlertProps, StyleProp, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Image, 
+  ActivityIndicator, 
+  Alert, 
+  ScrollView,
+  Dimensions,
+  FlatList
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CameraView, CameraCapturedPicture, Camera } from 'expo-camera';
-import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import createStyles from '../../styles/ClickAndCollect.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext'; 
 import clickcollectApi from '../../utils/api/clickcollect';
-import ordonnancesApi from '../../utils/api/ordonnances';
+import { CustomPicker } from '../../components';
+import config from '../../config';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Interface for storing QR data by profile 
 interface ProfileQRData { 
   [profileId: string]: { 
     qrCode: string; 
     isValidated: boolean; 
-    photo: CameraCapturedPicture | null; 
+    selectedOrdonnanceId: string | null; 
   }; 
 }
 
-// The ClickAndCollect component allows users to take a photo of their prescription, validate it, and receive confirmation from a pharmacist.
 export default function ClickAndCollect(): React.JSX.Element {
   const { colors } = useTheme();
   const { fontScale } = useFontScale();
   const { currentProfile, getProfileById } = useProfile();
   const styles = createStyles(colors, fontScale);
+  const { height: screenHeight } = Dimensions.get('window');
 
   // Global state to store QR data for all profiles
   const [profileQRData, setProfileQRData] = useState<ProfileQRData>({});
-  // State to manage camera permissions, visibility, photo capture, and validation status
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraVisible, setCameraVisible] = useState<boolean>(false);
-  const [photo, setPhoto] = useState<CameraCapturedPicture | null>(null);
-  const [isImageValidated, setIsImageValidated] = useState<boolean>(false);
-  // State to manage whether the prescription is being validated by a pharmacist and the validation result
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
   const [isValidatedByPharmacist, setIsValidatedByPharmacist] = useState<boolean | null>(null);
   const [clickcollectError, setClickcollectError] = useState<string | null>(null);
@@ -44,66 +48,19 @@ export default function ClickAndCollect(): React.JSX.Element {
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [showOrders, setShowOrders] = useState<boolean>(false);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  
+  // Nouveaux états pour la sélection d'ordonnance
+  const [ordonnances, setOrdonnances] = useState<Array<{ label: string; value: string }>>([]);
+  const [selectedOrdonnanceId, setSelectedOrdonnanceId] = useState<string | null>(null);
+  const [isLoadingOrdonnances, setIsLoadingOrdonnances] = useState<boolean>(false);
 
   const userClosedOrderRef = useRef(false);
-
-  // Helper to poll the order status until pro acts (validate/refuse)
-  const startPolling = async (startOrderId: number | null) => {
-    if (!startOrderId) return;
-    pollingCancelledRef.current = false;
-    const pollInterval = 3000;
-    try {
-      while (!pollingCancelledRef.current) {
-        // wait
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise(r => setTimeout(r, pollInterval));
-        // eslint-disable-next-line no-await-in-loop
-        // eslint-disable-next-line no-await-in-loop
-        const statusRes = await clickcollectApi.getOrderStatus(startOrderId);
-        if (statusRes.ok && statusRes.data?.order) {
-          const status = statusRes.data.order.status;
-          if (status === 'valide') {
-            const prescriptionQr = statusRes.data.order.contenu_qr || statusRes.data.order.prescription_qr;
-            setOrderStatus('valide');
-            setIsValidatedByPharmacist(true);
-            if (currentProfile?.id) {
-              const qrCodeValue = prescriptionQr || `https://pharmaxcess.fr/prescription/${currentProfile.id}/${Date.now()}`;
-              setProfileQRData(prev => ({
-                ...prev,
-                [currentProfile.id]: {
-                  photo: prev[currentProfile.id]?.photo || photo,
-                  qrCode: qrCodeValue,
-                  isValidated: true
-                }
-              }));
-            }
-            break;
-          }
-          if (status === 'refuse') {
-            const reason = statusRes.data.order.refusal_reason || 'Refusé par la pharmacie';
-            setClickcollectError(reason);
-            setOrderStatus('refuse');
-            setIsValidatedByPharmacist(false);
-            break;
-          }
-          // still pending
-          setOrderStatus('en_attente');
-        } else {
-          console.warn('[ClickAndCollect] (poll) unexpected status response', statusRes);
-        }
-      }
-    } catch (err: any) {
-      console.error('[ClickAndCollect] (poll) error', err);
-    } finally {
-      // leave isWaiting to caller control; do not forcibly clear it here
-    }
-  };
   
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return '';
     try {
       const d = new Date(dateStr);
-      return d.toLocaleString();
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (e) {
       return dateStr;
     }
@@ -111,7 +68,13 @@ export default function ClickAndCollect(): React.JSX.Element {
 
   const statusLabel = (s: string | undefined) => {
     if (!s) return '';
-    const map: any = { en_attente: 'En attente', pending: 'En attente', valide: 'Validée', refuse: 'Refusée' };
+    const map: any = { 
+      en_attente: 'En attente', 
+      pending: 'En attente', 
+      valide: 'Validée', 
+      refuse: 'Refusée',
+      error: 'Erreur'
+    };
     return map[s] || s;
   };
 
@@ -122,32 +85,96 @@ export default function ClickAndCollect(): React.JSX.Element {
     return prof?.name || order.profile_name || order.user_name || order.client_name || profileId || String(order.id || order.order_id || 'Non renseigné');
   };
   
-  // Reference to the camera view for taking pictures
-  const cameraRef = useRef<CameraView | null>(null);
-  
   // Retrieve current profile data 
   const currentProfileData = currentProfile ? profileQRData[currentProfile.id] : null;
   
-  // Request camera permissions when the component mounts
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
-  
+  // Function to fetch user's prescriptions
+  const fetchUserPrescriptions = async () => {
+    const apiBase = config?.backendUrl || '';
+    if (!apiBase) return;
+    
+    setIsLoadingOrdonnances(true);
+    try {
+      const res = await fetch(`${apiBase}/prescription-reminders/prescription`, {
+        credentials: 'include'
+      });
+      console.log('[ClickAndCollect] fetchUserPrescriptions response', res.status);
+      if (res.ok) {
+        const data = await res.json();
+        const prescriptionsData = data || [];
+        
+        const formattedOrdonnances = prescriptionsData.map((ordonnance: any) => ({
+          label: `${ordonnance.description || 'Ordonnance'} — ${ordonnance.date_expiration ? new Date(ordonnance.date_expiration).toLocaleDateString() : ''}`,
+          value: String(ordonnance.id)
+        }));
+        
+        setOrdonnances(formattedOrdonnances);
+        
+        // Si une ordonnance était déjà sélectionnée pour ce profil, la restaurer
+        if (currentProfileData?.selectedOrdonnanceId) {
+          setSelectedOrdonnanceId(currentProfileData.selectedOrdonnanceId);
+        }
+      }
+    } catch (error) {
+      console.error('[ClickAndCollect] error fetching user prescriptions', error);
+    } finally {
+      setIsLoadingOrdonnances(false);
+    }
+  };
+
+  const refreshOrdonnances = async () => {
+    const apiBase = config?.backendUrl || '';
+    if (!apiBase || !currentProfile?.id) return;
+    
+    setIsLoadingOrdonnances(true);
+    try {
+      const res = await fetch(`${apiBase}/prescription-reminders/prescription`, {
+        credentials: 'include'
+      });
+      console.log('[ClickAndCollect] refreshOrdonnances response', res.status);
+      if (res.ok) {
+        const data = await res.json();
+        const prescriptionsData = data || [];
+        
+        const formattedOrdonnances = prescriptionsData.map((ordonnance: any) => ({
+          label: `${ordonnance.description || 'Ordonnance'} — ${ordonnance.date_expiration ? new Date(ordonnance.date_expiration).toLocaleDateString() : ''}`,
+          value: String(ordonnance.id)
+        }));
+        
+        setOrdonnances(formattedOrdonnances);
+        
+        // Vérifier si l'ordonnance actuellement sélectionnée existe encore
+        if (selectedOrdonnanceId) {
+          const stillExists = formattedOrdonnances.some(o => o.value === selectedOrdonnanceId);
+          if (!stillExists) {
+            setSelectedOrdonnanceId(null);
+            // Mettre à jour aussi le profileQRData
+            setProfileQRData(prev => ({
+              ...prev,
+              [currentProfile.id]: {
+                selectedOrdonnanceId: null,
+                qrCode: prev[currentProfile.id]?.qrCode || '',
+                isValidated: false
+              }
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[ClickAndCollect] error refreshing user prescriptions', error);
+    } finally {
+      setIsLoadingOrdonnances(false);
+    }
+  };
+
   // Effect to reset state when switching profiles 
   useEffect(() => { 
     if (currentProfile?.id) { 
       const profileData = profileQRData[currentProfile.id];
       if (profileData) {
-        setPhoto(profileData.photo);
-        setIsImageValidated(profileData.isValidated);
-        setIsValidatedByPharmacist(profileData.isValidated);
+        setSelectedOrdonnanceId(profileData.selectedOrdonnanceId);
       } else {
-        setPhoto(null);
-        setIsImageValidated(false);
-        setIsValidatedByPharmacist(null);
+        setSelectedOrdonnanceId(null);
         setIsWaiting(false);
       }
 
@@ -176,37 +203,11 @@ export default function ClickAndCollect(): React.JSX.Element {
           console.error('[ClickAndCollect] error fetching previous orders', err);
         }
       })();
+
+      // Charger les ordonnances de l'utilisateur
+      refreshOrdonnances();
     }
   }, [currentProfile?.id]);
-
-  const takePicture = async (): Promise<void> => {
-    try {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync();
-        if (photo) {
-          setPhoto(photo);
-          // Save the photo in the local state 
-          if (currentProfile?.id) { 
-            setProfileQRData(prev => ({
-              ...prev,
-              [currentProfile.id]: {
-                photo: photo,
-                qrCode: prev[currentProfile.id]?.qrCode || '',
-                isValidated: false
-              }
-            }));
-          }
-        } else {
-          Alert.alert('Erreur', 'Impossible de capturer la photo.');
-        }
-        setCameraVisible(false);
-      } else {
-        Alert.alert('Erreur', 'La caméra n\'est pas prête.');
-      }
-    } catch (error) {
-      Alert.alert('Erreur', 'Une erreur est survenue lors de la prise de photo.');
-    }
-  };
 
   const openOrder = (order: any) => {
     if (!order || !currentProfile?.id) return;
@@ -246,7 +247,6 @@ export default function ClickAndCollect(): React.JSX.Element {
             if (status === 'valide') {
               if (!userClosedOrderRef.current) {
                 setOrderStatus('valide');
-                // Update the order in userOrders list
                 setUserOrders(prev => prev.map(o => 
                   (o.id === id || o.order_id === id) ? { ...o, status: 'valide' } : o
                 ));
@@ -256,7 +256,6 @@ export default function ClickAndCollect(): React.JSX.Element {
               if (!userClosedOrderRef.current) {
                 setOrderStatus('refuse');
                 setClickcollectError(statusRes.data.order.refusal_reason || 'Refusé par la pharmacie');
-                // Update the order in userOrders list
                 setUserOrders(prev => prev.map(o => 
                   (o.id === id || o.order_id === id) ? { ...o, status: 'refuse' } : o
                 ));
@@ -272,28 +271,24 @@ export default function ClickAndCollect(): React.JSX.Element {
   };
 
   const resetProcess = (): void => {
-    setPhoto(null);
-    setIsImageValidated(false);
+    setSelectedOrdonnanceId(null);
     setIsWaiting(false);
     setIsValidatedByPharmacist(null);
     setClickcollectError(null);
-    // Delete the saved photo for the current profile
     if (currentProfile?.id) { 
       setProfileQRData(prev => ({
         ...prev,
         [currentProfile.id]: {
-          photo: null,
+          selectedOrdonnanceId: null,
           qrCode: prev[currentProfile.id]?.qrCode || '',
           isValidated: false
         }
       }));
     }
-    // cancel any ongoing polling
     pollingCancelledRef.current = true;
     setOrderId(null);
     setOrderStatus(null);
     setSelectedOrder(null);
-    // remove persisted selected order
     (async () => {
       try {
         if (currentProfile?.id) {
@@ -307,40 +302,23 @@ export default function ClickAndCollect(): React.JSX.Element {
   };
 
   const handleImageValidation = async (): Promise<void> => {
-    // Flow:
-    // 1) upload temp image -> returns temp_image id
-    // 2) create ordonnance from temp image -> returns ordonnance_id
-    // 3) send clickcollect order referencing ordonnance_id
-    if (!photo || !currentProfile?.id) {
-      Alert.alert('Erreur', 'Photo ou profil manquant');
+    if (!selectedOrdonnanceId || !currentProfile?.id) {
+      Alert.alert('Erreur', 'Veuillez sélectionner une ordonnance');
       return;
     }
 
     setClickcollectError(null);
-    setIsImageValidated(true);
     setIsWaiting(true);
 
     let newOrderId: number | null = null;
     let newOrder: any = null;
 
     try {
-      // upload file (React Native file URI)
-      const uploadRes = await ordonnancesApi.uploadTempFile(currentProfile.id, photo.uri, `ord_${Date.now()}.jpg`, 'image/jpeg');
-      if (!uploadRes.ok) throw new Error(uploadRes.error || 'Upload failed');
-      const tempId = uploadRes.data?.id;
-
-      // create ordonnance using temp image
-      const createRes = await ordonnancesApi.createOrdonnance({ user_id: currentProfile.id, temp_image_id: tempId });
-      if (!createRes.ok) throw new Error(createRes.error || 'Create ordonnance failed');
-      const ordonnanceId = createRes.data?.ordonnance_id || createRes.data?.ordonnanceId || null;
-
-      // send click & collect order
-      const sendRes = await clickcollectApi.sendOrder(currentProfile.id, ordonnanceId);
+      const sendRes = await clickcollectApi.sendOrder(currentProfile.id, selectedOrdonnanceId);
       if (!sendRes.ok) throw new Error(sendRes.error || 'Send order failed');
       
       newOrderId = sendRes.data?.order_id || sendRes.data?.orderId;
       
-      // Create a proper order object matching the API response format
       newOrder = {
         id: newOrderId,
         order_id: newOrderId,
@@ -349,22 +327,27 @@ export default function ClickAndCollect(): React.JSX.Element {
         status: 'en_attente',
         date_demande: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        // Include other fields that might be needed
         refusal_reason: null,
         contenu_qr: null
       };
 
-      // IMMEDIATELY add to userOrders and set as selectedOrder
       setUserOrders(prev => [newOrder, ...prev]);
       setSelectedOrder(newOrder);
       setOrderId(newOrderId);
       setOrderStatus('en_attente');
 
-      // Save to AsyncStorage immediately
       const key = `clickcollect_selected_order_${currentProfile.id}`;
       await AsyncStorage.setItem(key, String(newOrderId));
 
-      // Start polling for status updates
+      setProfileQRData(prev => ({
+        ...prev,
+        [currentProfile.id]: {
+          selectedOrdonnanceId: selectedOrdonnanceId,
+          qrCode: prev[currentProfile.id]?.qrCode || '',
+          isValidated: false
+        }
+      }));
+
       pollingCancelledRef.current = false;
       while (!pollingCancelledRef.current) {
         await new Promise(r => setTimeout(r, 3000));
@@ -375,7 +358,6 @@ export default function ClickAndCollect(): React.JSX.Element {
         if (statusRes.ok && statusRes.data?.order) {
           const status = statusRes.data.order.status;
           
-          // Update the order in state
           const updatedOrder = {
             ...newOrder,
             ...statusRes.data.order,
@@ -383,8 +365,6 @@ export default function ClickAndCollect(): React.JSX.Element {
           };
           
           setSelectedOrder(updatedOrder);
-          
-          // Update in userOrders list
           setUserOrders(prev => prev.map(o => 
             o.id === newOrderId || o.order_id === newOrderId ? updatedOrder : o
           ));
@@ -398,7 +378,7 @@ export default function ClickAndCollect(): React.JSX.Element {
               setProfileQRData(prev => ({
                 ...prev,
                 [currentProfile.id]: {
-                  photo: prev[currentProfile.id]?.photo || photo,
+                  selectedOrdonnanceId: selectedOrdonnanceId,
                   qrCode: qrCodeValue,
                   isValidated: true
                 }
@@ -418,18 +398,66 @@ export default function ClickAndCollect(): React.JSX.Element {
       }
     } catch (err: any) {
       const msg = err?.message || String(err);
-      setClickcollectError(msg);
-      console.error('[ClickAndCollect] error during validation flow', { error: msg, newOrderId });
-      Alert.alert('Erreur', msg);
       
-      // If we created an order but got an error, still add it to the list
+      // Vérification spécifique pour l'erreur de commande existante
+      if (msg.includes("already exists for this user and prescription")) {
+        // Extraire l'ID de la commande existante depuis le message d'erreur
+        const match = msg.match(/order \(ID (\d+)\)/);
+        const existingOrderId = match ? match[1] : null;
+        
+        let errorMessage = "Une demande est déjà en cours pour cette ordonnance.";
+        
+        if (existingOrderId) {
+          errorMessage += `\n\nID de la demande existante : ${existingOrderId}`;
+          
+          // Rechercher la commande existante dans userOrders
+          const existingOrder = userOrders.find((order: any) => 
+            (order.id === Number(existingOrderId) || order.order_id === Number(existingOrderId))
+          );
+          
+          if (existingOrder) {
+            // Si on trouve la commande, on peut afficher plus de détails
+            errorMessage += `\nStatut : ${statusLabel(existingOrder.status)}`;
+            if (existingOrder.date_demande || existingOrder.created_at) {
+              errorMessage += `\nDate : ${formatDate(existingOrder.date_demande || existingOrder.created_at)}`;
+            }
+          }
+        }
+        
+        // Afficher une alerte avec l'option pour ouvrir la commande existante
+        Alert.alert(
+          "Demande déjà existante",
+          errorMessage,
+          [
+            { text: "OK", style: "cancel" },
+            ...(existingOrderId ? [{
+              text: "Voir la demande existante",
+              onPress: () => {
+                const existingOrder = userOrders.find((order: any) => 
+                  (order.id === Number(existingOrderId) || order.order_id === Number(existingOrderId))
+                );
+                if (existingOrder) {
+                  openOrder(existingOrder);
+                }
+              }
+            }] : [])
+          ]
+        );
+        
+        // On ne veut pas afficher cette erreur comme une erreur standard
+        setClickcollectError(null);
+      } else {
+        // Pour les autres erreurs, comportement normal
+        setClickcollectError(msg);
+        console.error('[ClickAndCollect] error during validation flow', { error: msg, newOrderId });
+        Alert.alert('Erreur', msg);
+      }
+      
       if (newOrder) {
         newOrder.status = 'error';
         newOrder.error = msg;
         setUserOrders(prev => [newOrder, ...prev]);
       }
-    } finally {
-      setIsWaiting(false);
     }
   };
 
@@ -445,11 +473,9 @@ export default function ClickAndCollect(): React.JSX.Element {
     setOrderId(null);
     setOrderStatus(null);
     setClickcollectError(null);
-    setPhoto(null);
-    setIsImageValidated(false);
+    setSelectedOrdonnanceId(null);
     pollingCancelledRef.current = true;
     
-    // Remove from AsyncStorage
     (async () => {
       try {
         if (currentProfile?.id) {
@@ -462,78 +488,70 @@ export default function ClickAndCollect(): React.JSX.Element {
     })();
   };
 
-  // Debug effect
+  // Calcul de la hauteur pour la liste des commandes
+  const ordersListHeight = Math.min(220, screenHeight * 0.4);
+
   useEffect(() => {
-    console.debug('[ClickAndCollect] State:', { 
-      selectedOrder: selectedOrder?.id, 
-      showOrders, 
-      userOrders: userOrders.length,
-      orderStatus,
-      isWaiting,
-      photo: !!photo
-    });
-  }, [selectedOrder, showOrders, userOrders.length, orderStatus, isWaiting, photo]);
+    if (selectedOrdonnanceId && showOrders) {
+      setShowOrders(false);
+    }
+  }, [selectedOrdonnanceId, showOrders]);
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Demande de permission de la caméra...</Text>
-      </View>
-    );
-  }
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Accès à la caméra refusé. Veuillez activer les permissions dans les paramètres.</Text>
-      </View>
-    );
-  }
+  useFocusEffect(
+    React.useCallback(() => {
+      // Recharger les ordonnances quand l'écran redevient focus
+      if (currentProfile?.id) {
+        refreshOrdonnances();
+      }
+      
+      return () => {
+        // Optionnel: nettoyage si nécessaire
+      };
+    }, [currentProfile?.id])
+  );
 
-  // Main render logic
   return (
-    <View style={styles.container}>
-      {cameraVisible ? (
-        // Camera view
-        <CameraView style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
-          <TouchableOpacity style={styles.cameraButton} onPress={takePicture}>
-            <Text style={styles.cameraIcon}>📷</Text>
-          </TouchableOpacity>
-        </CameraView>
-      ) : selectedOrder ? (
-        // Show selected order details
-        <View style={styles.centeredContent}>
+    <View style={[styles.container, { flex: 1 }]}>
+      {selectedOrder ? (
+        <ScrollView 
+          contentContainerStyle={[
+            styles.centeredContent, 
+            { 
+              flexGrow: 1, 
+              justifyContent: 'center', 
+              paddingVertical: 20 
+            }
+          ]}
+        >
           {orderStatus === 'en_attente' || isWaiting ? (
-            // Order is pending validation
             <>
               <Text style={styles.loadingText}>Votre ordonnance est en cours de validation...</Text>
-              <ActivityIndicator size="large" color={colors.secondary} />
+              <ActivityIndicator size="large" color={colors.secondary} style={{ marginVertical: 20 }} />
               <TouchableOpacity 
-                style={[styles.button, { marginTop: 20 }]} 
+                style={[styles.button, { width: '100%', marginTop: 20 }]} 
                 onPress={goBackToList}
               >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
                   <Text style={styles.buttonText}>Retour à la liste</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </>
           ) : orderStatus === 'refuse' ? (
-            // Order was refused
             <>
               <Text style={styles.loadingText}>Raison du refus :</Text>
               <Text style={[styles.loadingText, { color: colors.error, marginVertical: 10 }]}>
                 {selectedOrder?.refusal_reason || clickcollectError || 'Raison non spécifiée'}
               </Text>
               <TouchableOpacity 
-                style={[styles.button, { marginTop: 20 }]} 
+                style={[styles.button, { width: '100%', marginTop: 20 }]} 
                 onPress={goBackToList}
               >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
                   <Text style={styles.buttonText}>Retour à la liste</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </>
           ) : orderStatus === 'valide' ? (
-            // Order was validated
             <>
               <View style={styles.qrContainer}>
                 <Text style={styles.qrTitle}>Votre ordonnance a été validée !</Text>
@@ -576,7 +594,6 @@ export default function ClickAndCollect(): React.JSX.Element {
               </TouchableOpacity>
             </>
           ) : (
-            // Default order details view
             <>
               <Text style={styles.qrTitle}>Détails de la demande</Text>
               <Text style={styles.loadingText}>Nom: {resolveOrderName(selectedOrder)}</Text>
@@ -595,15 +612,14 @@ export default function ClickAndCollect(): React.JSX.Element {
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </ScrollView>
       ) : (
-        // Main view - no camera, no selected order
-        <View style={styles.centeredContent}>
-          {/* History toggle and list */}
-          {!photo && !isWaiting && !orderStatus && userOrders.length > 0 && (
-            <View style={{ width: '100%', marginBottom: 12 }}>
+        <View style={{ flex: 1 }}>
+          {/* History section - seulement quand il y a des commandes */}
+          {!isWaiting && !orderStatus &&  !selectedOrdonnanceId && userOrders.length > 0 && (
+            <View style={{ width: '100%', marginBottom: 20, paddingHorizontal: 16, paddingTop: 20 }}>
               <TouchableOpacity 
-                style={[styles.button, { paddingVertical: 8 }]} 
+                style={[styles.button, { paddingVertical: 12 }]} 
                 onPress={toggleShowOrders}
               >
                 <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
@@ -614,58 +630,161 @@ export default function ClickAndCollect(): React.JSX.Element {
               </TouchableOpacity>
 
               {showOrders && (
-                <ScrollView style={{ maxHeight: 220, marginTop: 8 }}>
-                  {userOrders.map((order: any) => (
-                    <TouchableOpacity 
-                      key={order.id || order.order_id} 
-                      style={{
-                        padding: 12,
-                        borderRadius: 8,
-                        backgroundColor: colors.card,
-                        marginBottom: 8,
-                        borderWidth: 1,
-                        borderColor: colors.border
-                      }} 
-                      onPress={() => openOrder(order)}
-                    >
-                      <Text style={[styles.loadingText, { fontWeight: 'bold' }]}>
-                        Demande du {formatDate(order.date_demande || order.created_at)}
-                      </Text>
-                      <Text style={[styles.loadingText, { 
-                        color: order.status === 'valide' ? colors.success : 
-                               order.status === 'refuse' ? colors.error : 
-                               colors.secondary 
-                      }]}>
-                        Statut: {statusLabel(order.status)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={{ 
+                  marginTop: 12,
+                  height: ordersListHeight,
+                  borderRadius: 8,
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border
+                }}>
+                  <FlatList
+                    data={userOrders}
+                    keyExtractor={(item, index) => String(item.id || item.order_id || index)}
+                    renderItem={({ item, index }) => (
+                      <TouchableOpacity 
+                        style={{
+                          padding: 16,
+                          borderBottomWidth: index < userOrders.length - 1 ? 1 : 0,
+                          borderBottomColor: colors.border
+                        }} 
+                        onPress={() => openOrder(item)}
+                      >
+                        <Text style={[styles.loadingText, { fontWeight: 'bold', marginBottom: 4 }]}>
+                          Demande du {formatDate(item.date_demande || item.created_at)}
+                        </Text>
+                        <Text style={[styles.loadingText, { 
+                          color: item.status === 'valide' ? colors.success : 
+                                 item.status === 'refuse' ? colors.error : 
+                                 item.status === 'error' ? colors.error :
+                                 colors.secondary,
+                          fontSize: 14
+                        }]}>
+                          Statut: {statusLabel(item.status)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator={true}
+                  />
+                </View>
               )}
             </View>
           )}
 
-          {/* Photo taking/validation section */}
-          {!photo ? (
-            <TouchableOpacity style={styles.card} onPress={() => setCameraVisible(true)}>
-              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
-                <Text style={styles.cardText}>Prendre une photo de votre ordonnance</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.qrContainer}>
-              <Image source={{ uri: photo.uri }} style={styles.image} />
-              <Text style={styles.loadingText}>Voulez-vous valider cette photo ou recommencer ?</Text>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.rejectButton} onPress={resetProcess}>
-                  <Text style={styles.buttonText}>Recommencer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.approveButton} onPress={handleImageValidation}>
-                  <Text style={styles.buttonText}>Valider</Text>
-                </TouchableOpacity>
+          {/* Main content section */}
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={{ 
+              flexGrow: 1, 
+              paddingVertical: 20,
+              paddingHorizontal: 16,
+              minHeight: screenHeight * 0.5
+            }}
+          >
+            {/* Ordonnance selection section */}
+            {!selectedOrdonnanceId ? (
+              <View style={[
+                styles.qrContainer, 
+                { 
+                  flex: 1, 
+                  justifyContent: 'center',
+                  paddingVertical: 20 
+                }
+              ]}>
+                {isLoadingOrdonnances ? (
+                  <ActivityIndicator size="large" color={colors.primary} />
+                ) : ordonnances.length === 0 ? (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 20 }]}>
+                      Aucune ordonnance disponible.
+                    </Text>
+                    <Text style={[styles.loadingText, { textAlign: 'center', fontSize: 14, opacity: 0.7 }]}>
+                      Veuillez d'abord ajouter au moins une ordonnance dans la section "Ordonnance" de la page Home.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 20 }]}>
+                      Sélectionnez une ordonnance :
+                    </Text>
+                    <CustomPicker
+                      label="Ordonnance liée"
+                      selectedValue={selectedOrdonnanceId || ''}
+                      onValueChange={(value) => setSelectedOrdonnanceId(String(value))}
+                      options={ordonnances}
+                      placeholder={ordonnances.length > 0 ? 'Choisir une ordonnance' : 'Aucune ordonnance disponible'}
+                      style={{ marginBottom: 30 }}
+                    />
+                    {selectedOrdonnanceId && (
+                      <TouchableOpacity 
+                        style={[styles.approveButton, { width: '100%', marginTop: 20 }]} 
+                        onPress={handleImageValidation}
+                      >
+                        <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
+                          <Text style={styles.buttonText}>Envoyer pour validation</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
               </View>
-            </View>
-          )}
+            ) : (
+              <View style={[
+                styles.qrContainer, 
+                { 
+                  flex: 1, 
+                  justifyContent: 'center',
+                  paddingVertical: 20 
+                }
+              ]}>
+                <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 10 }]}>
+                  Ordonnance sélectionnée
+                </Text>
+                <Text style={[
+                  styles.loadingText, 
+                  { 
+                    fontWeight: 'bold', 
+                    marginVertical: 15, 
+                    textAlign: 'center',
+                    paddingHorizontal: 16
+                  }
+                ]}>
+                  {ordonnances.find(o => o.value === selectedOrdonnanceId)?.label}
+                </Text>
+                <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 30 }]}>
+                  Voulez-vous envoyer cette ordonnance ou en sélectionner une autre ?
+                </Text>
+                <View style={[styles.buttonContainer, { width: '100%', flexDirection: 'column' }]}>
+
+                  <TouchableOpacity 
+                    style={{ width: '100%', marginBottom: 12 }}
+                    onPress={resetProcess}
+                  >
+                    <LinearGradient 
+                      colors={[colors.textSecondary, colors.infoTextSecondary]} 
+                      style={[styles.gradient, { width: '100%' }]}
+                    >
+                      <Text style={styles.buttonText}>Changer d'ordonnance</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={{ width: '100%' }}
+                    onPress={handleImageValidation}
+                  >
+                    <LinearGradient 
+                      colors={[colors.primary, colors.secondary]} 
+                      style={[styles.gradient, { width: '100%' }]}
+                    >
+                      <Text style={styles.buttonText}>Envoyer pour validation</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                </View>
+
+              </View>
+            )}
+          </ScrollView>
         </View>
       )}
     </View>
