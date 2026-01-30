@@ -313,6 +313,35 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         resizeMode: 'contain',
         marginTop: 16,
     },
+    loadingButtonsContainer: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    },
+    loadingMessageContainer: {
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: colors.infoBackground,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.infoBorder,
+    },
+    loadingMessageText: {
+    fontSize: 16 / fontScale,
+    fontWeight: '600',
+    color: colors.infoTitle,
+    textAlign: 'center',
+    marginBottom: 4,
+    },
+    loadingMessageSubtext: {
+    fontSize: 14 / fontScale,
+    color: colors.infoText,
+    textAlign: 'center',
+    opacity: 0.8,
+    },
 });
 
 export default createStyles;

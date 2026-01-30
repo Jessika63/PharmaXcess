@@ -285,20 +285,32 @@ export default function ClickAndCollect(): React.JSX.Element {
                   <Text style={[styles.loadingText, { marginTop: 12 }]}>Vérifiez l'ordonnance : si elle est conforme, appuyez sur « Valider » pour générer et envoyer le QR au patient. Si elle est non conforme, appuyez sur « Refuser » et indiquez le motif.</Text>
                 </ScrollView>
 
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.approveButton}
-                    onPress={handleApprove}
-                  >
-                    <Text style={styles.buttonText}>Valider</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rejectButton}
-                    onPress={handleReject}
-                  >
-                    <Text style={styles.buttonText}>Refuser</Text>
-                  </TouchableOpacity>
-                </View>
+                {/* Show buttons only when image is loaded, otherwise show loading message */}
+                {selectedImageLoading ? (
+                  <View style={styles.loadingButtonsContainer}>
+                    <View style={styles.loadingMessageContainer}>
+                      <Ionicons name="time-outline" size={24} color={colors.infoTitle} style={{ marginBottom: 8 }} />
+                      <Text style={styles.loadingMessageText}>
+                        Veuillez patienter pendant le chargement de l'image
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                      style={styles.approveButton}
+                      onPress={handleApprove}
+                    >
+                      <Text style={styles.buttonText}>Valider</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.rejectButton}
+                      onPress={handleReject}
+                    >
+                      <Text style={styles.buttonText}>Refuser</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           )}

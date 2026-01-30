@@ -98,6 +98,7 @@ export default function ClickAndCollect(): React.JSX.Element {
       // leave isWaiting to caller control; do not forcibly clear it here
     }
   };
+  
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return '';
     try {
@@ -120,10 +121,13 @@ export default function ClickAndCollect(): React.JSX.Element {
     const prof = (typeof getProfileById === 'function' && profileId) ? getProfileById(profileId) : null;
     return prof?.name || order.profile_name || order.user_name || order.client_name || profileId || String(order.id || order.order_id || 'Non renseigné');
   };
+  
   // Reference to the camera view for taking pictures
   const cameraRef = useRef<CameraView | null>(null);
+  
   // Retrieve current profile data 
   const currentProfileData = currentProfile ? profileQRData[currentProfile.id] : null;
+  
   // Request camera permissions when the component mounts
   useEffect(() => {
     (async () => {
@@ -131,8 +135,8 @@ export default function ClickAndCollect(): React.JSX.Element {
       setHasPermission(status === 'granted');
     })();
   }, []);
+  
   // Effect to reset state when switching profiles 
-
   useEffect(() => { 
     if (currentProfile?.id) { 
       const profileData = profileQRData[currentProfile.id];
@@ -216,6 +220,16 @@ export default function ClickAndCollect(): React.JSX.Element {
     setOrderStatus(order.status || null);
     setShowOrders(false);
 
+    // Save selected order to AsyncStorage
+    (async () => {
+      try {
+        const key = `clickcollect_selected_order_${currentProfile.id}`;
+        await AsyncStorage.setItem(key, String(id));
+      } catch (e) {
+        console.warn('[ClickAndCollect] failed to persist selected order', e);
+      }
+    })();
+
     // Start polling for this order
     if (id && (order.status === 'en_attente' || order.status === 'pending')) {
       pollingCancelledRef.current = false;
@@ -230,12 +244,22 @@ export default function ClickAndCollect(): React.JSX.Element {
           if (statusRes.ok && statusRes.data?.order) {
             const status = statusRes.data.order.status;
             if (status === 'valide') {
-              if (!userClosedOrderRef.current) setOrderStatus('valide');
+              if (!userClosedOrderRef.current) {
+                setOrderStatus('valide');
+                // Update the order in userOrders list
+                setUserOrders(prev => prev.map(o => 
+                  (o.id === id || o.order_id === id) ? { ...o, status: 'valide' } : o
+                ));
+              }
               break;
             } else if (status === 'refuse') {
               if (!userClosedOrderRef.current) {
                 setOrderStatus('refuse');
                 setClickcollectError(statusRes.data.order.refusal_reason || 'Refusé par la pharmacie');
+                // Update the order in userOrders list
+                setUserOrders(prev => prev.map(o => 
+                  (o.id === id || o.order_id === id) ? { ...o, status: 'refuse' } : o
+                ));
               }
               break;
             } else {
@@ -268,6 +292,7 @@ export default function ClickAndCollect(): React.JSX.Element {
     pollingCancelledRef.current = true;
     setOrderId(null);
     setOrderStatus(null);
+    setSelectedOrder(null);
     // remove persisted selected order
     (async () => {
       try {
@@ -281,7 +306,7 @@ export default function ClickAndCollect(): React.JSX.Element {
     })();
   };
 
-  const handleImageValidation = (): void => {
+  const handleImageValidation = async (): Promise<void> => {
     // Flow:
     // 1) upload temp image -> returns temp_image id
     // 2) create ordonnance from temp image -> returns ordonnance_id
@@ -291,105 +316,129 @@ export default function ClickAndCollect(): React.JSX.Element {
       return;
     }
 
-    (async () => {
-      let orderId: any = null;
-      try {
-        setClickcollectError(null);
-        setIsImageValidated(true);
-        setIsWaiting(true);
+    setClickcollectError(null);
+    setIsImageValidated(true);
+    setIsWaiting(true);
 
-        // upload file (React Native file URI)
-        const uploadRes = await ordonnancesApi.uploadTempFile(currentProfile.id, photo.uri, `ord_${Date.now()}.jpg`, 'image/jpeg');
-        if (!uploadRes.ok) throw new Error(uploadRes.error || 'Upload failed');
-        const tempId = uploadRes.data?.id;
+    let newOrderId: number | null = null;
+    let newOrder: any = null;
 
-        // create ordonnance using temp image
-        const createRes = await ordonnancesApi.createOrdonnance({ user_id: currentProfile.id, temp_image_id: tempId });
-        if (!createRes.ok) throw new Error(createRes.error || 'Create ordonnance failed');
-        const ordonnanceId = createRes.data?.ordonnance_id || createRes.data?.ordonnanceId || null;
+    try {
+      // upload file (React Native file URI)
+      const uploadRes = await ordonnancesApi.uploadTempFile(currentProfile.id, photo.uri, `ord_${Date.now()}.jpg`, 'image/jpeg');
+      if (!uploadRes.ok) throw new Error(uploadRes.error || 'Upload failed');
+      const tempId = uploadRes.data?.id;
 
-        // send click & collect order
-        const sendRes = await clickcollectApi.sendOrder(currentProfile.id, ordonnanceId);
-        if (!sendRes.ok) throw new Error(sendRes.error || 'Send order failed');
-        orderId = sendRes.data?.order_id || sendRes.data?.orderId;
+      // create ordonnance using temp image
+      const createRes = await ordonnancesApi.createOrdonnance({ user_id: currentProfile.id, temp_image_id: tempId });
+      if (!createRes.ok) throw new Error(createRes.error || 'Create ordonnance failed');
+      const ordonnanceId = createRes.data?.ordonnance_id || createRes.data?.ordonnanceId || null;
 
-        setUserOrders(prev => [
-          { 
-            id: orderId, 
-            status: 'en_attente', 
-            date_demande: new Date().toISOString(),
-            user_id: currentProfile.id 
-          },
-          ...prev
-        ]);
+      // send click & collect order
+      const sendRes = await clickcollectApi.sendOrder(currentProfile.id, ordonnanceId);
+      if (!sendRes.ok) throw new Error(sendRes.error || 'Send order failed');
+      
+      newOrderId = sendRes.data?.order_id || sendRes.data?.orderId;
+      
+      // Create a proper order object matching the API response format
+      newOrder = {
+        id: newOrderId,
+        order_id: newOrderId,
+        user_id: currentProfile.id,
+        profile_id: currentProfile.id,
+        status: 'en_attente',
+        date_demande: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        // Include other fields that might be needed
+        refusal_reason: null,
+        contenu_qr: null
+      };
 
-        // start polling order status until a pro accepts or refuses
-        const pollInterval = 3000;
-        let prescriptionQr: string | undefined;
-        // store order id and status for UI
-        setOrderId(orderId as number);
-        setOrderStatus('en_attente');
-        pollingCancelledRef.current = false;
-        while (!pollingCancelledRef.current) {
-          // wait
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise(r => setTimeout(r, pollInterval));
-          // eslint-disable-next-line no-await-in-loop
-          const statusRes = await clickcollectApi.getOrderStatus(orderId);
-          if (statusRes.ok && statusRes.data?.order) {
-            const status = statusRes.data.order.status;
-            if (status === 'valide') {
-              prescriptionQr = statusRes.data.order.contenu_qr || statusRes.data.order.prescription_qr;
-              setOrderStatus('valide');
-              setIsValidatedByPharmacist(true);
-              if (currentProfile?.id) {
-                const qrCodeValue = prescriptionQr || `https://pharmaxcess.fr/prescription/${currentProfile.id}/${Date.now()}`;
-                setProfileQRData(prev => ({
-                  ...prev,
-                  [currentProfile.id]: {
-                    photo: prev[currentProfile.id]?.photo || photo,
-                    qrCode: qrCodeValue,
-                    isValidated: true
-                  }
-                }));
-              }
-              break;
+      // IMMEDIATELY add to userOrders and set as selectedOrder
+      setUserOrders(prev => [newOrder, ...prev]);
+      setSelectedOrder(newOrder);
+      setOrderId(newOrderId);
+      setOrderStatus('en_attente');
+
+      // Save to AsyncStorage immediately
+      const key = `clickcollect_selected_order_${currentProfile.id}`;
+      await AsyncStorage.setItem(key, String(newOrderId));
+
+      // Start polling for status updates
+      pollingCancelledRef.current = false;
+      while (!pollingCancelledRef.current) {
+        await new Promise(r => setTimeout(r, 3000));
+        
+        if (pollingCancelledRef.current) break;
+
+        const statusRes = await clickcollectApi.getOrderStatus(newOrderId);
+        if (statusRes.ok && statusRes.data?.order) {
+          const status = statusRes.data.order.status;
+          
+          // Update the order in state
+          const updatedOrder = {
+            ...newOrder,
+            ...statusRes.data.order,
+            status: status
+          };
+          
+          setSelectedOrder(updatedOrder);
+          
+          // Update in userOrders list
+          setUserOrders(prev => prev.map(o => 
+            o.id === newOrderId || o.order_id === newOrderId ? updatedOrder : o
+          ));
+
+          if (status === 'valide') {
+            const prescriptionQr = statusRes.data.order.contenu_qr || statusRes.data.order.prescription_qr;
+            setOrderStatus('valide');
+            setIsValidatedByPharmacist(true);
+            if (currentProfile?.id) {
+              const qrCodeValue = prescriptionQr || `https://pharmaxcess.fr/prescription/${currentProfile.id}/${Date.now()}`;
+              setProfileQRData(prev => ({
+                ...prev,
+                [currentProfile.id]: {
+                  photo: prev[currentProfile.id]?.photo || photo,
+                  qrCode: qrCodeValue,
+                  isValidated: true
+                }
+              }));
             }
-            if (status === 'refuse') {
-              const reason = statusRes.data.order.refusal_reason || 'Refusé par la pharmacie';
-              setClickcollectError(reason);
-              setOrderStatus('refuse');
-              setIsValidatedByPharmacist(false);
-              break;
-            }
-            // if still 'en_attente' keep looping and show waiting state
-            setOrderStatus('en_attente');
+            break;
+          } else if (status === 'refuse') {
+            const reason = statusRes.data.order.refusal_reason || 'Refusé par la pharmacie';
+            setClickcollectError(reason);
+            setOrderStatus('refuse');
+            setIsValidatedByPharmacist(false);
+            break;
           } else {
-            console.warn('[ClickAndCollect] unexpected status response', statusRes);
+            setOrderStatus('en_attente');
           }
         }
-
-      } catch (err: any) {
-        const msg = err?.message || String(err);
-        setClickcollectError(msg);
-        console.error('[ClickAndCollect] error during validation flow', { error: msg, orderId });
-        Alert.alert('Erreur', msg);
-      } finally {
-        setIsWaiting(false);
       }
-    })();
-  };
-
-  const toggleShowOrders = () => {
-    console.debug('[ClickAndCollect] Toggling showOrders state:', !showOrders);
-    setShowOrders(!showOrders);
-    if (!showOrders) {
-      console.debug('[ClickAndCollect] Fetching user orders:', userOrders);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setClickcollectError(msg);
+      console.error('[ClickAndCollect] error during validation flow', { error: msg, newOrderId });
+      Alert.alert('Erreur', msg);
+      
+      // If we created an order but got an error, still add it to the list
+      if (newOrder) {
+        newOrder.status = 'error';
+        newOrder.error = msg;
+        setUserOrders(prev => [newOrder, ...prev]);
+      }
+    } finally {
+      setIsWaiting(false);
     }
   };
 
+  const toggleShowOrders = () => {
+    setShowOrders(!showOrders);
+  };
+
   const goBackToList = () => {
-    userClosedOrderRef.current = true; // 👈 important
+    userClosedOrderRef.current = true;
     setSelectedOrder(null);
     setShowOrders(false);
     setIsWaiting(false);
@@ -398,13 +447,32 @@ export default function ClickAndCollect(): React.JSX.Element {
     setClickcollectError(null);
     setPhoto(null);
     setIsImageValidated(false);
-    pollingCancelledRef.current = true; // stop polling
+    pollingCancelledRef.current = true;
+    
+    // Remove from AsyncStorage
+    (async () => {
+      try {
+        if (currentProfile?.id) {
+          const key = `clickcollect_selected_order_${currentProfile.id}`;
+          await AsyncStorage.removeItem(key);
+        }
+      } catch (e) {
+        console.warn('[ClickAndCollect] failed to remove persisted selected order', e);
+      }
+    })();
   };
 
-
+  // Debug effect
   useEffect(() => {
-    console.debug('[ClickAndCollect] State updated:', { selectedOrder, showOrders });
-  }, [selectedOrder, showOrders]);
+    console.debug('[ClickAndCollect] State:', { 
+      selectedOrder: selectedOrder?.id, 
+      showOrders, 
+      userOrders: userOrders.length,
+      orderStatus,
+      isWaiting,
+      photo: !!photo
+    });
+  }, [selectedOrder, showOrders, userOrders.length, orderStatus, isWaiting, photo]);
 
   if (hasPermission === null) {
     return (
@@ -421,222 +489,185 @@ export default function ClickAndCollect(): React.JSX.Element {
     );
   }
 
+  // Main render logic
   return (
     <View style={styles.container}>
       {cameraVisible ? (
-        // The camera view is the camera is visible. 
+        // Camera view
         <CameraView style={styles.camera} ref={(ref) => { cameraRef.current = ref; }}>
-          {/* Display a button at the bottom to take a picture */}
           <TouchableOpacity style={styles.cameraButton} onPress={takePicture}>
             <Text style={styles.cameraIcon}>📷</Text>
           </TouchableOpacity>
         </CameraView>
-      ) : (isWaiting || orderStatus === 'en_attente') ? (
-        // Display a loading indicator while the prescription is being validated
+      ) : selectedOrder ? (
+        // Show selected order details
         <View style={styles.centeredContent}>
-          <Text style={styles.loadingText}>Votre ordonnance est en cours de validation...</Text>
-          <ActivityIndicator size="large" color={colors.secondary} />
-          {renderBackToListButton(goBackToList, colors, styles)}
-        </View>
-      ) : orderStatus === 'refuse' ? (
-        // Display refusal reason and a button to return to the list
-        <View style={styles.centeredContent}>
-          <Text style={styles.loadingText}>Raison du refus :</Text>
-          <Text style={styles.loadingText}>{selectedOrder?.refusal_reason || 'Raison non spécifiée'}</Text>
-          {renderBackToListButton(goBackToList, colors, styles)}
-        </View>
-      ) : orderStatus === 'valide' ? (
-        // Display order status (en_attente / refuse / valide)
-        <View style={styles.centeredContent}>
-            <View style={styles.qrContainer}>
-              <Text style={styles.qrTitle}>
-                Votre ordonnance a été validée !
+          {orderStatus === 'en_attente' || isWaiting ? (
+            // Order is pending validation
+            <>
+              <Text style={styles.loadingText}>Votre ordonnance est en cours de validation...</Text>
+              <ActivityIndicator size="large" color={colors.secondary} />
+              <TouchableOpacity 
+                style={[styles.button, { marginTop: 20 }]} 
+                onPress={goBackToList}
+              >
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                  <Text style={styles.buttonText}>Retour à la liste</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          ) : orderStatus === 'refuse' ? (
+            // Order was refused
+            <>
+              <Text style={styles.loadingText}>Raison du refus :</Text>
+              <Text style={[styles.loadingText, { color: colors.error, marginVertical: 10 }]}>
+                {selectedOrder?.refusal_reason || clickcollectError || 'Raison non spécifiée'}
               </Text>
-              <Text style={styles.qrText}>
-                Présentez ce QR code auprès d'un distributeur PharmaXcess
-              </Text>
-              {(() => {
-                try {
-                  const parsed = JSON.parse(selectedOrder.contenu_qr);
-                  if (!parsed?.image) return null;
+              <TouchableOpacity 
+                style={[styles.button, { marginTop: 20 }]} 
+                onPress={goBackToList}
+              >
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                  <Text style={styles.buttonText}>Retour à la liste</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          ) : orderStatus === 'valide' ? (
+            // Order was validated
+            <>
+              <View style={styles.qrContainer}>
+                <Text style={styles.qrTitle}>Votre ordonnance a été validée !</Text>
+                <Text style={styles.qrText}>
+                  Présentez ce QR code auprès d'un distributeur PharmaXcess
+                </Text>
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(selectedOrder.contenu_qr);
+                    if (!parsed?.image) return null;
 
-                  return (
-                    <>
-                      <Image
-                        source={{ uri: `data:image/png;base64,${parsed.image}` }}
-                        style={styles.qrImage}
-                      />
-                      <Text style={styles.qrText}>
+                    return (
+                      <>
+                        <Image
+                          source={{ uri: `data:image/png;base64,${parsed.image}` }}
+                          style={styles.qrImage}
+                        />
                         <Text style={styles.qrText}>
                           Ou utilisez ce code : {parsed.code_unique}
                         </Text>
+                      </>
+                    );
+                  } catch (e) {
+                    console.warn('QR invalide', e);
+                    return (
+                      <Text style={styles.qrText}>
+                        QR code indisponible
                       </Text>
-                    </>
-                  );
-                } catch (e) {
-                  console.warn('QR invalide', e);
-                  return (
-                    <Text style={styles.qrText}>
-                      QR code indisponible
-                    </Text>
-                  );
-                }
-              })()}
-            </View>
-          {renderBackToListButton(goBackToList, colors, styles)}
+                    );
+                  }
+                })()}
+              </View>
+              <TouchableOpacity 
+                style={[styles.button, { marginTop: 20 }]} 
+                onPress={goBackToList}
+              >
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                  <Text style={styles.buttonText}>Retour à la liste</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Default order details view
+            <>
+              <Text style={styles.qrTitle}>Détails de la demande</Text>
+              <Text style={styles.loadingText}>Nom: {resolveOrderName(selectedOrder)}</Text>
+              <Text style={styles.loadingText}>Statut: {statusLabel(selectedOrder.status)}</Text>
+              <Text style={styles.loadingText}>
+                Date: {formatDate(selectedOrder.date_demande || selectedOrder.created_at)}
+              </Text>
+              
+              <TouchableOpacity 
+                style={[styles.button, { marginTop: 20 }]} 
+                onPress={goBackToList}
+              >
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                  <Text style={styles.buttonText}>Retour à la liste</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       ) : (
-        // The initial state or when no photo has been taken yet
+        // Main view - no camera, no selected order
         <View style={styles.centeredContent}>
-            {/* History toggle and list */}
-            {!photo && !isWaiting && !orderStatus && userOrders.length > 0 && !selectedOrder && (
-              <View style={{ width: '100%', marginBottom: 12 }}>
-                <TouchableOpacity 
-                  style={[styles.button, { paddingVertical: 8 }]} 
-                  onPress={toggleShowOrders}
-                >
-                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                    <Text style={styles.buttonText}>
-                      {showOrders ? 'Masquer mes demandes' : 'Voir mes demandes'}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+          {/* History toggle and list */}
+          {!photo && !isWaiting && !orderStatus && userOrders.length > 0 && (
+            <View style={{ width: '100%', marginBottom: 12 }}>
+              <TouchableOpacity 
+                style={[styles.button, { paddingVertical: 8 }]} 
+                onPress={toggleShowOrders}
+              >
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                  <Text style={styles.buttonText}>
+                    {showOrders ? 'Masquer mes demandes' : 'Voir mes demandes'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-                {showOrders && (
-                  <ScrollView style={{ maxHeight: 220, marginTop: 8 }}>
-                    {userOrders.map((o: any) => (
-                      <TouchableOpacity 
-                        key={o.id || o.order_id} 
-                        style={{
-                          padding: 8,
-                          borderRadius: 8,
-                          backgroundColor: colors.card,
-                          marginBottom: 8
-                        }} 
-                        onPress={() => openOrder(o)}
-                      >
-                        <Text style={styles.loadingText}>
-                          Date: {formatDate(o.date_demande || o.date || o.created_at)}
-                        </Text>
-                        <Text style={styles.loadingText}>
-                          Statut: {statusLabel(o.status)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
-            )}
-            {!photo ? (
-                <TouchableOpacity style={styles.card} onPress={() => setCameraVisible(true)}>
-                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
-                        <Text style={styles.cardText}>Prendre une photo de votre ordonnance</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
-            ) : (
-                <View style={styles.qrContainer}>
-                    <Image source={{ uri: photo.uri }} style={styles.image} />
-                    <Text style={styles.loadingText}>Voulez-vous valider cette photo ou recommencer ?</Text>
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.rejectButton} onPress={resetProcess}>
-                            <Text style={styles.buttonText}>Recommencer</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.approveButton} onPress={handleImageValidation}>
-                            <Text style={styles.buttonText}>Valider</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
-                {selectedOrder ? (
-              <View style={{ marginTop: 12, width: '100%' }}>
-                <Text style={styles.qrTitle}>Détails de la demande</Text>
-                <Text style={styles.loadingText}>Nom: {resolveOrderName(selectedOrder)}</Text>
-                <Text style={styles.loadingText}>Statut: {selectedOrder.status}</Text>
-                    <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={goBackToList}>
-                      <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                        <Text style={styles.buttonText}>Retour à la liste</Text>
-                      </LinearGradient>
+              {showOrders && (
+                <ScrollView style={{ maxHeight: 220, marginTop: 8 }}>
+                  {userOrders.map((order: any) => (
+                    <TouchableOpacity 
+                      key={order.id || order.order_id} 
+                      style={{
+                        padding: 12,
+                        borderRadius: 8,
+                        backgroundColor: colors.card,
+                        marginBottom: 8,
+                        borderWidth: 1,
+                        borderColor: colors.border
+                      }} 
+                      onPress={() => openOrder(order)}
+                    >
+                      <Text style={[styles.loadingText, { fontWeight: 'bold' }]}>
+                        Demande du {formatDate(order.date_demande || order.created_at)}
+                      </Text>
+                      <Text style={[styles.loadingText, { 
+                        color: order.status === 'valide' ? colors.success : 
+                               order.status === 'refuse' ? colors.error : 
+                               colors.secondary 
+                      }]}>
+                        Statut: {statusLabel(order.status)}
+                      </Text>
                     </TouchableOpacity>
-                {selectedOrder.status === 'valide' ? (
-                  <View style={{ marginTop: 8 }}>
-                    {profileQRData[currentProfile?.id]?.qrCode ? (
-                      <QRCode value={profileQRData[currentProfile?.id].qrCode} size={160} color={colors.secondary} />
-                    ) : (
-                      <Text style={styles.loadingText}>QR indisponible</Text>
-                    )}
-                  </View>
-                ) : selectedOrder.status === 'refuse' ? (
-                  <Text style={styles.loadingText}>Raison: {selectedOrder.refusal_reason || selectedOrder.refusalReason}</Text>
-                ) : null}
-                <TouchableOpacity style={[styles.button, { marginTop: 12 }]} onPress={() => setSelectedOrder(null)}>
-                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                    <Text style={styles.buttonText}>Fermer</Text>
-                  </LinearGradient>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
+
+          {/* Photo taking/validation section */}
+          {!photo ? (
+            <TouchableOpacity style={styles.card} onPress={() => setCameraVisible(true)}>
+              <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.cardGradient}>
+                <Text style={styles.cardText}>Prendre une photo de votre ordonnance</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.qrContainer}>
+              <Image source={{ uri: photo.uri }} style={styles.image} />
+              <Text style={styles.loadingText}>Voulez-vous valider cette photo ou recommencer ?</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.rejectButton} onPress={resetProcess}>
+                  <Text style={styles.buttonText}>Recommencer</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.approveButton} onPress={handleImageValidation}>
+                  <Text style={styles.buttonText}>Valider</Text>
                 </TouchableOpacity>
               </View>
-            ) : null}
+            </View>
+          )}
         </View>
       )}
     </View>
   );
 }
-
-const renderOrderCard = (order: any) => {
-    const orderDate = formatDate(order.date_demande);
-    const orderStatus = statusLabel(order.status);
-
-    return (
-      <TouchableOpacity
-        key={order.id || order.order_id}
-        style={styles.orderCard}
-        onPress={() => openOrder(order)}
-      >
-        <View style={styles.orderInfo}>
-          <Text style={styles.orderDate}>Date : {orderDate}</Text>
-          <Text style={styles.orderStatus}>Statut : {orderStatus}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-
-  const renderOrders = () => {
-    console.debug('[ClickAndCollect] Rendering user orders:', userOrders);
-
-    if (userOrders.length === 0) {
-      console.debug('[ClickAndCollect] No orders found for user.');
-      return (
-        <View style={styles.noOrdersContainer}>
-          <Text style={styles.noOrdersText}>Aucune demande trouvée.</Text>
-        </View>
-      );
-    }
-
-    return userOrders.map(order => {
-      console.debug('[ClickAndCollect] Rendering order:', {
-        id: order.id || order.order_id,
-        date: formatDate(order.date_demande),
-        status: statusLabel(order.status),
-      });
-      return (
-        <TouchableOpacity
-          key={order.id || order.order_id}
-          style={styles.orderCard}
-          onPress={() => openOrder(order)}
-        >
-          <View style={styles.orderInfo}>
-            <Text style={styles.orderDate}>Date : {formatDate(order.date_demande)}</Text>
-            <Text style={styles.orderStatus}>Statut : {statusLabel(order.status)}</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    });
-  };
-}
-
-// Utility function to render the "Retour à la liste" button
-const renderBackToListButton = (goBackToList: () => void, colors: any, styles: any) => (
-  <TouchableOpacity onPress={goBackToList} style={styles.backToListButton}>
-    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-      <Text style={styles.backToListButtonText}>Retour à la liste</Text>
-    </LinearGradient>
-  </TouchableOpacity>
-);
