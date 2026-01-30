@@ -1,9 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
 import config from '../../config';
 import QrCameraScanner from '../qr_camera_scanner';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function Preorder() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.preorder);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const goBackButtonRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -95,11 +102,13 @@ function Preorder() {
 
   return (
     <div style={{ backgroundColor: '#F8E6EA' }} className={`min-h-screen w-full flex flex-col items-center justify-start`}>
+      
+      
       {/* Header matching image: left arrow + title, logo right */}
       <div className="w-full px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
-            ref={goBackButtonRef}
+          <button ref={goBackButtonRef}
+            {...createVoiceOverHandlers(speak)}
             onClick={() => navigate('/cart')}
             className="text-black text-lg flex items-center gap-3"
           >

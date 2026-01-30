@@ -7,8 +7,11 @@ import ModalCINChoice from '../modal_cin_choice';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function DocumentsChecking() {
+  const { speak } = useVoiceOver();
     const [showCamera, setShowCamera] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(1);
@@ -257,7 +260,8 @@ function DocumentsChecking() {
                         ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                         ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                         ${config.transitions.default}
-                    `} onClick={() => setShowInactivityModal(false)}>
+                    `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
                 </ModalStandard>
@@ -272,14 +276,16 @@ function DocumentsChecking() {
                             ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default}
-                        `} onClick={() => setConfirmDelete(null)}>
+                        `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setConfirmDelete(null)}>
                             Annuler
                         </button>
                         <button className={`
                             ${config.padding.button} bg-red-600 text-white ${config.fontSizes.md}
                             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default}
-                        `} onClick={confirmDeleteDocument}>
+                        `} onClick={confirmDeleteDocument}
+            {...createVoiceOverHandlers(speak)}>
                             Supprimer
                         </button>
                     </div>
@@ -290,7 +296,8 @@ function DocumentsChecking() {
                 {/* Header */}
                 <div className="w-4/5 h-40 flex justify-between items-center mb-6 mt-12">
                     {/* Go Back */}
-                    <Link
+                    <Link 
+            {...createVoiceOverHandlers(speak)}
                         to="/"
                         ref={(el) => (buttonsRef.current[-1] = el)}
                         tabIndex={0}
@@ -320,7 +327,8 @@ function DocumentsChecking() {
                     </div>
                     <div className="mb-4">
                         <input type="file" onChange={handleFileChange} />
-                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}>Upload</button>
+                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}
+            {...createVoiceOverHandlers(speak)}>Upload</button>
                     </div>
 
                     <div>
@@ -334,8 +342,10 @@ function DocumentsChecking() {
                                         <div className="text-xs text-gray-500">{d.size} bytes — {new Date(d.date_ajout).toLocaleString()}</div>
                                     </div>
                                     <div>
-                                        <button onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
-                                        <button onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
                                     </div>
                                 </li>
                             ))}

@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
 import config from '../../config';
 import { PrescriptionProvider } from '../../context/PrescriptionContext';
@@ -9,6 +11,7 @@ import StepCarteVitale from './steps/StepCarteVitale';
 import StepCarteIdentite from './steps/StepCarteIdentite';
 import StepConfirmation from './steps/StepConfirmation';
 import StepPayment from './steps/StepPayment';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 const stepsDefault = [
     { id: 'ordonnance', label: 'Ordonnance', component: StepOrdonnance },
@@ -19,6 +22,10 @@ const stepsDefault = [
 ];
 
 function DocumentsFlow({ stepsOrder }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.documentsFlow);
+  const { speak } = useVoiceOver();
+
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [steps, setSteps] = useState(stepsOrder || stepsDefault);
     const [hasQRCode, setHasQRCode] = useState(false);
@@ -128,8 +135,8 @@ function DocumentsFlow({ stepsOrder }) {
                 {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
                       <div className="flex items-center gap-4">
-                          <button
-                              onClick={() => navigate(-1)}
+                          <button {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate(-1)}
                               className="flex items-center text-black hover:text-gray-600 transition-colors"
                           >
                               <config.icons.arrowLeft className="text-xl" />
@@ -151,6 +158,8 @@ function DocumentsFlow({ stepsOrder }) {
                     ) : (
                         // Overview with step cards and CTA
                         <div className="w-full flex flex-col items-center">
+                            
+                            
                             <div className="flex gap-8 mb-10 justify-center px-6">
                                         {steps.map((s, i) => {
                                             const isSelected = i === selectedStepIndex && activeStepIndex === null;
@@ -182,12 +191,11 @@ function DocumentsFlow({ stepsOrder }) {
 
                             <div className="text-center">
                                 <p className="mb-4">Prêt à commencer les vérifications?</p>
-                                <button
-                                    onClick={() => {
+                                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => {
                                         const selected = steps[selectedStepIndex];
                                         if (!selected.completed) {
-                                            startStep(selectedStepIndex);
-                                        } else if (!allCompleted && nextUncompletedIndex !== -1) {
+                                            startStep(selectedStepIndex);} else if (!allCompleted && nextUncompletedIndex !== -1) {
                                             startStep(nextUncompletedIndex);
                                         } else if (allCompleted) {
                                             window.location.href = '/non-prescription-drugs';

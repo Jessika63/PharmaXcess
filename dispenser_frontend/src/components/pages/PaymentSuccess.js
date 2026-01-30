@@ -1,10 +1,17 @@
 import config from '../../config';
 import React, { useEffect} from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useLocation, useNavigate } from 'react-router-dom'; 
-import { FaCreditCard } from 'react-icons/fa'; 
+import { FaCreditCard } from 'react-icons/fa';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers'; 
 
 
 const PaymentSuccess = () => {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.paymentSuccess);
+  const { speak } = useVoiceOver();
+
   const location = useLocation();
   const navigate = useNavigate(); 
   const paymentIntent = location.state?.paymentIntent;
@@ -30,13 +37,14 @@ const PaymentSuccess = () => {
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background_color">
+      
+      
       {/* Header */}
       <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
         <div className="flex items-center gap-4">
-          <Link
-            to="/cart"
+          <Link to="/cart"
             className="flex items-center text-black hover:text-gray-600 transition-colors"
-          >
+            {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />
           </Link>
           <h1 className="text-3xl font-semibold text-black">Paiement</h1>

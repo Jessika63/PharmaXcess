@@ -1,11 +1,18 @@
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { voiceOverTexts } from '../../config/voiceOverTexts'; 
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function DirectionQRPage() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.directionQR);
+  const { speak } = useVoiceOver();
+
     const navigate = useNavigate();
     const location = useLocation();
     const { generating, pharmacyName, qrData } = location.state || {};
@@ -169,8 +176,8 @@ function DirectionQRPage() {
                         <div className={`${config.fontSizes.sm} mb-4`}>
                             Vous allez être redirigé vers l'accueil dans 1 minute...
                         </div>
-                        <button
-                            className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`}
+                        <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`}
+                            {...createVoiceOverHandlers(speak)}
                             onClick={() => setShowInactivityModal(false)} // ✅ just dismiss modal
                         >
                             Rester sur la page
@@ -179,45 +186,47 @@ function DirectionQRPage() {
                 </div>
             )}
 
+            
+
             <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
                 <div className="flex flex-row gap-6 mb-4">
                     {/* Go Back Button */}
-                    <button
-                        ref={goBackRef}
+                    <button ref={goBackRef}
                         tabIndex={focusedIndex === 0 ? 0 : -1}
                         className={
                             `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
                             ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default} ${focusedIndex === 0 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
                         }
+                        {...createVoiceOverHandlers(speak)}
                         onClick={async () => await handleExit(() => navigate(-1))}
                     >
                         <config.icons.arrowLeft className="mr-2" /> Retour
                     </button>
 
                     {/* Med List Button */}
-                    <button
-                        ref={medListRef}
+                    <button ref={medListRef}
                         tabIndex={focusedIndex === 1 ? 0 : -1}
                         className={
                             `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
                             ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default} ${focusedIndex === 1 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
                         }
+                        {...createVoiceOverHandlers(speak)}
                         onClick={async () => await handleExit(() => navigate('/non-prescription-drugs'))}
                     >
                         <config.icons.pills className="mr-2" /> Liste des médicaments
                     </button>
 
                     {/* Home Button */}
-                    <button
-                        ref={homeRef}
+                    <button ref={homeRef}
                         tabIndex={focusedIndex === 2 ? 0 : -1}
                         className={
                             `${config.padding.button} ${config.buttonColors.mainGradient} ${config.textColors.primary}
                             ${config.fontSizes.md} ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default} ${focusedIndex === 2 ? `${config.focusStates.ring} ${config.scaleEffects.focus}` : ''}`
                         }
+            {...createVoiceOverHandlers(speak)}
                         onClick={async (e) => { e.preventDefault(); await handleExit(() => navigate('/')); }}
                     >
                         <config.icons.home className="mr-2" /> Accueil

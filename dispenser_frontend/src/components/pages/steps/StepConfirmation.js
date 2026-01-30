@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
+import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers';
 import { usePrescription } from "../../../context/PrescriptionContext";
 import { useCart } from "../../../context/CartContext";
 import config from "../../../config";
 
 function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.verification);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const { prescriptionData, updatePrescriptionData } = usePrescription();
   const { addToCart } = useCart();
@@ -88,6 +95,8 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
 
   return (
     <div className="w-full h-screen flex flex-col overflow-y-auto">
+      
+      
       <div className="flex-1 px-8 py-6">
         <h2 className="text-3xl font-bold text-black mb-8 text-center">
           Récapitulatif de vos informations
@@ -229,16 +238,14 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
 
         {/* Action Buttons */}
         <div className="flex gap-6 justify-center mt-10 pb-8">
-          <button
-            onClick={handleRestart}
+          <button onClick={handleRestart}
             className="bg-red-500 text-white px-12 py-5 rounded-full text-xl font-semibold hover:bg-red-600 hover:scale-105 transition-all duration-300 shadow-lg"
-          >
+            {...createVoiceOverHandlers(speak)}>
             RECOMMENCER
           </button>
-          <button
-            onClick={handleConfirm}
+          <button onClick={handleConfirm}
             className="bg-black text-white px-16 py-5 rounded-full text-xl font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
-          >
+            {...createVoiceOverHandlers(speak)}>
             VALIDER
           </button>
         </div>

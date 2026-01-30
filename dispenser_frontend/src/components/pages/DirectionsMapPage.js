@@ -15,6 +15,8 @@ import { getDefaultPosition } from '../../utils/positionUtils';
 // Fix default icon issue with Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 let DefaultIcon = L.icon({
   iconUrl,
   shadowUrl: iconShadow,
@@ -23,6 +25,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function DirectionsMapPage() {
+  const { speak } = useVoiceOver();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -250,7 +253,9 @@ function DirectionsMapPage() {
             <div className={`${config.fontSizes.sm} mb-4`}>
               Vous allez être redirigé vers l'accueil dans 1 minute...
             </div>
-            <button className={
+            <button 
+            {...createVoiceOverHandlers(speak)}
+              className={
               `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md} ${config.borderRadius.md}
               ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
             } onClick={() => setShowInactivityModal(false)}>
@@ -262,7 +267,9 @@ function DirectionsMapPage() {
       <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
               <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                 <div className="flex items-center gap-4">
-                  <button onClick={() => navigate(-1)} className="flex items-center text-black hover:text-gray-600 transition-colors">
+                  <button 
+            {...createVoiceOverHandlers(speak)}
+                    onClick={() => navigate(-1)} className="flex items-center text-black hover:text-gray-600 transition-colors">
                     <config.icons.arrowLeft className="text-xl" />
                   </button>
                   <h1 className="text-3xl font-semibold text-black">Itinéraire</h1>

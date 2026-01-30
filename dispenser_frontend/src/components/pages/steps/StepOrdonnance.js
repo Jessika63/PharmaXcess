@@ -1,5 +1,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
+import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../../config/voiceOverTexts';
+import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CameraComponent from "../../camera_component";
 import ModalCamera from "../../modal_camera";
@@ -8,6 +11,10 @@ import { usePrescription } from "../../../context/PrescriptionContext";
 import config from "../../../config";
 
 function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.scanOrdonnance);
+  const { speak } = useVoiceOver();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -162,14 +169,16 @@ const handlePhotoCaptured = async (base64Image) => {
 
   return (
     <div className="w-full h-screen flex flex-col">
+      
+      
       {showQRScanner ? (
         // Scan QR Code Page
         <>
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowQRScanner(false)}
+              <button {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowQRScanner(false)}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
               >
                 <config.icons.arrowLeft className="text-xl" />
@@ -260,8 +269,8 @@ const handlePhotoCaptured = async (base64Image) => {
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowPrescriptionScanner(false)}
+              <button {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowPrescriptionScanner(false)}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
               >
                 <config.icons.arrowLeft className="text-xl" />
@@ -287,7 +296,8 @@ const handlePhotoCaptured = async (base64Image) => {
 
             {/* Button to validate scan */}
             {!success && !loading && (
-              <button
+              <button 
+            {...createVoiceOverHandlers(speak)}
                 onClick={async () => {
                   try {
                     setLoading(true);
@@ -356,10 +366,9 @@ const handlePhotoCaptured = async (base64Image) => {
           {/* Header matching the image */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={goBackStep}
+              <button onClick={goBackStep}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
-              >
+            {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
               <h1 className="text-3xl font-semibold text-black">Scan ordonnance</h1>
@@ -384,8 +393,8 @@ const handlePhotoCaptured = async (base64Image) => {
                 <p className="text-xl text-gray-600 mb-10 flex-1">
                   Scanner votre ordonnance
                 </p>
-                <button
-                  onClick={() => openCamera('prescription')}
+                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => openCamera('prescription')}
                   className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
                 >
                   CHOISIR
@@ -401,8 +410,8 @@ const handlePhotoCaptured = async (base64Image) => {
                 <p className="text-xl text-gray-600 mb-10 flex-1">
                   Scanner le code qr de votre ordonnance
                 </p>
-                <button
-                  onClick={() => openCamera('qr')}
+                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => openCamera('qr')}
                   className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
                 >
                   CHOISIR

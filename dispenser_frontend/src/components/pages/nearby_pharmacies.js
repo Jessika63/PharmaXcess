@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../../App.css';
 import config from '../../config';
@@ -8,8 +10,13 @@ import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
 import ErrorPage from '../ErrorPage';
 import { getDefaultPosition } from '../../utils/positionUtils';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function NearbyPharmacies() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.nearbyPharmacies);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -179,15 +186,16 @@ function NearbyPharmacies() {
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background_color">
+      
+      
       {/* Header */}
       <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
         <div className="flex items-center gap-4">
-          <Link
-            to="/insufficient-stock"
+          <Link to="/insufficient-stock"
             state={{ drug }}
             ref={goBackButtonRef}
             className="flex items-center text-black hover:text-gray-600 transition-colors"
-          >
+            {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />
           </Link>
           <h1 className="text-3xl font-semibold text-black">Pharmacies proches</h1>
@@ -255,8 +263,8 @@ function NearbyPharmacies() {
                         </>
                       )}
                     </div>
-                    <button
-                      onClick={() => handlePharmacySelect(ph)}
+                    <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handlePharmacySelect(ph)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -287,10 +295,10 @@ function NearbyPharmacies() {
             <div className={`${config.fontSizes.sm} mb-4`}>
               Vous allez être redirigé vers l'accueil dans 1 minute...
             </div>
-            <button
-              className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+            <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                 ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`}
-              onClick={() => setShowInactivityModal(false)}
+              {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}
             >
               Rester sur la page
             </button>

@@ -1,12 +1,19 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate, useLocation } from 'react-router-dom'; 
 import '../../App.css'
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { useCart } from '../../context/CartContext';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function InsufficientStock() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.insufficientStock);
+  const { speak } = useVoiceOver();
+
 
   const navigate = useNavigate()
   const location = useLocation();
@@ -60,15 +67,16 @@ function InsufficientStock() {
 
     return (
       <div className="w-full min-h-screen flex flex-col bg-background_color">
+      
+      
         {/* Header */}
         <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
           <div className="flex items-center gap-4">
-            <Link
-              to="/non-prescription-drugs"
+            <Link to="/non-prescription-drugs"
               ref={goBackButtonRef}
               className={`flex items-center text-black hover:text-gray-600 transition-colors
                 ${focusedIndex === 0 ? 'scale-105' : ''}`}
-            >
+            {...createVoiceOverHandlers(speak)}>
               <config.icons.arrowLeft className="text-xl" />
             </Link>
             <h1 className="text-3xl font-semibold text-black">Médicament non disponible</h1>
@@ -101,13 +109,13 @@ function InsufficientStock() {
               <p className="text-xl text-gray-600 mb-10 flex-1">
                 Vous serez contacté lorsque le médicament sera disponible
               </p>
-              <button
-                ref={retryButtonRef}
+              <button ref={retryButtonRef}
                 tabIndex={0}
-                onClick={() => {
+                {...createVoiceOverHandlers(speak)}
+            onClick={() => {
                   // Add selected drug to cart and navigate to cart with custom checkout label
                   addToCart(drug); 
-                  navigate('/cart', { state: { checkoutLabel: 'COMMANDER' } });
+                  navigate('/cart', { state: { checkoutLabel: 'COMMANDER'} });
                 }}
                 className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
                   hover:scale-105 transition-transform duration-300
@@ -129,10 +137,10 @@ function InsufficientStock() {
               <p className="text-xl text-gray-600 mb-10 flex-1">
                 Localiser les pharmacies ayant ce médicament en stock
               </p>
-              <button
-                ref={cancelButtonRef}
+              <button ref={cancelButtonRef}
                 tabIndex={0}
-                onClick={() => navigate('/nearby-pharmacies', { state: { drug } })}
+                {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/nearby-pharmacies', { state: { drug} })}
                 className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
                   hover:scale-105 transition-transform duration-300
                   ${focusedIndex === 2 ? 'scale-105' : ''}`}
@@ -154,12 +162,12 @@ function InsufficientStock() {
             <div className={`${config.fontSizes.sm} mb-4`}>
               Vous allez être redirigé vers l'accueil dans 1 minute...
             </div>
-            <button
-              className={
+            <button className={
                 `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                 ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`
               }
-              onClick={() => setShowInactivityModal(false)}
+              {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}
             >
               Rester sur la page
             </button>

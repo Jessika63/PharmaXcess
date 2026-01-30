@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaCheck } from 'react-icons/fa';
 import config from '../../config';
 import { useCart } from '../../context/CartContext';
 import { usePrescription } from '../../context/PrescriptionContext';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 const MedicationDelivery = () => {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.medicationDelivery);
+  const { speak } = useVoiceOver();
+
     const navigate = useNavigate();
     const location = useLocation();
     const { cartItems: passedItems } = location.state || {};
@@ -57,6 +64,29 @@ const MedicationDelivery = () => {
     const progressPercent = (deliveredCount / totalItems) * 100;
     const currentItem = items[currentIndex];
 
+    // Auto-read advice content when showing advice
+    useEffect(() => {
+        if (showAdvice && currentAdviceIndex < totalItems) {
+            const adviceItem = items[currentAdviceIndex];
+            const fullText = `
+                Conseils pour ${adviceItem.label || adviceItem.nom}.
+                Quantité prescrite : ${adviceItem.quantity}.
+                Conseil d'utilisation.
+                Adultes : 1 comprimé toutes les 6 heures.
+                Maximum 4 comprimés par jour.
+                À prendre avec un verre d'eau.
+                Peut être pris pendant ou hors des repas.
+                Précautions.
+                Ne pas dépasser la dose recommandée.
+                Déconseillé en cas d'allergie au principe actif.
+                Consulter un médecin si les symptômes persistent.
+                Tenir hors de portée des enfants.
+                Ces conseils seront affichés pendant 30 secondes. Vous pouvez cliquer sur PASSER pour continuer.
+            `;
+            speak(fullText);
+        }
+    }, [showAdvice, currentAdviceIndex, items, speak]);
+
     // Advice screen (after delivery, before completion)
     if (showAdvice && currentAdviceIndex < totalItems) {
         const adviceItem = items[currentAdviceIndex];
@@ -64,13 +94,14 @@ const MedicationDelivery = () => {
         
         return (
             <div className="w-full min-h-screen flex flex-col bg-background_color">
+                
+                
                 {/* Header */}
                 <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                     <div className="flex items-center gap-4">
-                        <Link
-                            to="/"
+                        <Link to="/"
                             className="flex items-center text-black hover:text-gray-600 transition-colors"
-                        >
+            {...createVoiceOverHandlers(speak)}>
                             <config.icons.arrowLeft className="text-xl" />
                         </Link>
                         <h1 className="text-3xl font-semibold text-black">Conseils médicamenteux</h1>
@@ -127,8 +158,8 @@ const MedicationDelivery = () => {
                             <p className="text-base text-gray-500">
                                 Ces conseils seront affichés pendant 30 secondes
                             </p>
-                            <button
-                                onClick={() => setCurrentAdviceIndex(prev => prev + 1)}
+                            <button {...createVoiceOverHandlers(speak)}
+            onClick={() => setCurrentAdviceIndex(prev => prev + 1)}
                                 className="mt-4 bg-gray-200 text-black px-8 py-3 rounded-full text-base font-semibold
                                     hover:bg-gray-300 transition-colors duration-300"
                             >
@@ -145,13 +176,14 @@ const MedicationDelivery = () => {
     if (isComplete) {
         return (
             <div className="w-full min-h-screen flex flex-col bg-background_color">
+                
+                
                 {/* Header */}
                 <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                     <div className="flex items-center gap-4">
-                        <Link
-                            to="/"
+                        <Link to="/"
                             className="flex items-center text-black hover:text-gray-600 transition-colors"
-                        >
+            {...createVoiceOverHandlers(speak)}>
                             <config.icons.arrowLeft className="text-xl" />
                         </Link>
                         <h1 className="text-3xl font-semibold text-black">Délivrance des médicaments</h1>
@@ -171,8 +203,8 @@ const MedicationDelivery = () => {
                     <p className="text-xl text-gray-600 mb-12">Tous les médicaments ont été délivrés avec succès</p>
 
                     {/* Button */}
-                    <button
-                        onClick={() => navigate('/')}
+                    <button {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/')}
                         className="bg-black text-white px-16 py-4 rounded-full text-lg font-semibold
                             hover:scale-105 transition-transform duration-300"
                     >
@@ -186,13 +218,14 @@ const MedicationDelivery = () => {
     // In progress delivery page
     return (
         <div className="w-full min-h-screen flex flex-col bg-background_color">
+            
+            
             {/* Header */}
             <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                 <div className="flex items-center gap-4">
-                    <Link
-                        to="/"
+                    <Link to="/"
                         className="flex items-center text-black hover:text-gray-600 transition-colors"
-                    >
+            {...createVoiceOverHandlers(speak)}>
                         <config.icons.arrowLeft className="text-xl" />
                     </Link>
                     <h1 className="text-3xl font-semibold text-black">Délivrance des médicaments</h1>

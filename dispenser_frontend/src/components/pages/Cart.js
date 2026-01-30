@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate, useLocation } from 'react-router-dom'; 
 import { loadStripe } from '@stripe/stripe-js';
 import { FaMinus, FaPlus, FaTrash, FaShoppingCart } from 'react-icons/fa';
 import config from '../../config';
 import { useCart } from '../../context/CartContext';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import ElementsWrapper from '../ElementsWrapper';
@@ -12,6 +15,10 @@ import PaymentForm from '../PaymentForm';
 const stripePromise = loadStripe('pk_test_51Rsl1CLfU2UU0K5QVl6iyAUF5YuvHw648nWONQGJZmWPqtZhmxlZmSw6fORMnQNdzqtBe6Wd1LkTP7RCCoE71VyK00Zjm3nzmr');
 
 function Cart() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.cart);
+  const { speak } = useVoiceOver();
+
     const navigate = useNavigate();
     const location = useLocation(); 
     const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
@@ -99,13 +106,14 @@ function Cart() {
 
     return (
         <div className="w-full min-h-screen flex flex-col bg-background_color">
+      
+      
             {/* Header */}
             <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                 <div className="flex items-center gap-4">
-                    <Link
-                        to="/non-prescription-drugs"
+                    <Link to="/non-prescription-drugs"
                         className="flex items-center text-black hover:text-gray-600 transition-colors"
-                    >
+            {...createVoiceOverHandlers(speak)}>
                         <config.icons.arrowLeft className="text-xl" />
                     </Link>
                     <h1 className="text-3xl font-semibold text-black">Panier</h1>
@@ -122,11 +130,10 @@ function Cart() {
                     </div>
                     <h2 className="text-3xl font-bold text-black mb-3">Votre panier est vide</h2>
                     <p className="text-lg text-gray-500 mb-8">Ajoutez des médicaments à votre panier pour continuer</p>
-                    <Link
-                        to="/non-prescription-drugs"
+                    <Link to="/non-prescription-drugs"
                         className="bg-black text-white px-8 py-4 rounded-full text-lg font-semibold
                             hover:scale-105 transition-transform duration-300"
-                    >
+            {...createVoiceOverHandlers(speak)}>
                         PARCOURIR LES MÉDICAMENTS
                     </Link>
                 </div>
@@ -135,8 +142,8 @@ function Cart() {
                 <div className="flex-1 px-8 py-6">
                     <div className="flex justify-between items-start mb-6">
                         <h2 className="text-2xl font-bold text-black">Votre panier</h2>
-                        <button
-                            onClick={() => navigate('/non-prescription-drugs')}
+                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/non-prescription-drugs')}
                             className="bg-black text-white px-6 py-3 rounded-full text-sm font-semibold
                                 hover:scale-105 transition-transform duration-300"
                         >
@@ -162,16 +169,16 @@ function Cart() {
                                         
                                         {/* Quantity controls */}
                                         <div className="flex items-center justify-end gap-3 mt-3">
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            <button {...createVoiceOverHandlers(speak)}
+            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
                                                     hover:bg-gray-100 transition-colors"
                                             >
                                                 <FaMinus className="text-xs text-gray-600" />
                                             </button>
                                             <span className="text-lg font-semibold">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            <button {...createVoiceOverHandlers(speak)}
+            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
                                                     hover:bg-gray-100 transition-colors"
                                             >
@@ -180,8 +187,8 @@ function Cart() {
                                         </div>
 
                                         {/* Delete button */}
-                                        <button
-                                            onClick={() => removeFromCart(item.id)}
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => removeFromCart(item.id)}
                                             className="mt-3 text-red-500 hover:text-red-600 transition-colors"
                                         >
                                             <FaTrash className="text-lg" />
@@ -208,11 +215,10 @@ function Cart() {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={handleProceedToPayment}
+                                <button onClick={handleProceedToPayment}
                                     className="w-full bg-black text-white py-4 rounded-full text-lg font-semibold
                                         hover:scale-105 transition-transform duration-300"
-                                >
+            {...createVoiceOverHandlers(speak)}>
                                     {location.state?.checkoutLabel || 'PROCÉDER AU PAIEMENT'}
                                 </button>
                             </div>
@@ -236,8 +242,8 @@ function Cart() {
                         {/* Header */}
                         <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
                             <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => setPaymentModalOpen(false)}
+                                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => setPaymentModalOpen(false)}
                                     className="flex items-center text-black hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-pink-100"
                                 >
                                     <config.icons.arrowLeft className="text-xl" />
@@ -299,11 +305,11 @@ function Cart() {
                     <div className={`${config.fontSizes.sm} mb-4`}>
                         Vous allez être redirigé vers l'accueil dans 1 minute...
                     </div>
-                    <button
-                        className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                    <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default}`}
-                        onClick={() => setShowInactivityModal(false)}
+                        {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}
                     >
                         Rester sur la page
                     </button>

@@ -2,13 +2,31 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../../config';
 import ErrorPage from '../ErrorPage';
+import VoiceOverToggle from '../VoiceOverToggle';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function StartingPage() {
   const prescriptionButtonRef = useRef(null);
   const nonPrescriptionButtonRef = useRef(null);
 
   const [focusedIndex, setFocusedIndex] = useState(null); 
-  const [hoveredCard, setHoveredCard] = useState(null); 
+  const [hoveredCard, setHoveredCard] = useState(null);
+
+  // Auto-play of the VoiceOver on page load
+  useAutoVoiceOver(voiceOverTexts.startingPage);
+  const { speak } = useVoiceOver();
+
+  // Function to read the text of a button or card
+  const readButtonText = useCallback((text) => {
+    console.log('Lecture demandée:', text);
+    if (speak) {
+      speak(text);
+    } else {
+      console.error('speak function is not available');
+    }
+  }, [speak]); 
 
 
   const [vpnStatus, setVpnStatus] = useState({
@@ -274,7 +292,8 @@ function StartingPage() {
     return (
         <ErrorPage message={`${message}\n\n${details}`}>
             {vpnStatus.details?.adblockDetected && (
-                <button
+                <button 
+            {...createVoiceOverHandlers(speak)}
                     onClick={() => checkVPN(true)}
                     className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                 >
@@ -297,6 +316,9 @@ function StartingPage() {
   // Main page content
   return (
     <div className={`bg-background_color w-full min-h-screen flex flex-col items-center overflow-hidden pt-12`}>
+      {/* VoiceOver Toggle Button */}
+      <VoiceOverToggle />
+      
       {/* Logo */} 
       <div className="flex justify-center items-center mb-8">
         <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-72 h-auto" />
@@ -311,10 +333,15 @@ function StartingPage() {
 
       {/* Card 'With Prescription' */} 
       <Link 
+            {...createVoiceOverHandlers(speak)}
         to="/documents-flow" 
         ref={prescriptionButtonRef}
         tabIndex={0}
-        onMouseEnter={() => setHoveredCard(0)} 
+        onFocus={() => readButtonText("Vous avez une ordonnance médicale à traiter. Continuer avec ordonnance")}
+        onMouseEnter={() => {
+          setHoveredCard(0);
+          readButtonText("Vous avez une ordonnance médicale à traiter. Continuer avec ordonnance");
+        }}
         onMouseLeave={() => setHoveredCard(null)} 
         className={`flex-1 max-w-md h-64 flex flex-col items-center justify-center p-8 
             ${config.borderRadius.xl} ${config.shadows.md} 
@@ -339,10 +366,15 @@ function StartingPage() {
 
       {/* Card 'Without Prescription'  */}
       <Link 
+            {...createVoiceOverHandlers(speak)}
         to="/non-prescription-drugs" 
         ref={nonPrescriptionButtonRef}
         tabIndex={0}
-        onMouseEnter={() => setHoveredCard(1)}
+        onFocus={() => readButtonText("Achat libre de médicaments disponibles. Continuer sans ordonnance")}
+        onMouseEnter={() => {
+          setHoveredCard(1);
+          readButtonText("Achat libre de médicaments disponibles. Continuer sans ordonnance");
+        }}
         onMouseLeave={() => setHoveredCard(null)}
         className={`flex-1 max-w-md h-64 flex flex-col items-center justify-center p-8 
           ${config.borderRadius.xl} ${config.shadows.md}

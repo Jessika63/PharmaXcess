@@ -1,5 +1,7 @@
 import './css/global.css'
 import React, { useRef, useEffect, useState } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
@@ -12,6 +14,7 @@ import PaymentForm from '../PaymentForm';
 import { Elements } from '@stripe/react-stripe-js';
 import ElementsWrapper from '../ElementsWrapper';
 import { useCart } from '../../context/CartContext';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 const categories = {
     painKiller: "Anti-douleur",
@@ -34,6 +37,10 @@ let availableMedicineCache = null;
 let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.nonPrescriptionDrugs);
+  const { speak } = useVoiceOver();
+
     const stripePromiseRef = useRef(stripePromise);
     const [isModalOpen, setIsModalOpen] = useState(false);
     // const [focusedElement, setFocusedElement] = useState(null);
@@ -50,7 +57,11 @@ function NonPrescriptionDrugs() {
 
     // const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState(null);
-    const [filteredDrugs, setFilteredDrugs] = useState(drugsItems);
+    const [sortOrder, setSortOrder] = useState('name-asc'); // 'name-asc', 'price-asc', 'price-desc'
+    const [filteredDrugs, setFilteredDrugs] = useState(() => {
+        // Initial sort by name (A-Z)
+        return [...drugsItems].sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+    });
 
     const backButtonRef = useRef(null);
     const payButtonRef = useRef(null);
@@ -86,6 +97,35 @@ function NonPrescriptionDrugs() {
     const [clientSecret, setClientSecret] = useState(null);
 
     const [stockUpdateError, setStockUpdateError] = useState(null);
+
+    // Auto-read medication details when modal opens
+    useEffect(() => {
+        if (isModalOpen && selectedDrug) {
+            const fullText = `
+                Détails du médicament ${selectedDrug.label}.
+                Catégorie : ${categories[selectedDrug.category] || 'Médicament'}.
+                Description : ${selectedDrug.description || 'Description non disponible'}.
+                Informations produit :
+                Forme : ${selectedDrug.forme || 'Comprimés'}.
+                Dosage : ${selectedDrug.dosage || 'Non spécifié'}.
+                Présentation : ${selectedDrug.presentation || `Boîte de ${selectedDrug.size} comprimés`}.
+                Laboratoire : ${selectedDrug.laboratoire || 'Non spécifié'}.
+                Prix : ${selectedDrug.price ? `${selectedDrug.price.toFixed(2)} euros` : 'Prix non défini'}.
+                ${selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}.
+                Conseil d'utilisation :
+                Adultes : 1 comprimé toutes les 6 heures.
+                Maximum 4 comprimés par jour.
+                A prendre avec un verre d'eau.
+                Peut être pris pendant ou hors des repas.
+                Précautions :
+                Ne pas dépasser la dose recommandée.
+                Déconseillé en cas d'allergie au paracétamol.
+                Consulter un médecin si les symptômes persistent.
+                Tenir hors de portée des enfants.
+            `;
+            speak(fullText);
+        }
+    }, [isModalOpen, selectedDrug, speak]);
 
     // Reset modal focus when modal opens
     useEffect(() => {
@@ -338,6 +378,21 @@ const getCategoryKey = (value) => {
     return Object.keys(categories).find(key => categories[key] === value);
 };
 
+const applySortToItems = (items, sort) => {
+    const sorted = [...items];
+    
+    switch (sort) {
+        case 'name-asc':
+            return sorted.sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+        case 'price-asc':
+            return sorted.sort((a, b) => a.price - b.price);
+        case 'price-desc':
+            return sorted.sort((a, b) => b.price - a.price);
+        default:
+            return sorted;
+    }
+};
+
 const applyFilter = (filter) => {
     setSelectedFilter(filter);
     let filteredItems;
@@ -368,9 +423,20 @@ const applyFilter = (filter) => {
         filteredItems = drugsItems;
     }
 
+    // Apply current sort order
+    const sortedItems = applySortToItems(filteredItems, sortOrder);
+
     setIsSearchMenuOpen(false);
-    setFilteredDrugs(filteredItems);
+    setFilteredDrugs(sortedItems);
     setFocusedIndex(0);
+};
+
+const applySort = (sort) => {
+    setSortOrder(sort);
+    
+    // Apply sort to currently filtered items
+    const sortedItems = applySortToItems(filteredDrugs, sort);
+    setFilteredDrugs(sortedItems);
 };
 
 
@@ -485,6 +551,8 @@ const applyFilter = (filter) => {
     if (loading) {
         return (
             <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
+      
+      
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
                 <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
                     Chargement des médicaments...
@@ -499,11 +567,10 @@ const applyFilter = (filter) => {
             {/* Header */}
             <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                 <div className="flex items-center gap-4"> 
-                    <Link
-                        to="/"
+                    <Link to="/"
                         ref={goBackMainButtonRef}
                         className={`flex items-center text-black hover:text-gray-600 transition-colors ${focusedIndex === -2 ? 'scale-105' : ''}`}
-                    >
+            {...createVoiceOverHandlers(speak)}>
                         <config.icons.arrowLeft className="text-xl" /> 
                     </Link> 
                     <h1 className="text-3xl font-semibold text-black">Catalogue des médicaments</h1>
@@ -544,12 +611,15 @@ const applyFilter = (filter) => {
                     <label className="text-xs text-gray-500 mb-1">Trier</label> 
                     <div className="relative">
                         <select
+                            value={sortOrder}
+                            onChange={(e) => applySort(e.target.value)}
                             className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
                                 focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[250px] cursor-pointer"
+                            {...createVoiceOverHandlers(speak)}
                         >
-                            <option>Trier par ordre alphabétique</option>
-                            <option>Trier par prix croissant</option>
-                            <option>Trier par prix décroissant</option>
+                            <option value="name-asc">Ordre alphabétique (A-Z)</option>
+                            <option value="price-asc">Prix croissant</option>
+                            <option value="price-desc">Prix décroissant</option>
                         </select>
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -562,8 +632,8 @@ const applyFilter = (filter) => {
                 <div className="flex-grow"></div> 
 
                 {/* Cart button */}
-                <button 
-                    onClick={() => navigate('/cart')}
+                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/cart')}
                     className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700
                         hover:bg-gray-50 transition-colors relative"
                 > 
@@ -585,7 +655,8 @@ const applyFilter = (filter) => {
             >
                 <div className="grid grid-cols-4 gap-4"> 
                     {filteredDrugs.map((item, index) => (
-                        <button
+                        <button 
+            {...createVoiceOverHandlers(speak)}
                             key={item.id}
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
@@ -632,12 +703,11 @@ const applyFilter = (filter) => {
                         {/* Header */}
                         <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
                             <div className="flex items-center gap-4"> 
-                                <button
-                                    ref={backButtonRef}
+                                <button ref={backButtonRef}
                                     onClick={closeModal}
                                     className={`flex items-center text-black hover:text-gray-600 transition-colors p-3 rounded-full hover:bg-pink-100
                                         ${modalFocusIndex === 0 ? 'scale-105 bg-pink-100' : ''}`}
-                                >
+            {...createVoiceOverHandlers(speak)}>
                                     <config.icons.arrowLeft className="text-2xl" /> 
                                 </button>
                                 <h1 className="text-3xl font-semibold text-black">Choix du médicament</h1> 
@@ -692,14 +762,13 @@ const applyFilter = (filter) => {
 
 
                                     {/* Add to cart button */}
-                                    <button
-                                        ref={payButtonRef}
-                                        onClick={() => {
+                                    <button ref={payButtonRef}
+                                        {...createVoiceOverHandlers(speak)}
+            onClick={() => {
                                             if (selectedDrug.size > 0) {
                                                 addToCart(selectedDrug);
                                                 closeModal();
-                                                navigate('/cart');
-                                            } else {
+                                                navigate('/cart');} else {
                                                 navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
                                             }
                                         }}
@@ -798,9 +867,9 @@ const applyFilter = (filter) => {
                     <div className="flex items-center">
                         <config.icons.timesCircle className="mr-2" />
                         {stockUpdateError}
-                        <button
-                            className="ml-4"
-                            onClick={() => setStockUpdateError(null)}
+                        <button className="ml-4"
+                            {...createVoiceOverHandlers(speak)}
+            onClick={() => setStockUpdateError(null)}
                         >
                         <config.icons.times />
                         </button>
@@ -820,7 +889,8 @@ const applyFilter = (filter) => {
                         `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                         ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                         ${config.transitions.default}`
-                    } onClick={() => setShowInactivityModal(false)}>
+                    } {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
                 </ModalStandard>

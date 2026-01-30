@@ -1,10 +1,17 @@
-import React, { useState } from "react"; 
+import React, { useState } from "react";
+import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../../config/voiceOverTexts';
+import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers'; 
 import { useNavigate } from "react-router-dom";
 import CameraComponent from "../../camera_component";
 import config from "../../../config";
 import { usePrescription } from "../../../context/PrescriptionContext";
 
 function StepCarteVitale({ goToNextStep, goBackStep }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.scanCarteVitale);
+  const { speak } = useVoiceOver();
+
   const { updatePrescriptionData } = usePrescription();
   const navigate = useNavigate();
 
@@ -77,16 +84,17 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
 
   return (
     <div className="w-full h-screen flex flex-col">
+      
+      
       {showCamera ? (
         // Camera View
         <>
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={closeCamera}
+              <button onClick={closeCamera}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
-              >
+            {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
               <h1 className="text-3xl font-semibold text-black">Scan carte vitale</h1>
@@ -131,10 +139,9 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={goBackStep}
+              <button onClick={goBackStep}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
-              >
+            {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
               <h1 className="text-3xl font-semibold text-black">Scan carte vitale</h1>
@@ -158,10 +165,9 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
                 <p className="text-xl text-gray-600 mb-10 flex-1">
                   Prenez une photo de votre carte vitale
                 </p>
-                <button
-                  onClick={openCamera}
+                <button onClick={openCamera}
                   className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
-                >
+            {...createVoiceOverHandlers(speak)}>
                   PRENDRE EN PHOTO
                 </button>
               </div>

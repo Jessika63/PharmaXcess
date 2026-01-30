@@ -1,12 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { useNavigate } from "react-router-dom";
 import CameraComponent from '../../camera_component';
 import ModalCamera from '../../modal_camera';
 import config from '../../../config';
 import useInactivityRedirect from '../../../utils/useInactivityRedirect';
-import { usePrescription } from '../../../context/PrescriptionContext'; 
+import { usePrescription } from '../../../context/PrescriptionContext';
+import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers'; 
 
 function StepCarteIdentite({ goToNextStep, goBackStep }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.scanCarteIdentite);
+  const { speak } = useVoiceOver();
+
   const { updatePrescriptionData } = usePrescription(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -165,16 +172,17 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
   return (
 
     <div className="w-full h-screen flex flex-col">
+      
+      
       {showScannerView ? (
         // Scanner View
         <>
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={closeModal}
+              <button onClick={closeModal}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
-              >
+            {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
               <h1 className="text-3xl font-semibold text-black">
@@ -200,7 +208,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
             {/* Button to validate scan */}
             {statusSides[currentDocType] !== "valid" && !loading && (
-              <button
+              <button 
+            {...createVoiceOverHandlers(speak)}
                 onClick={async () => {
                   try {
                     setLoading(true);
@@ -288,7 +297,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
           {/* Header */}
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <button
+              <button 
+            {...createVoiceOverHandlers(speak)}
                 ref={(el) => (buttonsRef.current[3] = el)}
                 onClick={goBackStep}
                 className="flex items-center text-black hover:text-gray-600 transition-colors"
@@ -318,7 +328,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
                   Scanner le recto de votre carte
                 </p>
                 {renderStatus("R")}
-                <button
+                <button 
+            {...createVoiceOverHandlers(speak)}
                   ref={(el) => (buttonsRef.current[0] = el)}
                   onClick={() => openCameraForSide('recto')}
                   className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4"
@@ -337,7 +348,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
                   Scanner le verso de votre carte
                 </p>
                 {renderStatus("V")}
-                <button
+                <button 
+            {...createVoiceOverHandlers(speak)}
                   ref={(el) => (buttonsRef.current[1] = el)}
                   onClick={() => openCameraForSide('verso')}
                   className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4"

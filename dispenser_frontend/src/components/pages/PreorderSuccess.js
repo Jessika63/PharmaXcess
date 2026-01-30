@@ -1,18 +1,27 @@
 import React from 'react';
+import { useAutoVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../../config';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function PreorderSuccess() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.preorderSuccess);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const location = useLocation();
   const profile = location.state?.profile;
 
   return (
     <div style={{ backgroundColor: '#F8E6EA' }} className="min-h-screen w-full flex flex-col items-center justify-start">
+      
+      
       {/* Header */}
       <div className="w-full px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
+          <button {...createVoiceOverHandlers(speak)}
             onClick={() => navigate('/cart')}
             className="text-black text-lg flex items-center gap-3"
           >
@@ -34,8 +43,8 @@ function PreorderSuccess() {
           Nous avons bien récupéré vos informations, nous vous recontacterons lorsque votre commande sera disponible
         </p>
 
-        <button
-          onClick={() => navigate('/non-prescription-drugs')}
+        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/non-prescription-drugs')}
           className="bg-black text-white px-8 py-3 rounded-full text-sm font-semibold hover:scale-105 transition-transform duration-300"
         >
           TERMINER

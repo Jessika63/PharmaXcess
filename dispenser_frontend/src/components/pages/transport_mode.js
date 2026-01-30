@@ -1,11 +1,18 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../../App.css';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function TransportMode() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.transportMode);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -95,15 +102,16 @@ function TransportMode() {
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background_color">
+      
+      
       {/* Header */}
       <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
         <div className="flex items-center gap-4">
-          <Link
-            to="/nearby-pharmacies"
+          <Link to="/nearby-pharmacies"
             state={{ drug }}
             ref={goBackButtonRef}
             className="flex items-center text-black hover:text-gray-600 transition-colors"
-          >
+            {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />
           </Link>
           <h1 className="text-3xl font-semibold text-black">Mode de transport</h1>
@@ -112,8 +120,8 @@ function TransportMode() {
       </div>
 
       {/* Pharmacy Info Card */}
-      <div className="px-8 py-4">
-        <div className="bg-white rounded-xl p-6 flex justify-between items-center max-w-4xl">
+      <div className="px-8 py-4 flex justify-center">
+        <div className="bg-white rounded-xl p-6 flex justify-between items-center max-w-4xl w-full">
           <div className="flex flex-col">
             <span className="text-xl font-semibold text-black">{pharmacy.name}</span>
             {pharmacy.address && (
@@ -163,8 +171,8 @@ function TransportMode() {
                 </p>
                 
                 {/* Button */}
-                <button
-                  onClick={() => handleTransportSelect(transport.mode)}
+                <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleTransportSelect(transport.mode)}
                   className="bg-black text-white px-8 py-2 rounded-lg text-sm font-semibold
                     hover:scale-105 transition-transform duration-300"
                 >
@@ -187,10 +195,10 @@ function TransportMode() {
             <div className={`${config.fontSizes.sm} mb-4`}>
               Vous allez être redirigé vers l'accueil dans 1 minute...
             </div>
-            <button
-              className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+            <button className={`${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                 ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}`}
-              onClick={() => setShowInactivityModal(false)}
+              {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}
             >
               Rester sur la page
             </button>
