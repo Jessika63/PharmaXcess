@@ -10,6 +10,72 @@ import cv2
 import numpy as np
 import json
 
+import re
+from typing import Optional
+
+
+def parse_ocr_date(raw_date: Optional[str]) -> Optional[str]:
+    import re
+    from datetime import datetime
+    from typing import Optional
+
+    print("DEBUG: raw_date =", raw_date, flush=True)
+
+    if not raw_date or not isinstance(raw_date, str):
+        print("DEBUG: raw_date invalide", flush=True)
+        return None
+
+    raw_date = raw_date.strip().lower()
+    print("DEBUG: normalized raw_date =", raw_date, flush=True)
+
+    month_map = {
+        "jan": 1, "janv": 1, "janvier": 1,
+        "fév": 2, "fev": 2, "février": 2,
+        "mar": 3, "mars": 3,
+        "avr": 4, "avril": 4,
+        "mai": 5,
+        "jun": 6, "juin": 6,
+        "jul": 7, "juil": 7, "juillet": 7,
+        "aoû": 8, "aou": 8, "août": 8,
+        "sep": 9, "sept": 9, "septembre": 9,
+        "oct": 10, "octobre": 10,
+        "nov": 11, "novembre": 11,
+        "déc": 12, "dec": 12, "décembre": 12
+    }
+
+    normalized = re.sub(r"[\/\._\|\s]+", "-", raw_date)
+    print("DEBUG: normalized =", normalized, flush=True)
+
+    patterns = [
+        # Numeric
+        (r"(\d{4})-(\d{1,2})-(\d{1,2})", lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3)))),  # YYYY-MM-DD
+        (r"(\d{1,2})-(\d{1,2})-(\d{4})", lambda m: (int(m.group(3)), int(m.group(2)), int(m.group(1)))),  # DD-MM-YYYY
+        # Month names
+        (r"(\d{4})-([a-zéû]+)-(\d{1,2})", lambda m: (int(m.group(1)), month_map.get(m.group(2)), int(m.group(3)))),  # YYYY-MONTH-DD
+        (r"(\d{1,2})-([a-zéû]+)-(\d{4})", lambda m: (int(m.group(3)), month_map.get(m.group(2)), int(m.group(1)))),  # DD-MONTH-YYYY
+    ]
+
+    for pattern, extractor in patterns:
+        m = re.match(pattern, normalized)
+        if m:
+            y, mo, d = extractor(m)
+            print(f"DEBUG: matched pattern '{pattern}' -> y={y}, mo={mo}, d={d}", flush=True)
+            if not mo:
+                print("DEBUG: mois invalide, skipping", flush=True)
+                continue
+            try:
+                dt = datetime(y, mo, d)
+                formatted = dt.strftime("%Y-%m-%d")
+                print("DEBUG: formatted date =", formatted, flush=True)
+                return formatted
+            except ValueError as e:
+                print("DEBUG: ValueError:", e, flush=True)
+                continue
+
+    print("DEBUG: fallback, returning None", flush=True)
+    return None
+
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../scripts/scanner'))
 from extractAll import main as ocr_main
 
@@ -113,21 +179,7 @@ def create_ordonnance_by_image():
     description = "Ordonnance créée via OCR"
 
     raw_date_prescription = infos_ocr.get("date_prescription")
-    date_prescription = None
-
-    if raw_date_prescription:
-        for fmt in (
-            "%Y-%m-%d",      # 2026-01-31
-            "%d/%m/%Y",      # 31/01/2026
-            "%d-%m-%Y",      # 31-01-2026
-            "%d %m %Y",      # 31 01 2026
-        ):
-            try:
-                parsed_date = datetime.strptime(raw_date_prescription.strip(), fmt)
-                date_prescription = parsed_date.strftime("%Y-%m-%d")
-                break
-            except Exception:
-                pass
+    date_prescription = parse_ocr_date(raw_date_prescription)
 
     try:
         medicaments_json = json.dumps(medicaments)
