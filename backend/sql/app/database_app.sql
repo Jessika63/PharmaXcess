@@ -260,6 +260,17 @@ CREATE TABLE IF NOT EXISTS qrcodes_profiles (
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
+-- Table de suivi des patients par les professionnels
+CREATE TABLE IF NOT EXISTS patients_suivis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    professionnel_id INT NOT NULL,
+    patient_id INT NOT NULL,
+    date_ajout DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (professionnel_id, patient_id),
+    FOREIGN KEY (professionnel_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (patient_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+);
+
 -- Index supplémentaires pour la recherche rapide
 CREATE INDEX idx_utilisateur_tel ON utilisateurs(telephone);
 CREATE INDEX idx_utilisateur_secu ON utilisateurs(numero_securite_sociale);

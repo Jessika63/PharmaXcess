@@ -312,6 +312,10 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         maxHeight: 100,
         marginRight: 12,
     },
+    messageInputDisabled: {
+        backgroundColor: colors.surface,
+        opacity: 0.6,
+    },
     sendButton: {
         width: 40,
         height: 40,

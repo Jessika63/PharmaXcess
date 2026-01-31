@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigation from './navigations/RootNavigation';
@@ -6,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { FontScaleProvider } from './context/FontScaleContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { UserProvider } from './context/UserContext';
 import { useCORSRegistration } from './hooks/useCORSRegistration';
 import CORSLoadingScreen from './components/CORSLoadingScreen';
 import './utils/i18n';
@@ -34,14 +34,16 @@ function AppWithCORS(): React.JSX.Element {
     // Une fois l'enregistrement CORS réussi, afficher l'application normale
     return (
 
-                <AuthProvider>
-                    <ProfileProvider>
-                        <PreloadManager />
-                        <GestureHandlerRootView style={{ flex: 1 }}>
-                            <RootNavigation />
-                        </GestureHandlerRootView>
-                    </ProfileProvider>
-                </AuthProvider>
+                <UserProvider>
+                    <AuthProvider>
+                        <ProfileProvider>
+                            <PreloadManager />
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                                <RootNavigation />
+                            </GestureHandlerRootView>
+                        </ProfileProvider>
+                    </AuthProvider>
+                </UserProvider>
 
     );
 }

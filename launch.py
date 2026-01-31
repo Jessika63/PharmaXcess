@@ -117,7 +117,7 @@ if __name__ == "__main__":
     build_group.add_argument("--install-front", action="store_true", help="Install frontend dependencies with npm.")
     build_group.add_argument("--install-app", action="store_true", help="Install mobile app dependencies with npm.")
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
-    build_group.add_argument("--location", type=str, choices=['paris', 'lyon'], default='paris', help="Set the default location for the frontend (paris or lyon).")
+    build_group.add_argument("--location", type=str, choices=['paris', 'lyon'], default='lyon', help="Set the default location for the frontend (paris or lyon).")
 
     # Logging & Debugging
     log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")

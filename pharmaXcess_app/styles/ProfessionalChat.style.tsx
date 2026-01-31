@@ -297,6 +297,10 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         fontSize: 16 * fontScale,
         color: colors.infoTitle,
     },
+    messageInputDisabled: {
+        backgroundColor: colors.surface,
+        opacity: 0.6,
+    },
     sendButton: {
         backgroundColor: colors.secondary,
         borderRadius: 20,

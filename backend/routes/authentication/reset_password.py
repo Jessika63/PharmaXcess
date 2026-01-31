@@ -13,8 +13,10 @@ def reset_password():
 
     if not token or not new_password:
         return jsonify({"error": "Missing token or new password"}), 400
+    
+    # If token is the placeholder token (account didn't exist), return error
     if token == "token_non_existant":
-        return jsonify({"message": "Si un compte existe pour cet email, vous recevrez un lien pour réinitialiser le mot de passe"}), 200
+        return jsonify({"error": "Invalid or expired token"}), 400
 
     conn = None
     try:
