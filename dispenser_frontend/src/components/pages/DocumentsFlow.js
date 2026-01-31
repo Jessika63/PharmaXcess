@@ -139,12 +139,13 @@ function DocumentsFlow({ stepsOrder }) {
         if (activeStepIndex !== null) return;
 
         const handleKeyDown = (e) => {
-            const totalElements = steps.length + 1; // cards + button
+            const totalElements = steps.length + 2; // cards + button + back button
             
             if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
                 e.preventDefault();
                 setFocusedIndex(prev => {
                     const next = (prev + 1) % totalElements;
+                    // Only update selectedStepIndex if we're moving TO a card
                     if (next < steps.length) {
                         setSelectedStepIndex(next);
                     }
@@ -154,6 +155,7 @@ function DocumentsFlow({ stepsOrder }) {
                 e.preventDefault();
                 setFocusedIndex(prev => {
                     const next = (prev - 1 + totalElements) % totalElements;
+                    // Only update selectedStepIndex if we're moving TO a card
                     if (next < steps.length) {
                         setSelectedStepIndex(next);
                     }
@@ -172,8 +174,11 @@ function DocumentsFlow({ stepsOrder }) {
                         window.location.href = '/non-prescription-drugs';
                     }
                 } else if (focusedIndex === steps.length && buttonRefs.current[1]) {
-                    // On the button
+                    // On the COMMENCER button
                     buttonRefs.current[1].click();
+                } else if (focusedIndex === steps.length + 1 && buttonRefs.current[0]) {
+                    // On the back button
+                    buttonRefs.current[0].click();
                 }
             }
         };
@@ -190,19 +195,22 @@ function DocumentsFlow({ stepsOrder }) {
             cardRefs.current[focusedIndex].focus();
         } else if (focusedIndex === steps.length && buttonRefs.current[1]) {
             buttonRefs.current[1].focus();
+        } else if (focusedIndex === steps.length + 1 && buttonRefs.current[0]) {
+            buttonRefs.current[0].focus();
         }
     }, [focusedIndex, activeStepIndex, steps.length]); 
 
     return (
         <PrescriptionProvider>
             <div className="w-full h-screen flex flex-col bg-background_color">
-                {/* Header: isn't displayed if the active step is StepOrdonnance, StepCarteIdentite or StepCarteVitale */}
-                {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale')) && (
+                {/* Header: isn't displayed if the active step is StepOrdonnance, StepCarteIdentite, StepCarteVitale or StepConfirmation */}
+                {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale' || steps[activeStepIndex].id === 'confirmation')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
                       <div className="flex items-center gap-4">
                           <button ref={el => buttonRefs.current[0] = el} {...createVoiceOverHandlers(speak)}
             onClick={() => navigate(-1)}
-                              className="flex items-center text-black hover:text-gray-600 transition-colors"
+                              className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                                  ${focusedIndex === steps.length + 1 ? 'ring-2 ring-pink-300 rounded-lg' : ''}`}
                           >
                               <config.icons.arrowLeft className="text-xl" />
                           </button>
@@ -218,7 +226,10 @@ function DocumentsFlow({ stepsOrder }) {
                             goToNextStep,
                             goBackStep,
                             restartFlow, 
-                            setHasQRCode: steps[activeStepIndex].id === 'ordonnance' ? setHasQRCode : undefined
+                            setHasQRCode: steps[activeStepIndex].id === 'ordonnance' ? setHasQRCode : undefined,
+                            allPreviousStepsCompleted: steps[activeStepIndex].id === 'confirmation' 
+                                ? steps.slice(0, activeStepIndex).every(s => s.completed)
+                                : undefined
                         })
                     ) : (
                         // Overview with step cards and CTA
@@ -227,14 +238,17 @@ function DocumentsFlow({ stepsOrder }) {
                             
                             <div className="flex gap-8 mb-10 justify-center px-6">
                                         {steps.map((s, i) => {
-                                            const isSelected = i === selectedStepIndex && activeStepIndex === null;
+                                            const isSelected = i === selectedStepIndex && activeStepIndex === null && focusedIndex < steps.length;
                                             const isFocused = i === focusedIndex && activeStepIndex === null;
                                             return (
                                                 <div
                                                     key={s.id}
                                                     ref={el => cardRefs.current[i] = el}
                                                     tabIndex={0}
-                                                    onClick={() => setSelectedStepIndex(i)}
+                                                    onClick={() => {
+                                                        setSelectedStepIndex(i);
+                                                        setFocusedIndex(i);
+                                                    }}
                                                     className={`min-w-[24rem] p-10 rounded-xl flex flex-col items-center text-center cursor-pointer transition-transform ${s.completed ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white'} ${isSelected ? 'ring-4 ring-black scale-105' : ''} ${isFocused ? 'ring-2 ring-pink-300' : ''}`}
                                                 >
                                                     <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">

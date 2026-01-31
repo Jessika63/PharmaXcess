@@ -49,35 +49,74 @@ function DirectionsMapPage() {
   const [qrLoading, setQrLoading] = useState(false);
   const qrIds = useRef([]); 
   const hasGenerated = useRef(false); 
-  // Map focus state
-  const mapRef = useRef(null);
+  // Map and navigation
   const mapInstanceRef = useRef(null);
-  const [isMapFocused, setIsMapFocused] = useState(false); 
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const backButtonRef = useRef(null);
+  const [focusedIndex, setFocusedIndex] = useState(0); // 0 = back, 1 = zoom+, 2 = zoom-
+  const zoomInButtonRef = useRef(null);
+  const zoomOutButtonRef = useRef(null);
   
   useInactivityRedirect(() => setShowInactivityModal(true));
 
-  // Keyboard navigation for back button
+  // Get references to Leaflet zoom buttons after map is loaded
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const zoomInBtn = document.querySelector('.leaflet-control-zoom-in');
+      const zoomOutBtn = document.querySelector('.leaflet-control-zoom-out');
+      if (zoomInBtn) zoomInButtonRef.current = zoomInBtn;
+      if (zoomOutBtn) zoomOutButtonRef.current = zoomOutBtn;
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Keyboard navigation for back button and Leaflet zoom buttons
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Enter') {
+      if (['ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
         e.preventDefault();
-        if (backButtonRef.current) {
+        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+          setFocusedIndex(prev => (prev + 1) % 3); // 0 -> 1 -> 2 -> 0
+        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+          setFocusedIndex(prev => (prev - 1 + 3) % 3);
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (focusedIndex === 0 && backButtonRef.current) {
           backButtonRef.current.click();
+        } else if (focusedIndex === 1 && zoomInButtonRef.current) {
+          zoomInButtonRef.current.click();
+        } else if (focusedIndex === 2 && zoomOutButtonRef.current) {
+          zoomOutButtonRef.current.click();
         }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [focusedIndex]);
 
-  // Focus management for back button
+  // Focus management and style for zoom buttons
   useEffect(() => {
-    if (backButtonRef.current) {
+    if (focusedIndex === 0 && backButtonRef.current) {
       backButtonRef.current.focus();
+    } else if (focusedIndex === 1 && zoomInButtonRef.current) {
+      zoomInButtonRef.current.focus();
+      zoomInButtonRef.current.style.outline = '2px solid #ec4899';
+      zoomInButtonRef.current.style.outlineOffset = '2px';
+    } else if (focusedIndex === 2 && zoomOutButtonRef.current) {
+      zoomOutButtonRef.current.focus();
+      zoomOutButtonRef.current.style.outline = '2px solid #ec4899';
+      zoomOutButtonRef.current.style.outlineOffset = '2px';
     }
-  }, []);
+
+    // Clear outline from non-focused zoom buttons
+    if (focusedIndex !== 1 && zoomInButtonRef.current) {
+      zoomInButtonRef.current.style.outline = 'none';
+    }
+    if (focusedIndex !== 2 && zoomOutButtonRef.current) {
+      zoomOutButtonRef.current.style.outline = 'none';
+    }
+  }, [focusedIndex]);
 
   // Dismiss inactivity modal on user activity
   useEffect(() => {
@@ -153,20 +192,9 @@ function DirectionsMapPage() {
     fetchDirections();
   }, [pharmacy, transport]);
 
-  // Focus management
-  // Keyboard zoom handling (map only)
+  // Keyboard zoom handling (removed - now handled by zoom buttons navigation)
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
-        if (mapInstanceRef.current) {
-          e.preventDefault();
-          if (e.key === 'ArrowUp') mapInstanceRef.current.zoomIn();
-          else mapInstanceRef.current.zoomOut();
-        }
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // Removed - use Leaflet's native zoom controls
   }, []);
 
   // Generate QR code inline and cleanup generated codes on exit
@@ -287,41 +315,38 @@ function DirectionsMapPage() {
           </ModalStandard>
         </div>
       )}
-      <div className={`w-full h-screen flex flex-col items-center bg-background_color ${config.padding.container}`}>
-              <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
-                <div className="flex items-center gap-4">
-                  <button 
-            {...createVoiceOverHandlers(speak)}
-                    ref={backButtonRef}
-                    tabIndex={0}
-                    onClick={() => navigate(-1)} 
-                    className="flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg">
-                    <config.icons.arrowLeft className="text-xl" />
-                  </button>
-                  <h1 className="text-3xl font-semibold text-black">Itinéraire</h1>
-                </div>
-                <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
-              </div>
+      <div className="w-full min-h-screen flex flex-col bg-background_color">
+        {/* Header */}
+        <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
+          <div className="flex items-center gap-4">
+            <button 
+              {...createVoiceOverHandlers(speak)}
+              ref={backButtonRef}
+              tabIndex={focusedIndex === 0 ? 0 : -1}
+              onClick={() => navigate(-1)} 
+              className={`flex items-center text-black hover:text-gray-600 transition-all duration-300 focus:outline-none
+                ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
+              <config.icons.arrowLeft className="text-xl" />
+            </button>
+            <h1 className="text-3xl font-semibold text-black">Itinéraire</h1>
+          </div>
+          <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+        </div>
         <div className="w-full h-full flex flex-col items-center">
-          <h2 className={`${config.fontSizes.lg} font-bold mb-4`}>
+          <h2 className={`${config.fontSizes.lg} font-semibold text-black mb-2`}>
             Itinéraire vers {pharmacy.name}
           </h2>
-          <div className={`mb-4 ${config.fontSizes.sm} ${config.textColors.secondary} text-center h-6`}>
-            {isMapFocused && (
-              <span>
-                Utilisez les flèches <strong>↑</strong> et <strong>↓</strong> pour zoomer
-              </span>
-            )}
+          
+          {/* Zoom instructions */}
+          <div className="mb-4 text-center">
+            <span className={`${config.fontSizes.sm} text-gray-600`}>
+              Utilisez les boutons <strong>+</strong> et <strong>-</strong> sur la carte pour zoomer
+            </span>
           </div>
 
           <div className="w-full flex flex-row gap-6">
             <div
-              ref={mapRef}
-              tabIndex={0}
-              onFocus={() => setIsMapFocused(true)}
-              onBlur={() => setIsMapFocused(false)}
               style={{
-                outline: isMapFocused ? '2px solid #ec4899' : 'none',
                 borderRadius: 12,
                 width: '66%',
                 height: '60vh',
@@ -332,7 +357,7 @@ function DirectionsMapPage() {
               <MapContainer
                 center={center}
                 zoom={13}
-                style={{ width: '100%', height: '100%' }}
+                style={{ width: '100%', height: '100%', borderRadius: 12 }}
                 keyboard={false}
                 ref={mapInstanceRef}
               >
@@ -399,13 +424,6 @@ function DirectionsMapPage() {
               </div>
             </div>
           </div>
-        </div>
-        <div className="mt-auto mb-8">
-          <img
-            src={config.icons.logo}
-            alt="Logo PharmaXcess"
-            className="w-40 h-auto opacity-60"
-          />
         </div>
       </div>
     </>

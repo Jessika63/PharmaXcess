@@ -174,7 +174,7 @@ function Cart() {
                         if (buttonType === 0 && decreaseRefs.current[itemIndex]) { 
                             decreaseRefs.current[itemIndex].click();
                         } else if (buttonType === 1 && increaseRefs.current[itemIndex]) { 
-                            increaseRefs.current[itemsIndex].click(); 
+                            increaseRefs.current[itemIndex].click(); 
                         } else if (buttonType === 2 && deleteRefs.current[itemIndex]) {
                             deleteRefs.current[itemIndex].click();
                         }
@@ -236,17 +236,35 @@ function Cart() {
             const maxIndex = 3;
             
             switch(e.key) {
+                case 'Escape':
+                    // Allow Escape to exit CardElement focus
+                    if (paymentModalFocusIndex === 1) {
+                        e.preventDefault();
+                        setPaymentModalFocusIndex(0);
+                    }
+                    break;
                 case 'ArrowRight':
                 case 'ArrowDown':
+                    // Allow navigation out of CardElement with arrows
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPaymentModalFocusIndex(prev => (prev + 1) % maxIndex);
+                    break;
                 case 'Tab':
+                    // Always handle Tab to allow exiting CardElement
                     if (!e.shiftKey) {
                         e.preventDefault();
                         setPaymentModalFocusIndex(prev => (prev + 1) % maxIndex);
+                    } else {
+                        e.preventDefault();
+                        setPaymentModalFocusIndex(prev => (prev - 1 + maxIndex) % maxIndex);
                     }
                     break;
                 case 'ArrowLeft':
                 case 'ArrowUp':
+                    // Allow navigation out of CardElement with arrows
                     e.preventDefault();
+                    e.stopPropagation();
                     setPaymentModalFocusIndex(prev => (prev - 1 + maxIndex) % maxIndex);
                     break;
                 case 'Enter':
@@ -263,8 +281,9 @@ function Cart() {
             }
         };
         
-        document.addEventListener('keydown', handlePaymentModalKeyDown);
-        return () => document.removeEventListener('keydown', handlePaymentModalKeyDown);
+        // Use window with capture: true to intercept BEFORE iframe
+        window.addEventListener('keydown', handlePaymentModalKeyDown, true);
+        return () => window.removeEventListener('keydown', handlePaymentModalKeyDown, true);
     }, [paymentModalOpen, paymentModalFocusIndex]);
     
     // Payment modal focus management
@@ -475,6 +494,7 @@ function Cart() {
                                         payButtonRef={payButtonRef}
                                         cardElementContainerRef={cardElementContainerRef}
                                         focusIndex={paymentModalFocusIndex}
+                                        onFocusChange={setPaymentModalFocusIndex}
                                         onError={(error) => {
                                             navigate('/payment-error', {
                                                 state: {

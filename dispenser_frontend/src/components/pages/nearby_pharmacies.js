@@ -25,7 +25,7 @@ function NearbyPharmacies() {
 
   const [pharmaciesList, setPharmaciesList] = useState([]);
   const [userCoords, setUserCoords] = useState({ lat: null, lon: null });
-  const [selectedPharmacyIndex, setSelectedPharmacyIndex] = useState(0);
+  const [selectedPharmacyIndex, setSelectedPharmacyIndex] = useState(-1);
   const [loadingPharmacies, setLoadingPharmacies] = useState(true);
   const [error, setError] = useState(null);
   const [pharmaciesFetched, setPharmaciesFetched] = useState(false);
@@ -115,23 +115,34 @@ function NearbyPharmacies() {
     return () => events.forEach(event => window.removeEventListener(event, dismiss));
   }, [showInactivityModal]);
 
-  // Keyboard navigation for pharmacies list
+  // Keyboard navigation for pharmacies list and back button
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (["ArrowDown", "ArrowUp", "Tab"].includes(event.key)) {
+      if (["ArrowRight", "ArrowLeft", "Tab"].includes(event.key)) {
         event.stopPropagation();
         event.preventDefault();
 
-        const totalItems = pharmaciesList.length;
-        if (totalItems === 0) return;
+        // -1 = back button, 0..N-1 = pharmacies
+        if (pharmaciesList.length === 0) return; // No navigation needed
 
-        if (event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
-          setSelectedPharmacyIndex((prev) => (prev + 1) % totalItems);
-        } else if (event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
-          setSelectedPharmacyIndex((prev) => (prev - 1 + totalItems) % totalItems);
+        if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+          setSelectedPharmacyIndex((prev) => {
+            if (prev === pharmaciesList.length - 1) return -1; // Last pharmacy -> back button
+            return prev + 1; // -1 -> 0, 0 -> 1, etc.
+          });
+        } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+          setSelectedPharmacyIndex((prev) => {
+            if (prev === -1) return pharmaciesList.length - 1; // Back button -> last pharmacy
+            return prev - 1; // 0 -> -1, 1 -> 0, etc.
+          });
         }
-      } else if (event.key === "Enter" && selectedPharmacyIndex >= 0 && selectedPharmacyIndex < pharmaciesList.length) {
-        handlePharmacySelect(pharmaciesList[selectedPharmacyIndex]);
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        if (selectedPharmacyIndex === -1 && goBackButtonRef.current) {
+          goBackButtonRef.current.click();
+        } else if (selectedPharmacyIndex >= 0 && selectedPharmacyIndex < pharmaciesList.length) {
+          handlePharmacySelect(pharmaciesList[selectedPharmacyIndex]);
+        }
       }
     };
 
@@ -140,9 +151,12 @@ function NearbyPharmacies() {
   }, [pharmaciesList.length, selectedPharmacyIndex]); 
 
 
-  // Scroll to selected pharmacy
+  // Scroll to selected pharmacy or focus back button
   useEffect(() => {
-    if (cardRefs.current[selectedPharmacyIndex]) {
+    if (selectedPharmacyIndex === -1 && goBackButtonRef.current) {
+      goBackButtonRef.current.focus();
+    } else if (selectedPharmacyIndex >= 0 && cardRefs.current[selectedPharmacyIndex]) {
+      cardRefs.current[selectedPharmacyIndex].focus();
       cardRefs.current[selectedPharmacyIndex].scrollIntoView({
         behavior: 'smooth',
         block: 'nearest'
@@ -194,7 +208,9 @@ function NearbyPharmacies() {
           <Link to="/insufficient-stock"
             state={{ drug }}
             ref={goBackButtonRef}
-            className="flex items-center text-black hover:text-gray-600 transition-colors"
+            className={`flex items-center text-black hover:text-gray-600 transition-all duration-300
+              ${selectedPharmacyIndex === -1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            tabIndex={selectedPharmacyIndex === -1 ? 0 : -1}
             {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />
           </Link>
@@ -233,12 +249,7 @@ function NearbyPharmacies() {
               return (
                 <div
                   key={i}
-                  ref={el => {
-                    cardRefs.current[i] = el;
-                    if (i === 0 && selectedPharmacyIndex === 0 && el) {
-                      setTimeout(() => el.focus(), 0);
-                    }
-                  }}
+                  ref={el => cardRefs.current[i] = el}
                   className={`bg-white rounded-xl p-6 flex justify-between items-center transition-all duration-300
                     ${selectedPharmacyIndex === i ? 'ring-2 ring-pink-300 scale-[1.02]' : ''}`}
                   tabIndex={selectedPharmacyIndex === i ? 0 : -1}

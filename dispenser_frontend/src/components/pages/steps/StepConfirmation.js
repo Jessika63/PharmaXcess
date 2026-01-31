@@ -7,7 +7,7 @@ import { usePrescription } from "../../../context/PrescriptionContext";
 import { useCart } from "../../../context/CartContext";
 import config from "../../../config";
 
-function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
+function StepConfirmation({ goToNextStep, goBackStep, restartFlow, allPreviousStepsCompleted }) {
   // Auto-play VoiceOver
   useAutoVoiceOver(voiceOverTexts.verification);
   const { speak } = useVoiceOver();
@@ -21,32 +21,41 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
   // Keyboard navigation
   const [focusedIndex, setFocusedIndex] = useState(0);
   const buttonRefs = useRef([]);
+  const backButtonRef = useRef(null);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
         e.preventDefault();
-        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
-          setFocusedIndex((prev) => (prev + 1) % 2);
-        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
-          setFocusedIndex((prev) => (prev - 1 + 2) % 2);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+          setFocusedIndex((prev) => (prev + 1) % 3);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+          setFocusedIndex((prev) => (prev - 1 + 3) % 3);
         }
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (buttonRefs.current[focusedIndex]) {
-          buttonRefs.current[focusedIndex].click();
+        if (focusedIndex === 0 && backButtonRef.current) {
+          backButtonRef.current.click();
+        } else if (focusedIndex === 1 && buttonRefs.current[0]) {
+          buttonRefs.current[0].click();
+        } else if (focusedIndex === 2 && buttonRefs.current[1] && allPreviousStepsCompleted !== false) {
+          buttonRefs.current[1].click();
         }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex]);
+  }, [focusedIndex, allPreviousStepsCompleted]);
 
   // Focus management
   useEffect(() => {
-    if (buttonRefs.current[focusedIndex]) {
-      buttonRefs.current[focusedIndex].focus();
+    if (focusedIndex === 0 && backButtonRef.current) {
+      backButtonRef.current.focus();
+    } else if (focusedIndex === 1 && buttonRefs.current[0]) {
+      buttonRefs.current[0].focus();
+    } else if (focusedIndex === 2 && buttonRefs.current[1]) {
+      buttonRefs.current[1].focus();
     }
   }, [focusedIndex]);
 
@@ -128,6 +137,23 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
   return (
     <div className="w-full h-screen flex flex-col overflow-y-auto">
       
+      {/* Header */}
+      <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+        <div className="flex items-center gap-4">
+          <button 
+            ref={backButtonRef}
+            onClick={goBackStep}
+            tabIndex={0}
+            className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+              ${focusedIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
+            {...createVoiceOverHandlers(speak)}
+          >
+            <config.icons.arrowLeft className="text-xl" />
+          </button>
+          <h1 className="text-3xl font-semibold text-black">Vérification</h1>
+        </div>
+        <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+      </div>
       
       <div className="flex-1 px-8 py-6">
         <h2 className="text-3xl font-bold text-black mb-8 text-center">
@@ -274,15 +300,18 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
             ref={el => buttonRefs.current[0] = el}
             tabIndex={0}
             className={`bg-red-500 text-white px-12 py-5 rounded-full text-xl font-semibold hover:bg-red-600 hover:scale-105 transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-pink-300
-              ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+              ${focusedIndex === 1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
             RECOMMENCER
           </button>
-          <button onClick={handleConfirm}
+          <button 
+            onClick={allPreviousStepsCompleted !== false ? handleConfirm : undefined}
             ref={el => buttonRefs.current[1] = el}
             tabIndex={0}
-            className={`bg-black text-white px-16 py-5 rounded-full text-xl font-semibold hover:scale-105 transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-pink-300
-              ${focusedIndex === 1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            disabled={allPreviousStepsCompleted === false}
+            className={`px-16 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-pink-300
+              ${allPreviousStepsCompleted !== false ? 'bg-black text-white hover:scale-105 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}
+              ${focusedIndex === 2 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
             VALIDER
           </button>

@@ -22,7 +22,7 @@ function TransportMode() {
   const distance = location.state?.distance || 0;
   const userCoords = location.state?.userCoords || { lat: null, lon: null };
 
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
 
   const goBackButtonRef = useRef(null);
@@ -69,13 +69,25 @@ function TransportMode() {
         event.stopPropagation();
         event.preventDefault();
 
+        // -1 = back button, 0..2 = transport modes
         if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
-          setFocusedIndex((prev) => (prev + 1) % transportModes.length);
+          setFocusedIndex((prev) => {
+            if (prev === transportModes.length - 1) return -1; // Last mode -> back button
+            return prev + 1; // -1 -> 0, 0 -> 1, etc.
+          });
         } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
-          setFocusedIndex((prev) => (prev - 1 + transportModes.length) % transportModes.length);
+          setFocusedIndex((prev) => {
+            if (prev === -1) return transportModes.length - 1; // Back button -> last mode
+            return prev - 1; // 0 -> -1, 1 -> 0, etc.
+          });
         }
       } else if (event.key === "Enter") {
-        handleTransportSelect(transportModes[focusedIndex].mode);
+        event.preventDefault();
+        if (focusedIndex === -1 && goBackButtonRef.current) {
+          goBackButtonRef.current.click();
+        } else if (focusedIndex >= 0 && focusedIndex < transportModes.length) {
+          handleTransportSelect(transportModes[focusedIndex].mode);
+        }
       }
     };
 
@@ -85,7 +97,9 @@ function TransportMode() {
 
   // Focus management
   useEffect(() => {
-    if (cardRefs.current[focusedIndex]) {
+    if (focusedIndex === -1 && goBackButtonRef.current) {
+      goBackButtonRef.current.focus();
+    } else if (focusedIndex >= 0 && cardRefs.current[focusedIndex]) {
       cardRefs.current[focusedIndex].focus();
     }
   }, [focusedIndex]);
@@ -110,7 +124,9 @@ function TransportMode() {
           <Link to="/nearby-pharmacies"
             state={{ drug }}
             ref={goBackButtonRef}
-            className="flex items-center text-black hover:text-gray-600 transition-colors"
+            className={`flex items-center text-black hover:text-gray-600 transition-all duration-300
+              ${focusedIndex === -1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            tabIndex={focusedIndex === -1 ? 0 : -1}
             {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />
           </Link>

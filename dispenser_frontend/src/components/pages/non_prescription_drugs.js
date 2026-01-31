@@ -70,7 +70,7 @@ function NonPrescriptionDrugs() {
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
 
-    // Focus index: -3 = cart, -2 = sort, -1 = filter, 0...N-1 = drug cards
+    // Focus index: -4 = back button, -3 = cart, -2 = sort, -1 = filter, 0...N-1 = drug cards
     const [focusedIndex, setFocusedIndex] = useState(-1);
 
     const itemRefs = useRef([]);
@@ -256,6 +256,8 @@ function NonPrescriptionDrugs() {
             sortButtonRef.current.focus();
         } else if (focusedIndex === -1 && searchButtonRef.current) {
             searchButtonRef.current.focus();
+        } else if (focusedIndex === -4 && goBackMainButtonRef.current) {
+            goBackMainButtonRef.current.focus();
         } else if (focusedIndex >= 0 && itemRefs.current[focusedIndex]) {
             itemRefs.current[focusedIndex].focus();
             itemRefs.current[focusedIndex].scrollIntoView({
@@ -329,7 +331,9 @@ function NonPrescriptionDrugs() {
                 } else if (focusedIndex === -2) {
                     setFocusedIndex(-1); // From sort to filter
                 } else if (focusedIndex === -1) {
-                    // Circular: go from filter to last drug item
+                    setFocusedIndex(-4); // From filter to back button
+                } else if (focusedIndex === -4) {
+                    // Circular: go from back button to last drug item
                     if (filteredDrugs.length > 0) {
                         setFocusedIndex(filteredDrugs.length - 1);
                     } else {
@@ -338,7 +342,9 @@ function NonPrescriptionDrugs() {
                 }
             } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
                 event.preventDefault();
-                if (focusedIndex === -1) {
+                if (focusedIndex === -4) {
+                    setFocusedIndex(-1); // From back button to filter
+                } else if (focusedIndex === -1) {
                     setFocusedIndex(-2); // From filter to sort
                 } else if (focusedIndex === -2) {
                     setFocusedIndex(-3); // From sort to cart
@@ -347,13 +353,13 @@ function NonPrescriptionDrugs() {
                     if (filteredDrugs.length > 0) {
                         setFocusedIndex(0);
                     } else {
-                        setFocusedIndex(-1);
+                        setFocusedIndex(-4);
                     }
                 } else if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length - 1) {
                     setFocusedIndex(focusedIndex + 1);
                 } else if (focusedIndex === filteredDrugs.length - 1) {
-                    // Circular: go from last drug item to filter
-                    setFocusedIndex(-1);
+                    // Circular: go from last drug item to back button
+                    setFocusedIndex(-4);
                 }
             } else if (event.key === "ArrowUp") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
@@ -402,6 +408,9 @@ function NonPrescriptionDrugs() {
                 } else if (focusedIndex === -3 && cartButtonRef.current) {
                     event.preventDefault();
                     cartButtonRef.current.click();
+                } else if (focusedIndex === -4 && goBackMainButtonRef.current) {
+                    event.preventDefault();
+                    goBackMainButtonRef.current.click();
                 }
             }
         };
@@ -612,7 +621,9 @@ const applySort = (sort) => {
                 <div className="flex items-center gap-4"> 
                     <Link to="/"
                         ref={goBackMainButtonRef}
-                        className={`flex items-center text-black hover:text-gray-600 transition-colors ${focusedIndex === -2 ? 'scale-105' : ''}`}
+                        tabIndex={0}
+                        className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                            ${focusedIndex === -4 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                         <config.icons.arrowLeft className="text-xl" /> 
                     </Link> 
