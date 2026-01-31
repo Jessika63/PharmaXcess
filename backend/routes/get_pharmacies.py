@@ -9,7 +9,7 @@ get_pharmacies_bp = Blueprint('get_pharmacies', __name__)
 def get_pharmacies():
     """
     Objective:
-    Retrieve the 10 closest pharmacy distributors based on a given latitude and longitude.
+    Retrieve the 12 closest pharmacy distributors based on a given latitude and longitude.
 
     Parameters:
     - lat: Latitude of the reference point. (Float, required)
@@ -18,11 +18,11 @@ def get_pharmacies():
     Process:
     - Validates that both latitude and longitude are provided.
     - Queries the database to calculate the distance (in km) from each distributor to the given coordinates using the Haversine formula.
-    - Orders the distributors by ascending distance and limits the result to 10 closest.
+    - Orders the distributors by ascending distance and limits the result to 12 closest.
     - Renames the "nom" field to "name" in the response for consistency.
 
     Return Value:
-    - Success: Returns a JSON object with a list of the 10 closest distributors and a success message, HTTP status code 200. (Response)
+    - Success: Returns a JSON object with a list of the 12 closest distributors and a success message, HTTP status code 200. (Response)
     - Failure: Returns a JSON error message with HTTP status code 400 if coordinates are missing or 500 in case of database errors. (Response)
     """
 
@@ -54,7 +54,7 @@ def get_pharmacies():
                 ) AS distance_km
             FROM distributeurs
             ORDER BY distance_km ASC
-            LIMIT 10;
+            LIMIT 12;
             """
             cursor.execute(query, (lat, lon, lat))
             results = cursor.fetchall()
