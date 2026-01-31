@@ -56,7 +56,7 @@ class CORSRegistration {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         config.cors.isRegistered = true;
         return true;
       } else {

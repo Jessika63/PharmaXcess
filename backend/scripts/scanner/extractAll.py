@@ -4,170 +4,362 @@ import numpy as np
 import unicodedata
 import cv2
 import requests
+from typing import List, Dict, Any, Optional, Tuple
 
 try:
     from doctr.models import ocr_predictor  # type: ignore
     from doctr.io import DocumentFile  # type: ignore
-except Exception:  # doctr not installed in lightweight CI image
+except Exception:
     class _MissingDoctrPredictor:
         def __call__(self, *args, **kwargs):
-            raise ImportError("python-doctr is not installed; tests should patch 'ocr_predictor'.")
+            raise ImportError("python-doctr is not installed")
 
-    def ocr_predictor(*args, **kwargs):  # type: ignore
+    def ocr_predictor(*args, **kwargs):
         return _MissingDoctrPredictor()
 
-    class DocumentFile:  # type: ignore
+    class DocumentFile:
         @staticmethod
         def from_images(path):
-            # Minimal shim: predictor in tests ignores the content type
             return path
 
-
 def normalize_text(text):
+    """Normalise le texte pour faciliter le parsing"""
     text = text.replace(":", ": ")
     text = text.lower()
-    text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+    text = ''.join(c for c in unicodedata.normalize('NFD', text) 
+                   if unicodedata.category(c) != 'Mn')
     text = re.sub(r"\s+", " ", text)
     return text
 
-
 def isPrescription(text):
-    keywords = ["RPPS", "ordonnance", "prescription", "mg", "comprimé", "solution", "capsule", "Dr "]
-    score = sum(1 for k in keywords if k.lower() in text.lower())
-    return score >= 2
+    """Détecte si le texte correspond à une ordonnance"""
+    keywords = ["RPPS", "ordonnance", "prescription", "mg", "comprimé", 
+                "solution", "capsule", "Dr ", "Le ", "M.", "Mme.", "né(e)"]
+    text_lower = text.lower()
+    score = sum(1 for k in keywords if k in text_lower)
+    return score >= 3
 
 def isRectoID(text):
-    keywords = ["Nationalité", "Nom", "Prénoms", "Sexe", "Née le", "Taille"]
-    score = sum(1 for k in keywords if k.lower() in text.lower())
+    """Détecte si le texte correspond au recto d'une carte d'identité"""
+    keywords = ["Nationalité", "Nom", "Prénoms", "Sexe", "Née le", "Taille",
+                "CARTE NATIONALE", "No", "Date de naissance"]
+    text_lower = text.lower()
+    score = sum(1 for k in keywords if k.lower() in text_lower)
     return score >= 3
 
 def isVersoID(text):
-    keywords = ["Adresse", "délivrée le", "Carte valable jusqu'au", "Carte nationale", "par", "Signature de lautorité"]
-    score = sum(1 for k in keywords if k.lower() in text.lower())
+    """Détecte si le texte correspond au verso d'une carte d'identité"""
+    keywords = ["Adresse", "délivrée le", "Carte valable jusqu'au", 
+                "Carte nationale", "par", "Signature de lautorité", "valable"]
+    text_lower = text.lower()
+    score = sum(1 for k in keywords if k.lower() in text_lower)
     return score >= 3
 
-
-def getInfosPrescription(text):
+def extract_doctor_info(text):
+    """Extraction améliorée des informations du médecin"""
     infos = {}
-    spe = "NONE"
-
+    
+    # Pattern pour le nom du médecin
     doctor_pattern = r"Dr\s+([A-Za-zÀ-ÿ]+)\s+([A-Za-zÀ-ÿ]+)"
     doctors = re.findall(doctor_pattern, text)
+    
     if doctors:
         firstname, lastname = doctors[0]
-        specialty_pattern = r"(MEDECIN\s+[A-Zéèêîàç\-]+|CARDIOLOGUE|DERMATOLOGUE|PEDIATRE|GYNECOLOGUE|OPHTALMOLOGISTE|PSYCHIATRE)"
-        specialty_match = re.search(specialty_pattern, text, re.IGNORECASE)
-        if specialty_match:
-            spe = specialty_match.group(0).strip()
-        infos["medecin"] = {
-            "prenom": firstname,
-            "nom": lastname,
-            "speciality": spe
-        }
-
+        infos["prenom"] = firstname.capitalize()
+        infos["nom"] = lastname.capitalize()
+        
+        # Recherche de la spécialité
+        # Chercher sur plusieurs lignes après le nom
+        lines = text.split('\n')
+        found_doctor = False
+        specialty = "Médecin généraliste"  # Valeur par défaut
+        
+        for i, line in enumerate(lines):
+            if f"Dr {firstname} {lastname}" in line or f"Dr {lastname}" in line:
+                found_doctor = True
+                # Chercher la spécialité dans les lignes suivantes
+                for j in range(i+1, min(i+4, len(lines))):
+                    specialty_line = lines[j].strip()
+                    # Chercher des mots-clés de spécialité
+                    specialty_keywords = {
+                        "MÉDECIN GENERALISTE": "Médecin généraliste",
+                        "GENERALISTE": "Médecin généraliste",
+                        "CARDIOLOGUE": "Cardiologue",
+                        "DERMATOLOGUE": "Dermatologue",
+                        "PEDIATRE": "Pédiatre",
+                        "GYNECOLOGUE": "Gynécologue",
+                        "OPHTALMOLOGISTE": "Ophtalmologiste",
+                        "PSYCHIATRE": "Psychiatre",
+                        "RHUMATOLOGUE": "Rhumatologue",
+                        "GASTRO": "Gastro-entérologue",
+                        "PNEUMOLOGUE": "Pneumologue",
+                        "ENDOCRINOLOGUE": "Endocrinologue"
+                    }
+                    
+                    for key, value in specialty_keywords.items():
+                        if key.lower() in specialty_line.lower():
+                            specialty = value
+                            break
+                    if specialty != "Médecin généraliste":
+                        break
+        
+        infos["specialite"] = specialty
+    
+    # Recherche du RPPS
     rpps_pattern = r"RPPS[:\s]*([0-9]{11})"
     rpps_match = re.search(rpps_pattern, text)
     if rpps_match:
         infos["rpps"] = rpps_match.group(1)
-
-    patient_pattern = r"(?:M\.|Mme\.)[^\S\r\n]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
-    patient = re.search(patient_pattern, text)
-    if patient:
-        last_name = patient.group(1)
-        first_name = patient.group(2)
-        infos["patient"] = {"prenom": first_name, "nom": last_name}
-
-    date_presc_match = re.search(r"Le\s+(\d{1,2}\s+[a-zéû]+\s+\d{4})", text, re.IGNORECASE)
-    if date_presc_match:
-        infos["date_prescription"] = date_presc_match.group(1)
-
-    lines = text.splitlines()
-    meds = []
-    current_med = None
-    capture_started = False
-
-    for line in lines:
-        line = line.strip()
-        if not capture_started and re.search(r"né\(e\)|née le", line, re.IGNORECASE):
-            capture_started = True
-            continue
-        if not capture_started or not line:
-            continue
-        if re.search(r"[A-Z]{3,}.*\b(mg|ml|g|%|cp|comprimé|sol|solution|pulv|capsule|pommade|sirop|gelule)\b", line, re.IGNORECASE):
-            current_med = {"nom": line, "posologie": ""}
-            meds.append(current_med)
-        elif current_med:
-            current_med["posologie"] += line + " "
-
-    for med in meds:
-        med["posologie"] = med["posologie"].strip()
-    if meds:
-        infos["medicaments"] = meds
-
+    
+    # Adresse du médecin
+    address_pattern = r"(\d{1,3}\s+[A-Za-zÀ-ÿ\s]+)\n(\d{5})\s+([A-Za-zÀ-ÿ\s]+)"
+    address_match = re.search(address_pattern, text)
+    if address_match:
+        infos["adresse"] = address_match.group(1).title()
+        infos["code_postal"] = address_match.group(2)
+        infos["ville"] = address_match.group(3).title()
+    
     return infos
 
+def extract_patient_info(text):
+    """Extraction améliorée des informations du patient"""
+    infos = {}
+    
+    # Pattern pour le patient
+    patient_pattern = r"(?:M\.|Mme\.|M\s|Mme\s)[^\S\r\n]*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ-]+)[^\S\r\n]+([A-Za-zÀ-ÖØ-öø-ÿ'’-]+)"
+    patient_match = re.search(patient_pattern, text)
+    
+    if patient_match:
+        last_name = patient_match.group(1)
+        first_name = patient_match.group(2)
+        infos["nom"] = last_name.capitalize()
+        infos["prenom"] = first_name.capitalize()
+    
+    # Date de naissance
+    birth_pattern = r"Ne?e?\(?e?\)?\s*le\s*[:\s]*(\d{1,2}[./-]\d{1,2}[./-]\d{4})"
+    birth_match = re.search(birth_pattern, text, re.IGNORECASE)
+    if birth_match:
+        infos["date_naissance"] = birth_match.group(1).replace('.', '/')
+    
+    # Taille et poids
+    taille_pattern = r"(\d{3})\s*cm"
+    poids_pattern = r"(\d{2,3})\s*kg"
+    
+    taille_match = re.search(taille_pattern, text)
+    poids_match = re.search(poids_pattern, text)
+    
+    if taille_match:
+        infos["taille"] = f"{taille_match.group(1)} cm"
+    if poids_match:
+        infos["poids"] = f"{poids_match.group(1)} kg"
+    
+    return infos
+
+def extract_medications(text):
+    """Extraction améliorée des médicaments"""
+    medications = []
+    
+    # Normaliser le texte pour le parsing
+    normalized = text.replace('\n', ' ').replace('  ', ' ')
+    
+    # Pattern pour détecter les médicaments (plus robuste)
+    # Cherche des combinaisons de mots en majuscules suivis de dosages
+    medication_patterns = [
+        r'([A-Z][A-Z\s-]{3,}?\d+[\s-]*(?:mg|g|ml|µg|UI|%|cp|comprimé|gelule|capsule|suppositoire|ampoule))\s+(.*?)(?=(?:[A-Z][A-Z\s-]{3,}?\d+|$))',
+        r'([A-Z][A-Za-z\s-]{3,}?)\s+(\d+[\s-]*(?:mg|g|ml|µg|UI|%).*?)(?=(?:[A-Z][A-Za-z\s-]{3,}|$))',
+        r'^([A-Z][A-Za-z\s-]{10,})\s+(.*)'
+    ]
+    
+    for pattern in medication_patterns:
+        matches = re.findall(pattern, normalized, re.IGNORECASE)
+        for match in matches:
+            if len(match) == 2:
+                nom, posologie = match
+                
+                # Nettoyer le nom du médicament
+                nom = re.sub(r'\s+', ' ', nom).strip()
+                # Enlever les mentions entre parenthèses (nom commercial)
+                nom = re.sub(r'\([^)]*\)', '', nom).strip()
+                # Garder seulement la partie avant le dosage si présente
+                nom = re.split(r'\d+[\s-]*(?:mg|g|ml|µg|UI|%)', nom)[0].strip()
+                
+                # Nettoyer la posologie
+                posologie = re.sub(r'\s+', ' ', posologie).strip()
+                # Extraire la fréquence si disponible
+                freq_patterns = [
+                    r'(\d+\s+fois\s+par\s+(?:jour|semaine|mois))',
+                    r'(matin\s+et\s+soir)',
+                    r'(par\s+(?:jour|semaine|mois))',
+                    r'(\d+\s+(?:comprimé|cp|goutte|sachet|gelule|dose))'
+                ]
+                
+                frequency = ""
+                for freq_pattern in freq_patterns:
+                    freq_match = re.search(freq_pattern, posologie, re.IGNORECASE)
+                    if freq_match:
+                        frequency = freq_match.group(1)
+                        break
+                
+                # Si pas de fréquence trouvée, prendre les premiers mots
+                if not frequency and len(posologie.split()) > 0:
+                    words = posologie.split()
+                    frequency = ' '.join(words[:min(4, len(words))])
+                
+                # Filtrer les faux positifs
+                if len(nom) < 3 or nom.isdigit():
+                    continue
+                
+                # Éviter les doublons
+                existing = any(m['nom'] == nom for m in medications)
+                if not existing:
+                    medications.append({
+                        'nom': nom,
+                        'posologie': frequency or posologie[:50]
+                    })
+    
+    # Si peu de médicaments trouvés, utiliser une méthode alternative
+    if len(medications) < 2:
+        # Chercher des lignes contenant des noms de médicaments connus
+        known_meds = ['PARACETAMOL', 'IBUPROFENE', 'AMOXICILLINE', 'DICLOFENAC',
+                     'LORATADINE', 'DESLORATADINE', 'OMEPRAZOLE', 'SIMVASTATINE',
+                     'METFORMINE', 'INSULINE', 'PREDNISONE', 'DEXAMETHASONE',
+                     'SPASFON', 'SMECTA', 'DOLIPRANE', 'EFFERALGAN']
+        
+        lines = text.split('\n')
+        for line in lines:
+            line_upper = line.upper()
+            for med in known_meds:
+                if med in line_upper:
+                    # Extraire la posologie
+                    pos_match = re.search(r'(\d+[\s-]*(?:mg|g|ml|cp|comprimé).*?)', line, re.IGNORECASE)
+                    posologie = pos_match.group(1) if pos_match else ""
+                    
+                    medications.append({
+                        'nom': med.capitalize(),
+                        'posologie': posologie[:50] if posologie else ""
+                    })
+                    break
+    
+    # Dédupliquer
+    unique_meds = []
+    seen = set()
+    for med in medications:
+        if med['nom'] not in seen:
+            seen.add(med['nom'])
+            unique_meds.append(med)
+    
+    return unique_meds[:10]  # Limiter à 10 médicaments
+
+def extract_prescription_date(text):
+    """Extrait la date de prescription"""
+    date_patterns = [
+        r"Le\s+(\d{1,2}\s+[a-zéû]+\s+\d{4})",
+        r"Le\s+(\d{1,2}[./-]\d{1,2}[./-]\d{4})",
+        r"Date[:\s]*(\d{1,2}[./-]\d{1,2}[./-]\d{4})"
+    ]
+    
+    for pattern in date_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    
+    return ""
+
+def getInfosPrescription(text):
+    """Extraction principale des informations d'ordonnance"""
+    infos = {}
+    
+    # 1. Informations du médecin
+    doctor_info = extract_doctor_info(text)
+    if doctor_info:
+        infos["medecin"] = doctor_info
+    
+    # 2. Date de prescription
+    prescription_date = extract_prescription_date(text)
+    if prescription_date:
+        infos["date_prescription"] = prescription_date
+    
+    # 3. Informations du patient
+    patient_info = extract_patient_info(text)
+    if patient_info:
+        infos["patient"] = patient_info
+    
+    # 4. Médicaments
+    medications = extract_medications(text)
+    if medications:
+        infos["medicaments"] = medications
+    
+    # 5. Spécialité (récupérée du médecin)
+    if "medecin" in infos and "specialite" in infos["medecin"]:
+        infos["specialite"] = infos["medecin"]["specialite"]
+    
+    return infos
 
 def getInfosRectoID(text):
+    """Extraction améliorée des informations du recto de la carte d'identité"""
     infos = {}
-
-
-    text = text.replace("Mationalite", "Nationalité").replace("Francaise", "Française") \
-               .replace("TM Nom:", "Nom:").replace("Prénom(s):", "Prénoms:") \
-               .replace("Né(e) le", "Né(e) le:").replace("Taille", "Taille:") \
-               .replace("Sexe :", "Sexe:").replace("à:", "lieu_naissance:")
-
-
+    
+    # Nettoyage du texte
+    text = text.replace("Mationalite", "Nationalité") \
+               .replace("Francaise", "Française") \
+               .replace("TM Nom:", "Nom:") \
+               .replace("Prénom(s):", "Prénoms:") \
+               .replace("Né(e) le", "Né(e) le:") \
+               .replace("Taille", "Taille:") \
+               .replace("Sexe :", "Sexe:") \
+               .replace("à:", "lieu_naissance:")
+    
+    # Numéro de carte
     match = re.search(r"CARTE NATIONALE D'IDENTITE\s+No[:\s]*([0-9A-Z]+)", text, re.IGNORECASE)
     if match:
         infos["numero_carte"] = match.group(1).strip()
-
-
+    
+    # Nationalité
     match = re.search(r"Nationalité[:\s]*([A-Za-zéÉèàêâîç]+)", text)
     if match:
         infos["nationalite"] = match.group(1).strip()
-
-
+    
+    # Nom
     match = re.search(r"Nom[:\s]*([A-Z]+)", text)
     if match:
         infos["nom"] = match.group(1).capitalize()
-
-
+    
+    # Prénoms
     match = re.search(r"Prénoms[:\s]*([A-Z\s]+)", text)
     if match:
         raw = match.group(1).strip()
-
         prenoms = [p.capitalize() for p in raw.split() if len(p) > 1]
         infos["prenoms"] = prenoms
-
-
+    
+    # Sexe
     match = re.search(r"Sexe[:\s]*([MF])", text)
     if match:
         infos["sexe"] = "Homme" if match.group(1) == "M" else "Femme"
-
-
+    
+    # Date de naissance
     match = re.search(r"Né\(e\) le[:\s]*([0-9]{2}[./-][0-9]{2}[./-][0-9]{4})", text)
     if match:
         infos["date_naissance"] = match.group(1).replace('.', '/')
-
-
+    
+    # Lieu de naissance
     match = re.search(r"lieu_naissance[:\s]*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)", text)
     if match:
         raw_lieu = match.group(1).strip()
-
         raw_lieu = re.split(r'\s*\n', raw_lieu)[0]
         infos["lieu_naissance"] = raw_lieu.title()
-
-
+    
+    # Taille
     match = re.search(r"Taille[:\s]*([0-9][.,]?[0-9]{1,2})", text)
     if match:
         infos["taille"] = match.group(1).replace(',', '.')
-
+    
     return infos
 
-
 def getInfosVersoID(text):
+    """Extraction améliorée des informations du verso de la carte d'identité"""
     infos = {}
-
+    
+    # Nettoyage du texte
     text = text.replace("Carte valablejusqu'au", "Carte valable jusqu'au") \
                .replace("delivreele", "délivrée le") \
                .replace("Adresse.:", "Adresse:") \
@@ -176,8 +368,8 @@ def getInfosVersoID(text):
                .replace("LePrefet", "Le Préfèt") \
                .replace("par:", "par:") \
                .replace("Signature de lautorité", "signature_autorite")
-
-
+    
+    # Adresse
     address_match = re.search(
         r"Adresse[:\s]*([0-9A-Z\s\-]+)\s*\n\s*(\d{5})\s*([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ\s\-]+)",
         text, re.IGNORECASE
@@ -185,80 +377,41 @@ def getInfosVersoID(text):
     if address_match:
         infos["adresse"] = address_match.group(1).title().strip()
         infos["code_postal"] = address_match.group(2)
-
         infos["ville"] = address_match.group(3).split('\n')[0].title().strip()
-
-
+    
+    # Date de validité
     valid_match = re.search(r"valable.*?(\d{2}[./-]\d{2}[./-]\d{4})", text)
     if valid_match:
         infos["date_validite"] = valid_match.group(1).replace('.', '/')
-
-
+    
+    # Date de délivrance
     issued_match = re.search(r"délivrée le[:\s]*(\d{2}[./-]\d{2}[./-]\d{4})", text)
     if issued_match:
         infos["date_delivrance"] = issued_match.group(1).replace('.', '/')
-
-
+    
+    # Autorité
     by_match = re.search(r"par[:\s]*(.+)", text, re.IGNORECASE)
     if by_match:
         autorite = by_match.group(1).split('\n')[0].strip()
         infos["autorite"] = autorite.title()
-
-
+    
+    # Signature
     sig_match = re.search(r"signature_autorite[:\s]*(.+)", text, re.IGNORECASE | re.DOTALL)
     if sig_match:
         signature = sig_match.group(1).strip()
         infos["signature_autorite"] = " ".join([line.strip() for line in signature.splitlines() if line.strip()])
-
+    
     return infos
-
-
-
-def flip_image(input_path, flip_code=1):
-    """ Flip the image and save the result """
-    image = cv2.imread(input_path)
-    if image is None:
-        raise FileNotFoundError(f"Could not read the image at {input_path}")
-    flipped = cv2.flip(image, flip_code)
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    cv2.imwrite(tmp_file.name, flipped)
-    return tmp_file.name
-
-def verify_doctor(first_name, last_name):
-    try:
-        env = os.getenv('ENV')
-
-        if env == 'production':
-            url = "http://57.128.57.96:5000/find_doctor_by_name"
-        elif env == 'development':
-            url = "http://localhost:5000/find_doctor_by_name"
-        else:
-            print("Erreur : la variable ENV n'est pas définie correctement")
-        params = {"last_name": last_name}
-        if first_name:
-            params["first_name"] = first_name
-        resp = requests.get(url, params=params, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            if isinstance(data, list) and data:
-                return True, data
-            return False, {"error": "Doctor not found", "data": data}
-        return False, {"error": f"API error {resp.status_code}"}
-    except Exception as e:
-        return False, {"error": str(e)}
-
-
 
 def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
     """
     Extract text from image using Doctr OCR and return JSON with infos.
     """
     result = {"success": False, "raw_text": "", "infos": {}, "error": ""}
-
+    
     try:
-
+        # Chargement de l'image
         if from_base64:
-            # Support both raw bytes and base64-encoded strings (optionally prefixed with a data URI)
             if isinstance(image_input, (bytes, bytearray)):
                 image_data = bytes(image_input)
             elif isinstance(image_input, str):
@@ -266,7 +419,7 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
                 image_data = base64.b64decode(b64_payload)
             else:
                 raise TypeError("Unsupported image_input type for base64 mode")
-
+            
             nparr = np.frombuffer(image_data, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         else:
@@ -274,37 +427,39 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
                 result["error"] = f"File '{image_input}' does not exist"
                 return result
             img = cv2.imread(image_input)
-
+        
         if img is None:
             result["error"] = "Cannot read image file"
             return result
-
+        
         if flip_horizontal:
             img = cv2.flip(img, 1)
-
-
+        
+        # Sauvegarde temporaire
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
             tmp_path = tmp.name
             cv2.imwrite(tmp_path, img)
-
-
+        
+        # OCR avec Doctr
         predictor = ocr_predictor(pretrained=True)
         doc = DocumentFile.from_images(tmp_path)
         ocr_result = predictor(doc)
-
+        
+        # Extraction du texte
         lines = []
         for page in ocr_result.pages:
             for block in page.blocks:
                 for line in block.lines:
                     line_text = " ".join([word.value for word in line.words])
                     lines.append(line_text)
-
+        
         text = "\n".join(lines).strip()
         result["raw_text"] = text
-
+        
+        # Validation et extraction selon le type de document
         valid = False
         infos = {}
-
+        
         if doc_type.upper() == "P":
             valid = isPrescription(text)
             if valid:
@@ -315,33 +470,39 @@ def main(image_input, doc_type, from_base64=False, flip_horizontal=False):
                 infos = getInfosRectoID(text)
         elif doc_type.upper() == "V":
             valid = isVersoID(text)
-
             if valid:
                 infos = getInfosVersoID(text)
-
-
-        if not valid:
-            result["error"] = f"The provided document does not match the expected type '{doc_type}'."
-
-
+        
+        # Gestion des erreurs
+        if not text or text == "\n":
+            result["error"] = "Veuillez insérer votre document."
+        elif not valid:
+            result["error"] = "Le document inséré est invalide ou ne correspond pas au type attendu."
+        
         result["success"] = valid
         result["infos"] = infos
-
+        
+        # Nettoyage du fichier temporaire
+        try:
+            os.unlink(tmp_path)
+        except:
+            pass
+        
         return result
-
+        
     except Exception as e:
         result["error"] = str(e)
-        print("result", result)
+        import traceback
+        print(f"Error in main: {traceback.format_exc()}")
         return result
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python extractAll.py <image_path> <doc_type>")
         sys.exit(1)
-
+    
     image_path = sys.argv[1]
     doc_type = sys.argv[2]
-
+    
     output = main(image_path, doc_type)
     print(json.dumps(output, ensure_ascii=False, indent=2))

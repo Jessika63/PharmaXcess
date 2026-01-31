@@ -1,13 +1,10 @@
-
 import React, { useState } from 'react';
-import config from '../../config';
 import { PrescriptionProvider } from '../../context/PrescriptionContext';
 import StepHeader from './steps/StepHeader';
 import StepOrdonnance from './steps/StepOrdonnance';
 import StepCarteVitale from './steps/StepCarteVitale';
 import StepCarteIdentite from './steps/StepCarteIdentite';
 import StepConfirmation from './steps/StepConfirmation';
-import StepPayment from './steps/StepPayment';
 
 const stepsDefault = [
     { id: 'ordonnance', label: 'Ordonnance', component: StepOrdonnance },

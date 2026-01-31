@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 import json
 from functools import wraps
-
+from datetime import datetime
 # Load environment variables from .env file
 load_dotenv()
 
@@ -143,6 +143,73 @@ def remove_origin():
     else:
         return jsonify({"error": "Origin not found"}), 404
 
+
+PI_URL_FILE = "/tmp/pi_ngrok_url.json"
+
+@app.route('/api/pi/update_url', methods=['POST'])
+def update_pi_url():
+    """Reçoit et stocke l'URL de la Pi"""
+    try:
+        data = request.get_json()
+        if not data or 'url' not in data:
+            return jsonify({
+                "success": False, 
+                "error": "Missing 'url' in request body"
+            }), 400
+        
+        pi_url = data['url'].strip()
+        
+        if not pi_url.startswith(('http://', 'https://')):
+            return jsonify({
+                "success": False, 
+                "error": "Invalid URL format"
+            }), 400
+        
+        url_data = {
+            "url": pi_url,
+            "timestamp": datetime.now().isoformat(),
+            "updated_from": request.remote_addr
+        }
+        
+        with open(PI_URL_FILE, 'w') as f:
+            json.dump(url_data, f, indent=2)
+        
+        print(f"URL Pi mise à jour: {pi_url}")
+        
+        return jsonify({
+            "success": True,
+            "message": f"URL updated to {pi_url}",
+            "timestamp": url_data["timestamp"]
+        })
+        
+    except Exception as e:
+        print(f"Erreur update URL: {e}")
+        return jsonify({
+            "success": False, 
+            "error": str(e)
+        }), 500
+
+@app.route('/api/pi/current_url', methods=['GET'])
+def get_pi_url():
+    """Récupère l'URL actuelle de la Pi"""
+    try:
+        if os.path.exists(PI_URL_FILE):
+            with open(PI_URL_FILE, 'r') as f:
+                data = json.load(f)
+            return jsonify({"success": True, **data})
+        else:
+            return jsonify({
+                "success": False, 
+                "error": "No URL registered yet",
+                "url": "https://undelineable-bellicose-alannah.ngrok-free.dev"  # Fallback
+            })
+    except Exception as e:
+        return jsonify({
+            "success": False, 
+            "error": str(e),
+            "url": "https://undelineable-bellicose-alannah.ngrok-free.dev"
+        })
+
 def register_blueprints():
     """
     Objective: Register all blueprints (API endpoints) of the Flask application.
@@ -209,6 +276,10 @@ def register_blueprints():
     from routes.ordonnances.ordonnance_create import ordonnances_bp
     from routes.profile.followed_patients import followed_bp
     from routes.cart.cart import cart_bp
+
+
+    from routes.scanner.scanner import scanner_bp
+    app.register_blueprint(scanner_bp)
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)

@@ -40,7 +40,7 @@ if (env === 'production') {
 } else {
     console.error("⚠️ La variable ENV n'est pas définie correctement");
 }
-
+backendUrl = 'http://57.128.57.96:5000';
 // Define the constants separately first
 const Epitech_Paris = {
   lat: 48.815273,
