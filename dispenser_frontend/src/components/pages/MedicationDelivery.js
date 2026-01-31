@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaCheck } from 'react-icons/fa';
@@ -13,17 +13,24 @@ const MedicationDelivery = () => {
   useAutoVoiceOver(voiceOverTexts.medicationDelivery);
   const { speak } = useVoiceOver();
 
+    // Keyboard navigation
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const [adviceFocused, setAdviceFocused] = useState(false); // Track if skip button is focused on advice screen
+    const buttonRefs = useRef([]);
+    const skipButtonRef = useRef(null);
+    const completeButtonRef = useRef(null);
+
     const navigate = useNavigate();
     const location = useLocation();
     const { cartItems: passedItems } = location.state || {};
     const { clearCart } = useCart();
     const { clearPrescriptionData } = usePrescription();
     
-    // Use the passed items or fallback to context cart items
-    const items = passedItems || [
+    // Use the passed items or fallback to context cart items (memoized to avoid re-creation)
+    const items = useMemo(() => passedItems || [
         { id: 1, label: 'Advil 400mg', quantity: 1 },
         { id: 2, label: 'Doliprane 1000mg', quantity: 2 }
-    ];
+    ], [passedItems]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
@@ -84,8 +91,64 @@ const MedicationDelivery = () => {
                 Ces conseils seront affichés pendant 30 secondes. Vous pouvez cliquer sur PASSER pour continuer.
             `;
             speak(fullText);
+            // Reset focus state when new advice is shown
+            setAdviceFocused(false);
         }
-    }, [showAdvice, currentAdviceIndex, items, speak]);
+    }, [showAdvice, currentAdviceIndex, totalItems, items, speak]);
+
+    // Keyboard navigation for advice screen
+    useEffect(() => {
+        if (!showAdvice || currentAdviceIndex >= totalItems) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Tab') {
+                e.preventDefault();
+                setAdviceFocused(true);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                setAdviceFocused(false);
+            } else if (e.key === 'Enter' && adviceFocused) {
+                e.preventDefault();
+                if (skipButtonRef.current) {
+                    skipButtonRef.current.click();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showAdvice, currentAdviceIndex, totalItems, adviceFocused]);
+
+    // Focus management for advice screen skip button
+    useEffect(() => {
+        if (showAdvice && currentAdviceIndex < totalItems && adviceFocused && skipButtonRef.current) {
+            skipButtonRef.current.focus();
+        }
+    }, [showAdvice, currentAdviceIndex, totalItems, adviceFocused]);
+
+    // Keyboard navigation for completion screen
+    useEffect(() => {
+        if (!isComplete) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (completeButtonRef.current) {
+                    completeButtonRef.current.click();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isComplete]);
+
+    // Auto-focus the complete button when completion screen is shown
+    useEffect(() => {
+        if (isComplete && completeButtonRef.current) {
+            completeButtonRef.current.focus();
+        }
+    }, [isComplete]);
 
     // Advice screen (after delivery, before completion)
     if (showAdvice && currentAdviceIndex < totalItems) {
@@ -99,7 +162,7 @@ const MedicationDelivery = () => {
                 {/* Header */}
                 <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                     <div className="flex items-center gap-4">
-                        <Link to="/"
+                        <Link ref={el => buttonRefs.current[0] = el} to="/"
                             className="flex items-center text-black hover:text-gray-600 transition-colors"
             {...createVoiceOverHandlers(speak)}>
                             <config.icons.arrowLeft className="text-xl" />
@@ -158,10 +221,13 @@ const MedicationDelivery = () => {
                             <p className="text-base text-gray-500">
                                 Ces conseils seront affichés pendant 30 secondes
                             </p>
-                            <button {...createVoiceOverHandlers(speak)}
+                            <button
+                                ref={skipButtonRef}
+                                {...createVoiceOverHandlers(speak)}
             onClick={() => setCurrentAdviceIndex(prev => prev + 1)}
-                                className="mt-4 bg-gray-200 text-black px-8 py-3 rounded-full text-base font-semibold
-                                    hover:bg-gray-300 transition-colors duration-300"
+                                className={`mt-4 bg-gray-200 text-black px-8 py-3 rounded-full text-base font-semibold
+                                    hover:bg-gray-300 transition-colors duration-300 focus:outline-none
+                                    ${adviceFocused ? 'ring-2 ring-pink-300' : ''}`}
                             >
                                 PASSER
                             </button>
@@ -203,10 +269,12 @@ const MedicationDelivery = () => {
                     <p className="text-xl text-gray-600 mb-12">Tous les médicaments ont été délivrés avec succès</p>
 
                     {/* Button */}
-                    <button {...createVoiceOverHandlers(speak)}
+                    <button
+                        ref={completeButtonRef}
+                        {...createVoiceOverHandlers(speak)}
             onClick={() => navigate('/')}
                         className="bg-black text-white px-16 py-4 rounded-full text-lg font-semibold
-                            hover:scale-105 transition-transform duration-300"
+                            hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300"
                     >
                         TERMINER
                     </button>

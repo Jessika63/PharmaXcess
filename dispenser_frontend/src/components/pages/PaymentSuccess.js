@@ -1,5 +1,5 @@
 import config from '../../config';
-import React, { useEffect} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useLocation, useNavigate } from 'react-router-dom'; 
@@ -11,6 +11,10 @@ const PaymentSuccess = () => {
   // Auto-play VoiceOver
   useAutoVoiceOver(voiceOverTexts.paymentSuccess);
   const { speak } = useVoiceOver();
+
+    // Keyboard navigation
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const buttonRefs = useRef([]);
 
   const location = useLocation();
   const navigate = useNavigate(); 
@@ -35,6 +39,44 @@ const PaymentSuccess = () => {
 
 
 
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            const maxIndex = buttonRefs.current.length - 1;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setFocusedIndex(prev => Math.min(prev + 1, maxIndex));
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setFocusedIndex(prev => Math.max(prev - 1, 0));
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (buttonRefs.current[focusedIndex]) {
+                        buttonRefs.current[focusedIndex].click();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [focusedIndex]);
+    
+    // Focus management
+    useEffect(() => {
+        if (buttonRefs.current[focusedIndex]) {
+            buttonRefs.current[focusedIndex].focus();
+        }
+    }, [focusedIndex]);
+
   return (
     <div className="w-full min-h-screen flex flex-col bg-background_color">
       
@@ -42,7 +84,7 @@ const PaymentSuccess = () => {
       {/* Header */}
       <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
         <div className="flex items-center gap-4">
-          <Link to="/cart"
+          <Link ref={el => buttonRefs.current[0] = el} to="/cart"
             className="flex items-center text-black hover:text-gray-600 transition-colors"
             {...createVoiceOverHandlers(speak)}>
             <config.icons.arrowLeft className="text-xl" />

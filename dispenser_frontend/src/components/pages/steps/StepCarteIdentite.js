@@ -29,6 +29,9 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
   const [focusedIndex, setFocusedIndex] = useState(1);
   const buttonsRef = useRef([]);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const scanButtonRef = useRef(null);
+  const backButtonScannerRef = useRef(null);
+  const backButtonSelectionRef = useRef(null);
 
   const openCameraForSide = (side) => {
     const docType = side === 'recto' ? 'R' : 'V';
@@ -111,35 +114,89 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
     return null;
   };
 
+  // Keyboard navigation for selection page (back button + 2 cards)
+  useEffect(() => {
+    if (!showScannerView) {
+      const handleKeyDown = (event) => {
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey) || (event.key === "Tab" && event.shiftKey)) {
+          event.preventDefault();
+          if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex + 1) % 3);
+          } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex - 1 + 3) % 3);
+          }
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          if (focusedIndex === 0 && backButtonSelectionRef.current) {
+            backButtonSelectionRef.current.click();
+          } else if (focusedIndex === 1 && buttonsRef.current[0]) {
+            buttonsRef.current[0].click();
+          } else if (focusedIndex === 2 && buttonsRef.current[1]) {
+            buttonsRef.current[1].click();
+          }
+        }
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [focusedIndex, showScannerView]);
 
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
-      event.preventDefault();
-      setFocusedIndex((prevIndex) => {
-        const newIndex = (prevIndex + 1) % 4;
-        focusedIndexRef.current = newIndex;
-        return newIndex;
-      });
-    } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
-      event.preventDefault();
-      setFocusedIndex((prevIndex) => {
-        const newIndex = (prevIndex - 1 + 4) % 4;
-        focusedIndexRef.current = newIndex;
-        return newIndex;
-      });
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      if (focusedIndexRef.current === 1) {
-        openCameraForSide("verso")
-      } else if (focusedIndexRef.current === 2) {
-        navigate('/');
-      } else if (focusedIndexRef.current === 3) {
-        goBackStep()
-      } else if (focusedIndexRef.current === 0) {
-        openCameraForSide("recto")
+  // Keyboard navigation for scanner page (back button + LANCER LE SCAN button)
+  useEffect(() => {
+    if (showScannerView) {
+      const handleKeyDown = (e) => {
+        const maxIndex = (statusSides[currentDocType] !== "valid" && !loading) ? 1 : 0;
+        const totalElements = maxIndex + 1;
+        
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
+          e.preventDefault();
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+            setFocusedIndex((prev) => (prev + 1) % totalElements);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+            setFocusedIndex((prev) => (prev - 1 + totalElements) % totalElements);
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focusedIndex === 0 && backButtonScannerRef.current) {
+            backButtonScannerRef.current.click();
+          } else if (focusedIndex === 1 && scanButtonRef.current) {
+            scanButtonRef.current.click();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (backButtonScannerRef.current) {
+            backButtonScannerRef.current.click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showScannerView, loading, currentDocType, statusSides, focusedIndex]);
+
+  // Focus management for selection page
+  useEffect(() => {
+    if (!showScannerView) {
+      if (focusedIndex === 0 && backButtonSelectionRef.current) {
+        backButtonSelectionRef.current.focus();
+      } else if (focusedIndex === 1 && buttonsRef.current[0]) {
+        buttonsRef.current[0].focus();
+      } else if (focusedIndex === 2 && buttonsRef.current[1]) {
+        buttonsRef.current[1].focus();
       }
     }
-  }, [navigate, openCameraForSide]);
+  }, [focusedIndex, showScannerView]);
+
+  // Focus management for scanner page
+  useEffect(() => {
+    if (showScannerView) {
+      if (focusedIndex === 0 && backButtonScannerRef.current) {
+        backButtonScannerRef.current.focus();
+      } else if (focusedIndex === 1 && statusSides[currentDocType] !== "valid" && !loading && scanButtonRef.current) {
+        scanButtonRef.current.focus();
+      }
+    }
+  }, [showScannerView, focusedIndex, loading, currentDocType, statusSides]);
 
 
   useInactivityRedirect(() => setShowInactivityModal(true));
@@ -153,22 +210,6 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
     return () => events.forEach(event => window.removeEventListener(event, dismiss));
   }, [showInactivityModal]);
 
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  useEffect(() => {
-    if (buttonsRef.current[focusedIndex]) {
-      buttonsRef.current[focusedIndex].focus();
-    }
-  }, [focusedIndex]);
-
-  useEffect(() => {
-  }, [focusedIndex]);
-
   return (
 
     <div className="w-full h-screen flex flex-col">
@@ -181,7 +222,10 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
               <button onClick={closeModal}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonScannerRef}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && showScannerView ? 'ring-2 ring-pink-300' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -210,6 +254,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
             {statusSides[currentDocType] !== "valid" && !loading && (
               <button 
             {...createVoiceOverHandlers(speak)}
+                ref={scanButtonRef}
+                tabIndex={0}
                 onClick={async () => {
                   try {
                     setLoading(true);
@@ -272,7 +318,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
                     console.error("Erreur client:", error);
                   }
                 }}
-                className="px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+                className={`px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                  ${focusedIndex === 1 && showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}
               >
                 LANCER LE SCAN
               </button>
@@ -299,9 +346,11 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
             <div className="flex items-center gap-4">
               <button 
             {...createVoiceOverHandlers(speak)}
-                ref={(el) => (buttonsRef.current[3] = el)}
+                ref={backButtonSelectionRef}
                 onClick={goBackStep}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && !showScannerView ? 'ring-2 ring-pink-300' : ''}`}
               >
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -319,7 +368,8 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
             {/* Two cards side by side */}
             <div className="flex gap-8 max-w-5xl w-full mb-8">
               {/* Recto Card */}
-              <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 1 && !showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.idCard className="text-3xl text-black" />
                 </div>
@@ -332,14 +382,17 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
             {...createVoiceOverHandlers(speak)}
                   ref={(el) => (buttonsRef.current[0] = el)}
                   onClick={() => openCameraForSide('recto')}
-                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4"
+                  tabIndex={0}
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4 focus:outline-none focus:ring-2 focus:ring-pink-300
+                    ${focusedIndex === 1 && !showScannerView ? 'scale-105' : ''}`}
                 >
                   CHOISIR
                 </button>
               </div>
 
               {/* Verso Card */}
-              <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 2 && !showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.idCard className="text-3xl text-black" />
                 </div>
@@ -352,7 +405,9 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
             {...createVoiceOverHandlers(speak)}
                   ref={(el) => (buttonsRef.current[1] = el)}
                   onClick={() => openCameraForSide('verso')}
-                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4"
+                  tabIndex={0}
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4 focus:outline-none focus:ring-2 focus:ring-pink-300
+                    ${focusedIndex === 2 && !showScannerView ? 'scale-105' : ''}`}
                 >
                   CHOISIR
                 </button>

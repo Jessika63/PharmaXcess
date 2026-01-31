@@ -1,5 +1,5 @@
 // src/pages/PaymentError.js
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useLocation } from 'react-router-dom';
@@ -11,9 +11,51 @@ function PaymentError() {
   useAutoVoiceOver(voiceOverTexts.paymentError);
   const { speak } = useVoiceOver();
 
+    // Keyboard navigation
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const buttonRefs = useRef([]);
+
   const location = useLocation();
   const errorMessage = location.state?.errorMessage || "Désolé, une erreur s'est produite lors du traitement de votre paiement.";
   const fromPath = location.state?.from || '/non-prescription-drugs';
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            const maxIndex = buttonRefs.current.length - 1;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setFocusedIndex(prev => Math.min(prev + 1, maxIndex));
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setFocusedIndex(prev => Math.max(prev - 1, 0));
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (buttonRefs.current[focusedIndex]) {
+                        buttonRefs.current[focusedIndex].click();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [focusedIndex]);
+    
+    // Focus management
+    useEffect(() => {
+        if (buttonRefs.current[focusedIndex]) {
+            buttonRefs.current[focusedIndex].focus();
+        }
+    }, [focusedIndex]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-background_color">
@@ -35,7 +77,7 @@ function PaymentError() {
         </p>
 
         {/* Correct path usage */}
-        <Link to={fromPath}
+        <Link ref={el => buttonRefs.current[0] = el} to={fromPath}
           className={
             `${config.fontSizes.md} ${config.buttonColors.red} ${config.padding.button} ${config.borderRadius.md}
             ${config.shadows.md} ${config.transitions.default} hover:opacity-90`

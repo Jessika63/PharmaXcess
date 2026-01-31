@@ -54,7 +54,30 @@ function DirectionsMapPage() {
   const mapInstanceRef = useRef(null);
   const [isMapFocused, setIsMapFocused] = useState(false); 
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const backButtonRef = useRef(null);
+  
   useInactivityRedirect(() => setShowInactivityModal(true));
+
+  // Keyboard navigation for back button
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (backButtonRef.current) {
+          backButtonRef.current.click();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Focus management for back button
+  useEffect(() => {
+    if (backButtonRef.current) {
+      backButtonRef.current.focus();
+    }
+  }, []);
 
   // Dismiss inactivity modal on user activity
   useEffect(() => {
@@ -269,7 +292,10 @@ function DirectionsMapPage() {
                 <div className="flex items-center gap-4">
                   <button 
             {...createVoiceOverHandlers(speak)}
-                    onClick={() => navigate(-1)} className="flex items-center text-black hover:text-gray-600 transition-colors">
+                    ref={backButtonRef}
+                    tabIndex={0}
+                    onClick={() => navigate(-1)} 
+                    className="flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg">
                     <config.icons.arrowLeft className="text-xl" />
                   </button>
                   <h1 className="text-3xl font-semibold text-black">Itinéraire</h1>

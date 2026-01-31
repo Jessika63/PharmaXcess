@@ -12,6 +12,9 @@ export const voiceOverTexts = {
   
   // Scan prescription 
   scanOrdonnance: "Scanner votre ordonnance. Vous pouvez scanner un QR code ou une ordonnance papier. Veuillez présenter votre document au scanner.",
+  scanOrdonnanceQR: "Scanner le QR code de votre ordonnance. Veuillez positionner le QR code devant le scanner.", 
+  scanOrdonnancePapier: "Scanner votre ordonnance papier. Veuillez insérer votre ordonnance dans le scanner présent sur la machine. Cliquez sur lancer le scan pour commencer.",
+  
   
   // Scan identity card
   scanCarteIdentite: "Scanner votre carte d'identité. Veuillez insérer le recto puis le verso de votre carte d'identité dans le scanner présent sur la machine.",

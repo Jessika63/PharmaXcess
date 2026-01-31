@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,38 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
   const { addToCart } = useCart();
   const [medicaments, setMedicaments] = useState([]);
   const [selectedMedicaments, setSelectedMedicaments] = useState({});
+  
+  // Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const buttonRefs = useRef([]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+        e.preventDefault();
+        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+          setFocusedIndex((prev) => (prev + 1) % 2);
+        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+          setFocusedIndex((prev) => (prev - 1 + 2) % 2);
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (buttonRefs.current[focusedIndex]) {
+          buttonRefs.current[focusedIndex].click();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusedIndex]);
+
+  // Focus management
+  useEffect(() => {
+    if (buttonRefs.current[focusedIndex]) {
+      buttonRefs.current[focusedIndex].focus();
+    }
+  }, [focusedIndex]);
 
   useEffect(() => {
     // Utiliser les données du contexte de prescription
@@ -239,12 +271,18 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow }) {
         {/* Action Buttons */}
         <div className="flex gap-6 justify-center mt-10 pb-8">
           <button onClick={handleRestart}
-            className="bg-red-500 text-white px-12 py-5 rounded-full text-xl font-semibold hover:bg-red-600 hover:scale-105 transition-all duration-300 shadow-lg"
+            ref={el => buttonRefs.current[0] = el}
+            tabIndex={0}
+            className={`bg-red-500 text-white px-12 py-5 rounded-full text-xl font-semibold hover:bg-red-600 hover:scale-105 transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-pink-300
+              ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
             RECOMMENCER
           </button>
           <button onClick={handleConfirm}
-            className="bg-black text-white px-16 py-5 rounded-full text-xl font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
+            ref={el => buttonRefs.current[1] = el}
+            tabIndex={0}
+            className={`bg-black text-white px-16 py-5 rounded-full text-xl font-semibold hover:scale-105 transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-pink-300
+              ${focusedIndex === 1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
             VALIDER
           </button>

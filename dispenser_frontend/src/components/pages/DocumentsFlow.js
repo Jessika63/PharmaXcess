@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,11 @@ function DocumentsFlow({ stepsOrder }) {
   // Auto-play VoiceOver
   useAutoVoiceOver(voiceOverTexts.documentsFlow);
   const { speak } = useVoiceOver();
+
+    // Keyboard navigation
+    const [focusedIndex, setFocusedIndex] = useState(0); // 0-3 = cards, 4 = button
+    const buttonRefs = useRef([]);
+    const cardRefs = useRef([]);
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [steps, setSteps] = useState(stepsOrder || stepsDefault);
@@ -126,7 +131,67 @@ function DocumentsFlow({ stepsOrder }) {
     const allCompleted = steps.every(s => s.completed);
     const anyCompleted = steps.some(s => s.completed);
 
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
+
+    // Keyboard navigation
+    useEffect(() => {
+        // Don't handle keyboard if a step is active
+        if (activeStepIndex !== null) return;
+
+        const handleKeyDown = (e) => {
+            const totalElements = steps.length + 1; // cards + button
+            
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+                e.preventDefault();
+                setFocusedIndex(prev => {
+                    const next = (prev + 1) % totalElements;
+                    if (next < steps.length) {
+                        setSelectedStepIndex(next);
+                    }
+                    return next;
+                });
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+                e.preventDefault();
+                setFocusedIndex(prev => {
+                    const next = (prev - 1 + totalElements) % totalElements;
+                    if (next < steps.length) {
+                        setSelectedStepIndex(next);
+                    }
+                    return next;
+                });
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (focusedIndex < steps.length) {
+                    // On a card
+                    const selected = steps[focusedIndex];
+                    if (!selected.completed) {
+                        startStep(focusedIndex);
+                    } else if (!allCompleted && nextUncompletedIndex !== -1) {
+                        startStep(nextUncompletedIndex);
+                    } else if (allCompleted) {
+                        window.location.href = '/non-prescription-drugs';
+                    }
+                } else if (focusedIndex === steps.length && buttonRefs.current[1]) {
+                    // On the button
+                    buttonRefs.current[1].click();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [activeStepIndex, focusedIndex, steps, selectedStepIndex, allCompleted, anyCompleted, nextUncompletedIndex]);
+
+    // Focus management
+    useEffect(() => {
+        if (activeStepIndex !== null) return;
+
+        if (focusedIndex < steps.length && cardRefs.current[focusedIndex]) {
+            cardRefs.current[focusedIndex].focus();
+        } else if (focusedIndex === steps.length && buttonRefs.current[1]) {
+            buttonRefs.current[1].focus();
+        }
+    }, [focusedIndex, activeStepIndex, steps.length]); 
 
     return (
         <PrescriptionProvider>
@@ -135,7 +200,7 @@ function DocumentsFlow({ stepsOrder }) {
                 {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
                       <div className="flex items-center gap-4">
-                          <button {...createVoiceOverHandlers(speak)}
+                          <button ref={el => buttonRefs.current[0] = el} {...createVoiceOverHandlers(speak)}
             onClick={() => navigate(-1)}
                               className="flex items-center text-black hover:text-gray-600 transition-colors"
                           >
@@ -163,11 +228,14 @@ function DocumentsFlow({ stepsOrder }) {
                             <div className="flex gap-8 mb-10 justify-center px-6">
                                         {steps.map((s, i) => {
                                             const isSelected = i === selectedStepIndex && activeStepIndex === null;
+                                            const isFocused = i === focusedIndex && activeStepIndex === null;
                                             return (
                                                 <div
                                                     key={s.id}
+                                                    ref={el => cardRefs.current[i] = el}
+                                                    tabIndex={0}
                                                     onClick={() => setSelectedStepIndex(i)}
-                                                    className={`min-w-[24rem] p-10 rounded-xl flex flex-col items-center text-center cursor-pointer transition-transform ${s.completed ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white'} ${isSelected ? 'ring-4 ring-black scale-105' : ''}`}
+                                                    className={`min-w-[24rem] p-10 rounded-xl flex flex-col items-center text-center cursor-pointer transition-transform ${s.completed ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white'} ${isSelected ? 'ring-4 ring-black scale-105' : ''} ${isFocused ? 'ring-2 ring-pink-300' : ''}`}
                                                 >
                                                     <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                                                         {/* Icon per step */}
@@ -191,7 +259,7 @@ function DocumentsFlow({ stepsOrder }) {
 
                             <div className="text-center">
                                 <p className="mb-4">Prêt à commencer les vérifications?</p>
-                                <button {...createVoiceOverHandlers(speak)}
+                                <button ref={el => buttonRefs.current[1] = el} {...createVoiceOverHandlers(speak)}
             onClick={() => {
                                         const selected = steps[selectedStepIndex];
                                         if (!selected.completed) {
@@ -201,7 +269,8 @@ function DocumentsFlow({ stepsOrder }) {
                                             window.location.href = '/non-prescription-drugs';
                                         }
                                     }}
-                                    className="bg-black text-white px-8 py-3 rounded-full"
+                                    className={`bg-black text-white px-8 py-3 rounded-full focus:outline-none
+                                        ${focusedIndex === steps.length ? 'ring-2 ring-pink-300' : ''}`}
                                 >
                                     {allCompleted ? 'Continuer' : (anyCompleted ? 'Poursuivre les vérifications' : 'Commencer les vérifications')}
                                 </button>

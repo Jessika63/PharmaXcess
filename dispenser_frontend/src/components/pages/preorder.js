@@ -17,6 +17,21 @@ function Preorder() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        if (goBackButtonRef.current) {
+          goBackButtonRef.current.click();
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     if (goBackButtonRef.current) {
       goBackButtonRef.current.focus();

@@ -22,6 +22,23 @@ function Cart() {
     const navigate = useNavigate();
     const location = useLocation(); 
     const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
+
+    // Keyboard navigation state
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const backButtonRef = useRef(null);
+    const continueShoppingRef = useRef(null);
+    const browseMedicinesRef = useRef(null);
+    
+    const finalizeButtonRef = useRef(null);
+    const decreaseRefs = useRef([]);
+    const increaseRefs = useRef([]);
+    const deleteRefs = useRef([]);
+    
+    // Payment modal navigation
+    const [paymentModalFocusIndex, setPaymentModalFocusIndex] = useState(0); // 0 = back, 1 = card input, 2 = pay button
+    const paymentBackButtonRef = useRef(null);
+    const payButtonRef = useRef(null);
+    const cardElementContainerRef = useRef(null);
     
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [clientSecret, setClientSecret] = useState(null);
@@ -104,6 +121,164 @@ function Cart() {
         return () => events.forEach(event => window.removeEventListener(event, dismiss));
     }, [showInactivityModal]);
 
+    // Keyboard navigation
+    useEffect(() => {
+        // Determine maxIndex based on cart state
+        let maxIndex;
+        if (cartItems.length === 0) {
+            maxIndex = 2; // back button + browse medicines button
+        } else {
+            const itemControlsCount = cartItems.length * 3; // -, +, delete for each item
+            maxIndex = 2 + itemControlsCount + 1; // back + continue + controls + finalize
+        }
+        
+        const handleKeyDown = (e) => {
+            if (paymentModalOpen || showInactivityModal) return;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setFocusedIndex(prev => (prev + 1) % maxIndex);
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setFocusedIndex(prev => (prev - 1 + maxIndex) % maxIndex);
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        setFocusedIndex(prev => (prev - 1 + maxIndex) % maxIndex);
+                    } else {
+                        setFocusedIndex(prev => (prev + 1) % maxIndex);
+                    }
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (focusedIndex === 0 && backButtonRef.current) {
+                        backButtonRef.current.click();
+                    } else if (cartItems.length === 0 && focusedIndex === 1 && browseMedicinesRef.current) {
+                        // Empty cart: browse medicines button
+                        browseMedicinesRef.current.click();
+                    } else if (focusedIndex === 1 && continueShoppingRef.current) {
+                        continueShoppingRef.current.click();
+                    } else if (focusedIndex === maxIndex - 1 && finalizeButtonRef.current) {
+                        finalizeButtonRef.current.click();
+                    } else { 
+                        // Handle item controls (starting from index 2) 
+                        const controlIndex = focusedIndex - 2; 
+                        const itemIndex = Math.floor(controlIndex / 3);
+                        const buttonType = controlIndex % 3; // 0=decrease, 1=increase, 2=delete 
+
+                        if (buttonType === 0 && decreaseRefs.current[itemIndex]) { 
+                            decreaseRefs.current[itemIndex].click();
+                        } else if (buttonType === 1 && increaseRefs.current[itemIndex]) { 
+                            increaseRefs.current[itemsIndex].click(); 
+                        } else if (buttonType === 2 && deleteRefs.current[itemIndex]) {
+                            deleteRefs.current[itemIndex].click();
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [focusedIndex, cartItems.length, paymentModalOpen, showInactivityModal]);
+    
+    // Focus management
+    useEffect(() => {
+        if (cartItems.length === 0) {
+            // Empty cart navigation
+            if (focusedIndex === 0 && backButtonRef.current) {
+                backButtonRef.current.focus();
+            } else if (focusedIndex === 1 && browseMedicinesRef.current) {
+                browseMedicinesRef.current.focus();
+            }
+            return;
+        }
+        
+        // Non-empty cart navigation
+        const itemControlsCount = cartItems.length * 3;
+        const maxIndex = 2 + itemControlsCount + 1;
+        
+        if (focusedIndex === 0 && backButtonRef.current) {
+            backButtonRef.current.focus();
+        } else if (focusedIndex === 1 && continueShoppingRef.current) {
+            continueShoppingRef.current.focus();
+        } else if (focusedIndex === maxIndex - 1 && finalizeButtonRef.current) {
+            finalizeButtonRef.current.focus();
+        } else {
+            // Focus item controls (starting from index 2)
+            const controlIndex = focusedIndex - 2;
+            const itemIndex = Math.floor(controlIndex / 3);
+            const buttonType = controlIndex % 3;
+            
+            if (buttonType === 0 && decreaseRefs.current[itemIndex]) {
+                decreaseRefs.current[itemIndex].focus();
+            } else if (buttonType === 1 && increaseRefs.current[itemIndex]) {
+                increaseRefs.current[itemIndex].focus();
+            } else if (buttonType === 2 && deleteRefs.current[itemIndex]) {
+                deleteRefs.current[itemIndex].focus();
+            }
+        }
+    }, [focusedIndex, cartItems.length]);
+    
+    // Payment modal keyboard navigation
+    useEffect(() => {
+        if (!paymentModalOpen) return;
+        
+        const handlePaymentModalKeyDown = (e) => {
+            // 0 = back button, 1 = card input, 2 = pay button
+            const maxIndex = 3;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case 'Tab':
+                    if (!e.shiftKey) {
+                        e.preventDefault();
+                        setPaymentModalFocusIndex(prev => (prev + 1) % maxIndex);
+                    }
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setPaymentModalFocusIndex(prev => (prev - 1 + maxIndex) % maxIndex);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (paymentModalFocusIndex === 0 && paymentBackButtonRef.current) {
+                        paymentBackButtonRef.current.click();
+                    } else if (paymentModalFocusIndex === 2 && payButtonRef.current) {
+                        payButtonRef.current.click();
+                    }
+                    // For index 1 (card input), Enter should not do anything special
+                    break;
+                default:
+                    break;
+            }
+        };
+        
+        document.addEventListener('keydown', handlePaymentModalKeyDown);
+        return () => document.removeEventListener('keydown', handlePaymentModalKeyDown);
+    }, [paymentModalOpen, paymentModalFocusIndex]);
+    
+    // Payment modal focus management
+    useEffect(() => {
+        if (!paymentModalOpen) return;
+        
+        if (paymentModalFocusIndex === 0 && paymentBackButtonRef.current) {
+            paymentBackButtonRef.current.focus();
+        } else if (paymentModalFocusIndex === 2 && payButtonRef.current) {
+            payButtonRef.current.focus();
+        }
+        // For index 1 (card input), PaymentForm handles the focus via Stripe's CardElement.focus()
+    }, [paymentModalOpen, paymentModalFocusIndex]);
+
     return (
         <div className="w-full min-h-screen flex flex-col bg-background_color">
       
@@ -112,7 +287,8 @@ function Cart() {
             <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
                 <div className="flex items-center gap-4">
                     <Link to="/non-prescription-drugs"
-                        className="flex items-center text-black hover:text-gray-600 transition-colors"
+                        ref={backButtonRef}
+                        className={`flex items-center text-black hover:text-gray-600 transition-colors ${focusedIndex === 0 ? 'ring-2 ring-pink-300 rounded' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                         <config.icons.arrowLeft className="text-xl" />
                     </Link>
@@ -131,8 +307,10 @@ function Cart() {
                     <h2 className="text-3xl font-bold text-black mb-3">Votre panier est vide</h2>
                     <p className="text-lg text-gray-500 mb-8">Ajoutez des médicaments à votre panier pour continuer</p>
                     <Link to="/non-prescription-drugs"
-                        className="bg-black text-white px-8 py-4 rounded-full text-lg font-semibold
-                            hover:scale-105 transition-transform duration-300"
+                        ref={browseMedicinesRef}
+                        className={`bg-black text-white px-8 py-4 rounded-full text-lg font-semibold
+                            hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                            ${focusedIndex === 1 && cartItems.length === 0 ? 'ring-4 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                         PARCOURIR LES MÉDICAMENTS
                     </Link>
@@ -142,10 +320,12 @@ function Cart() {
                 <div className="flex-1 px-8 py-6">
                     <div className="flex justify-between items-start mb-6">
                         <h2 className="text-2xl font-bold text-black">Votre panier</h2>
-                        <button {...createVoiceOverHandlers(speak)}
+                        <button 
+                            ref={continueShoppingRef}
+                            {...createVoiceOverHandlers(speak)}
             onClick={() => navigate('/non-prescription-drugs')}
-                            className="bg-black text-white px-6 py-3 rounded-full text-sm font-semibold
-                                hover:scale-105 transition-transform duration-300"
+                            className={`bg-black text-white px-6 py-3 rounded-full text-sm font-semibold
+                                hover:scale-105 transition-transform duration-300 ${focusedIndex === 1 ? 'ring-4 ring-pink-300' : ''}`}
                         >
                             CONTINUER MES ACHATS
                         </button>
@@ -154,7 +334,9 @@ function Cart() {
                     <div className="flex gap-8">
                         {/* Cart Items */}
                         <div className="flex-1 space-y-4">
-                            {cartItems.map((item) => (
+                            {cartItems.map((item, itemIndex) => {
+                                const baseIndex = 2 + itemIndex * 3; // 2 = after back and continue shopping
+                                return (
                                 <div
                                     key={item.id}
                                     className="bg-white rounded-2xl p-6 flex justify-between items-start"
@@ -169,33 +351,40 @@ function Cart() {
                                         
                                         {/* Quantity controls */}
                                         <div className="flex items-center justify-end gap-3 mt-3">
-                                            <button {...createVoiceOverHandlers(speak)}
+                                            <button 
+                                                ref={el => decreaseRefs.current[itemIndex] = el}
+                                                {...createVoiceOverHandlers(speak)}
             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                                                    hover:bg-gray-100 transition-colors"
+                                                className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                                                    hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex ? 'ring-2 ring-pink-300' : ''}`}
                                             >
                                                 <FaMinus className="text-xs text-gray-600" />
                                             </button>
                                             <span className="text-lg font-semibold">{item.quantity}</span>
-                                            <button {...createVoiceOverHandlers(speak)}
+                                            <button 
+                                                ref={el => increaseRefs.current[itemIndex] = el}
+                                                {...createVoiceOverHandlers(speak)}
             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                                                    hover:bg-gray-100 transition-colors"
+                                                className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                                                    hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex + 1 ? 'ring-2 ring-pink-300' : ''}`}
                                             >
                                                 <FaPlus className="text-xs text-gray-600" />
                                             </button>
                                         </div>
 
                                         {/* Delete button */}
-                                        <button {...createVoiceOverHandlers(speak)}
+                                        <button 
+                                            ref={el => deleteRefs.current[itemIndex] = el}
+                                            {...createVoiceOverHandlers(speak)}
             onClick={() => removeFromCart(item.id)}
-                                            className="mt-3 text-red-500 hover:text-red-600 transition-colors"
+                                            className={`mt-3 text-red-500 hover:text-red-600 transition-colors ${focusedIndex === baseIndex + 2 ? 'ring-2 ring-pink-300 rounded' : ''}`}
                                         >
                                             <FaTrash className="text-lg" />
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {/* Order Summary */}
@@ -216,8 +405,9 @@ function Cart() {
                                 </div>
 
                                 <button onClick={handleProceedToPayment}
-                                    className="w-full bg-black text-white py-4 rounded-full text-lg font-semibold
-                                        hover:scale-105 transition-transform duration-300"
+                                    ref={finalizeButtonRef} 
+                                    className={`w-full bg-black text-white py-4 rounded-full text-lg font-semibold
+                                        hover:scale-105 transition-transform duration-300 ${focusedIndex === (2 + cartItems.length * 3) ? 'ring-4 ring-pink-300' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                                     {location.state?.checkoutLabel || 'PROCÉDER AU PAIEMENT'}
                                 </button>
@@ -242,9 +432,11 @@ function Cart() {
                         {/* Header */}
                         <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
                             <div className="flex items-center gap-4">
-                                <button {...createVoiceOverHandlers(speak)}
+                                <button 
+                                    ref={paymentBackButtonRef}
+                                    {...createVoiceOverHandlers(speak)}
             onClick={() => setPaymentModalOpen(false)}
-                                    className="flex items-center text-black hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-pink-100"
+                                    className={`flex items-center text-black hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-pink-100 ${paymentModalFocusIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
                                 >
                                     <config.icons.arrowLeft className="text-xl" />
                                 </button>
@@ -280,6 +472,9 @@ function Cart() {
                                         clientSecret={clientSecret}
                                         amount={total * 100}
                                         onSuccess={handlePaymentSuccess}
+                                        payButtonRef={payButtonRef}
+                                        cardElementContainerRef={cardElementContainerRef}
+                                        focusIndex={paymentModalFocusIndex}
                                         onError={(error) => {
                                             navigate('/payment-error', {
                                                 state: {

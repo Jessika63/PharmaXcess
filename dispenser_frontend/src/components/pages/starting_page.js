@@ -347,7 +347,8 @@ function StartingPage() {
             ${config.borderRadius.xl} ${config.shadows.md} 
           bg-white ${config.textColors.black}
           transition-transform duration-300 ease-in-out 
-          ${config.focusStates.ring} cursor-pointer`}
+          focus:outline-none focus:ring-2 focus:ring-pink-300 cursor-pointer
+          ${focusedIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
         style={{ transform: hoveredCard === 0 || focusedIndex === 0 ? 'scale(1.05)' : 'scale(1)' }} 
       >
         {/* Icon in gray circle */} 
@@ -380,7 +381,8 @@ function StartingPage() {
           ${config.borderRadius.xl} ${config.shadows.md}
           bg-white ${config.textColors.black}
           transition-transform duration-300 ease-in-out
-          ${config.focusStates.ring} cursor-pointer`}
+          focus:outline-none focus:ring-2 focus:ring-pink-300 cursor-pointer
+          ${focusedIndex === 1 ? 'ring-2 ring-pink-300' : ''}`}
         style={{ transform: hoveredCard === 1 || focusedIndex === 1 ? 'scale(1.05)' : 'scale(1)' }}
       >
         {/* Icon in gray circle */}

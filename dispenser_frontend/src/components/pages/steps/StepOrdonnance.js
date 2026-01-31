@@ -12,7 +12,6 @@ import config from "../../../config";
 
 function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   // Auto-play VoiceOver
-  useAutoVoiceOver(voiceOverTexts.scanOrdonnance);
   const { speak } = useVoiceOver();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,6 +25,25 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const [success, setSuccess] = useState(false); 
   const navigate = useNavigate();
   const { updatePrescriptionData } = usePrescription();
+
+  // Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const buttonRefs = useRef([]);
+  const scanButtonRef = useRef(null);
+  const backButtonQRRef = useRef(null);
+  const backButtonPrescriptionRef = useRef(null);
+  const backButtonSelectionRef = useRef(null);
+
+  // VoiceOver for different pages
+  useEffect(() => {
+    if (showQRScanner) {
+      speak(voiceOverTexts.scanOrdonnanceQR);
+    } else if (showPrescriptionScanner) {
+      speak(voiceOverTexts.scanOrdonnancePapier);
+    } else {
+      speak(voiceOverTexts.scanOrdonnance);
+    }
+  }, [showQRScanner, showPrescriptionScanner, speak]);
 
   const openCamera = (type) => {
     setScanType(type);
@@ -167,6 +185,103 @@ const handlePhotoCaptured = async (base64Image) => {
   }
 };
 
+  // Keyboard navigation for selection page (back button + 2 cards)
+  useEffect(() => {
+    if (!showQRScanner && !showPrescriptionScanner) {
+      const handleKeyDown = (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
+          e.preventDefault();
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+            setFocusedIndex((prev) => (prev + 1) % 3);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+            setFocusedIndex((prev) => (prev - 1 + 3) % 3);
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focusedIndex === 0 && backButtonSelectionRef.current) {
+            backButtonSelectionRef.current.click();
+          } else if (buttonRefs.current[focusedIndex - 1]) {
+            buttonRefs.current[focusedIndex - 1].click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [focusedIndex, showQRScanner, showPrescriptionScanner]);
+
+  // Keyboard navigation for prescription scanner (back button + LANCER LE SCAN button)
+  useEffect(() => {
+    if (showPrescriptionScanner) {
+      const handleKeyDown = (e) => {
+        const maxIndex = (!loading && !success) ? 1 : 0; // 0 = back, 1 = scan button (if not loading/success)
+        
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
+          e.preventDefault();
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+            setFocusedIndex((prev) => Math.min(prev + 1, maxIndex));
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+            setFocusedIndex((prev) => Math.max(prev - 1, 0));
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focusedIndex === 0 && backButtonPrescriptionRef.current) {
+            backButtonPrescriptionRef.current.click();
+          } else if (focusedIndex === 1 && scanButtonRef.current) {
+            scanButtonRef.current.click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showPrescriptionScanner, loading, success, focusedIndex]);
+
+  // Keyboard navigation for QR scanner (back button only)
+  useEffect(() => {
+    if (showQRScanner) {
+      const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (backButtonQRRef.current) {
+            backButtonQRRef.current.click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showQRScanner]);
+
+  // Focus management for prescription scanner
+  useEffect(() => {
+    if (showPrescriptionScanner) {
+      if (focusedIndex === 0 && backButtonPrescriptionRef.current) {
+        backButtonPrescriptionRef.current.focus();
+      } else if (focusedIndex === 1 && !loading && !success && scanButtonRef.current) {
+        scanButtonRef.current.focus();
+      }
+    }
+  }, [showPrescriptionScanner, focusedIndex, loading, success]);
+
+  // Focus management for QR scanner
+  useEffect(() => {
+    if (showQRScanner && backButtonQRRef.current) {
+      backButtonQRRef.current.focus();
+    }
+  }, [showQRScanner]);
+
+  // Focus management for selection page
+  useEffect(() => {
+    if (!showQRScanner && !showPrescriptionScanner) {
+      if (focusedIndex === 0 && backButtonSelectionRef.current) {
+        backButtonSelectionRef.current.focus();
+      } else if (buttonRefs.current[focusedIndex - 1]) {
+        buttonRefs.current[focusedIndex - 1].focus();
+      }
+    }
+  }, [focusedIndex, showQRScanner, showPrescriptionScanner]);
+
   return (
     <div className="w-full h-screen flex flex-col">
       
@@ -179,7 +294,9 @@ const handlePhotoCaptured = async (base64Image) => {
             <div className="flex items-center gap-4">
               <button {...createVoiceOverHandlers(speak)}
             onClick={() => setShowQRScanner(false)}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonQRRef}
+                tabIndex={0}
+                className="flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg"
               >
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -271,7 +388,10 @@ const handlePhotoCaptured = async (base64Image) => {
             <div className="flex items-center gap-4">
               <button {...createVoiceOverHandlers(speak)}
             onClick={() => setShowPrescriptionScanner(false)}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonPrescriptionRef}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && showPrescriptionScanner ? 'ring-2 ring-pink-300' : ''}`}
               >
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -298,6 +418,8 @@ const handlePhotoCaptured = async (base64Image) => {
             {!success && !loading && (
               <button 
             {...createVoiceOverHandlers(speak)}
+                ref={scanButtonRef}
+                tabIndex={0}
                 onClick={async () => {
                   try {
                     setLoading(true);
@@ -341,7 +463,8 @@ const handlePhotoCaptured = async (base64Image) => {
                     setLoading(false);
                   }
                 }}
-                className="px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+                className={`px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                  ${focusedIndex === 1 && showPrescriptionScanner ? 'ring-2 ring-pink-300 scale-105' : ''}`}
               >
                 LANCER LE SCAN
               </button>
@@ -367,7 +490,10 @@ const handlePhotoCaptured = async (base64Image) => {
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
               <button onClick={goBackStep}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonSelectionRef}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && !showQRScanner && !showPrescriptionScanner ? 'ring-2 ring-pink-300' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -385,7 +511,8 @@ const handlePhotoCaptured = async (base64Image) => {
             {/* Two cards side by side */}
             <div className="flex gap-8 max-w-5xl w-full mb-8">
               {/* Ordonnance Card */}
-              <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.filePrescription className="text-3xl text-black" />
                 </div>
@@ -395,14 +522,19 @@ const handlePhotoCaptured = async (base64Image) => {
                 </p>
                 <button {...createVoiceOverHandlers(speak)}
             onClick={() => openCamera('prescription')}
-                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
+                  ref={el => buttonRefs.current[0] = el}
+                  tabIndex={0}
+                  aria-label="Ordonnance - Scanner votre ordonnance - CHOISIR"
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300
+                    ${focusedIndex === 1 ? 'scale-105' : ''}`}
                 >
-                  CHOISIR
+                  <span className="sr-only">Ordonnance - </span>CHOISIR
                 </button>
               </div>
 
               {/* QR Code Card */}
-              <div className="flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 2 ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.qrCode className="text-3xl text-black" />
                 </div>
@@ -412,9 +544,13 @@ const handlePhotoCaptured = async (base64Image) => {
                 </p>
                 <button {...createVoiceOverHandlers(speak)}
             onClick={() => openCamera('qr')}
-                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
+                  ref={el => buttonRefs.current[1] = el}
+                  tabIndex={0}
+                  aria-label="QR code - Scanner le code qr de votre ordonnance - CHOISIR"
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300
+                    ${focusedIndex === 2 ? 'scale-105' : ''}`}
                 >
-                  CHOISIR
+                  <span className="sr-only">QR code - </span>CHOISIR
                 </button>
               </div>
             </div>

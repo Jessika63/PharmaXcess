@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers'; 
@@ -20,6 +20,12 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const buttonRefs = useRef([]);
+  const backButtonSelectionRef = useRef(null);
+  const backButtonCameraRef = useRef(null);
 
   const openCamera = () => {
     setShowCamera(true);
@@ -82,6 +88,64 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
     }
   };
 
+  // Keyboard navigation for selection page (back button + photo button)
+  useEffect(() => {
+    if (!showCamera) {
+      const handleKeyDown = (event) => {
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey) || (event.key === "Tab" && event.shiftKey)) {
+          event.preventDefault();
+          if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex + 1) % 2);
+          } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex - 1 + 2) % 2);
+          }
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          if (focusedIndex === 0 && backButtonSelectionRef.current) {
+            backButtonSelectionRef.current.click();
+          } else if (focusedIndex === 1 && buttonRefs.current[0]) {
+            buttonRefs.current[0].click();
+          }
+        }
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [focusedIndex, showCamera]);
+  // Keyboard navigation for camera view - Only Escape key for back button (CameraComponent handles its own buttons)
+  useEffect(() => {
+    if (showCamera) {
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          if (backButtonCameraRef.current) {
+            backButtonCameraRef.current.click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showCamera]);
+  // Focus management for selection page
+  useEffect(() => {
+    if (!showCamera) {
+      if (focusedIndex === 0 && backButtonSelectionRef.current) {
+        backButtonSelectionRef.current.focus();
+      } else if (focusedIndex === 1 && buttonRefs.current[0]) {
+        buttonRefs.current[0].focus();
+      }
+    }
+  }, [focusedIndex, showCamera]);
+
+  // Focus management for camera view - CameraComponent handles its own focus
+  useEffect(() => {
+    if (showCamera && backButtonCameraRef.current) {
+      // Set initial focus on back button, but don't manage it further
+      // CameraComponent will take over focus management for its buttons
+    }
+  }, [showCamera]);
+
   return (
     <div className="w-full h-screen flex flex-col">
       
@@ -93,7 +157,9 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
               <button onClick={closeCamera}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonCameraRef}
+                tabIndex={0}
+                className="flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg"
             {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -140,7 +206,10 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
           <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
               <button onClick={goBackStep}
-                className="flex items-center text-black hover:text-gray-600 transition-colors"
+                ref={backButtonSelectionRef}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && !showCamera ? 'ring-2 ring-pink-300' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -157,7 +226,8 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
 
             {/* Card */}
             <div className="max-w-2xl w-full mb-8">
-              <div className="bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px]">
+              <div className={`bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 1 && !showCamera ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.addressCard className="text-3xl text-black" />
                 </div>
@@ -166,7 +236,10 @@ function StepCarteVitale({ goToNextStep, goBackStep }) {
                   Prenez une photo de votre carte vitale
                 </p>
                 <button onClick={openCamera}
-                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
+                  ref={el => buttonRefs.current[0] = el}
+                  tabIndex={0}
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                    ${focusedIndex === 1 && !showCamera ? 'scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                   PRENDRE EN PHOTO
                 </button>

@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
+const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError, payButtonRef, cardElementContainerRef, focusIndex }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Auto-focus the CardElement when focusIndex === 1
+  useEffect(() => {
+    if (focusIndex === 1 && elements) {
+      const cardElement = elements.getElement(CardElement);
+      if (cardElement) {
+        // Use Stripe's focus method to focus the card input
+        cardElement.focus();
+      }
+    }
+  }, [focusIndex, elements]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -51,7 +62,12 @@ const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
       <div className="mb-6">
-        <div className="p-4 border rounded-lg bg-white shadow-sm">
+        <div 
+          ref={cardElementContainerRef}
+          tabIndex="0"
+          className={`p-4 border rounded-lg bg-white shadow-sm transition-all
+            ${focusIndex === 1 ? 'ring-2 ring-pink-300' : ''}`}
+        >
           <CardElement
             options={{
               style: {
@@ -76,13 +92,15 @@ const PaymentForm = ({ clientSecret, amount, drugId, onSuccess, onError }) => {
       )}
 
       <button
+        ref={payButtonRef}
         type="submit"
         disabled={!stripe || processing}
         className={`w-full py-4 px-6 rounded-full font-bold text-white
           ${!stripe || processing
             ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-black hover:scale-105'} 
-          transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300`} 
+          transition-transform duration-300 focus:outline-none 
+          ${focusIndex === 2 ? 'ring-4 ring-pink-300' : 'focus:ring-2 focus:ring-pink-300'}`}
 
 
       >

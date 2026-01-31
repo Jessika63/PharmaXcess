@@ -127,7 +127,7 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                     <div className="flex justify-center gap-8 mt-6">
                         <button
                             className={`px-12 py-4 bg-black text-white text-lg font-semibold rounded-full
-                            shadow-md hover:scale-105 transition-transform duration-300 ${currentFocusedIndex === 0 ? 'scale-110' : ''}`}
+                            shadow-md hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300 ${currentFocusedIndex === 0 ? 'scale-110 ring-2 ring-pink-300' : ''}`}
                             onClick={handleRetakePhoto}
                             tabIndex={currentFocusedIndex === 0 ? 0 : -1}
                         >
@@ -135,7 +135,7 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                         </button>
                         <button
                             className={`px-12 py-4 bg-black text-white text-lg font-semibold rounded-full
-                            shadow-md hover:scale-105 transition-transform duration-300 ${currentFocusedIndex === 1 ? 'scale-110' : ''}`}
+                            shadow-md hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300 ${currentFocusedIndex === 1 ? 'scale-110 ring-2 ring-pink-300' : ''}`}
                             onClick={handleValidatePhoto}
                             tabIndex={currentFocusedIndex === 1 ? 0 : -1}
                         >
@@ -152,7 +152,7 @@ const CameraComponent = ({ onPhotoCapture, onClose, focusedButtonIndex, setFocus
                     <div className="flex justify-center gap-8 mt-6">
                         <button
                             className={`px-12 py-4 bg-black text-white text-lg font-semibold rounded-full
-                            shadow-md hover:scale-105 transition-transform duration-300 ${currentFocusedIndex === 0 ? 'scale-110' : ''}`}
+                            shadow-md hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300 ${currentFocusedIndex === 0 ? 'scale-110 ring-2 ring-pink-300' : ''}`}
                             onClick={capturePhoto}
                             tabIndex={currentFocusedIndex === 0 ? 0 : -1}
                         >

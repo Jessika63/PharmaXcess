@@ -14,8 +14,8 @@ function DocumentsChecking() {
   const { speak } = useVoiceOver();
     const [showCamera, setShowCamera] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [focusedIndex, setFocusedIndex] = useState(1);
-    const focusedIndexRef = useRef(1);
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const focusedIndexRef = useRef(0);
     const buttonsRef = useRef([]);
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     const [currentDocType, setCurrentDocType] = useState(null);
@@ -112,35 +112,36 @@ function DocumentsChecking() {
     };
 
     const handleKeyDown = useCallback((event) => {
-        if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+        // Don't handle keyboard events if modals are open
+        if (isModalOpen || showInactivityModal || showCINOptions) return;
+        
+        if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex + 1) % 5;
+                const newIndex = (prevIndex + 1) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
-        } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex - 1 + 5) % 5;
+                const newIndex = (prevIndex - 1 + 4) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
-            if (focusedIndexRef.current === 1) { // Nouveau cas
+            if (focusedIndexRef.current === 0) {
                 handleOpenCamera('ordonnance_qr');
-            } else if (focusedIndexRef.current === 2) {
+            } else if (focusedIndexRef.current === 1) { 
                 handleOpenCamera('ordonnance');
-            } else if (focusedIndexRef.current === 3) {
+            } else if (focusedIndexRef.current === 2) {
                 handleOpenCamera('carte_vitale');
-            } else if (focusedIndexRef.current === 4) {
+            } else if (focusedIndexRef.current === 3) {
                 handleOpenCamera('carte_identite');
-            } else if (focusedIndexRef.current === 0) {
-                navigate('/');
             }
         }
-    }, [navigate, handleOpenCamera]);
+    }, [navigate, handleOpenCamera, isModalOpen, showInactivityModal, showCINOptions]);
 
     useInactivityRedirect(() => setShowInactivityModal(true));
     useEffect(() => {
@@ -372,7 +373,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 4 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance_qr')}
                         >
                             <config.icons.qrCode className="mr-4 text-4xl" />
@@ -388,7 +389,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 1 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance')}
 
                         >
@@ -405,7 +406,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 2 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_vitale')}
                         >
                             <config.icons.addressCard className="mr-4 text-4xl" />
@@ -421,7 +422,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 3 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 3 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_identite')}
                         >
                             <config.icons.idCard className="mr-4 text-4xl" />

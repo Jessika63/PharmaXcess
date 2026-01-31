@@ -52,6 +52,9 @@ function NonPrescriptionDrugs() {
 
 
     const searchButtonRef = useRef(null);
+    const sortButtonRef = useRef(null); 
+    const cartButtonRef = useRef(null); 
+
 
     const goBackMainButtonRef = useRef(null)
 
@@ -67,8 +70,8 @@ function NonPrescriptionDrugs() {
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
 
-    // Focus index: -2 = go back, -1 = search/filter, 0...N-1 = drug cards
-    const [focusedIndex, setFocusedIndex] = useState(0);
+    // Focus index: -3 = cart, -2 = sort, -1 = filter, 0...N-1 = drug cards
+    const [focusedIndex, setFocusedIndex] = useState(-1);
 
     const itemRefs = useRef([]);
 
@@ -164,7 +167,10 @@ function NonPrescriptionDrugs() {
                 if (modalFocusIndex === 0) {
                     closeModal();
                 } else if (modalFocusIndex === 1) {
-                    handlePayment();
+                    // Trigger the add to cart button
+                    if (payButtonRef.current) {
+                        payButtonRef.current.click();
+                    }
                 }
             }
         };
@@ -244,8 +250,10 @@ function NonPrescriptionDrugs() {
             return;
         }
 
-        if (focusedIndex === -2 && goBackMainButtonRef.current) {
-            goBackMainButtonRef.current.focus();
+        if (focusedIndex === -3 && cartButtonRef.current) {
+            cartButtonRef.current.focus();
+        } else if (focusedIndex === -2 && sortButtonRef.current) {
+            sortButtonRef.current.focus();
         } else if (focusedIndex === -1 && searchButtonRef.current) {
             searchButtonRef.current.focus();
         } else if (focusedIndex >= 0 && itemRefs.current[focusedIndex]) {
@@ -261,13 +269,10 @@ function NonPrescriptionDrugs() {
     // Set initial focus after loading
     useEffect(() => {
         if (!loading) {
-            if (filteredDrugs.length > 0) {
-                setFocusedIndex(0);
-            } else {
-                setFocusedIndex(-1);
-            }
+            // Always start on filter
+            setFocusedIndex(-1);
         }
-    }, [loading, filteredDrugs.length]);
+    }, [loading]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -306,35 +311,49 @@ function NonPrescriptionDrugs() {
                 return;
             } // Let modal handle its own keys
 
-            if (filteredDrugs.length === 0) {
-                return;
-            }
-
-            if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
+            // Don't prevent default on selects to allow native dropdown behavior
+            const isOnSelect = focusedIndex === -1 || focusedIndex === -2;
+            
+            if (!isOnSelect && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
             }
 
             if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+                event.preventDefault(); 
                 if (focusedIndex > 0) {
                     setFocusedIndex(focusedIndex - 1);
                 } else if (focusedIndex === 0) {
-                    setFocusedIndex(-1);
-                } else if (focusedIndex === -1) {
-                    setFocusedIndex(-2);
+                    setFocusedIndex(-3); // From first drug to cart
+                } else if (focusedIndex === -3) {
+                    setFocusedIndex(-2); // From cart to sort
                 } else if (focusedIndex === -2) {
-                    // Circular: go from first control (-2) to last drug item
-                    setFocusedIndex(filteredDrugs.length - 1);
+                    setFocusedIndex(-1); // From sort to filter
+                } else if (focusedIndex === -1) {
+                    // Circular: go from filter to last drug item
+                    if (filteredDrugs.length > 0) {
+                        setFocusedIndex(filteredDrugs.length - 1);
+                    } else {
+                        setFocusedIndex(-3);
+                    }
                 }
             } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
-                if (focusedIndex === -2) {
-                    setFocusedIndex(-1);
-                } else if (focusedIndex === -1) {
-                    setFocusedIndex(0);
-                } else if (focusedIndex < filteredDrugs.length - 1) {
+                event.preventDefault();
+                if (focusedIndex === -1) {
+                    setFocusedIndex(-2); // From filter to sort
+                } else if (focusedIndex === -2) {
+                    setFocusedIndex(-3); // From sort to cart
+                } else if (focusedIndex === -3) {
+                    // From cart to first drug
+                    if (filteredDrugs.length > 0) {
+                        setFocusedIndex(0);
+                    } else {
+                        setFocusedIndex(-1);
+                    }
+                } else if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length - 1) {
                     setFocusedIndex(focusedIndex + 1);
                 } else if (focusedIndex === filteredDrugs.length - 1) {
-                    // Circular: go from last drug item to first control (-2)
-                    setFocusedIndex(-2);
+                    // Circular: go from last drug item to filter
+                    setFocusedIndex(-1);
                 }
             } else if (event.key === "ArrowUp") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
@@ -352,13 +371,37 @@ function NonPrescriptionDrugs() {
                         setFocusedIndex(newIndex);
                     }
                 }
-            } else if (event.key === "Enter") {
+            } else if (event.key === "Enter" || event.key === " ") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    event.preventDefault();
                     openModal(filteredDrugs[focusedIndex]);
-                } else if (focusedIndex === -1) {
-                    toggleFilterMenu();
-                } else if (focusedIndex === -2) {
-                    goBackMainButtonRef.current?.click();
+                } else if (focusedIndex === -1 && searchButtonRef.current) {
+                    event.preventDefault();
+                    // Open filter dropdown
+                    try {
+                        if (searchButtonRef.current.showPicker) {
+                            searchButtonRef.current.showPicker();
+                        } else {
+                            searchButtonRef.current.click();
+                        }
+                    } catch (e) {
+                        searchButtonRef.current.click();
+                    }
+                } else if (focusedIndex === -2 && sortButtonRef.current) {
+                    event.preventDefault();
+                    // Open sort dropdown
+                    try {
+                        if (sortButtonRef.current.showPicker) {
+                            sortButtonRef.current.showPicker();
+                        } else {
+                            sortButtonRef.current.click();
+                        }
+                    } catch (e) {
+                        sortButtonRef.current.click();
+                    }
+                } else if (focusedIndex === -3 && cartButtonRef.current) {
+                    event.preventDefault();
+                    cartButtonRef.current.click();
                 }
             }
         };
@@ -590,6 +633,7 @@ const applySort = (sort) => {
                             className={`appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
                                 focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[200px] cursor-pointer
                                 ${focusedIndex === -1 ? 'ring-2 ring-pink-300' : ''}`}
+                                {...createVoiceOverHandlers(speak)} 
                         >
                             <option value="">Tous les types</option> 
                             <option value="A-G">A - G</option>
@@ -611,10 +655,12 @@ const applySort = (sort) => {
                     <label className="text-xs text-gray-500 mb-1">Trier</label> 
                     <div className="relative">
                         <select
+                            ref={sortButtonRef}
                             value={sortOrder}
                             onChange={(e) => applySort(e.target.value)}
-                            className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
-                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[250px] cursor-pointer"
+                            className={`appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
+                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[250px] cursor-pointer
+                                ${focusedIndex === -2 ? 'ring-2 ring-pink-300' : ''}`}
                             {...createVoiceOverHandlers(speak)}
                         >
                             <option value="name-asc">Ordre alphabétique (A-Z)</option>
@@ -632,10 +678,13 @@ const applySort = (sort) => {
                 <div className="flex-grow"></div> 
 
                 {/* Cart button */}
-                <button {...createVoiceOverHandlers(speak)}
+                <button
+                    ref={cartButtonRef}
+                    {...createVoiceOverHandlers(speak)}
             onClick={() => navigate('/cart')}
-                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700
-                        hover:bg-gray-50 transition-colors relative"
+                    className={`flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700
+                        hover:bg-gray-50 transition-colors relative
+                        ${focusedIndex === -3 ? 'ring-2 ring-pink-300' : ''}`}
                 > 
                     <span>PANIER</span>
                     <config.icons.cart className="text-lg" />
