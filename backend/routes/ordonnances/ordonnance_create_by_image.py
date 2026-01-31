@@ -109,10 +109,10 @@ def create_ordonnance_by_image():
     infos_ocr = ocr_result.get("infos", {})
     medicaments = infos_ocr.get("medicaments", [])
     medecin = infos_ocr.get("medecin", {})
+    patient = infos_ocr.get("patient", {})
     description = "Ordonnance créée via OCR"
 
     raw_date_prescription = infos_ocr.get("date_prescription")
-
     try:
         datetime.strptime(raw_date_prescription, "%Y-%m-%d")
         date_prescription = raw_date_prescription
@@ -123,8 +123,6 @@ def create_ordonnance_by_image():
         medicaments_json = json.dumps(medicaments)
     except Exception:
         medicaments_json = None
-
-
 
     if not medicaments:
         return jsonify({"error": "OCR did not extract any medications"}), 422
@@ -155,11 +153,28 @@ def create_ordonnance_by_image():
             conn.commit()
     finally:
         conn.close()
+    
+    medecin_data = {
+        "nom": medecin.get("nom"),
+        "prenom": medecin.get("prenom"),
+        "specialite": medecin.get("specialite"),
+        "adresse": medecin.get("adresse"),
+        "code_postal": medecin.get("code_postal"),
+        "ville": medecin.get("ville"),
+    }
+    
+    patient_data = {
+        "nom": patient.get("nom"),
+        "prenom": patient.get("prenom"),
+        "poids": patient.get("poids"),
+        "taille": patient.get("taille"),
+    }
 
     return jsonify({
         "message": "Ordonnance créée via OCR",
         "ordonnance_id": ordonnance_id,
+        "date_prescription": date_prescription,
         "medicaments": medicaments,
-        "medecin": medecin,
-        "date_prescription": date_prescription
+        "medecin": medecin_data,
+        "patient": patient_data
     }), 201
