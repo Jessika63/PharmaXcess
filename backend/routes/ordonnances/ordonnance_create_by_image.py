@@ -109,8 +109,22 @@ def create_ordonnance_by_image():
     infos_ocr = ocr_result.get("infos", {})
     medicaments = infos_ocr.get("medicaments", [])
     medecin = infos_ocr.get("medecin", {})
-    date_prescription = infos_ocr.get("date_prescription")
     description = "Ordonnance créée via OCR"
+
+    raw_date_prescription = infos_ocr.get("date_prescription")
+
+    try:
+        datetime.strptime(raw_date_prescription, "%Y-%m-%d")
+        date_prescription = raw_date_prescription
+    except Exception:
+        date_prescription = None
+    
+    try:
+        medicaments_json = json.dumps(medicaments)
+    except Exception:
+        medicaments_json = None
+
+
 
     if not medicaments:
         return jsonify({"error": "OCR did not extract any medications"}), 422
@@ -134,7 +148,7 @@ def create_ordonnance_by_image():
                 stored_filename,
                 medecin.get("nom"),
                 date_prescription,
-                json.dumps(medicaments),
+                medicaments_json,
                 datetime.now()
             ))
             ordonnance_id = cursor.lastrowid
