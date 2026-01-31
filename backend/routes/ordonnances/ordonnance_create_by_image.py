@@ -113,12 +113,22 @@ def create_ordonnance_by_image():
     description = "Ordonnance créée via OCR"
 
     raw_date_prescription = infos_ocr.get("date_prescription")
-    try:
-        datetime.strptime(raw_date_prescription, "%Y-%m-%d")
-        date_prescription = raw_date_prescription
-    except Exception:
-        date_prescription = None
-    
+    date_prescription = None
+
+    if raw_date_prescription:
+        for fmt in (
+            "%Y-%m-%d",      # 2026-01-31
+            "%d/%m/%Y",      # 31/01/2026
+            "%d-%m-%Y",      # 31-01-2026
+            "%d %m %Y",      # 31 01 2026
+        ):
+            try:
+                parsed_date = datetime.strptime(raw_date_prescription.strip(), fmt)
+                date_prescription = parsed_date.strftime("%Y-%m-%d")
+                break
+            except Exception:
+                pass
+
     try:
         medicaments_json = json.dumps(medicaments)
     except Exception:
