@@ -20,7 +20,6 @@ function StartingPage() {
 
   // Function to read the text of a button or card
   const readButtonText = useCallback((text) => {
-    console.log('Lecture demandée:', text);
     if (speak) {
       speak(text);
     } else {

@@ -14,7 +14,7 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow, allPreviousSt
 
   const navigate = useNavigate();
   const { prescriptionData, updatePrescriptionData } = usePrescription();
-  const { addToCart } = useCart();
+  const { addListToCart } = useCart();
   const [medicaments, setMedicaments] = useState([]);
   const [selectedMedicaments, setSelectedMedicaments] = useState({});
   
@@ -94,26 +94,28 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow, allPreviousSt
     }));
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     // Filter the selected medicaments
     const selectedMeds = medicaments.filter((_, index) => selectedMedicaments[index]);
     
-    // Add each selected medicament to the cart
-    selectedMeds.forEach(med => {
-      const quantity = med.quantity || 1;
-      // Add the medicament 'quantity' times
-      for (let i = 0; i < quantity; i++) {
-        addToCart({
-          id: med.id || `${med.nom}-${Date.now()}-${i}`,
-          nom: med.nom,
-          name: med.nom, // compatibility
-          label: med.nom, // For display in cart
-          posologie: med.posologie,
-          price: 0, // Price to be set in cart
-          description: med.posologie
-        });
-      }
-    });
+    // Format items for addListToCart: [{id, quantity, label}]
+    const itemsToAdd = selectedMeds.map(med => ({
+      id: med.id || `${med.nom}-${Date.now()}`,
+      quantity: med.quantity || 1,
+      label: med.nom || med.name,
+      nom: med.nom,
+      name: med.nom,
+      posologie: med.posologie,
+      price: 0,
+      description: med.posologie
+    }));
+    
+    console.log('🎯 Adding items to cart:', itemsToAdd);
+    
+    // Add all items at once using addListToCart
+    const result = await addListToCart(itemsToAdd);
+    
+    console.log('🎯 Add list result:', result);
     
     // Update prescription data with selected medicaments
     updatePrescriptionData({

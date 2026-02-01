@@ -26,17 +26,13 @@ export const CartProvider = ({ children }) => {
     useEffect(() => { 
         const initialize = async () => {
             try {
-                console.log('🚀 Initialisation CartContext...');
                 setLoading(true);
                 
                 // Fetch medicines data
                 try {
-                    console.log('📦 Fetching medicines...');
                     const meds = await medicineService.getAllMedicines();
-                    console.log('📦 Medicines récupérés:', meds);
-                    console.log('📦 Type:', typeof meds, 'isArray:', Array.isArray(meds));
                     const medsArray = Array.isArray(meds) ? meds : [];
-                    console.log('📦 Setting medicinesData with', medsArray.length, 'items');
+                    setMedicinesData(medsArray);
                     setMedicinesData(medsArray);
                 } catch (medErr) {
                     console.error('❌ Error fetching medicines:', medErr);
@@ -45,9 +41,7 @@ export const CartProvider = ({ children }) => {
                 
                 // Initialize cart
                 try {
-                    console.log('🛒 Initializing cart...');
                     const newCartId = await cartService.initCart();
-                    console.log('🛒 Cart initialized with ID:', newCartId);
                     setCartId(newCartId);
                 } catch (cartErr) {
                     console.error('❌ Error initializing cart:', cartErr);
@@ -60,7 +54,6 @@ export const CartProvider = ({ children }) => {
                 setError(err.message);
             } finally {
                 setLoading(false);
-                console.log('✅ Initialisation terminée');
             }
         };
         
@@ -68,12 +61,8 @@ export const CartProvider = ({ children }) => {
     }, []); 
 
     const getAvailableStock = useCallback((medicineId) => {
-        console.log('🔍 getAvailableStock - medicineId:', medicineId);
-        console.log('🔍 medicinesData:', medicinesData);
-        console.log('🔍 medicinesData.length:', medicinesData.length);
         
         const medicine = medicinesData.find(m => parseInt(m.id) === parseInt(medicineId));
-        console.log('🔍 medicine trouvé:', medicine);
         
         if (!medicine) {
             console.warn('⚠️ Medicine non trouvé pour id:', medicineId);
@@ -146,6 +135,61 @@ export const CartProvider = ({ children }) => {
             setLoading(false);
         }
     }, [cartId, getAvailableStock]); 
+
+
+    const addListToCart = useCallback(async (items) => {
+
+        let currentCartId = cartId;
+        
+        // If cart is not initialized, initialize it first
+        if (!currentCartId) {
+            console.warn('⚠️ Cart not initialized, initializing now...');
+            try {
+                const newCartId = await cartService.initCart();
+                currentCartId = newCartId;
+                setCartId(newCartId);
+            } catch (err) {
+                console.error('❌ Failed to initialize cart:', err);
+                setError('Impossible d\'initialiser le panier');
+                return { success: false, notAdded: items };
+            }
+        }
+
+        try {
+            setLoading(true);
+            console.log('📋 Calling cartService.addList with:', currentCartId, items);
+            
+            // Format items for backend: [{id: 1, quantity: 2}, {id: 5, quantity: 1}]
+            const formattedItems = items.map(item => ({
+                id: item.id,
+                quantity: item.quantity || 1,
+                label: item.label || item.nom || item.name
+            }));
+            
+            const result = await cartService.addList(currentCartId, formattedItems);
+            console.log('📋 addList result:', result);
+            
+            // Update cart items from backend response
+            setCartItems(result.cart?.items || []);
+            
+            // Check if some items were not added
+            if (result.not_added && result.not_added.length > 0) {
+                console.warn('⚠️ Some items not added:', result.not_added);
+                const notAddedNames = result.not_added.map(item => item.medicine_name).join(', ');
+                setError(`Stock insuffisant pour: ${notAddedNames}`);
+                return { success: true, notAdded: result.not_added };
+            }
+            
+            setError(null);
+            return { success: true, notAdded: [] };
+        } catch (err) {
+            console.error('❌ Error adding list to cart:', err);
+            setError(err.message);
+            return { success: false, notAdded: items };
+        } finally {
+            setLoading(false);
+        }
+    }, [cartId]);
 
 
     const removeFromCart = useCallback(async (drugId) => { 
@@ -267,7 +311,8 @@ export const CartProvider = ({ children }) => {
         <CartContext.Provider value={{
             cartItems,
             cartId,
-            addToCart, 
+            addToCart,
+            addListToCart,
             removeFromCart, 
             updateQuantity, 
             clearCart, 
