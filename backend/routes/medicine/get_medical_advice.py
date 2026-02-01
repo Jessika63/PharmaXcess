@@ -41,7 +41,7 @@ def get_medical_advice(medicine_id):
                 data = json.load(file)
         except json.JSONDecodeError:
             return Response(
-                json.dumps({"error": "Medicine data file is invalid JSON"}, ensure_ascii=False),
+                json.dumps({"error": "Failed to parse medicine data file"}, ensure_ascii=False),
                 mimetype='application/json; charset=utf-8',
                 status=500
             )
