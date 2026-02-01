@@ -27,7 +27,8 @@ def get_medical_advice(medicine_id):
         - 500: JSON error response if an internal error occurs (Object)
     """
     try:
-        json_path = "/data/medicine_available.json"
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        json_path = os.path.join(BASE_DIR, "medicine_available.json")
 
         if not os.path.exists(json_path):
             return Response(
