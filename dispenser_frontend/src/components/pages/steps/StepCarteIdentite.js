@@ -1,32 +1,53 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { useNavigate } from "react-router-dom";
 import CameraComponent from '../../camera_component';
 import ModalCamera from '../../modal_camera';
 import config from '../../../config';
 import useInactivityRedirect from '../../../utils/useInactivityRedirect';
+import { usePrescription } from '../../../context/PrescriptionContext';
+import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers'; 
 
 function StepCarteIdentite({ goToNextStep, goBackStep }) {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.scanCarteIdentite);
+  const { speak } = useVoiceOver();
+
+  const { updatePrescriptionData } = usePrescription(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [currentDocType, setCurrentDocType] = useState(null);
   const [statusSides, setStatusSides] = useState({ R: null, V: null });
+  const [showScannerView, setShowScannerView] = useState(false); 
+  const [currentSide, setCurrentSide] = useState(null); 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-      const focusedIndexRef = useRef(1);
+  const focusedIndexRef = useRef(1); 
   
   const [focusedIndex, setFocusedIndex] = useState(1);
   const buttonsRef = useRef([]);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const scanButtonRef = useRef(null);
+  const backButtonScannerRef = useRef(null);
+  const backButtonSelectionRef = useRef(null);
 
   const openCameraForSide = (side) => {
     const docType = side === 'recto' ? 'R' : 'V';
     setCurrentDocType(docType);
-    setShowCamera(true);
-    setIsModalOpen(true);
+    setCurrentSide(side); 
+    setShowScannerView(true); 
+    setError('');
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setShowCamera(false);
+    setShowScannerView(false); 
+    setCurrentSide(null); 
+    setLoading(false); 
+    setError('');
   };
 
   const handlePhotoCaptured = async (base64Image) => {
@@ -45,6 +66,17 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        // Save the data in context and localStorage 
+        const carteData = {
+          extractedText: data.extracted_text || '', 
+          nom: data.nom || '', 
+          prenom: data.prenom || '', 
+          dateNaissance: data.date_naissance || '', 
+          numeroIdentite: data.numeroIdentite || '' 
+        }; 
+
+        updatePrescriptionData({ carteIdentite: carteData }); 
+        localStorage.setItem('carteIdentite', JSON.stringify(carteData));
         setStatusSides(prev => {
           const updated = { ...prev, [currentDocType]: "valid" };
           if (updated.R === "valid" && updated.V === "valid") {
@@ -82,35 +114,89 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
     return null;
   };
 
+  // Keyboard navigation for selection page (back button + 2 cards)
+  useEffect(() => {
+    if (!showScannerView) {
+      const handleKeyDown = (event) => {
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey) || (event.key === "Tab" && event.shiftKey)) {
+          event.preventDefault();
+          if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex + 1) % 3);
+          } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
+            setFocusedIndex((prevIndex) => (prevIndex - 1 + 3) % 3);
+          }
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          if (focusedIndex === 0 && backButtonSelectionRef.current) {
+            backButtonSelectionRef.current.click();
+          } else if (focusedIndex === 1 && buttonsRef.current[0]) {
+            buttonsRef.current[0].click();
+          } else if (focusedIndex === 2 && buttonsRef.current[1]) {
+            buttonsRef.current[1].click();
+          }
+        }
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [focusedIndex, showScannerView]);
 
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
-      event.preventDefault();
-      setFocusedIndex((prevIndex) => {
-        const newIndex = (prevIndex + 1) % 4;
-        focusedIndexRef.current = newIndex;
-        return newIndex;
-      });
-    } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
-      event.preventDefault();
-      setFocusedIndex((prevIndex) => {
-        const newIndex = (prevIndex - 1 + 4) % 4;
-        focusedIndexRef.current = newIndex;
-        return newIndex;
-      });
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      if (focusedIndexRef.current === 1) {
-        openCameraForSide("verso")
-      } else if (focusedIndexRef.current === 2) {
-        navigate('/');
-      } else if (focusedIndexRef.current === 3) {
-        goBackStep()
-      } else if (focusedIndexRef.current === 0) {
-        openCameraForSide("recto")
+  // Keyboard navigation for scanner page (back button + LANCER LE SCAN button)
+  useEffect(() => {
+    if (showScannerView) {
+      const handleKeyDown = (e) => {
+        const maxIndex = (statusSides[currentDocType] !== "valid" && !loading) ? 1 : 0;
+        const totalElements = maxIndex + 1;
+        
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
+          e.preventDefault();
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+            setFocusedIndex((prev) => (prev + 1) % totalElements);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+            setFocusedIndex((prev) => (prev - 1 + totalElements) % totalElements);
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focusedIndex === 0 && backButtonScannerRef.current) {
+            backButtonScannerRef.current.click();
+          } else if (focusedIndex === 1 && scanButtonRef.current) {
+            scanButtonRef.current.click();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (backButtonScannerRef.current) {
+            backButtonScannerRef.current.click();
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showScannerView, loading, currentDocType, statusSides, focusedIndex]);
+
+  // Focus management for selection page
+  useEffect(() => {
+    if (!showScannerView) {
+      if (focusedIndex === 0 && backButtonSelectionRef.current) {
+        backButtonSelectionRef.current.focus();
+      } else if (focusedIndex === 1 && buttonsRef.current[0]) {
+        buttonsRef.current[0].focus();
+      } else if (focusedIndex === 2 && buttonsRef.current[1]) {
+        buttonsRef.current[1].focus();
       }
     }
-  }, [navigate, openCameraForSide]);
+  }, [focusedIndex, showScannerView]);
+
+  // Focus management for scanner page
+  useEffect(() => {
+    if (showScannerView) {
+      if (focusedIndex === 0 && backButtonScannerRef.current) {
+        backButtonScannerRef.current.focus();
+      } else if (focusedIndex === 1 && statusSides[currentDocType] !== "valid" && !loading && scanButtonRef.current) {
+        scanButtonRef.current.focus();
+      }
+    }
+  }, [showScannerView, focusedIndex, loading, currentDocType, statusSides]);
 
 
   useInactivityRedirect(() => setShowInactivityModal(true));
@@ -124,107 +210,212 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
     return () => events.forEach(event => window.removeEventListener(event, dismiss));
   }, [showInactivityModal]);
 
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  useEffect(() => {
-    if (buttonsRef.current[focusedIndex]) {
-      buttonsRef.current[focusedIndex].focus();
-    }
-  }, [focusedIndex]);
-
-  useEffect(() => {
-  }, [focusedIndex]);
-
   return (
 
-    <div className="w-full h-full flex flex-col items-center bg-background_color">
-      <div className="w-4/5 flex justify-between items-center mt-8 mb-6">
-
-
-        <button
-          ref={(el) => (buttonsRef.current[3] = el)}
-          tabIndex={0}
-          className={`
-            px-6 py-3 ${config.borderRadius.lg} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.md} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-          onClick={goBackStep}
-        >
-          Retour
-        </button>
-
-        <button
-          ref={(el) => (buttonsRef.current[2] = el)}
-          tabIndex={0}
-          className={`
-            px-6 py-3 ${config.borderRadius.lg} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.md} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-          `}
-          onClick={() => navigate("/")}
-        >
-          Menu
-        </button>
-      </div>
-
-      <div className="w-full h-full flex flex-col items-center justify-center space-y-12">
-
-        <h2 className={`text-2xl font-bold ${config.textColors.primary}`}>
-          Scanner votre Carte d'Identité
-        </h2>
-
-        <div className="flex space-x-8">
-          <div className="flex flex-col items-center">
-            <button
-              onClick={() => openCameraForSide('recto')}
-              ref={(el) => (buttonsRef.current[0] = el)}
-              tabIndex={0}
-              className={`
-              w-40 h-40 flex items-center justify-center
-              ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary}
-              ${config.fontSizes.lg} ${config.transitions.slow}
-              ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-            `}
-            >
-              Recto
-            </button>
-            {renderStatus("R")}
+    <div className="w-full h-screen flex flex-col">
+      
+      
+      {showScannerView ? (
+        // Scanner View
+        <>
+          {/* Header */}
+          <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <button onClick={closeModal}
+                ref={backButtonScannerRef}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && showScannerView ? 'ring-2 ring-pink-300' : ''}`}
+            {...createVoiceOverHandlers(speak)}>
+                <config.icons.arrowLeft className="text-xl" />
+              </button>
+              <h1 className="text-3xl font-semibold text-black">
+                Scan carte d'identité - {currentSide === 'recto' ? 'Recto' : 'Verso'}
+              </h1>
+            </div>
+            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
           </div>
 
-          <div className="flex flex-col items-center">
-            <button
-              onClick={() => openCameraForSide('verso')}
-              ref={(el) => (buttonsRef.current[1] = el)}
-              tabIndex={0}
-              className={`
-              w-40 h-40 flex items-center justify-center
-              ${config.borderRadius.xl} ${config.shadows.md}
-              ${config.buttonColors.mainGradient} ${config.textColors.primary}
-              ${config.fontSizes.lg} ${config.transitions.slow}
-              ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-            `}
-            >
-              Verso
-            </button>
-            {renderStatus("V")}
-          </div>
-        </div>
+          {/* Scanner Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-8">
+            <div className="flex flex-col items-center text-center max-w-3xl mb-8">
+              <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-8">
+                <config.icons.idCard className="text-4xl text-black" />
+              </div>
+              <p className="text-2xl text-black mb-4 font-semibold">
+                Veuillez insérer le {currentSide === 'recto' ? 'recto' : 'verso'} de votre carte d'identité
+              </p>
+              <p className="text-xl text-black">
+                dans le scanner présent sur la machine
+              </p>
+            </div>
 
-        {isModalOpen && showCamera && (
-          <ModalCamera onClose={closeModal}>
-            <CameraComponent onPhotoCapture={handlePhotoCaptured} />
-          </ModalCamera>
-        )}
-      </div>
+            {/* Button to validate scan */}
+            {statusSides[currentDocType] !== "valid" && !loading && (
+              <button 
+            {...createVoiceOverHandlers(speak)}
+                ref={scanButtonRef}
+                tabIndex={0}
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    setError('');
+
+                    // Create a blank white image as placeholder
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    canvas.toBlob(async (blob) => {
+                      const formData = new FormData();
+                      formData.append("image", blob, "photo.jpg");
+                      formData.append("doc_type", currentDocType);
+
+                      const response = await fetch(`${config.backendUrl}/extractText`, {
+                        method: 'POST',
+                        body: formData,
+                      });
+
+                      const data = await response.json();
+                      if (response.ok && data.success) {
+                        // Save the data in context and localStorage 
+                        const carteData = {
+                          extractedText: data.extracted_text || '', 
+                          nom: data.nom || '', 
+                          prenom: data.prenom || '', 
+                          dateNaissance: data.date_naissance || '', 
+                          numeroIdentite: data.numero_identite || '' 
+                        }; 
+
+                        updatePrescriptionData({ carteIdentite: carteData }); 
+
+
+                        localStorage.setItem('carteIdentite', JSON.stringify(carteData));
+                        
+                        setStatusSides(prev => {
+                          const updated = { ...prev, [currentDocType]: "valid" };
+                          setTimeout(() => {
+                            setShowScannerView(false);
+                            if (updated.R === "valid" && updated.V === "valid") {
+                              setTimeout(() => goToNextStep(), 800);
+                            }
+                          }, 1000);
+                          return updated;
+                        });
+                      } else {
+                        setStatusSides(prev => ({ ...prev, [currentDocType]: "invalid" }));
+                        setError(data.error || "Erreur lors du scan de la carte");
+                        setLoading(false);
+                      }
+                    }, 'image/jpeg');
+                  } catch (error) {
+                    setStatusSides(prev => ({ ...prev, [currentDocType]: "invalid" }));
+                    setError("Erreur lors du scan de la carte");
+                    setLoading(false);
+                    console.error("Erreur client:", error);
+                  }
+                }}
+                className={`px-16 py-5 bg-black text-white text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                  ${focusedIndex === 1 && showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+              >
+                LANCER LE SCAN
+              </button>
+            )}
+
+            {loading && (
+              <p className="text-gray-700 font-medium text-xl animate-pulse mt-2">Scan en cours, veuillez patienter...</p>
+            )}
+
+            {error && (
+              <div className="text-red-600 font-semibold text-lg mt-2 max-w-md">{error}</div>
+            )}
+
+            {statusSides[currentDocType] === "valid" && (
+              <div className="text-green-600 font-semibold text-xl mt-2 max-w-md">Carte scannée avec succès !</div>
+            )}
+          </div>
+        </>
+      ) : (
+        // Selection View
+        <>
+          {/* Header */}
+          <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <button 
+            {...createVoiceOverHandlers(speak)}
+                ref={backButtonSelectionRef}
+                onClick={goBackStep}
+                tabIndex={0}
+                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                  ${focusedIndex === 0 && !showScannerView ? 'ring-2 ring-pink-300' : ''}`}
+              >
+                <config.icons.arrowLeft className="text-xl" />
+              </button>
+              <h1 className="text-3xl font-semibold text-black">Scan carte d'identité</h1>
+            </div>
+            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-8">
+            <h2 className="text-2xl text-black mb-12 text-center">
+              Choisissez le côté de la carte à scanner
+            </h2>
+
+            {/* Two cards side by side */}
+            <div className="flex gap-8 max-w-5xl w-full mb-8">
+              {/* Recto Card */}
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 1 && !showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                  <config.icons.idCard className="text-3xl text-black" />
+                </div>
+                <h3 className="text-3xl font-bold text-black mb-6">Recto</h3>
+                <p className="text-xl text-gray-600 mb-10 flex-1">
+                  Scanner le recto de votre carte
+                </p>
+                {renderStatus("R")}
+                <button 
+            {...createVoiceOverHandlers(speak)}
+                  ref={(el) => (buttonsRef.current[0] = el)}
+                  onClick={() => openCameraForSide('recto')}
+                  tabIndex={0}
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4 focus:outline-none focus:ring-2 focus:ring-pink-300
+                    ${focusedIndex === 1 && !showScannerView ? 'scale-105' : ''}`}
+                >
+                  CHOISIR
+                </button>
+              </div>
+
+              {/* Verso Card */}
+              <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
+                ${focusedIndex === 2 && !showScannerView ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                  <config.icons.idCard className="text-3xl text-black" />
+                </div>
+                <h3 className="text-3xl font-bold text-black mb-6">Verso</h3>
+                <p className="text-xl text-gray-600 mb-10 flex-1">
+                  Scanner le verso de votre carte
+                </p>
+                {renderStatus("V")}
+                <button 
+            {...createVoiceOverHandlers(speak)}
+                  ref={(el) => (buttonsRef.current[1] = el)}
+                  onClick={() => openCameraForSide('verso')}
+                  tabIndex={0}
+                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300 mt-4 focus:outline-none focus:ring-2 focus:ring-pink-300
+                    ${focusedIndex === 2 && !showScannerView ? 'scale-105' : ''}`}
+                >
+                  CHOISIR
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )} 
     </div>
 
   );
