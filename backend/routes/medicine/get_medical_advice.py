@@ -62,26 +62,42 @@ def get_medical_advice(medicine_id):
                 status=404
             )
 
-        medical_advice = medicine.get("medicalAdvice")
+        required_fields = ["id", "name", "category", "price"]
+        for field in required_fields:
+            if field not in medicine:
+                return Response(
+                    json.dumps({"error": f"Missing required field: {field}"}, ensure_ascii=False),
+                    mimetype="application/json; charset=utf-8",
+                    status=404
+                )
 
-        if medical_advice is None:
-            return Response(
-                json.dumps({"error": "Medical advice not available for this medicine"}, ensure_ascii=False),
-                mimetype='application/json; charset=utf-8',
-                status=404
-            )
+        description = medicine.get("description", "")
 
-        medical_advice_clean = {
-            "dosage": medical_advice.get("dosage", ""),
-            "maxPerDay": medical_advice.get("maxPerDay", ""),
-            "warnings": medical_advice.get("warnings", []),
-            "contraIndications": medical_advice.get("contraIndications", [])
+        product_info = medicine.get("productInfo", {})
+        product_info_clean = {
+            "form": product_info.get("form", ""),
+            "dosage": product_info.get("dosage", ""),
+            "presentation": product_info.get("presentation", ""),
+            "laboratory": product_info.get("laboratory", "")
         }
-
+        
+        usage_advice = medicine.get("usageAdvice", [])
+        if not isinstance(usage_advice, list):
+            usage_advice = []
+        
+        warnings = medicine.get("warnings", [])
+        if not isinstance(warnings, list):
+            warnings = []
+        
         response_data = {
-            "medicineId": medicine_id,
-            "label": medicine.get("label", ""),
-            "medicalAdvice": medical_advice_clean
+            "id": medicine.get("id"),
+            "name": medicine.get("name"),
+            "category": medicine.get("category"),
+            "price": medicine.get("price"),
+            "description": description,
+            "productInfo": product_info_clean,
+            "usageAdvice": usage_advice,
+            "warnings": warnings
         }
 
         return Response(
@@ -90,12 +106,6 @@ def get_medical_advice(medicine_id):
             status=200
         )
 
-    except json.JSONDecodeError:
-        return Response(
-            json.dumps({"error": "Failed to parse medicine data file"}, ensure_ascii=False),
-            mimetype='application/json; charset=utf-8',
-            status=500
-        )
     except Exception as e:
         logging.exception(f"Unexpected error in get_medical_advice for medicine_id={medicine_id}")
         return Response(
