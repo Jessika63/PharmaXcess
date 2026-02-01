@@ -824,11 +824,22 @@ const applySort = (sort) => {
                                     {/* Add to cart button */}
                                     <button ref={payButtonRef}
                                         {...createVoiceOverHandlers(speak)}
-            onClick={() => {
+                                        onClick={async () => {
+                                            console.log('🔴 BOUTON CLIQUÉ!');
+                                            console.log('selectedDrug:', selectedDrug);
                                             if (selectedDrug.size > 0) {
-                                                addToCart(selectedDrug);
-                                                closeModal();
-                                                navigate('/cart');} else {
+                                                console.log('Stock disponible, ajout au panier...');
+                                                const success = await addToCart(selectedDrug);
+                                                console.log('Résultat addToCart:', success);
+                                                if (success) {
+                                                    console.log('✅ Succès! Fermeture modal et navigation...');
+                                                    closeModal();
+                                                    navigate('/cart');
+                                                } else {
+                                                    console.log('❌ Échec addToCart');
+                                                }
+                                            } else {
+                                                console.log('Stock insuffisant, redirection...');
                                                 navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
                                             }
                                         }}

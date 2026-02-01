@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 cart_bp = Blueprint("cart", __name__)
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-JSON_PATH = os.path.join(BASE_DIR, "medicine_available.json")
+# Path to medicine data in Docker volume
+JSON_PATH = "/data/medicine_available.json"
 
 # =========================
 # In-memory carts storage
@@ -351,3 +351,60 @@ def validate_cart():
         "total": cart["total"],
         "items": cart["items"]
     }), 200
+
+
+@cart_bp.route("/cart/checkout", methods=["POST"])
+def checkout_cart():
+    """
+    Checkout cart: validates cart and decrements stock in medicine_available.json
+    """
+    data = request.get_json(force=True)
+    cart_id = data.get("cart_id")
+
+    cart = carts.get(cart_id)
+    if not cart:
+        return jsonify({"error": "Cart not found"}), 404
+
+    if not cart["items"]:
+        return jsonify({"error": "Cart is empty"}), 400
+
+    try:
+        # Load current medicine data
+        with open(JSON_PATH, "r", encoding="utf-8") as f:
+            data_file = json.load(f)
+        
+        medicines = data_file["medicine"]
+        
+        # Decrement stock for each item in cart
+        for item in cart["items"]:
+            med_id = int(item["id"])
+            qty = int(item["quantity"])
+            
+            # Find medicine and decrement stock
+            for med in medicines:
+                if int(med["id"]) == med_id:
+                    current_stock = int(med.get("size", 0))
+                    new_stock = max(0, current_stock - qty)
+                    med["size"] = new_stock
+                    print(f"📉 Stock decremented: Medicine {med['label']} - {current_stock} -> {new_stock}")
+                    break
+        
+        # Save updated medicine data
+        with open(JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(data_file, f, ensure_ascii=False, indent=2)
+        
+        # Mark cart as checked out
+        cart["status"] = "COMPLETED"
+        cart["completed_at"] = datetime.utcnow().isoformat()
+        cart["updated_at"] = cart["completed_at"]
+        
+        return jsonify({
+            "message": "Checkout successful - stock decremented",
+            "cart_id": cart_id,
+            "total": cart["total"],
+            "items": cart["items"]
+        }), 200
+        
+    except Exception as err:
+        print(f"❌ Error during checkout: {err}")
+        return jsonify({"error": f"Checkout failed: {str(err)}"}), 500
