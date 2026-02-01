@@ -14,7 +14,16 @@ get_medical_advice_bp = Blueprint(
 )
 def get_medical_advice(medicine_id):
     """
-    Retrieve medical advice associated with a given medicine.
+    Objectif: Retrieve medical advice associated with a given medicine.
+
+    Parameters:
+        - medicine_id (int): medicine identifier
+    Query parameters:
+        - None
+    Returns:
+        - 200: JSON response containing the medical advice for the specified medicine (Object)
+        - 404: JSON error response if the medicine or its advice is not found (Object)
+        - 500: JSON error response if an internal error occurs (Object)
     """
     try:
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
