@@ -491,9 +491,9 @@ const handlePhotoCaptured = async (base64Image) => {
             <div className="flex items-center gap-4">
               <button onClick={goBackStep}
                 ref={backButtonSelectionRef}
-                tabIndex={0}
-                className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
-                  ${focusedIndex === 0 && !showQRScanner && !showPrescriptionScanner ? 'ring-2 ring-pink-300' : ''}`}
+                tabIndex={focusedIndex === 0 ? 0 : -1}
+                className={`flex items-center text-black hover:text-gray-600 transition-all duration-300 focus:outline-none
+                  ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
             {...createVoiceOverHandlers(speak)}>
                 <config.icons.arrowLeft className="text-xl" />
               </button>
@@ -512,7 +512,7 @@ const handlePhotoCaptured = async (base64Image) => {
             <div className="flex gap-8 max-w-5xl w-full mb-8">
               {/* Ordonnance Card */}
               <div className={`flex-1 bg-white rounded-3xl p-12 flex flex-col items-center text-center shadow-lg min-h-[400px] transition-all
-                ${focusedIndex === 0 ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
+                ${focusedIndex === 1 ? 'ring-2 ring-pink-300 scale-105' : ''}`}>
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <config.icons.filePrescription className="text-3xl text-black" />
                 </div>
@@ -523,10 +523,9 @@ const handlePhotoCaptured = async (base64Image) => {
                 <button {...createVoiceOverHandlers(speak)}
             onClick={() => openCamera('prescription')}
                   ref={el => buttonRefs.current[0] = el}
-                  tabIndex={0}
+                  tabIndex={focusedIndex === 1 ? 0 : -1}
                   aria-label="Ordonnance - Scanner votre ordonnance - CHOISIR"
-                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300
-                    ${focusedIndex === 1 ? 'scale-105' : ''}`}
+                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
                 >
                   <span className="sr-only">Ordonnance - </span>CHOISIR
                 </button>
@@ -545,10 +544,9 @@ const handlePhotoCaptured = async (base64Image) => {
                 <button {...createVoiceOverHandlers(speak)}
             onClick={() => openCamera('qr')}
                   ref={el => buttonRefs.current[1] = el}
-                  tabIndex={0}
+                  tabIndex={focusedIndex === 2 ? 0 : -1}
                   aria-label="QR code - Scanner le code qr de votre ordonnance - CHOISIR"
-                  className={`bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300
-                    ${focusedIndex === 2 ? 'scale-105' : ''}`}
+                  className="bg-black text-white px-12 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform duration-300"
                 >
                   <span className="sr-only">QR code - </span>CHOISIR
                 </button>
