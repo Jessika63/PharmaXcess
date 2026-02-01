@@ -7,8 +7,11 @@ import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
 import { getPharmaciesCache, setPharmaciesCache } from '../../utils/pharmaciesCache';
 import { getDefaultPosition } from '../../utils/positionUtils';
+import { useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function DrugStoresAvailable() {
+  const { speak } = useVoiceOver();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -196,7 +199,8 @@ function DrugStoresAvailable() {
           <button className={`
             ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
-          `} onClick={() => setShowInactivityModal(false)}>
+          `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
             Rester sur la page
           </button>
         </ModalStandard>
@@ -208,7 +212,8 @@ function DrugStoresAvailable() {
         {/* Header */}
         <div className="w-4/5 flex justify-between items-center mb-12 mt-8">
           <div className="w-full flex justify-start mb-4">
-            <button
+            <button 
+            {...createVoiceOverHandlers(speak)}
               ref={(el) => (buttonsRef.current[0] = el)}
               tabIndex={0}
               className={`
@@ -243,7 +248,8 @@ function DrugStoresAvailable() {
         >
           <div className={config.layout.buttonGrid}>
             {drugShops.map((item, index) => (
-              <button
+              <button 
+            {...createVoiceOverHandlers(speak)}
                 key={item.id}
                 ref={(el) => (buttonsRef.current[index + 1] = el)}
                 tabIndex={0}

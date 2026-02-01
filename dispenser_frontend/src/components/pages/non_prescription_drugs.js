@@ -1,5 +1,7 @@
 import './css/global.css'
 import React, { useRef, useEffect, useState } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
@@ -11,6 +13,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import PaymentForm from '../PaymentForm';
 import { Elements } from '@stripe/react-stripe-js';
 import ElementsWrapper from '../ElementsWrapper';
+import { useCart } from '../../context/CartContext';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 const categories = {
     painKiller: "Anti-douleur",
@@ -33,6 +37,10 @@ let availableMedicineCache = null;
 let availableMedicineFetched = false;
 
 function NonPrescriptionDrugs() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.nonPrescriptionDrugs);
+  const { speak } = useVoiceOver();
+
     const stripePromiseRef = useRef(stripePromise);
     const [isModalOpen, setIsModalOpen] = useState(false);
     // const [focusedElement, setFocusedElement] = useState(null);
@@ -40,21 +48,30 @@ function NonPrescriptionDrugs() {
     const [drugsItems, setDrugsItems] = useState([]);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const navigate = useNavigate();
+    const { addToCart, getCartCount } = useCart(); 
+
 
     const searchButtonRef = useRef(null);
+    const sortButtonRef = useRef(null); 
+    const cartButtonRef = useRef(null); 
+
 
     const goBackMainButtonRef = useRef(null)
 
     // const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState(null);
-    const [filteredDrugs, setFilteredDrugs] = useState(drugsItems);
+    const [sortOrder, setSortOrder] = useState('name-asc'); // 'name-asc', 'price-asc', 'price-desc'
+    const [filteredDrugs, setFilteredDrugs] = useState(() => {
+        // Initial sort by name (A-Z)
+        return [...drugsItems].sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+    });
 
     const backButtonRef = useRef(null);
     const payButtonRef = useRef(null);
     const drugsListRef = useRef(null);
 
-    // Focus index: -2 = go back, -1 = search/filter, 0...N-1 = drug cards
-    const [focusedIndex, setFocusedIndex] = useState(0);
+    // Focus index: -4 = back button, -3 = cart, -2 = sort, -1 = filter, 0...N-1 = drug cards
+    const [focusedIndex, setFocusedIndex] = useState(-1);
 
     const itemRefs = useRef([]);
 
@@ -83,6 +100,35 @@ function NonPrescriptionDrugs() {
     const [clientSecret, setClientSecret] = useState(null);
 
     const [stockUpdateError, setStockUpdateError] = useState(null);
+
+    // Auto-read medication details when modal opens
+    useEffect(() => {
+        if (isModalOpen && selectedDrug) {
+            const fullText = `
+                Détails du médicament ${selectedDrug.label}.
+                Catégorie : ${categories[selectedDrug.category] || 'Médicament'}.
+                Description : ${selectedDrug.description || 'Description non disponible'}.
+                Informations produit :
+                Forme : ${selectedDrug.forme || 'Comprimés'}.
+                Dosage : ${selectedDrug.dosage || 'Non spécifié'}.
+                Présentation : ${selectedDrug.presentation || `Boîte de ${selectedDrug.size} comprimés`}.
+                Laboratoire : ${selectedDrug.laboratoire || 'Non spécifié'}.
+                Prix : ${selectedDrug.price ? `${selectedDrug.price.toFixed(2)} euros` : 'Prix non défini'}.
+                ${selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}.
+                Conseil d'utilisation :
+                Adultes : 1 comprimé toutes les 6 heures.
+                Maximum 4 comprimés par jour.
+                A prendre avec un verre d'eau.
+                Peut être pris pendant ou hors des repas.
+                Précautions :
+                Ne pas dépasser la dose recommandée.
+                Déconseillé en cas d'allergie au paracétamol.
+                Consulter un médecin si les symptômes persistent.
+                Tenir hors de portée des enfants.
+            `;
+            speak(fullText);
+        }
+    }, [isModalOpen, selectedDrug, speak]);
 
     // Reset modal focus when modal opens
     useEffect(() => {
@@ -121,7 +167,10 @@ function NonPrescriptionDrugs() {
                 if (modalFocusIndex === 0) {
                     closeModal();
                 } else if (modalFocusIndex === 1) {
-                    handlePayment();
+                    // Trigger the add to cart button
+                    if (payButtonRef.current) {
+                        payButtonRef.current.click();
+                    }
                 }
             }
         };
@@ -201,10 +250,14 @@ function NonPrescriptionDrugs() {
             return;
         }
 
-        if (focusedIndex === -2 && goBackMainButtonRef.current) {
-            goBackMainButtonRef.current.focus();
+        if (focusedIndex === -3 && cartButtonRef.current) {
+            cartButtonRef.current.focus();
+        } else if (focusedIndex === -2 && sortButtonRef.current) {
+            sortButtonRef.current.focus();
         } else if (focusedIndex === -1 && searchButtonRef.current) {
             searchButtonRef.current.focus();
+        } else if (focusedIndex === -4 && goBackMainButtonRef.current) {
+            goBackMainButtonRef.current.focus();
         } else if (focusedIndex >= 0 && itemRefs.current[focusedIndex]) {
             itemRefs.current[focusedIndex].focus();
             itemRefs.current[focusedIndex].scrollIntoView({
@@ -218,13 +271,10 @@ function NonPrescriptionDrugs() {
     // Set initial focus after loading
     useEffect(() => {
         if (!loading) {
-            if (filteredDrugs.length > 0) {
-                setFocusedIndex(0);
-            } else {
-                setFocusedIndex(-1);
-            }
+            // Always start on filter
+            setFocusedIndex(-1);
         }
-    }, [loading, filteredDrugs.length]);
+    }, [loading]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -263,35 +313,53 @@ function NonPrescriptionDrugs() {
                 return;
             } // Let modal handle its own keys
 
-            if (filteredDrugs.length === 0) {
-                return;
-            }
-
-            if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
+            // Don't prevent default on selects to allow native dropdown behavior
+            const isOnSelect = focusedIndex === -1 || focusedIndex === -2;
+            
+            if (!isOnSelect && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Tab"].includes(event.key)) {
                 event.preventDefault();
             }
 
             if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+                event.preventDefault(); 
                 if (focusedIndex > 0) {
                     setFocusedIndex(focusedIndex - 1);
                 } else if (focusedIndex === 0) {
-                    setFocusedIndex(-1);
-                } else if (focusedIndex === -1) {
-                    setFocusedIndex(-2);
+                    setFocusedIndex(-3); // From first drug to cart
+                } else if (focusedIndex === -3) {
+                    setFocusedIndex(-2); // From cart to sort
                 } else if (focusedIndex === -2) {
-                    // Circular: go from first control (-2) to last drug item
-                    setFocusedIndex(filteredDrugs.length - 1);
+                    setFocusedIndex(-1); // From sort to filter
+                } else if (focusedIndex === -1) {
+                    setFocusedIndex(-4); // From filter to back button
+                } else if (focusedIndex === -4) {
+                    // Circular: go from back button to last drug item
+                    if (filteredDrugs.length > 0) {
+                        setFocusedIndex(filteredDrugs.length - 1);
+                    } else {
+                        setFocusedIndex(-3);
+                    }
                 }
             } else if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
-                if (focusedIndex === -2) {
-                    setFocusedIndex(-1);
+                event.preventDefault();
+                if (focusedIndex === -4) {
+                    setFocusedIndex(-1); // From back button to filter
                 } else if (focusedIndex === -1) {
-                    setFocusedIndex(0);
-                } else if (focusedIndex < filteredDrugs.length - 1) {
+                    setFocusedIndex(-2); // From filter to sort
+                } else if (focusedIndex === -2) {
+                    setFocusedIndex(-3); // From sort to cart
+                } else if (focusedIndex === -3) {
+                    // From cart to first drug
+                    if (filteredDrugs.length > 0) {
+                        setFocusedIndex(0);
+                    } else {
+                        setFocusedIndex(-4);
+                    }
+                } else if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length - 1) {
                     setFocusedIndex(focusedIndex + 1);
                 } else if (focusedIndex === filteredDrugs.length - 1) {
-                    // Circular: go from last drug item to first control (-2)
-                    setFocusedIndex(-2);
+                    // Circular: go from last drug item to back button
+                    setFocusedIndex(-4);
                 }
             } else if (event.key === "ArrowUp") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
@@ -309,13 +377,40 @@ function NonPrescriptionDrugs() {
                         setFocusedIndex(newIndex);
                     }
                 }
-            } else if (event.key === "Enter") {
+            } else if (event.key === "Enter" || event.key === " ") {
                 if (focusedIndex >= 0 && focusedIndex < filteredDrugs.length) {
+                    event.preventDefault();
                     openModal(filteredDrugs[focusedIndex]);
-                } else if (focusedIndex === -1) {
-                    toggleFilterMenu();
-                } else if (focusedIndex === -2) {
-                    goBackMainButtonRef.current?.click();
+                } else if (focusedIndex === -1 && searchButtonRef.current) {
+                    event.preventDefault();
+                    // Open filter dropdown
+                    try {
+                        if (searchButtonRef.current.showPicker) {
+                            searchButtonRef.current.showPicker();
+                        } else {
+                            searchButtonRef.current.click();
+                        }
+                    } catch (e) {
+                        searchButtonRef.current.click();
+                    }
+                } else if (focusedIndex === -2 && sortButtonRef.current) {
+                    event.preventDefault();
+                    // Open sort dropdown
+                    try {
+                        if (sortButtonRef.current.showPicker) {
+                            sortButtonRef.current.showPicker();
+                        } else {
+                            sortButtonRef.current.click();
+                        }
+                    } catch (e) {
+                        sortButtonRef.current.click();
+                    }
+                } else if (focusedIndex === -3 && cartButtonRef.current) {
+                    event.preventDefault();
+                    cartButtonRef.current.click();
+                } else if (focusedIndex === -4 && goBackMainButtonRef.current) {
+                    event.preventDefault();
+                    goBackMainButtonRef.current.click();
                 }
             }
         };
@@ -333,6 +428,21 @@ function NonPrescriptionDrugs() {
 
 const getCategoryKey = (value) => {
     return Object.keys(categories).find(key => categories[key] === value);
+};
+
+const applySortToItems = (items, sort) => {
+    const sorted = [...items];
+    
+    switch (sort) {
+        case 'name-asc':
+            return sorted.sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+        case 'price-asc':
+            return sorted.sort((a, b) => a.price - b.price);
+        case 'price-desc':
+            return sorted.sort((a, b) => b.price - a.price);
+        default:
+            return sorted;
+    }
 };
 
 const applyFilter = (filter) => {
@@ -365,9 +475,20 @@ const applyFilter = (filter) => {
         filteredItems = drugsItems;
     }
 
+    // Apply current sort order
+    const sortedItems = applySortToItems(filteredItems, sortOrder);
+
     setIsSearchMenuOpen(false);
-    setFilteredDrugs(filteredItems);
+    setFilteredDrugs(sortedItems);
     setFocusedIndex(0);
+};
+
+const applySort = (sort) => {
+    setSortOrder(sort);
+    
+    // Apply sort to currently filtered items
+    const sortedItems = applySortToItems(filteredDrugs, sort);
+    setFilteredDrugs(sortedItems);
 };
 
 
@@ -385,7 +506,7 @@ const applyFilter = (filter) => {
         // Stock check
         const size = parseInt(selectedDrug?.size) || 0;
         if (size <= 0) {
-            navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } });
+            navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
             return;
         }
 
@@ -482,6 +603,8 @@ const applyFilter = (filter) => {
     if (loading) {
         return (
             <div className={`w-full h-screen flex flex-col items-center justify-center bg-background_color`}>
+      
+      
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-solid mb-4"></div>
                 <div className={`${config.fontSizes.md} ${config.textColors.secondary}`}>
                     Chargement des médicaments...
@@ -491,163 +614,282 @@ const applyFilter = (filter) => {
     }
 
     return (
-        <div className={`w-full h-screen flex flex-col items-center ${config.padding.container} bg-background_color`}>
-            <div className="w-4/5 h-48 flex justify-between items-center mb-8 mt-2">
-                <Link
-                to="/"
-                ref={goBackMainButtonRef}
-                className={`${config.fontSizes.md} ${config.buttonColors.mainGradient} ${config.padding.button}
-                    ${config.borderRadius.lg} ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
-                    ${config.focusStates.outline} flex items-center ${focusedIndex === -2 ? config.scaleEffects.focus : ''}`}>
-                    <config.icons.arrowLeft className="mr-3" />
-                        Retour
-                </Link>
+        
+        <div className={`w-full min-h-screen flex flex-col bg-background_color`}>
+            {/* Header */}
+            <div className="w-full px-8 py-4 flex justify-between items-center mt-4">
+                <div className="flex items-center gap-4"> 
+                    <Link to="/"
+                        ref={goBackMainButtonRef}
+                        tabIndex={0}
+                        className={`flex items-center text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 focus:rounded-lg
+                            ${focusedIndex === -4 ? 'ring-2 ring-pink-300 scale-105' : ''}`}
+            {...createVoiceOverHandlers(speak)}>
+                        <config.icons.arrowLeft className="text-xl" /> 
+                    </Link> 
+                    <h1 className="text-3xl font-semibold text-black">Catalogue des médicaments</h1>
+                </div> 
+                <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-10" /> 
+            </div> 
+            {/* Filter and Sort Bar */}
+            <div className="w-full px-8 py-4 flex items-center gap-6"> 
+                {/* Filter dropdown */}
+                <div className="flex flex-col"> 
+                    <label className="text-xs text-gray-500 mb-1">Filtrer</label>
+                    <div className="relative"> 
+                        <select
+                            ref={searchButtonRef}
+                            value={selectedFilter || ''}
+                            onChange={(e) => applyFilter(e.target.value || null)}
+                            className={`appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
+                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[200px] cursor-pointer
+                                ${focusedIndex === -1 ? 'ring-2 ring-pink-300' : ''}`}
+                                {...createVoiceOverHandlers(speak)} 
+                        >
+                            <option value="">Tous les types</option> 
+                            <option value="A-G">A - G</option>
+                            <option value="H-P">H - P</option>
+                            <option value="Q-Z">Q - Z</option>
+                            {Object.entries(categories).map(([key, value]) => (
+                                <option key={key} value={key}>{value}</option>
+                            ))} 
+                        </select>
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /> 
+                            </svg> 
+                        </div> 
+                    </div> 
+                </div> 
+                {/* Sort dropdown */} 
+                <div className="flex flex-col"> 
+                    <label className="text-xs text-gray-500 mb-1">Trier</label> 
+                    <div className="relative">
+                        <select
+                            ref={sortButtonRef}
+                            value={sortOrder}
+                            onChange={(e) => applySort(e.target.value)}
+                            className={`appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 
+                                focus:outline-none focus:ring-2 focus:ring-pink-300 min-w-[250px] cursor-pointer
+                                ${focusedIndex === -2 ? 'ring-2 ring-pink-300' : ''}`}
+                            {...createVoiceOverHandlers(speak)}
+                        >
+                            <option value="name-asc">Ordre alphabétique (A-Z)</option>
+                            <option value="price-asc">Prix croissant</option>
+                            <option value="price-desc">Prix décroissant</option>
+                        </select>
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /> 
+                            </svg> 
+                        </div> 
+                    </div> 
+                </div> 
+                {/* Spacer */}
+                <div className="flex-grow"></div> 
 
-                <div className="flex-grow flex justify-center pr-16">
-                    <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-116 h-28" />
-                </div>
-            </div>
-
-            {isSearchMenuOpen && (
-                <div className={`absolute top-8 left-[80%] ${config.buttonColors.mainGradient} ${config.shadows.md} ${config.borderRadius.sm} ${config.padding.modal} w-64`}>
-                    <p className="font-bold flex items-center">
-                        <config.icons.filter className="mr-2" />
-                        Filtrer par :
-                    </p>
-
-                    {searchMenuOptions.map((option, index) => {
-                        // Determine the option type
-                        let onClickHandler;
-                        let displayText;
-                        let icon = null;
-
-                        if (["A-G", "H-P", "Q-Z"].includes(option)) {
-                            // Alphabetical filters
-                            onClickHandler = () => applyFilter(option);
-                            displayText = option.replace('-', ' - ');
-                        }
-                        else if (option === "Reset") {
-                            // Reset
-                            onClickHandler = () => applyFilter(null);
-                            displayText = "Réinitialiser";
-                            icon = <config.icons.sync className="mr-2" />;
-                        }
-                        else if (option === "Close") {
-                            // Close - only close the menu, no filter
-                            onClickHandler = () => {
-                                setIsSearchMenuOpen(false);
-                                setFocusedIndex(0);
-                            };
-                            displayText = "Fermer";
-                            icon = <config.icons.times className="mr-2" />;
-                        }
-                        else {
-                            // Categories (value from categories)
-                            const categoryKey = Object.keys(categories).find(
-                                key => categories[key] === option
-                            );
-                            onClickHandler = () => applyFilter(categoryKey);
-                            displayText = option;
-                        }
-
-                        return (
-                            <button
-                                onClick={onClickHandler}
-                                key={option}
-                                ref={el => (searchMenuRefs.current[index] = el)}
-                                tabIndex={focusedIndexSearch === index ? 0 : -1}
-                                className={`block w-full text-left py-2 ${
-                                    focusedIndexSearch === index ? config.scaleEffects.focus : ""
-                                } ${icon ? "flex items-center" : ""}`}
-                            >
-                                {icon}
-                                {displayText}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            <div className={`flex items-center ${config.buttonColors.buttonBackground} ${config.padding.button} ${config.borderRadius.md} ${config.shadows.md}`}>
-                <span className={`${config.fontSizes.md} ${config.textColors.black}`}>
-                    Voici la liste des médicaments disponibles à la vente :
-                </span>
+                {/* Cart button */}
                 <button
-                    ref={searchButtonRef}
-                    onClick={toggleFilterMenu}
-                    className={
-                        `ml-4 flex items-center gap-2 ${config.textColors.primary} ${config.fontSizes.sm}
-                        ${config.buttonColors.mainGradient} ${config.padding.button} ${config.borderRadius.sm}
-                        ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default}
-                        ${focusedIndex == -1 ? config.scaleEffects.focus : ""}`
-                    }>
-                    <config.icons.search className={config.fontSizes.md} />
-                    Rechercher
+                    ref={cartButtonRef}
+                    {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/cart')}
+                    className={`flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700
+                        hover:bg-gray-50 transition-colors relative
+                        ${focusedIndex === -3 ? 'ring-2 ring-pink-300' : ''}`}
+                > 
+                    <span>PANIER</span>
+                    <config.icons.cart className="text-lg" />
+                    {getCartCount() > 0 && ( 
+                        <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {getCartCount()} 
+                        </span> 
+                    )} 
+
+
                 </button>
             </div>
-
+            {/* Drugs grid container */}
             <div
-                className="w-4/5 mt-16 h-[50vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-pink-400 scrollbar-track-gray-200"
+                className="flex-1 px-8 py-4 overlow-y-auto" 
                 ref={drugsListRef}
             >
-                <div className={config.layout.buttonGrid3}>
+                <div className="grid grid-cols-4 gap-4"> 
                     {filteredDrugs.map((item, index) => (
-                        <button
+                        <button 
+            {...createVoiceOverHandlers(speak)}
                             key={item.id}
                             id={`drug-${item.id}`}
                             ref={el => itemRefs.current[index] = el}
                             tabIndex={0}
                             type="button"
-                            className={`h-24 flex items-center justify-center ${config.fontSizes.xl} ${config.textColors.primary}
-                                ${config.buttonColors.mainGradient} ${config.borderRadius.lg} ${config.shadows.md} cursor-pointer
-                                ${config.transitions.default} ${index === focusedIndex ? `${config.scaleEffects.focus} ${config.focusStates.ring}` : ''}`}
+                            className={`bg-white rounded-xl p-5 text-left cursor-pointer
+                                transition-transform duration-300 hover:scale-105 
+                                ${index === focusedIndex ? 'scale-105 ring-2 ring-pink-300' : ''}`} 
                             onClick={() => openModal(item)}
                         >
-                            {item.label}
+                            {/* Drug name */} 
+                            <h3 className="text-lg font-bold text-black mb-1">
+                                {item.label}
+                            </h3>
+                            {/* Description */}
+                            <p className="text-sm text-gray-500 mb-6">
+                                {item.description || categories[item.category] || 'Médicament disponible'}
+                            </p>
+                            {/* Price and stock */}
+                            <div className="flex justify-between items-end">
+                                <span className="text-lg font-bold text-black">
+                                    {item.price ? `${item.price.toFixed(2)}€` : 'Prix non défini'}
+                                </span>
+                                <span className={`text-sm ${item.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {item.size > 0 ? 'En stock' : 'Non disponible'}
+                                </span>
+                            </div>
                         </button>
                     ))}
                 </div>
-
             </div>
 
             {isModalOpen && selectedDrug && (
-                <ModalStandard onClose={closeModal}>
-                    <button
-                        ref={backButtonRef}
-                        className={`w-40 h-20 absolute top-4 left-4 ${config.fontSizes.lg} ${config.textColors.white}
-                            ${config.buttonColors.red} ${config.borderRadius.md} ${config.padding.button}
-                            ${config.buttonColors.redHover} ${config.focusStates.outline} ${config.transitions.default}
-                            ${modalFocusIndex === 0 ? config.scaleEffects.focus : ''}`}
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    {/* Semi-transparent overlay */}
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50"
+
                         onClick={closeModal}
-                    >
-                        <config.icons.times className="mr-2" />
-                        Fermer
-                    </button>
-                    <div className={`${config.padding.modal} text-center ${config.fontSizes.xxl} ${config.textColors.primary}`}>
-                        <h2>{selectedDrug.label} (Reste: {selectedDrug.size})</h2>
-                    </div>
-                    <button
-                        ref={payButtonRef}
-                        className={`w-1/3 h-32 mx-auto mt-16 py-3 font-semibold
-                            ${selectedDrug.size > 0 ? config.buttonColors.green : config.buttonColors.red}
-                            ${config.textColors.white} ${config.borderRadius.sm} ${config.shadows.md}
-                            ${config.transitions.default} ${config.fontSizes.xl}
-                            ${modalFocusIndex === 1 ? config.scaleEffects.focus : ''}`}
-                        onClick={selectedDrug.size > 0 ? handlePayment : () => navigate('/insufficient-stock', { state: { from: '/non-prescription-drugs' } })}
-                    >
-                        {selectedDrug.size > 0 ? (
-                            <>
-                                <config.icons.money className="mr-2" />
-                                Payer
-                            </>
-                        ) : (
-                            <>
-                                <config.icons.timesCircle className="mr-2" />
-                                Stock indisponible - Options de retrait
-                            </>
-                        )}
-                    </button>
-                </ModalStandard>
+                    ></div> 
+                    
+                    {/* Modal content - solid background pink */}
+                    <div className="relative bg-pink-50 rounded-2xl shadow-2xl max-w-7xl w-[95%] max-h-[95vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="w-full px-8 py-6 flex justify-between items-center border-b border-pink-200">
+                            <div className="flex items-center gap-4"> 
+                                <button ref={backButtonRef}
+                                    onClick={closeModal}
+                                    className={`flex items-center text-black hover:text-gray-600 transition-colors p-3 rounded-full hover:bg-pink-100
+                                        ${modalFocusIndex === 0 ? 'scale-105 bg-pink-100' : ''}`}
+            {...createVoiceOverHandlers(speak)}>
+                                    <config.icons.arrowLeft className="text-2xl" /> 
+                                </button>
+                                <h1 className="text-3xl font-semibold text-black">Choix du médicament</h1> 
+                            </div> 
+                            <img src={config.icons.logo} alt="Logo PharmaXcess" className="h-12" />
+                        </div> 
+
+
+                        {/* Content */}
+                        <div className="p-10"> 
+                            <div className="flex gap-12"> 
+                                {/* Left side - Product card */}
+                                <div className="bg-white rounded-2xl p-8 flex-1"> 
+                                    {/* Drug name and category */}
+                                    <h2 className="text-3xl font-bold text-black mb-2">{selectedDrug.label}</h2> 
+                                    <p className="text-lg text-gray-500 mb-6">{categories[selectedDrug.category] || 'Médicament'}</p>
+
+                                    {/* Description */}
+                                    <div className="mb-6"> 
+                                        <h3 className="text-lg font-bold text-black mb-2">Description</h3>
+                                        <p className="text-base text-gray-600">{selectedDrug.description || 'Description non disponible'}</p> 
+                                    </div> 
+
+
+                                    {/* Product info */}
+                                    <div className="mb-8"> 
+                                        <h3 className="text-lg font-bold text-black mb-3">Informations produit</h3>
+                                        <div className="space-y-2 text-base">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Forme :</span>
+                                                <span className="text-black">{selectedDrug.forme || 'Comprimés'}</span> 
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Dosage :</span>
+                                                <span className="text-black">{selectedDrug.dosage || 'Non spécifié'}</span>
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Présentation :</span>
+                                                <span className="text-black">{selectedDrug.presentation || `Boîte de ${selectedDrug.size} comprimés`}</span>
+                                            </div> 
+
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Laboratoire :</span>
+                                                <span className="text-black">{selectedDrug.laboratoire || 'Non spécifié'}</span>
+                                            </div> 
+
+                                        </div> 
+
+                                    </div> 
+
+
+                                    {/* Add to cart button */}
+                                    <button ref={payButtonRef}
+                                        {...createVoiceOverHandlers(speak)}
+            onClick={() => {
+                                            if (selectedDrug.size > 0) {
+                                                addToCart(selectedDrug);
+                                                closeModal();
+                                                navigate('/cart');} else {
+                                                navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
+                                            }
+                                        }}
+                                        className={`w-full py-4 rounded-full text-lg font-semibold flex items-center justify-center gap-3
+                                            transition-transform duration-300 hover:scale-105
+                                            ${selectedDrug.size > 0 
+                                                ? 'bg-black text-white' 
+                                                : 'bg-gray-400 text-white'}
+                                            ${modalFocusIndex === 1 ? 'scale-105' : ''}`}
+                                    >
+                                        {selectedDrug.size > 0 ? ( 
+                                            <> 
+                                                AJOUTER AU PANIER 
+                                                <config.icons.cart className="text-xl" /> 
+                                            </> 
+                                        ) : ( 
+                                            'VOIR LES OPTIONS DISPONIBLES'
+                                        )} 
+                                    </button>
+                                </div> 
+
+
+                                {/* Right side - Price and info */}
+                                <div className="flex-1"> 
+                                    {/* Price and stock */}
+                                    <div className="mb-8"> 
+                                        <p className="text-5xl font-bold text-black">{selectedDrug.price ? `${selectedDrug.price.toFixed(2)}€` : 'Prix non défini'}</p>
+                                        <p className={`text-xl mt-2 ${selectedDrug.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}
+                                        </p> 
+                                    </div> 
+
+
+                                    {/* Usage advice */} 
+                                    <div className="mb-8"> 
+                                        <h3 className="text-xl font-bold text-black mb-3">Conseil d'utilisation</h3>
+                                        <ul className="text-base text-gray-600 space-y-2"> 
+                                            <li>Adultes : 1 comprimé toutes les 6 heures</li> 
+                                            <li>Maximum 4 comprimés par jour</li>
+                                            <li>A prendre avec un verre d'eau</li> 
+                                            <li>Peut être pris pendant ou hors des repas</li>
+                                        </ul> 
+                                    </div>
+
+                                    {/* Precautions */}
+                                    <div> 
+                                        <h3 className="text-xl font-bold text-black mb-3">Précautions</h3>
+                                        <ul className="text-base text-gray-600 space-y-2"> 
+                                            <li>Ne pas dépasser la dose recommandée</li>
+                                            <li>Déconseillé en cas d'allergie au paracétamol</li>
+                                            <li>Consulter un médecin si les symptômes persistent</li>
+                                            <li>Tenir hors de portée des enfants</li>
+                                        </ul> 
+                                    </div> 
+                                </div> 
+                            </div> 
+                        </div> 
+                    </div> 
+                </div> 
+
+
             )}
 
             {paymentModalOpen && clientSecret && (
@@ -685,9 +927,9 @@ const applyFilter = (filter) => {
                     <div className="flex items-center">
                         <config.icons.timesCircle className="mr-2" />
                         {stockUpdateError}
-                        <button
-                            className="ml-4"
-                            onClick={() => setStockUpdateError(null)}
+                        <button className="ml-4"
+                            {...createVoiceOverHandlers(speak)}
+            onClick={() => setStockUpdateError(null)}
                         >
                         <config.icons.times />
                         </button>
@@ -707,7 +949,8 @@ const applyFilter = (filter) => {
                         `${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                         ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                         ${config.transitions.default}`
-                    } onClick={() => setShowInactivityModal(false)}>
+                    } {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
                 </ModalStandard>

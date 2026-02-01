@@ -47,7 +47,7 @@ function ModalCINChoice({ children, onClose, onSelect }) {
         if (justOpened.current) {
             justOpened.current = false;
         }
-dispenser_frontend/src/components/modal_cin_choice.js    }, [focusedIndex, buttonRefs]);
+    }, [focusedIndex, buttonRefs]);
 
     useEffect(() => {
         justOpened.current = true;

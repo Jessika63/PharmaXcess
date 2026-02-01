@@ -1,17 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
+import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
-import CameraComponent from '../camera_component';
-import ModalCamera from '../modal_camera';
 import config from '../../config';
+import QrCameraScanner from '../qr_camera_scanner';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function Preorder() {
+  // Auto-play VoiceOver
+  useAutoVoiceOver(voiceOverTexts.preorder);
+  const { speak } = useVoiceOver();
+
   const navigate = useNavigate();
   const goBackButtonRef = useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        if (goBackButtonRef.current) {
+          goBackButtonRef.current.click();
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (goBackButtonRef.current) {
@@ -20,15 +39,13 @@ function Preorder() {
   }, []);
 
   const openCamera = () => {
-    setShowCamera(true);
-    setIsModalOpen(true);
     setError("");
     setSuccess(false);
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    setShowCamera(false);
+    setError("");
+    setSuccess(false);
   };
 
   // Fonction pour vérifier si l'image contient un QR code de profil
@@ -59,7 +76,8 @@ function Preorder() {
   };
 
   const handlePhotoCaptured = async (base64Image) => {
-    closeModal();
+    // when using CameraComponent we closed the modal; here we are using
+    // continuous scanner so we don't need to close anything explicitly 
     try {
       setLoading(true);
       setError("");
@@ -98,83 +116,84 @@ function Preorder() {
   };
 
   return (
-    <div className={`bg-background_color min-h-screen w-full flex flex-col items-center justify-center`}>
-      {/* Go Back Button */}
-      <div className="w-4/5 flex items-center mt-6 mb-2">
-        <button
-          ref={goBackButtonRef}
-          tabIndex={0}
-          className={`
-            ${config.fontSizes.md} ${config.buttonStyles.back} ${config.padding.button} ${config.borderRadius.lg}
-            ${config.shadows.md} ${config.scaleEffects.hover} ${config.transitions.default} ${config.focusStates.outline}
-            flex items-center ${config.focusStates.ring} ${config.scaleEffects.focus}`
-          }
-          onClick={() => navigate('/insufficient-stock')}
-        >
-          <config.icons.arrowLeft className="mr-3" />
-            Retour
-        </button>
-      </div>
-
-      {/* Logo */}
-      <div className="w-4/5 h-28 flex justify-center items-center mb-4 mt-2">
-        <div className="flex justify-center items-center w-full">
-          <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-80 h-20" />
+    <div style={{ backgroundColor: '#F8E6EA' }} className={`min-h-screen w-full flex flex-col items-center justify-start`}>
+      
+      
+      {/* Header matching image: left arrow + title, logo right */}
+      <div className="w-full px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button ref={goBackButtonRef}
+            {...createVoiceOverHandlers(speak)}
+            onClick={() => navigate('/cart')}
+            className="text-black text-lg flex items-center gap-3"
+          >
+            <config.icons.arrowLeft />
+            <span className="text-xl font-semibold">Commander et récupérer plus tard</span>
+          </button>
         </div>
+        <img src={config.icons.logo} alt="Logo Pharmaxcess" className="h-8 mr-4" />
       </div>
 
-      {/* Scanner QR Code de Profil */}
-      <div className={`w-3/4 bg-background_color ${config.padding.modal} ${config.borderRadius.md} text-center mb-4 flex flex-col items-center`}>
-        <h2 className={`${config.fontSizes.xl} ${config.textColors.primary} font-bold mb-4`}>
-          Scanner votre QR code de profil
-        </h2>
-        <p className={`${config.fontSizes.md} ${config.textColors.secondary} mb-6`}>
-          Scannez le QR code de votre profil utilisateur depuis l'application mobile PharmaXcess
-        </p>
-
-        {/* Bouton Scanner */}
-        <button
-          onClick={openCamera}
-          disabled={loading}
-          className={`
-            w-2/5 h-40 flex flex-col items-center justify-center
-            ${config.borderRadius.xl} ${config.shadows.md}
-            ${config.buttonColors.mainGradient} ${config.textColors.primary}
-            ${config.fontSizes.xl} ${config.transitions.slow}
-            ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-            ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
-        >
-          <config.icons.qrCode className="text-4xl mb-2" />
-          Scanner QR code
-        </button>
-
-        {/* Messages de statut */}
-        {loading && (
-          <p className="text-gray-700 font-medium animate-pulse mt-6">
-            Analyse en cours, veuillez patienter...
+      {/* Central content */}
+      <div className="w-full flex flex-col items-center justify-center mt-8 px-6">
+        <div className="flex flex-col items-center text-center max-w-3xl">
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6">
+            <config.icons.qrCode className="text-2xl" />
+          </div>
+          <p className={`${config.fontSizes.md} text-black mb-4`}>
+            Veuillez scanner votre QR code de profil
           </p>
+          <p className={`${config.fontSizes.sm} text-black mb-6`}>
+            PharmaXcess afin de vous recontacter lors de la disponibilité de votre commande
+          </p>
+        </div>
+
+        {/* Embedded scanner area (no buttons) */}
+        {!success && (
+          <div className="mt-6 mb-8">
+            <QrCameraScanner onFrame={async (blob) => {
+              // when a frame is produced, send it to backend for QR check
+              try {
+                setLoading(true);
+                setError('');
+                const formData = new FormData();
+                formData.append('image', blob, 'frame.jpg');
+
+                const response = await fetch(`${config.backendUrl}/read_profile_qr`, {
+                  method: 'POST',
+                  body: formData,
+                });
+                const data = await response.json();
+                    if (data.success) {
+                      // navigate to success confirmation page with profile data
+                      navigate('/preorder-success', { state: { profile: data.profile } });
+                      return;
+                    } else {
+                      // keep scanning; show error only occasionally
+                      setError(data.error || 'Aucun QR code détecté');
+                    }
+              } catch (err) {
+                console.error(err);
+                setError('Erreur lors de la lecture du QR code.');
+              } finally {
+                setLoading(false);
+              }
+            }} overlaySize={360} />
+          </div>
+        )}
+
+        {loading && (
+          <p className="text-gray-700 font-medium animate-pulse mt-2">Analyse en cours, veuillez patienter...</p>
         )}
 
         {error && (
-          <div className="text-red-600 font-semibold mt-6 max-w-md">
-            {error}
-          </div>
+          <div className="text-red-600 font-semibold mt-2 max-w-md">{error}</div> 
         )}
 
         {success && (
-          <div className="text-green-600 font-semibold mt-6 max-w-md">
-            Profil utilisateur détecté avec succès !
-          </div>
+          <div className="text-green-600 font-semibold mt-2 max-w-md">Profil utilisateur détecté avec succès !</div>
         )}
       </div>
-
-      {/* Modal Camera */}
-      {isModalOpen && showCamera && (
-        <ModalCamera onClose={closeModal}>
-          <CameraComponent onPhotoCapture={handlePhotoCaptured} />
-        </ModalCamera>
-      )}
     </div>
   );
 }
