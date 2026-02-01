@@ -18,8 +18,10 @@ def get_medical_advice(medicine_id):
 
     Parameters:
         - medicine_id (int): medicine identifier
+    
     Query parameters:
         - None
+
     Returns:
         - 200: JSON response containing the medical advice for the specified medicine (Object)
         - 404: JSON error response if the medicine or its advice is not found (Object)
@@ -48,7 +50,11 @@ def get_medical_advice(medicine_id):
 
         medicines = data.get("medicine", [])
 
-        medicine = next((m for m in medicines if m.get("id") == medicine_id), None)
+        medicine = next(
+            (m for m in medicines if m.get("id") == medicine_id),
+            None
+        )
+
         if medicine is None:
             return Response(
                 json.dumps({"error": "Medicine not found"}, ensure_ascii=False),
@@ -57,6 +63,7 @@ def get_medical_advice(medicine_id):
             )
 
         medical_advice = medicine.get("medicalAdvice")
+
         if medical_advice is None:
             return Response(
                 json.dumps({"error": "Medical advice not available for this medicine"}, ensure_ascii=False),
@@ -83,6 +90,12 @@ def get_medical_advice(medicine_id):
             status=200
         )
 
+    except json.JSONDecodeError:
+        return Response(
+            json.dumps({"error": "Failed to parse medicine data file"}, ensure_ascii=False),
+            mimetype='application/json; charset=utf-8',
+            status=500
+        )
     except Exception as e:
         logging.exception(f"Unexpected error in get_medical_advice for medicine_id={medicine_id}")
         return Response(
