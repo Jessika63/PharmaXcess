@@ -146,15 +146,15 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                 {/* Button to create a new profile - only shown when currentProfile is the main profile */}
                 {currentProfile?.isMain && (
                     <TouchableOpacity 
-                        style={[styles.card, { marginTop: 20 }]} 
+                        style={[cardStyles.card, { marginTop: 20 }]} 
                         onPress={() => setShowCreateModal(true)}
                     >
                         <LinearGradient 
                             colors={[colors.secondary, colors.primary]} 
-                            style={[styles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                            style={[cardStyles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
                         >
                             <Ionicons name="add-circle-outline" size={24} color={colors.iconPrimary} style={{ marginRight: 10 }} />
-                            <Text style={[styles.cardText, { color: colors.iconPrimary, fontWeight: 'bold' }]}>
+                            <Text style={[cardStyles.cardText, { color: colors.iconPrimary, fontWeight: 'bold' }]}>
                                 Créer un nouveau profil
                             </Text>
                         </LinearGradient>
@@ -207,7 +207,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                     colors={[colors.textSecondary, colors.infoTextSecondary]} 
                                     style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
                                 >
-                                    <Text style={[styles.cancelButtonText, { color: colors.iconPrimary }]}>Annuler</Text>
+                                    <Text style={styles.cancelButtonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
 
@@ -219,7 +219,7 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                     colors={[colors.primary, colors.secondary]} 
                                     style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
                                 >
-                                    <Text style={[styles.createButtonText, { color: colors.iconPrimary }]}>Créer</Text>
+                                    <Text style={styles.createButtonText}>Créer</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
