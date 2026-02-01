@@ -83,7 +83,7 @@ export default function Chat(): React.JSX.Element {
     const [newTicket, setNewTicket] = useState<ChatItem>({
         id: '',
         title: '',
-        name: user?.name,
+        name: user?.name || '',
         question: '',
         date: '',
         messages: [],
@@ -261,7 +261,7 @@ export default function Chat(): React.JSX.Element {
                     const mapped = (messages || []).map((m: any) => ({
                         id: String(m.id || m.message_id || Math.random()),
                         text: m.message || m.message_text || '',
-                        sender: Number(m.auteur_id) === Number(currentProfile.id) ? 'user' : 'support',
+                        sender: Number(m.auteur_id) === Number(currentProfile?.id) ? 'user' : 'support',
                         timestamp: m.date_envoi || m.date || new Date().toLocaleString('fr-FR'),
                         isRead: true
                     }));
@@ -313,7 +313,7 @@ export default function Chat(): React.JSX.Element {
                 const res = await fetch(`${base}/messages/add/${selectedChat.id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ auteur_id: Number(currentProfile.id), message: newMessage.trim() })
+                    body: JSON.stringify({ auteur_id: Number(currentProfile?.id), message: newMessage.trim() })
                 });
 
                 if (res.ok) {
@@ -427,12 +427,11 @@ export default function Chat(): React.JSX.Element {
         const newTicketData: ChatItem = {
             ...newTicket,
             id: Math.random().toString(),
-            name: nameFromProfile,
+            name: nameFromProfile || '',
             date: new Date().toISOString().split('T')[0],
             messages: [initialMessage],
             status: 'open',
             lastActivity: currentDateTime,
-            name: safeCurrentProfile?.name || user?.email,
         };
 
         // If this is a server profile, create discussion on backend
@@ -443,7 +442,7 @@ export default function Chat(): React.JSX.Element {
             try {
                 const base = config.backendUrl.replace(/\/$/, '');
                 const payload = {
-                    utilisateur_id: Number(currentProfile.id),
+                    utilisateur_id: Number(currentProfile?.id),
                     subject: newTicket.title,
                     name: nameFromProfile,
                     question: newTicket.question,
@@ -492,7 +491,7 @@ export default function Chat(): React.JSX.Element {
         setNewTicket({ 
             id: '', 
             title: '', 
-            name: safeCurrentProfile?.name || user?.email,
+            name: safeCurrentProfile?.name || user?.email || '',
             question: '', 
             date: '',
             messages: [],
@@ -582,7 +581,8 @@ export default function Chat(): React.JSX.Element {
     const renderConversation = () => (
         <KeyboardAvoidingView 
             style={styles.conversationContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         >
             {/* Chat Header */}
             <View style={styles.conversationHeader}>
@@ -629,7 +629,9 @@ export default function Chat(): React.JSX.Element {
                     </View>
                 )}
                 style={styles.messagesList}
-                contentContainerStyle={{ padding: 20 }}
+                contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
             />
 
             {/* Message Input or Closed Message */}
@@ -667,7 +669,7 @@ export default function Chat(): React.JSX.Element {
 
     const createDiscussion = async () => {
         console.log('Creating discussion with payload:', {
-            utilisateur_id: Number(currentProfile.id),
+            utilisateur_id: Number(currentProfile?.id),
             subject: newTicket.title,
             name: user?.name,
             question: newTicket.question,
@@ -680,7 +682,7 @@ export default function Chat(): React.JSX.Element {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    utilisateur_id: Number(currentProfile.id),
+                    utilisateur_id: Number(currentProfile?.id),
                     subject: newTicket.title,
                     name: user?.name,
                     question: newTicket.question,
@@ -708,7 +710,7 @@ export default function Chat(): React.JSX.Element {
     const addMessage = async (discussionId: string, message: string) => {
         try {
             const payload = {
-                auteur_id: Number(currentProfile.id),
+                auteur_id: Number(currentProfile?.id),
                 message: message,
             };
 
@@ -729,10 +731,6 @@ export default function Chat(): React.JSX.Element {
         } catch (error) {
             console.error('Error adding message:', error);
         }
-    };
-
-    const navigateToCreateTicket = () => {
-        navigation.navigate('CreateTicket');
     };
 
     return (
