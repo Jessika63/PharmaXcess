@@ -13,66 +13,59 @@ import json
 import re
 from typing import Optional
 
-
 def parse_ocr_date(raw_date: Optional[str]) -> Optional[str]:
     import re
     from datetime import datetime
     from typing import Optional
 
-    print("DEBUG: raw_date =", raw_date, flush=True)
-
     if not raw_date or not isinstance(raw_date, str):
-        print("DEBUG: raw_date invalide", flush=True)
         return None
 
     raw_date = raw_date.strip().lower()
-    print("DEBUG: normalized raw_date =", raw_date, flush=True)
 
     month_map = {
         "jan": 1, "janv": 1, "janvier": 1,
-        "fév": 2, "fev": 2, "février": 2,
+        "fév": 2, "fev": 2, "février": 2, "fevrier": 2,
         "mar": 3, "mars": 3,
         "avr": 4, "avril": 4,
         "mai": 5,
         "jun": 6, "juin": 6,
         "jul": 7, "juil": 7, "juillet": 7,
-        "aoû": 8, "aou": 8, "août": 8,
+        "aoû": 8, "aou": 8, "août": 8, "aout": 8,
         "sep": 9, "sept": 9, "septembre": 9,
         "oct": 10, "octobre": 10,
         "nov": 11, "novembre": 11,
-        "déc": 12, "dec": 12, "décembre": 12
+        "déc": 12, "dec": 12, "décembre": 12, "decembre": 12
     }
 
-    normalized = re.sub(r"[\/\._\|\s]+", "-", raw_date)
-    print("DEBUG: normalized =", normalized, flush=True)
+    normalized = re.sub(r"[\/\._\|\s:]+", "-", raw_date)
+    
+    current_year = datetime.now().year
 
     patterns = [
-        # Numeric
-        (r"(\d{4})-(\d{1,2})-(\d{1,2})", lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3)))),  # YYYY-MM-DD
-        (r"(\d{1,2})-(\d{1,2})-(\d{4})", lambda m: (int(m.group(3)), int(m.group(2)), int(m.group(1)))),  # DD-MM-YYYY
-        # Month names
-        (r"(\d{4})-([a-zéû]+)-(\d{1,2})", lambda m: (int(m.group(1)), month_map.get(m.group(2)), int(m.group(3)))),  # YYYY-MONTH-DD
-        (r"(\d{1,2})-([a-zéû]+)-(\d{4})", lambda m: (int(m.group(3)), month_map.get(m.group(2)), int(m.group(1)))),  # DD-MONTH-YYYY
+        (r"(\d{4})-(\d{1,2})-(\d{1,2})", lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3)))),
+        (r"(\d{1,2})-(\d{1,2})-(\d{2,4})", lambda m: (int(m.group(3)), int(m.group(2)), int(m.group(1)))), 
+        (r"(\d{4})-([a-zéû]+)-(\d{1,2})", lambda m: (int(m.group(1)), month_map.get(m.group(2)), int(m.group(3)))),
+        (r"(\d{1,2})-([a-zéû]+)-(\d{2,4})", lambda m: (int(m.group(3)), month_map.get(m.group(2)), int(m.group(1)))),
+        (r"(\d{1,2})-([a-zéû]+)", lambda m: (current_year, month_map.get(m.group(2)), int(m.group(1)))),
+        (r"(\d{1,2})-(\d{1,2})", lambda m: (current_year, int(m.group(2)), int(m.group(1)))),
     ]
 
     for pattern, extractor in patterns:
-        m = re.match(pattern, normalized)
+        m = re.search(pattern, normalized)
         if m:
             y, mo, d = extractor(m)
-            print(f"DEBUG: matched pattern '{pattern}' -> y={y}, mo={mo}, d={d}", flush=True)
             if not mo:
-                print("DEBUG: mois invalide, skipping", flush=True)
                 continue
+            if y < 100:
+                y += 2000
+                
             try:
                 dt = datetime(y, mo, d)
-                formatted = dt.strftime("%Y-%m-%d")
-                print("DEBUG: formatted date =", formatted, flush=True)
-                return formatted
-            except ValueError as e:
-                print("DEBUG: ValueError:", e, flush=True)
+                return dt.strftime("%Y-%m-%d")
+            except ValueError:
                 continue
 
-    print("DEBUG: fallback, returning None", flush=True)
     return None
 
 
