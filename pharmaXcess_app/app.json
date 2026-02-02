@@ -43,14 +43,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      [
-        "expo-env",
-        {
-          "allowUndefined": true,
-          "verbose": false
-        }
-      ]
-    ]
+    "extra": {
+      "eas": {
+        "projectId": "317896b4-5683-4672-afb1-168b454d5471"
+      }
+    }
   }
 }

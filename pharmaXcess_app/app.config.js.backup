@@ -17,6 +17,7 @@ module.exports = {
       supportsTablet: true
     },
     android: {
+      package: "com.pharmaxcess.app",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
@@ -27,6 +28,9 @@ module.exports = {
       favicon: "./assets/favicon.png"
     },
     extra: {
+      eas: {
+        projectId: "317896b4-5683-4672-afb1-168b454d5471"
+      }
       // Vous pouvez définir des variables ici si besoin
     }
   }
