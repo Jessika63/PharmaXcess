@@ -196,6 +196,8 @@ def create_ordonnance_by_image():
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
             tmp_path = tmp.name
             cv2.imwrite(tmp_path, img)
+        img_bytes = None
+        img = None
     except Exception as e:
         return jsonify({"error": f"Error preparing image for OCR: {str(e)}"}), 500
 
