@@ -200,27 +200,17 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
 
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
-                                style={[styles.cancelButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
+                                style={styles.cancelButton}
                                 onPress={() => setShowCreateModal(false)}
                             >
-                                <LinearGradient 
-                                    colors={[colors.textSecondary, colors.infoTextSecondary]} 
-                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
-                                >
-                                    <Text style={styles.cancelButtonText}>Annuler</Text>
-                                </LinearGradient>
+                                <Text style={styles.cancelButtonText}>Annuler</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                style={[styles.createButton, { backgroundColor: 'transparent', overflow: 'hidden' }]}
+                                style={styles.createButton}
                                 onPress={handleCreateProfile}
                             >
-                                <LinearGradient 
-                                    colors={[colors.primary, colors.secondary]} 
-                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}
-                                >
-                                    <Text style={styles.createButtonText}>Créer</Text>
-                                </LinearGradient>
+                                <Text style={styles.createButtonText}>Créer</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

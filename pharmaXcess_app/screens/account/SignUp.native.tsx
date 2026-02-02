@@ -8,6 +8,8 @@ import {
     Alert,
     ActivityIndicator,
     AccessibilityInfo,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -256,11 +258,16 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
     const passwordStrength = calculatePasswordStrength(formData.password);
 
     return (
-        <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-            accessibilityLabel="Écran d'inscription"
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
+            <ScrollView 
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
+                accessibilityLabel="Écran d'inscription"
+            >
             {/* Header */}
             <Text style={styles.title} accessibilityRole="header">
                 Bienvenue !
@@ -583,6 +590,7 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
                     style={styles.accessibilityAnnouncement}
                     accessibilityLiveRegion="polite"
                 />
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }

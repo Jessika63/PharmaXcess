@@ -9,6 +9,8 @@ import {
     ActivityIndicator,
     AccessibilityInfo,
     findNodeHandle,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -241,12 +243,17 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     }, [navigation]);
 
     return (
-        <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-            accessibilityLabel="Écran de connexion"
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-            <View style={styles.container}>
+            <ScrollView 
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
+                accessibilityLabel="Écran de connexion"
+            >
+                <View style={styles.container}>
                 {/* Header */}
                 <Text style={styles.title} accessibilityRole="header">
                     Heureux de vous revoir !
@@ -453,6 +460,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                     accessibilityLiveRegion="polite"
                 />
             </View>
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Button, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -579,11 +579,7 @@ export default function Chat(): React.JSX.Element {
 
     // Render conversation view
     const renderConversation = () => (
-        <KeyboardAvoidingView 
-            style={styles.conversationContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-        >
+        <View style={{ flex: 1 }}>
             {/* Chat Header */}
             <View style={styles.conversationHeader}>
                 <TouchableOpacity 
@@ -600,71 +596,77 @@ export default function Chat(): React.JSX.Element {
                 </View>
             </View>
 
-            {/* Messages List */}
-            <FlatList
-                data={selectedChat?.messages || []}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={[
-                        styles.messageContainer,
-                        item.sender === 'user' ? styles.userMessage : styles.supportMessage
-                    ]}>
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            >
+                {/* Messages List */}
+                <FlatList
+                    data={selectedChat?.messages || []}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
                         <View style={[
-                            styles.messageBubble,
-                            item.sender === 'user' ? styles.userBubble : styles.supportBubble
+                            styles.messageContainer,
+                            item.sender === 'user' ? styles.userMessage : styles.supportMessage
                         ]}>
-                            <Text style={[
-                                styles.messageText,
-                                item.sender === 'user' ? styles.userText : styles.supportText
+                            <View style={[
+                                styles.messageBubble,
+                                item.sender === 'user' ? styles.userBubble : styles.supportBubble
                             ]}>
-                                {item.text}
-                            </Text>
-                            <Text style={[
-                                styles.messageTime,
-                                item.sender === 'user' ? styles.userTime : styles.supportTime
-                            ]}>
-                                {item.timestamp}
-                            </Text>
+                                <Text style={[
+                                    styles.messageText,
+                                    item.sender === 'user' ? styles.userText : styles.supportText
+                                ]}>
+                                    {item.text}
+                                </Text>
+                                <Text style={[
+                                    styles.messageTime,
+                                    item.sender === 'user' ? styles.userTime : styles.supportTime
+                                ]}>
+                                    {item.timestamp}
+                                </Text>
+                            </View>
                         </View>
+                    )}
+                    style={styles.messagesList}
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                />
+
+                {/* Message Input or Closed Message */}
+                {selectedChat?.status === 'closed' ? (
+                    <View style={[styles.messageInputContainer, { justifyContent: 'center', alignItems: 'center', flexDirection: 'column', paddingVertical: 20 }]}>
+                        <Ionicons name="lock-closed" size={32} color={colors.infoTextSecondary} style={{ marginBottom: 10 }} />
+                        <Text style={[styles.messageText, { textAlign: 'center', marginBottom: 8, color: colors.iconPrimary }]}>Cette discussion est fermée</Text>
+                        <Text style={[styles.messageText, { textAlign: 'center', color: colors.iconPrimary }]}>Ouvrir un nouveau ticket</Text>
+                    </View>
+                ) : (
+                    <View style={styles.messageInputContainer}>
+                        <TextInput
+                            style={styles.messageInput}
+                            placeholder="Tapez votre message..."
+                            value={newMessage}
+                            onChangeText={setNewMessage}
+                            multiline
+                            maxLength={500}
+                        />
+                        <TouchableOpacity 
+                            style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
+                            onPress={handleSendMessage}
+                            disabled={!newMessage.trim()}
+                        >
+                            <Ionicons 
+                                name="send" 
+                                size={20} 
+                                color={newMessage.trim() ? colors.iconPrimary : colors.inputBorder} 
+                            />
+                        </TouchableOpacity>
                     </View>
                 )}
-                style={styles.messagesList}
-                contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-            />
-
-            {/* Message Input or Closed Message */}
-            {selectedChat?.status === 'closed' ? (
-                <View style={[styles.messageInputContainer, { justifyContent: 'center', alignItems: 'center', flexDirection: 'column', paddingVertical: 20 }]}>
-                    <Ionicons name="lock-closed" size={32} color={colors.infoTextSecondary} style={{ marginBottom: 10 }} />
-                    <Text style={[styles.messageText, { textAlign: 'center', marginBottom: 8, color: colors.iconPrimary }]}>Cette discussion est fermée</Text>
-                    <Text style={[styles.messageText, { textAlign: 'center', color: colors.iconPrimary }]}>Ouvrir un nouveau ticket</Text>
-                </View>
-            ) : (
-                <View style={styles.messageInputContainer}>
-                    <TextInput
-                        style={styles.messageInput}
-                        placeholder="Tapez votre message..."
-                        value={newMessage}
-                        onChangeText={setNewMessage}
-                        multiline
-                        maxLength={500}
-                    />
-                    <TouchableOpacity 
-                        style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
-                        onPress={handleSendMessage}
-                        disabled={!newMessage.trim()}
-                    >
-                        <Ionicons 
-                            name="send" 
-                            size={20} 
-                            color={newMessage.trim() ? colors.iconPrimary : colors.inputBorder} 
-                        />
-                    </TouchableOpacity>
-                </View>
-            )}
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </View>
     );
 
     const createDiscussion = async () => {
@@ -738,35 +740,48 @@ export default function Chat(): React.JSX.Element {
             {selectedChat ? renderConversation() : renderChatList()}
 
             <Modal visible={isModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Créer un ticket</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Sujet"
-                        value={newTicket.title}
-                        onChangeText={(text) => setNewTicket({ ...newTicket, title: text })}
-                    />
-                    {/* Name removed: we save profile name/email automatically in backend. */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Votre question"
-                        value={newTicket.question}
-                        onChangeText={(text) => setNewTicket({ ...newTicket, question: text })}
-                    />
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleAddTicket}>
-                            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                                <Text style={styles.saveButtonText}>Confirmer</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
-                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
-                                <Text style={styles.saveButtonText}>Annuler</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                <KeyboardAvoidingView 
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                >
+                    <ScrollView 
+                        contentContainerStyle={{ flexGrow: 1 }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Créer un ticket</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Sujet"
+                                value={newTicket.title}
+                                onChangeText={(text) => setNewTicket({ ...newTicket, title: text })}
+                            />
+                            {/* Name removed: we save profile name/email automatically in backend. */}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Votre question"
+                                value={newTicket.question}
+                                onChangeText={(text) => setNewTicket({ ...newTicket, question: text })}
+                                multiline
+                                numberOfLines={4}
+                            />
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.saveButton} onPress={handleAddTicket}>
+                                    <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                                        <Text style={styles.saveButtonText}>Confirmer</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
+                                    <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
+                                        <Text style={styles.saveButtonText}>Annuler</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );
