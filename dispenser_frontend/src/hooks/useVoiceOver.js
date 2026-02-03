@@ -19,8 +19,6 @@ export const useVoiceOver = () => {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           voicesLoadedRef.current = true;
-          console.log('Voices loaded:', voices.length);
-          console.log('Available French voices:', voices.filter(v => v.lang.includes('fr')).map(v => v.name));
         }
       };
 
@@ -38,11 +36,8 @@ export const useVoiceOver = () => {
 
   // Function to speak a text
   const speak = useCallback((text, options = {}) => {
-    console.log('speak() called with:', { text, isVoiceOverEnabled });
-    
     // Do nothing if VoiceOver is disabled
     if (!isVoiceOverEnabled) {
-      console.log('VoiceOver is disabled, not speaking');
       return;
     }
 
@@ -56,7 +51,6 @@ export const useVoiceOver = () => {
     const performSpeak = (retryCount = 0) => {
       // Force reload voices
       const voices = window.speechSynthesis.getVoices();
-      console.log(`Attempt ${retryCount + 1}: voices available:`, voices.length);
 
       // If no voices after 5 attempts, give up with a message
       if (voices.length === 0 && retryCount >= 5) {
@@ -68,7 +62,6 @@ export const useVoiceOver = () => {
       // If no voices, retry after a delay
       if (voices.length === 0) {
         const delay = 200 * (retryCount + 1); // 200ms, 400ms, 600ms, etc.
-        console.log(`No voices yet, retrying in ${delay}ms...`);
         setTimeout(() => performSpeak(retryCount + 1), delay);
         return;
       }
@@ -77,7 +70,6 @@ export const useVoiceOver = () => {
       window.speechSynthesis.cancel();
 
       if (!text || text.trim() === '') {
-        console.log('Empty text, not speaking');
         return;
       }
 
@@ -92,39 +84,26 @@ export const useVoiceOver = () => {
 
       // Select a French voice if available
       const frenchVoices = voices.filter(voice => voice.lang.includes('fr'));
-      console.log('Available French voices:', frenchVoices.map(v => v.name));
       
       if (frenchVoices.length > 0) {
         utterance.voice = frenchVoices[0];
-        console.log('Using French voice:', frenchVoices[0].name);
       } else {
         // Use the first available voice if no French voice
         utterance.voice = voices[0];
-        console.log('No French voice, using:', voices[0].name);
       }
-
-      console.log('Utterance created:', { 
-        lang: utterance.lang, 
-        rate: utterance.rate, 
-        volume: utterance.volume,
-        voice: utterance.voice?.name 
-      });
 
       // Optional event handlers
       utterance.onstart = () => {
-        console.log('✅ Speech started successfully!');
         isPlayingRef.current = true;
         options.onStart?.();
       };
 
       utterance.onend = () => {
-        console.log('Speech ended');
         isPlayingRef.current = false;
         options.onEnd?.();
       };
 
       utterance.onerror = (event) => {
-        console.error('❌ Erreur de synthèse vocale:', event);
         isPlayingRef.current = false;
         options.onError?.(event);
       };
@@ -132,12 +111,12 @@ export const useVoiceOver = () => {
       utteranceRef.current = utterance;
       
       // Start speaking
-      console.log('Calling speechSynthesis.speak()');
       window.speechSynthesis.speak(utterance);
       
       // Check status after a short delay
       setTimeout(() => {
-        console.log('Status check - speaking:', window.speechSynthesis.speaking, 'pending:', window.speechSynthesis.pending);
+        void window.speechSynthesis.speaking;
+        void window.speechSynthesis.pending;
       }, 100);
     };
 
