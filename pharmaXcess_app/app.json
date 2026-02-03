@@ -37,8 +37,7 @@
         "ACCESS_NETWORK_STATE"
       ],
       "softwareKeyboardLayoutMode": "resize",
-      "usesCleartextTraffic": true,
-      "networkSecurityConfig": "./network_security_config.xml"
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
