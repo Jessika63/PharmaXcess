@@ -2,485 +2,713 @@
     "medicine": [
         {
             "id": 1,
-            "label": "Dafalgan",
-            "category": "painKiller",
-            "size": 2,
+            "name": "Dafalgan 500 mg",
+            "category": "Anti-douleur",
             "price": 2.18,
-            "medicalAdvice": {
-                "dosage": "1 à 2 comprimés toutes les 6 heures",
-                "maxPerDay": "3g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool",
-                    "Attention en cas de maladie du foie"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique sévère"
-                ]
-            }
+            "description": "Dafalgan est un médicament antidouleur à base de paracétamol, utilisé pour soulager les douleurs légères à modérées et/ou réduire la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg par comprimé",
+                "presentation": "Boîte de 16 comprimés",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "Adultes : 1 comprimé toutes les 6 heures",
+                "Maximum 4 comprimés par jour",
+                "À prendre avec un verre d'eau",
+                "Peut être pris pendant ou en dehors des repas"
+            ],
+            "warnings": [
+                "Ne pas dépasser la dose recommandée",
+                "Déconseillé en cas d'allergie au paracétamol",
+                "Attention en cas de maladie du foie",
+                "Tenir hors de portée des enfants"
+            ]
         },
         {
             "id": 2,
-            "label": "Gaviscon",
-            "category": "antiAcid",
-            "size": 0,
+            "name": "Gaviscon suspension buvable",
+            "category": "Anti-acide",
             "price": 3.04,
-            "medicalAdvice": {
-                "dosage": "10 à 20 ml après les repas et au coucher",
-                "maxPerDay": "80 ml par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’allergie à l’un des composants"
-                ],
-                "contraIndications": []
-            }
+            "description": "Gaviscon est utilisé pour soulager les brûlures d’estomac et les reflux gastro-œsophagiens.",
+            "productInfo": {
+                "form": "suspension buvable",
+                "dosage": "Alginate de sodium et bicarbonate",
+                "presentation": "Flacon de 150 ml",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "10 à 20 ml après les repas",
+                "Peut être pris au coucher",
+                "Agiter le flacon avant utilisation"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’allergie à l’un des composants",
+                "Contient du sodium"
+            ]
         },
         {
             "id": 3,
-            "label": "Nurofen",
-            "category": "antiInflammatory",
-            "size": 1,
+            "name": "Nurofen 200 mg",
+            "category": "Anti-inflammatoire",
             "price": 3.29,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 6 à 8 heures",
-                "maxPerDay": "1200 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’asthme ou d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "Nurofen est un anti-inflammatoire non stéroïdien utilisé pour traiter les douleurs et la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "200 mg par comprimé",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 6 à 8 heures",
+                "À prendre de préférence pendant un repas",
+                "Maximum 1200 mg par jour"
+            ],
+            "warnings": [
+                "Déconseillé en cas d’ulcère gastrique",
+                "Ne pas utiliser en cas d’asthme sans avis médical",
+                "Déconseillé en cas d’insuffisance rénale sévère"
+            ]
         },
         {
             "id": 4,
-            "label": "Physiomer",
-            "category": "hygiene",
-            "size": 2,
+            "name": "Physiomer spray nasal",
+            "category": "Hygiène nasale",
             "price": 10.38,
-            "medicalAdvice": {
-                "dosage": "1 à 2 pulvérisations dans chaque narine, 2 à 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Physiomer est une solution d’eau de mer utilisée pour le nettoyage et l’hygiène des fosses nasales.",
+            "productInfo": {
+                "form": "spray nasal",
+                "dosage": "Eau de mer 100 % naturelle",
+                "presentation": "Spray 135 ml",
+                "laboratory": "Laboratoire de la Mer"
+            },
+            "usageAdvice": [
+                "1 à 2 pulvérisations dans chaque narine",
+                "2 à 3 fois par jour",
+                "Convient à un usage quotidien"
+            ],
+            "warnings": [
+                "Nettoyer l’embout après chaque utilisation"
+            ]
         },
         {
             "id": 5,
-            "label": "Zyrtec",
-            "category": "antiHistamine",
-            "size": 0,
+            "name": "Zyrtec 10 mg",
+            "category": "Antihistaminique",
             "price": 3.40,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [
-                    "Peut provoquer une somnolence"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "Zyrtec est utilisé dans le traitement des symptômes des allergies comme le rhume des foins.",
+            "productInfo": {
+                "form": "comprimé pelliculé",
+                "dosage": "10 mg par comprimé",
+                "presentation": "Boîte de 7 comprimés",
+                "laboratory": "UCB Pharma"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour",
+                "De préférence le soir",
+                "À avaler avec un verre d’eau"
+            ],
+            "warnings": [
+                "Peut provoquer une somnolence",
+                "Prudence en cas d’insuffisance rénale"
+            ]
         },
         {
             "id": 6,
-            "label": "Coryzalia",
-            "category": "homeopathy",
-            "size": 0,
+            "name": "Coryzalia",
+            "category": "Homéopathie",
             "price": 5.57,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les heures, puis espacer selon amélioration",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Coryzalia est un médicament homéopathique utilisé pour soulager les symptômes du rhume.",
+            "productInfo": {
+                "form": "comprimé sublingual",
+                "dosage": "Complexe homéopathique",
+                "presentation": "Boîte de 40 comprimés",
+                "laboratory": "Boiron"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les heures au début",
+                "Espacer les prises selon amélioration",
+                "Laisser fondre sous la langue"
+            ],
+            "warnings": [
+                "Contient du lactose"
+            ]
         },
         {
             "id": 7,
-            "label": "Ibuprofene",
-            "category": "antiInflammatory",
-            "size": 1,
+            "name": "Ibuprofène 200 mg",
+            "category": "Anti-inflammatoire",
             "price": 3.18,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 6 à 8 heures",
-                "maxPerDay": "1200 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’asthme ou d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "L’ibuprofène est utilisé pour soulager la douleur, la fièvre et l’inflammation.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "200 mg par comprimé",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Biogaran"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 6 à 8 heures",
+                "À prendre pendant un repas",
+                "Maximum 1200 mg par jour"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’ulcère gastrique",
+                "Déconseillé en cas d’insuffisance rénale sévère"
+            ]
         },
         {
             "id": 8,
-            "label": "Doliprane",
-            "category": "painKiller",
-            "size": 2,
+            "name": "Doliprane 500 mg",
+            "category": "Anti-douleur",
             "price": 2.18,
-            "medicalAdvice": {
-                "dosage": "1 à 2 comprimés toutes les 6 heures",
-                "maxPerDay": "4g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique"
-                ]
-            }
+            "description": "Doliprane est un médicament à base de paracétamol utilisé contre la douleur et la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg par comprimé",
+                "presentation": "Boîte de 16 comprimés",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "1 à 2 comprimés toutes les 6 heures",
+                "Maximum 4 g par jour",
+                "À prendre avec un verre d’eau"
+            ],
+            "warnings": [
+                "Ne pas associer avec l’alcool",
+                "Ne pas cumuler avec d’autres médicaments contenant du paracétamol"
+            ]
         },
         {
             "id": 9,
-            "label": "L52",
-            "category": "homeopathy",
-            "size": 3,
+            "name": "L52",
+            "category": "Homéopathie",
             "price": 6.99,
-            "medicalAdvice": {
-                "dosage": "1 comprimé 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "L52 est un médicament homéopathique traditionnellement utilisé en cas d’états anxieux légers.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "Complexe homéopathique",
+                "presentation": "Boîte de 60 comprimés",
+                "laboratory": "Lehning"
+            },
+            "usageAdvice": [
+                "1 comprimé 3 fois par jour",
+                "À laisser fondre sous la langue"
+            ],
+            "warnings": [
+                "Contient du lactose"
+            ]
         },
         {
             "id": 10,
-            "label": "Toplexil",
-            "category": "antiHistamine",
-            "size": 1,
+            "name": "Toplexil",
+            "category": "Antitussif / Antihistaminique",
             "price": 6.00,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [
-                    "Peut provoquer une somnolence"
-                ],
-                "contraIndications": []
-            }
+            "description": "Toplexil est utilisé pour calmer la toux sèche, notamment d’origine allergique.",
+            "productInfo": {
+                "form": "sirop",
+                "dosage": "Oxomémazine",
+                "presentation": "Flacon de 150 ml",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "1 prise le soir",
+                "Utiliser le gobelet doseur",
+                "Réservé à l’adulte"
+            ],
+            "warnings": [
+                "Peut provoquer une forte somnolence",
+                "Éviter la conduite de véhicules"
+            ]
         },
         {
             "id": 11,
-            "label": "Vitascorbol",
-            "category": "foodSupplement",
-            "size": 3,
+            "name": "Vitascorbol 500 mg",
+            "category": "Complément alimentaire",
             "price": 2.99,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Vitascorbol est un complément alimentaire à base de vitamine C utilisé pour réduire la fatigue et soutenir le système immunitaire.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg de vitamine C par comprimé",
+                "presentation": "Tube de 20 comprimés",
+                "laboratory": "Bayer"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour",
+                "À avaler avec un verre d’eau",
+                "De préférence le matin"
+            ],
+            "warnings": [
+                "Ne pas dépasser la dose journalière recommandée",
+                "À utiliser dans le cadre d’une alimentation équilibrée"
+            ]
         },
         {
             "id": 12,
-            "label": "Hexaspray",
-            "category": "antiSeptic",
-            "size": 3,
+            "name": "Hexaspray",
+            "category": "Antiseptique buccal",
             "price": 4.99,
-            "medicalAdvice": {
-                "dosage": "1 pulvérisation 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Hexaspray est un antiseptique local utilisé pour soulager les maux de gorge et les infections buccales légères.",
+            "productInfo": {
+                "form": "spray buccal",
+                "dosage": "Biclotymol",
+                "presentation": "Flacon de 30 ml",
+                "laboratory": "Bouchara-Recordati"
+            },
+            "usageAdvice": [
+                "1 pulvérisation dans la bouche",
+                "3 fois par jour",
+                "Éviter de manger ou boire juste après l’application"
+            ],
+            "warnings": [
+                "Usage prolongé déconseillé",
+                "Ne pas utiliser chez l’enfant sans avis médical"
+            ]
         },
         {
             "id": 13,
-            "label": "Voltarene",
-            "category": "antiInflammatory",
-            "size": 0,
+            "name": "Voltarène 50 mg",
+            "category": "Anti-inflammatoire",
             "price": 4.68,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 12 heures",
-                "maxPerDay": "100 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale"
-                ]
-            }
+            "description": "Voltarène est un anti-inflammatoire non stéroïdien utilisé pour traiter les douleurs et inflammations.",
+            "productInfo": {
+                "form": "comprimé enrobé",
+                "dosage": "50 mg de diclofénac",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Novartis"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 12 heures",
+                "À prendre au cours d’un repas",
+                "Maximum 100 mg par jour"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’ulcère gastrique",
+                "Déconseillé en cas d’insuffisance rénale",
+                "Ne pas associer avec d’autres AINS"
+            ]
         },
         {
             "id": 14,
-            "label": "Smecta",
-            "category": "antiDiarrheal",
-            "size": 1,
+            "name": "Smecta",
+            "category": "Antidiarrhéique",
             "price": 3.19,
-            "medicalAdvice": {
-                "dosage": "1 sachet 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Smecta est utilisé pour le traitement symptomatique des diarrhées aiguës.",
+            "productInfo": {
+                "form": "poudre pour suspension buvable",
+                "dosage": "3 g de diosmectite par sachet",
+                "presentation": "Boîte de 12 sachets",
+                "laboratory": "Ipsen"
+            },
+            "usageAdvice": [
+                "1 sachet 3 fois par jour",
+                "À diluer dans un demi-verre d’eau",
+                "Espacer des autres médicaments"
+            ],
+            "warnings": [
+                "Peut provoquer une constipation passagère"
+            ]
         },
         {
             "id": 15,
-            "label": "Synthol",
-            "category": "painKiller",
-            "size": 2,
+            "name": "Synthol",
+            "category": "Antalgique local",
             "price": 7.60,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 4 à 6 heures",
-                "maxPerDay": "3g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique"
-                ]
-            }
+            "description": "Synthol est une solution à usage local utilisée pour soulager les douleurs musculaires et les coups.",
+            "productInfo": {
+                "form": "solution pour application cutanée",
+                "dosage": "Lévomenthol, résorcinol",
+                "presentation": "Flacon de 225 ml",
+                "laboratory": "GSK"
+            },
+            "usageAdvice": [
+                "Appliquer localement 1 à 2 fois par jour",
+                "Ne pas avaler",
+                "Usage externe uniquement"
+            ],
+            "warnings": [
+                "Ne pas appliquer sur une peau lésée",
+                "Éviter le contact avec les yeux"
+            ]
         },
         {
             "id": 16,
-            "label": "Strepsil",
-            "category": "antiSeptic",
-            "size": 3,
+            "name": "Strepsils",
+            "category": "Antiseptique buccal",
             "price": 7.71,
-            "medicalAdvice": {
-                "dosage": "1 pastille toutes les 2 à 3 heures",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Strepsils est utilisé pour soulager les maux de gorge et les irritations de la bouche.",
+            "productInfo": {
+                "form": "pastille à sucer",
+                "dosage": "Amylmétacrésol et alcool dichlorobenzylique",
+                "presentation": "Boîte de 24 pastilles",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "1 pastille toutes les 2 à 3 heures",
+                "Laisser fondre lentement dans la bouche"
+            ],
+            "warnings": [
+                "Ne pas dépasser 8 pastilles par jour",
+                "Déconseillé chez l’enfant de moins de 6 ans"
+            ]
         },
         {
             "id": 17,
-            "label": "Dafalgan 2",
-            "category": "painKiller",
-            "size": 0,
+            "name": "Dafalgan 500 mg",
+            "category": "Anti-douleur",
             "price": 2.18,
-            "medicalAdvice": {
-                "dosage": "1 à 2 comprimés toutes les 6 heures",
-                "maxPerDay": "3g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool",
-                    "Attention en cas de maladie du foie"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique sévère"
-                ]
-            }
+            "description": "Médicament à base de paracétamol utilisé contre la douleur et la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg par comprimé",
+                "presentation": "Boîte de 16 comprimés",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "1 à 2 comprimés toutes les 6 heures",
+                "Maximum 3 g par jour",
+                "À prendre avec un verre d’eau"
+            ],
+            "warnings": [
+                "Ne pas associer avec l’alcool",
+                "Attention en cas de maladie du foie"
+            ]
         },
         {
             "id": 18,
-            "label": "Gaviscon 2",
-            "category": "antiAcid",
-            "size": 1,
+            "name": "Gaviscon suspension buvable",
+            "category": "Anti-acide",
             "price": 3.04,
-            "medicalAdvice": {
-                "dosage": "10 à 20 ml après les repas et au coucher",
-                "maxPerDay": "80 ml par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’allergie à l’un des composants"
-                ],
-                "contraIndications": []
-            }
+            "description": "Traitement symptomatique des brûlures d’estomac et des reflux acides.",
+            "productInfo": {
+                "form": "suspension buvable",
+                "dosage": "Alginate de sodium",
+                "presentation": "Flacon de 150 ml",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "10 à 20 ml après les repas",
+                "Peut être pris au coucher"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’allergie à l’un des composants"
+            ]
         },
         {
             "id": 19,
-            "label": "Nurofen 2",
-            "category": "painKiller",
-            "size": 2,
+            "name": "Nurofen 200 mg",
+            "category": "Anti-douleur / Anti-inflammatoire",
             "price": 3.29,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 6 à 8 heures",
-                "maxPerDay": "1200 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’asthme ou d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "Nurofen est utilisé pour soulager la douleur, l’inflammation et la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "200 mg d’ibuprofène",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 6 à 8 heures",
+                "Maximum 1200 mg par jour",
+                "À prendre pendant un repas"
+            ],
+            "warnings": [
+                "Déconseillé en cas d’asthme",
+                "Ne pas utiliser en cas d’ulcère gastrique",
+                "Déconseillé en cas d’insuffisance rénale sévère"
+            ]
         },
         {
             "id": 20,
-            "label": "Physiomer 2",
-            "category": "hygiene",
-            "size": 3,
+            "name": "Physiomer spray nasal",
+            "category": "Hygiène nasale",
             "price": 10.38,
-            "medicalAdvice": {
-                "dosage": "1 à 2 pulvérisations dans chaque narine, 2 à 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Solution d’eau de mer utilisée pour le lavage et l’hygiène quotidienne du nez.",
+            "productInfo": {
+                "form": "spray nasal",
+                "dosage": "Eau de mer isotonique",
+                "presentation": "Spray 135 ml",
+                "laboratory": "Laboratoire de la Mer"
+            },
+            "usageAdvice": [
+                "1 à 2 pulvérisations par narine",
+                "2 à 3 fois par jour"
+            ],
+            "warnings": [
+                "Nettoyer l’embout après chaque utilisation"
+            ]
         },
         {
             "id": 21,
-            "label": "Zyrtec 2",
-            "category": "antiHistamine",
-            "size": 0,
+            "name": "Zyrtec 10 mg",
+            "category": "Antihistaminique",
             "price": 3.40,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [
-                    "Peut provoquer une somnolence"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "Zyrtec est utilisé pour soulager les symptômes des allergies comme les éternuements, démangeaisons et rhinites allergiques.",
+            "productInfo": {
+                "form": "comprimé pelliculé",
+                "dosage": "10 mg de cétirizine",
+                "presentation": "Boîte de 7 comprimés",
+                "laboratory": "UCB Pharma"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour",
+                "De préférence le soir",
+                "À avaler avec un verre d’eau"
+            ],
+            "warnings": [
+                "Peut provoquer une somnolence",
+                "Prudence en cas d’insuffisance rénale sévère"
+            ]
         },
         {
             "id": 22,
-            "label": "Coryzalia 2",
-            "category": "homeopathy",
-            "size": 1,
+            "name": "Coryzalia",
+            "category": "Homéopathie",
             "price": 5.57,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les heures, puis espacer selon amélioration",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Médicament homéopathique utilisé pour soulager les symptômes du rhume.",
+            "productInfo": {
+                "form": "comprimé sublingual",
+                "dosage": "Complexe homéopathique",
+                "presentation": "Boîte de 40 comprimés",
+                "laboratory": "Boiron"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les heures au début",
+                "Espacer les prises selon amélioration",
+                "Laisser fondre sous la langue"
+            ],
+            "warnings": [
+                "Contient du lactose"
+            ]
         },
         {
             "id": 23,
-            "label": "Ibuprofen 2",
-            "category": "antiInflammatory",
-            "size": 2,
+            "name": "Ibuprofène 200 mg",
+            "category": "Anti-inflammatoire",
             "price": 3.18,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 6 à 8 heures",
-                "maxPerDay": "1200 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’asthme ou d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale sévère"
-                ]
-            }
+            "description": "Ibuprofène utilisé pour le traitement des douleurs, de la fièvre et des inflammations.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "200 mg par comprimé",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Biogaran"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 6 à 8 heures",
+                "À prendre au cours d’un repas",
+                "Maximum 1200 mg par jour"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’ulcère gastrique",
+                "Déconseillé chez l’asthmatique",
+                "Déconseillé en cas d’insuffisance rénale sévère"
+            ]
         },
         {
             "id": 24,
-            "label": "Doliprane 2",
-            "category": "painKiller",
-            "size": 3,
+            "name": "Doliprane 500 mg",
+            "category": "Anti-douleur",
             "price": 2.18,
-            "medicalAdvice": {
-                "dosage": "1 à 2 comprimés toutes les 6 heures",
-                "maxPerDay": "4g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique"
-                ]
-            }
+            "description": "Médicament à base de paracétamol indiqué dans le traitement de la douleur et de la fièvre.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg par comprimé",
+                "presentation": "Boîte de 16 comprimés",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "1 à 2 comprimés toutes les 6 heures",
+                "Maximum 4 g par jour",
+                "À prendre avec un verre d’eau"
+            ],
+            "warnings": [
+                "Ne pas associer avec l’alcool",
+                "Déconseillé en cas d’insuffisance hépatique"
+            ]
         },
         {
             "id": 25,
-            "label": "L52 2",
-            "category": "homeopathy",
-            "size": 0,
+            "name": "L52",
+            "category": "Homéopathie",
             "price": 6.99,
-            "medicalAdvice": {
-                "dosage": "1 comprimé 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "L52 est un médicament homéopathique utilisé en cas de stress et troubles mineurs du sommeil.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "Complexe homéopathique",
+                "presentation": "Boîte de 60 comprimés",
+                "laboratory": "Lehning"
+            },
+            "usageAdvice": [
+                "1 comprimé 3 fois par jour",
+                "À laisser fondre sous la langue"
+            ],
+            "warnings": [
+                "Contient du lactose"
+            ]
         },
         {
             "id": 26,
-            "label": "Toplexil 2",
-            "category": "antiHistamine",
-            "size": 1,
+            "name": "Toplexil",
+            "category": "Antitussif / Antihistaminique",
             "price": 6.00,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [
-                    "Peut provoquer une somnolence"
-                ],
-                "contraIndications": []
-            }
+            "description": "Toplexil est utilisé pour calmer la toux sèche, notamment d’origine allergique.",
+            "productInfo": {
+                "form": "sirop",
+                "dosage": "Oxomémazine",
+                "presentation": "Flacon de 150 ml",
+                "laboratory": "Sanofi"
+            },
+            "usageAdvice": [
+                "1 prise le soir",
+                "Utiliser le gobelet doseur",
+                "Réservé à l’adulte"
+            ],
+            "warnings": [
+                "Peut provoquer une somnolence importante",
+                "Éviter la conduite et l’alcool"
+            ]
         },
         {
             "id": 27,
-            "label": "Vitascorbol 2",
-            "category": "foodSupplement",
-            "size": 2,
+            "name": "Vitascorbol 500 mg",
+            "category": "Complément alimentaire",
             "price": 2.99,
-            "medicalAdvice": {
-                "dosage": "1 comprimé par jour",
-                "maxPerDay": "1 comprimé par jour",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Complément alimentaire à base de vitamine C contribuant à réduire la fatigue.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "500 mg de vitamine C",
+                "presentation": "Tube de 20 comprimés",
+                "laboratory": "Bayer"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour",
+                "À avaler avec un verre d’eau",
+                "De préférence le matin"
+            ],
+            "warnings": [
+                "Ne pas dépasser la dose journalière recommandée"
+            ]
         },
         {
             "id": 28,
-            "label": "Hexaspray 2",
-            "category": "antiSeptic",
-            "size": 3,
+            "name": "Hexaspray",
+            "category": "Antiseptique buccal",
             "price": 4.99,
-            "medicalAdvice": {
-                "dosage": "1 pulvérisation 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Antiseptique local utilisé pour soulager les maux de gorge.",
+            "productInfo": {
+                "form": "spray buccal",
+                "dosage": "Biclotymol",
+                "presentation": "Flacon de 30 ml",
+                "laboratory": "Bouchara-Recordati"
+            },
+            "usageAdvice": [
+                "1 pulvérisation 3 fois par jour",
+                "Éviter de manger ou boire juste après"
+            ],
+            "warnings": [
+                "Usage prolongé déconseillé"
+            ]
         },
         {
             "id": 29,
-            "label": "Voltaren 2",
-            "category": "antiInflammatory",
-            "size": 0,
+            "name": "Voltarène 50 mg",
+            "category": "Anti-inflammatoire",
             "price": 4.68,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 12 heures",
-                "maxPerDay": "100 mg par jour",
-                "warnings": [
-                    "Ne pas utiliser en cas d’ulcère gastrique"
-                ],
-                "contraIndications": [
-                    "Insuffisance rénale"
-                ]
-            }
+            "description": "Voltarène est un anti-inflammatoire utilisé pour traiter les douleurs et inflammations.",
+            "productInfo": {
+                "form": "comprimé enrobé",
+                "dosage": "50 mg de diclofénac",
+                "presentation": "Boîte de 20 comprimés",
+                "laboratory": "Novartis"
+            },
+            "usageAdvice": [
+                "1 comprimé toutes les 12 heures",
+                "À prendre pendant un repas",
+                "Maximum 100 mg par jour"
+            ],
+            "warnings": [
+                "Ne pas utiliser en cas d’ulcère gastrique",
+                "Déconseillé en cas d’insuffisance rénale"
+            ]
         },
         {
             "id": 30,
-            "label": "Smecta 2",
-            "category": "antiDiarrheal",
-            "size": 1,
+            "name": "Smecta",
+            "category": "Antidiarrhéique",
             "price": 3.19,
-            "medicalAdvice": {
-                "dosage": "1 sachet 3 fois par jour",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Traitement symptomatique des diarrhées aiguës.",
+            "productInfo": {
+                "form": "poudre pour suspension buvable",
+                "dosage": "3 g de diosmectite par sachet",
+                "presentation": "Boîte de 12 sachets",
+                "laboratory": "Ipsen"
+            },
+            "usageAdvice": [
+                "1 sachet 3 fois par jour",
+                "À diluer dans un demi-verre d’eau"
+            ],
+            "warnings": [
+                "Espacer la prise des autres médicaments"
+            ]
         },
         {
             "id": 31,
-            "label": "Synthol 2",
-            "category": "painKiller",
-            "size": 2,
+            "name": "Synthol",
+            "category": "Antalgique local",
             "price": 7.60,
-            "medicalAdvice": {
-                "dosage": "1 comprimé toutes les 4 à 6 heures",
-                "maxPerDay": "3g par jour",
-                "warnings": [
-                    "Ne pas associer avec l’alcool"
-                ],
-                "contraIndications": [
-                    "Insuffisance hépatique"
-                ]
-            }
+            "description": "Solution pour application cutanée utilisée pour soulager les douleurs musculaires.",
+            "productInfo": {
+                "form": "solution cutanée",
+                "dosage": "Lévomenthol et résorcinol",
+                "presentation": "Flacon de 225 ml",
+                "laboratory": "GSK"
+            },
+            "usageAdvice": [
+                "Appliquer localement 1 à 2 fois par jour",
+                "Usage externe uniquement"
+            ],
+            "warnings": [
+                "Ne pas appliquer sur une peau lésée",
+                "Éviter le contact avec les yeux"
+            ]
         },
         {
             "id": 32,
-            "label": "Strepsil 2",
-            "category": "antiSeptic",
-            "size": 3,
+            "name": "Strepsils",
+            "category": "Antiseptique buccal",
             "price": 7.71,
-            "medicalAdvice": {
-                "dosage": "1 pastille toutes les 2 à 3 heures",
-                "maxPerDay": "Pas de limite stricte",
-                "warnings": [],
-                "contraIndications": []
-            }
+            "description": "Strepsils soulage les maux de gorge et les irritations buccales.",
+            "productInfo": {
+                "form": "pastille à sucer",
+                "dosage": "Amylmétacrésol et alcool dichlorobenzylique",
+                "presentation": "Boîte de 24 pastilles",
+                "laboratory": "Reckitt Benckiser"
+            },
+            "usageAdvice": [
+                "1 pastille toutes les 2 à 3 heures",
+                "Laisser fondre lentement dans la bouche"
+            ],
+            "warnings": [
+                "Ne pas dépasser 8 pastilles par jour"
+            ]
+        },
+        {
+            "id": 33,
+            "name": "Test Medicine",
+            "category": "Test",
+            "price": 0.50,
+            "description": "Médicament fictif utilisé à des fins de test et de démonstration.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "Substance inactive",
+                "presentation": "Boîte de test",
+                "laboratory": "Laboratoire fictif"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour",
+                "Usage non thérapeutique"
+            ],
+            "warnings": [
+                "Produit de test – ne pas utiliser chez l’humain"
+            ]
         }
     ]
 }

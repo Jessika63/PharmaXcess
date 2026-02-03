@@ -210,6 +210,8 @@ def register_blueprints():
     from routes.medicine.get_medical_advice import get_medical_advice_bp
     from routes.profile.followed_patients import followed_bp
     from routes.cart.cart import cart_bp
+    
+    from routes.ordonnances.ordonnance_create_by_image import ordonnance_create_by_image_bp
 
     # Save blueprints
     app.register_blueprint(find_doctor_by_name_bp)
@@ -267,7 +269,7 @@ def register_blueprints():
     app.register_blueprint(cart_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(get_medical_advice_bp)
-
+    app.register_blueprint(ordonnance_create_by_image_bp)
     app.register_blueprint(followed_bp)
 
 register_blueprints()
