@@ -227,7 +227,7 @@ def register_blueprints():
     from routes.remove_doctor import remove_doctor_bp
     from routes.read_text import extract_text_bp
     from routes.get_pharmacies import get_pharmacies_bp
-    from routes.get_available_medicine import get_available_medicine_bp
+    from routes.medicine.get_available_medicine import get_available_medicine_bp
     from routes.get_directions import get_directions_bp
     from routes.get_default_position import get_default_position_bp
     from routes.stripe.pay_with_stripe import create_payment_intent_bp
@@ -274,8 +274,11 @@ def register_blueprints():
     from routes.profile.documents import documents_bp
     from routes.profile.sub_profiles import sub_profile_bp
     from routes.ordonnances.ordonnance_create import ordonnances_bp
+    from routes.medicine.get_medical_advice import get_medical_advice_bp
     from routes.profile.followed_patients import followed_bp
     from routes.cart.cart import cart_bp
+    
+    from routes.ordonnances.ordonnance_create_by_image import ordonnance_create_by_image_bp
 
 
     from routes.scanner.scanner import scanner_bp
@@ -336,6 +339,8 @@ def register_blueprints():
     app.register_blueprint(ordonnances_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(documents_bp)
+    app.register_blueprint(get_medical_advice_bp)
+    app.register_blueprint(ordonnance_create_by_image_bp)
     app.register_blueprint(followed_bp)
 
 register_blueprints()
