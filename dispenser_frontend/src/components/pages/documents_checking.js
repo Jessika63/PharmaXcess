@@ -7,12 +7,15 @@ import ModalCINChoice from '../modal_cin_choice';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function DocumentsChecking() {
+  const { speak } = useVoiceOver();
     const [showCamera, setShowCamera] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [focusedIndex, setFocusedIndex] = useState(1);
-    const focusedIndexRef = useRef(1);
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const focusedIndexRef = useRef(0);
     const buttonsRef = useRef([]);
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     const [currentDocType, setCurrentDocType] = useState(null);
@@ -109,35 +112,36 @@ function DocumentsChecking() {
     };
 
     const handleKeyDown = useCallback((event) => {
-        if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+        // Don't handle keyboard events if modals are open
+        if (isModalOpen || showInactivityModal || showCINOptions) return;
+        
+        if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex + 1) % 5;
+                const newIndex = (prevIndex + 1) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
-        } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex - 1 + 5) % 5;
+                const newIndex = (prevIndex - 1 + 4) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
-            if (focusedIndexRef.current === 1) { // Nouveau cas
+            if (focusedIndexRef.current === 0) {
                 handleOpenCamera('ordonnance_qr');
-            } else if (focusedIndexRef.current === 2) {
+            } else if (focusedIndexRef.current === 1) { 
                 handleOpenCamera('ordonnance');
-            } else if (focusedIndexRef.current === 3) {
+            } else if (focusedIndexRef.current === 2) {
                 handleOpenCamera('carte_vitale');
-            } else if (focusedIndexRef.current === 4) {
+            } else if (focusedIndexRef.current === 3) {
                 handleOpenCamera('carte_identite');
-            } else if (focusedIndexRef.current === 0) {
-                navigate('/');
             }
         }
-    }, [navigate, handleOpenCamera]);
+    }, [navigate, handleOpenCamera, isModalOpen, showInactivityModal, showCINOptions]);
 
     useInactivityRedirect(() => setShowInactivityModal(true));
     useEffect(() => {
@@ -257,7 +261,8 @@ function DocumentsChecking() {
                         ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                         ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                         ${config.transitions.default}
-                    `} onClick={() => setShowInactivityModal(false)}>
+                    `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
                 </ModalStandard>
@@ -272,14 +277,16 @@ function DocumentsChecking() {
                             ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default}
-                        `} onClick={() => setConfirmDelete(null)}>
+                        `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setConfirmDelete(null)}>
                             Annuler
                         </button>
                         <button className={`
                             ${config.padding.button} bg-red-600 text-white ${config.fontSizes.md}
                             ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                             ${config.transitions.default}
-                        `} onClick={confirmDeleteDocument}>
+                        `} onClick={confirmDeleteDocument}
+            {...createVoiceOverHandlers(speak)}>
                             Supprimer
                         </button>
                     </div>
@@ -290,7 +297,8 @@ function DocumentsChecking() {
                 {/* Header */}
                 <div className="w-4/5 h-40 flex justify-between items-center mb-6 mt-12">
                     {/* Go Back */}
-                    <Link
+                    <Link 
+            {...createVoiceOverHandlers(speak)}
                         to="/"
                         ref={(el) => (buttonsRef.current[-1] = el)}
                         tabIndex={0}
@@ -320,7 +328,8 @@ function DocumentsChecking() {
                     </div>
                     <div className="mb-4">
                         <input type="file" onChange={handleFileChange} />
-                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}>Upload</button>
+                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}
+            {...createVoiceOverHandlers(speak)}>Upload</button>
                     </div>
 
                     <div>
@@ -334,8 +343,10 @@ function DocumentsChecking() {
                                         <div className="text-xs text-gray-500">{d.size} bytes — {new Date(d.date_ajout).toLocaleString()}</div>
                                     </div>
                                     <div>
-                                        <button onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
-                                        <button onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
                                     </div>
                                 </li>
                             ))}
@@ -362,7 +373,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 4 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance_qr')}
                         >
                             <config.icons.qrCode className="mr-4 text-4xl" />
@@ -378,7 +389,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 1 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance')}
 
                         >
@@ -395,7 +406,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 2 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_vitale')}
                         >
                             <config.icons.addressCard className="mr-4 text-4xl" />
@@ -411,7 +422,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 3 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 3 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_identite')}
                         >
                             <config.icons.idCard className="mr-4 text-4xl" />
