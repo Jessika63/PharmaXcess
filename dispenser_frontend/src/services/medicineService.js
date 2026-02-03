@@ -69,6 +69,29 @@ const medicineService = {
     }
   },
 
+  // Get medical advice for a specific medicine
+  async getMedicalAdvice(medicineId) {
+    try {
+      const url = `${config.backendUrl}/medicine/${medicineId}/medical-advice`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Medical advice not found for medicine ${medicineId}`);
+          return null;
+        }
+        throw new Error(`Failed to fetch medical advice: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`❌ Error fetching medical advice for medicine ${medicineId}:`, error);
+      return null;
+    }
+  },
+
   // Clear cache (useful for refreshing)
   clearCache() {
     medicinesCache = null;

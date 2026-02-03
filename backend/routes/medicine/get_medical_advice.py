@@ -22,9 +22,8 @@ def get_medical_advice(medicine_id):
         - 500: JSON error response if an internal error occurs (Object)
     """
     try:
-        # Compute the path to the JSON data file
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        json_path = os.path.join(BASE_DIR, "medicine_available.json")
+        # Use the same path as get_available_medicine (Docker volume)
+        json_path = "/data/medicine_available.json"
 
         # Check if the JSON file exists
         if not os.path.exists(json_path):
@@ -64,7 +63,7 @@ def get_medical_advice(medicine_id):
             )
 
         # Ensure required fields exist
-        required_fields = ["id", "name", "category", "price"]
+        required_fields = ["id", "label", "category", "price"]
         for field in required_fields:
             # Missing essential data = internal error
             if field not in medicine:
@@ -96,7 +95,7 @@ def get_medical_advice(medicine_id):
         # Build the response data
         response_data = {
             "id": medicine.get("id"),
-            "name": medicine.get("name"),
+            "label": medicine.get("label"),
             "category": medicine.get("category"),
             "price": medicine.get("price"),
             "description": description,

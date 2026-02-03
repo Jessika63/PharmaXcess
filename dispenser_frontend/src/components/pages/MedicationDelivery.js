@@ -7,6 +7,7 @@ import { useCart } from '../../context/CartContext';
 import { usePrescription } from '../../context/PrescriptionContext';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
+import medicineService from '../../services/medicineService';
 
 const MedicationDelivery = () => {
   // Auto-play VoiceOver
@@ -36,7 +37,32 @@ const MedicationDelivery = () => {
     const [isComplete, setIsComplete] = useState(false);
     const [showAdvice, setShowAdvice] = useState(false);
     const [currentAdviceIndex, setCurrentAdviceIndex] = useState(0);
+    const [medicalAdviceData, setMedicalAdviceData] = useState({});
     const totalItems = items.length;
+
+    // Fetch medical advice for all items
+    useEffect(() => {
+        const fetchAllMedicalAdvice = async () => {
+            const advicePromises = items.map(async (item) => {
+                if (item.id) {
+                    const advice = await medicineService.getMedicalAdvice(item.id);
+                    return { id: item.id, advice };
+                }
+                return { id: item.id, advice: null };
+            });
+
+            const adviceResults = await Promise.all(advicePromises);
+            const adviceMap = {};
+            adviceResults.forEach(({ id, advice }) => {
+                adviceMap[id] = advice;
+            });
+            setMedicalAdviceData(adviceMap);
+        };
+
+        if (items && items.length > 0) {
+            fetchAllMedicalAdvice();
+        }
+    }, [items]);
 
     // Simulate delivery process
     useEffect(() => {
@@ -75,26 +101,37 @@ const MedicationDelivery = () => {
     useEffect(() => {
         if (showAdvice && currentAdviceIndex < totalItems) {
             const adviceItem = items[currentAdviceIndex];
+            const advice = medicalAdviceData[adviceItem.id];
+            
+            let adviceText = '';
+            let warningsText = '';
+
+            if (advice && advice.usageAdvice && advice.usageAdvice.length > 0) {
+                adviceText = advice.usageAdvice.join('. ') + '.';
+            } else {
+                adviceText = 'Adultes : 1 comprimé toutes les 6 heures. Maximum 4 comprimés par jour. À prendre avec un verre d\'eau. Peut être pris pendant ou hors des repas.';
+            }
+
+            if (advice && advice.warnings && advice.warnings.length > 0) {
+                warningsText = advice.warnings.join('. ') + '.';
+            } else {
+                warningsText = 'Ne pas dépasser la dose recommandée. Déconseillé en cas d\'allergie au principe actif. Consulter un médecin si les symptômes persistent. Tenir hors de portée des enfants.';
+            }
+
             const fullText = `
                 Conseils pour ${adviceItem.label || adviceItem.nom}.
                 Quantité prescrite : ${adviceItem.quantity}.
                 Conseil d'utilisation.
-                Adultes : 1 comprimé toutes les 6 heures.
-                Maximum 4 comprimés par jour.
-                À prendre avec un verre d'eau.
-                Peut être pris pendant ou hors des repas.
+                ${adviceText}
                 Précautions.
-                Ne pas dépasser la dose recommandée.
-                Déconseillé en cas d'allergie au principe actif.
-                Consulter un médecin si les symptômes persistent.
-                Tenir hors de portée des enfants.
+                ${warningsText}
                 Ces conseils seront affichés pendant 30 secondes. Vous pouvez cliquer sur PASSER pour continuer.
             `;
             speak(fullText);
             // Reset focus state when new advice is shown
             setAdviceFocused(false);
         }
-    }, [showAdvice, currentAdviceIndex, totalItems, items, speak]);
+    }, [showAdvice, currentAdviceIndex, totalItems, items, speak, medicalAdviceData]);
 
     // Keyboard navigation for advice screen
     useEffect(() => {
@@ -154,6 +191,7 @@ const MedicationDelivery = () => {
     if (showAdvice && currentAdviceIndex < totalItems) {
         const adviceItem = items[currentAdviceIndex];
         const adviceProgress = currentAdviceIndex + 1;
+        const advice = medicalAdviceData[adviceItem.id];
         
         return (
             <div className="w-full min-h-screen flex flex-col bg-background_color">
@@ -195,10 +233,18 @@ const MedicationDelivery = () => {
                                 Conseil d'utilisation
                             </h3>
                             <ul className="text-lg text-gray-700 space-y-3 ml-8">
-                                <li className="list-disc">Adultes : 1 comprimé toutes les 6 heures</li>
-                                <li className="list-disc">Maximum 4 comprimés par jour</li>
-                                <li className="list-disc">À prendre avec un verre d'eau</li>
-                                <li className="list-disc">Peut être pris pendant ou hors des repas</li>
+                                {advice && advice.usageAdvice && advice.usageAdvice.length > 0 ? (
+                                    advice.usageAdvice.map((item, index) => (
+                                        <li key={index} className="list-disc">{item}</li>
+                                    ))
+                                ) : (
+                                    <>
+                                        <li className="list-disc">Adultes : 1 comprimé toutes les 6 heures</li>
+                                        <li className="list-disc">Maximum 4 comprimés par jour</li>
+                                        <li className="list-disc">À prendre avec un verre d'eau</li>
+                                        <li className="list-disc">Peut être pris pendant ou hors des repas</li>
+                                    </>
+                                )}
                             </ul>
                         </div>
 
@@ -209,10 +255,18 @@ const MedicationDelivery = () => {
                                 Précautions
                             </h3>
                             <ul className="text-lg text-gray-700 space-y-3 ml-8">
-                                <li className="list-disc">Ne pas dépasser la dose recommandée</li>
-                                <li className="list-disc">Déconseillé en cas d'allergie au principe actif</li>
-                                <li className="list-disc">Consulter un médecin si les symptômes persistent</li>
-                                <li className="list-disc">Tenir hors de portée des enfants</li>
+                                {advice && advice.warnings && advice.warnings.length > 0 ? (
+                                    advice.warnings.map((item, index) => (
+                                        <li key={index} className="list-disc">{item}</li>
+                                    ))
+                                ) : (
+                                    <>
+                                        <li className="list-disc">Ne pas dépasser la dose recommandée</li>
+                                        <li className="list-disc">Déconseillé en cas d'allergie au principe actif</li>
+                                        <li className="list-disc">Consulter un médecin si les symptômes persistent</li>
+                                        <li className="list-disc">Tenir hors de portée des enfants</li>
+                                    </>
+                                )}
                             </ul>
                         </div>
 
