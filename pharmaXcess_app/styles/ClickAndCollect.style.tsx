@@ -296,7 +296,9 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
     gradient: {
         paddingVertical: 15,
         paddingHorizontal: 30,
-        borderRadius: 25,
+        marginVertical: 10,
+        borderRadius: 10,
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },

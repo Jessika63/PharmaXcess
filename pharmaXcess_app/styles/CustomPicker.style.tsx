@@ -33,7 +33,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
     },
     pickerText: {
         fontSize: 16 * fontScale,
-        color: colors.infoText, 
+        color: colors.text, 
         flex: 1,
     },
     modalContainer: {

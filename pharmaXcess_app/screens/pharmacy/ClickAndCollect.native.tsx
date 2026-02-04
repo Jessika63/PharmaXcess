@@ -525,31 +525,35 @@ export default function ClickAndCollect(): React.JSX.Element {
         >
           {orderStatus === 'en_attente' || isWaiting ? (
             <>
-              <Text style={styles.loadingText}>Votre ordonnance est en cours de validation...</Text>
+              <Text style={{ fontSize: 18 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 20 }}>Votre ordonnance est en cours de validation...</Text>
               <ActivityIndicator size="large" color={colors.secondary} style={{ marginVertical: 20 }} />
-              <TouchableOpacity 
-                style={[styles.button, { width: '100%', marginTop: 20 }]} 
-                onPress={goBackToList}
-              >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
-                  <Text style={styles.buttonText}>Retour à la liste</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={[styles.card, { width: '90%', height: 120, marginTop: 20 }]}>
+                <TouchableOpacity 
+                  style={{ flex: 1 }}
+                  onPress={goBackToList}
+                >
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Retour à la liste</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </>
           ) : orderStatus === 'refuse' ? (
             <>
-              <Text style={styles.loadingText}>Raison du refus :</Text>
-              <Text style={[styles.loadingText, { color: colors.error, marginVertical: 10 }]}>
+              <Text style={{ fontSize: 18 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 10 }}>Raison du refus :</Text>
+              <Text style={{ fontSize: 16 * fontScale, color: colors.error, textAlign: 'center', marginVertical: 10 }}>
                 {selectedOrder?.refusal_reason || clickcollectError || 'Raison non spécifiée'}
               </Text>
-              <TouchableOpacity 
-                style={[styles.button, { width: '100%', marginTop: 20 }]} 
-                onPress={goBackToList}
-              >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
-                  <Text style={styles.buttonText}>Retour à la liste</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={[styles.card, { width: '90%', height: 120, marginTop: 20 }]}>
+                <TouchableOpacity 
+                  style={{ flex: 1 }}
+                  onPress={goBackToList}
+                >
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Retour à la liste</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </>
           ) : orderStatus === 'valide' ? (
             <>
@@ -584,32 +588,36 @@ export default function ClickAndCollect(): React.JSX.Element {
                   }
                 })()}
               </View>
-              <TouchableOpacity 
-                style={[styles.button, { marginTop: 20 }]} 
-                onPress={goBackToList}
-              >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                  <Text style={styles.buttonText}>Retour à la liste</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={[styles.card, { width: '90%', height: 120, marginTop: 20 }]}>
+                <TouchableOpacity 
+                  style={{ flex: 1 }}
+                  onPress={goBackToList}
+                >
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Retour à la liste</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <>
-              <Text style={styles.qrTitle}>Détails de la demande</Text>
-              <Text style={styles.loadingText}>Nom: {resolveOrderName(selectedOrder)}</Text>
-              <Text style={styles.loadingText}>Statut: {statusLabel(selectedOrder.status)}</Text>
-              <Text style={styles.loadingText}>
+              <Text style={[styles.qrTitle]}>Détails de la demande</Text>
+              <Text style={{ fontSize: 16 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 5 }}>Nom: {resolveOrderName(selectedOrder)}</Text>
+              <Text style={{ fontSize: 16 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 5 }}>Statut: {statusLabel(selectedOrder.status)}</Text>
+              <Text style={{ fontSize: 16 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 15 }}>
                 Date: {formatDate(selectedOrder.date_demande || selectedOrder.created_at)}
               </Text>
               
-              <TouchableOpacity 
-                style={[styles.button, { marginTop: 20 }]} 
-                onPress={goBackToList}
-              >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                  <Text style={styles.buttonText}>Retour à la liste</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={[styles.card, { width: '90%', height: 120, marginTop: 20 }]}>
+                <TouchableOpacity 
+                  style={{ flex: 1 }}
+                  onPress={goBackToList}
+                >
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Retour à la liste</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </>
           )}
         </ScrollView>
@@ -618,16 +626,18 @@ export default function ClickAndCollect(): React.JSX.Element {
           {/* History section - seulement quand il y a des commandes */}
           {!isWaiting && !orderStatus &&  !selectedOrdonnanceId && userOrders.length > 0 && (
             <View style={{ width: '100%', marginBottom: 20, paddingHorizontal: 16, paddingTop: 20 }}>
-              <TouchableOpacity 
-                style={[styles.button, { paddingVertical: 12 }]} 
-                onPress={toggleShowOrders}
-              >
-                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-                  <Text style={styles.buttonText}>
-                    {showOrders ? 'Masquer mes demandes' : 'Voir mes demandes'}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={[styles.card, { width: '100%', height: 80 }]}>
+                <TouchableOpacity 
+                  style={{ flex: 1 }}
+                  onPress={toggleShowOrders}
+                >
+                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                    <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>
+                      {showOrders ? 'Masquer mes demandes' : 'Voir mes demandes'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
 
               {showOrders && (
                 <View style={{ 
@@ -683,102 +693,104 @@ export default function ClickAndCollect(): React.JSX.Element {
           >
             {/* Ordonnance selection section */}
             {!selectedOrdonnanceId ? (
-              <View style={[
-                styles.qrContainer, 
-                { 
-                  flex: 1, 
-                  justifyContent: 'center',
-                  paddingVertical: 20 
-                }
-              ]}>
+              <View style={{ 
+                flex: 1, 
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingVertical: 20,
+                paddingHorizontal: 16
+              }}>
                 {isLoadingOrdonnances ? (
                   <ActivityIndicator size="large" color={colors.primary} />
                 ) : ordonnances.length === 0 ? (
                   <View style={{ alignItems: 'center' }}>
-                    <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 20 }]}>
+                    <Text style={{ fontSize: 18 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 20 }}>
                       Aucune ordonnance disponible.
                     </Text>
-                    <Text style={[styles.loadingText, { textAlign: 'center', fontSize: 14, opacity: 0.7 }]}>
+                    <Text style={{ fontSize: 14 * fontScale, color: colors.text, textAlign: 'center', opacity: 0.7 }}>
                       Veuillez d'abord ajouter au moins une ordonnance dans la section "Ordonnance" de la page Home.
                     </Text>
                   </View>
                 ) : (
                   <>
-                    <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 20 }]}>
+                    <Text style={{ fontSize: 18 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 20 }}>
                       Sélectionnez une ordonnance :
                     </Text>
                     <CustomPicker
-                      label="Ordonnance liée"
                       selectedValue={selectedOrdonnanceId || ''}
                       onValueChange={(value) => setSelectedOrdonnanceId(String(value))}
                       options={ordonnances}
                       placeholder={ordonnances.length > 0 ? 'Choisir une ordonnance' : 'Aucune ordonnance disponible'}
-                      style={{ marginBottom: 30 }}
+                      style={{ marginBottom: 30, width: '100%' }}
                     />
                     {selectedOrdonnanceId && (
-                      <TouchableOpacity 
-                        style={[styles.approveButton, { width: '100%', marginTop: 20 }]} 
-                        onPress={handleImageValidation}
-                      >
-                        <LinearGradient colors={[colors.primary, colors.secondary]} style={[styles.gradient, { width: '100%' }]}>
-                          <Text style={styles.buttonText}>Envoyer pour validation</Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
+                      <View style={[styles.card, { width: '100%', height: 120, marginTop: 2 }]}>
+                        <TouchableOpacity 
+                          style={{ flex: 1 }}
+                          onPress={handleImageValidation}
+                        >
+                          <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
+                            <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Envoyer pour validation</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </>
                 )}
               </View>
             ) : (
-              <View style={[
-                styles.qrContainer, 
-                { 
-                  flex: 1, 
-                  justifyContent: 'center',
-                  paddingVertical: 20 
-                }
-              ]}>
-                <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 10 }]}>
+              <View style={{ 
+                flex: 1, 
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingVertical: 20,
+                paddingHorizontal: 16
+              }}>
+                <Text style={{ fontSize: 18 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 10 }}>
                   Ordonnance sélectionnée
                 </Text>
-                <Text style={[
-                  styles.loadingText, 
-                  { 
-                    fontWeight: 'bold', 
-                    marginVertical: 15, 
-                    textAlign: 'center',
-                    paddingHorizontal: 16
-                  }
-                ]}>
+                <Text style={{ 
+                  fontSize: 16 * fontScale,
+                  color: colors.text,
+                  fontWeight: 'bold', 
+                  marginVertical: 15, 
+                  textAlign: 'center',
+                  paddingHorizontal: 16
+                }}>
                   {ordonnances.find(o => o.value === selectedOrdonnanceId)?.label}
                 </Text>
-                <Text style={[styles.loadingText, { textAlign: 'center', marginBottom: 30 }]}>
+                <Text style={{ fontSize: 16 * fontScale, color: colors.text, textAlign: 'center', marginBottom: 30 }}>
                   Voulez-vous envoyer cette ordonnance ou en sélectionner une autre ?
                 </Text>
-                <View style={[styles.buttonContainer, { width: '100%', flexDirection: 'column' }]}>
+                <View style={{ width: '100%', flexDirection: 'column', gap: 10 }}>
 
-                  <TouchableOpacity 
-                    style={{ width: '100%', marginBottom: 12 }}
-                    onPress={resetProcess}
-                  >
-                    <LinearGradient 
-                      colors={[colors.textSecondary, colors.infoTextSecondary]} 
-                      style={[styles.gradient, { width: '100%' }]}
+                  <View style={[styles.card, { width: '100%', height: 120 }]}>
+                    <TouchableOpacity 
+                      style={{ flex: 1 }}
+                      onPress={resetProcess}
                     >
-                      <Text style={styles.buttonText}>Changer d'ordonnance</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
+                      <LinearGradient 
+                        colors={[colors.primary, colors.secondary]} 
+                        style={styles.gradient}
+                      >
+                        <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Changer d'ordonnance</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
 
-                  <TouchableOpacity 
-                    style={{ width: '100%' }}
-                    onPress={handleImageValidation}
-                  >
-                    <LinearGradient 
-                      colors={[colors.primary, colors.secondary]} 
-                      style={[styles.gradient, { width: '100%' }]}
+                  <View style={[styles.card, { width: '100%', height: 120 }]}>
+                    <TouchableOpacity 
+                      style={{ flex: 1 }}
+                      onPress={handleImageValidation}
                     >
-                      <Text style={styles.buttonText}>Envoyer pour validation</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
+                      <LinearGradient 
+                        colors={[colors.primary, colors.secondary]} 
+                        style={styles.gradient}
+                      >
+                        <Text style={[styles.cardText, { fontSize: 18 * fontScale, fontWeight: 'bold' }]}>Envoyer pour validation</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
 
                 </View>
 
