@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 import sys, os, re, json, tempfile, time, base64
 import numpy as np
@@ -265,6 +266,34 @@ def extract_prescription_date(text):
     
     return ""
 
+def filter_invalid_medications(medicaments):
+    """Filter out invalid medications (common OCR errors)"""
+    filtered = []
+    invalid_keywords = [
+        "selarl", "sarl", "sas", "eurl", "dr ", "docteur", "cabinet",
+        "neurologie", "cardiologie", "dermatologie", "ophtalmologie",
+        "médecin", "medecin", "chirurgien", "hopital", "clinique",
+        "rue ", "avenue", "boulevard", "place ", "centre", "rcs",
+        "honoraires", "contact", "tel", "mail", "fax", "email",
+        "règlement", "carte", "chèque", "doctolib"
+    ]
+    
+    for med in medicaments:
+        nom = (med.get("nom") or "").strip()
+        posologie = (med.get("posologie") or "").strip()
+        
+        # Skip if no name OR no posology
+        if not nom or not posologie:
+            continue
+            
+        # Skip if it looks like a doctor's name, company name, or address
+        if any(kw in nom.lower() for kw in invalid_keywords):
+            continue
+            
+        filtered.append(med)
+    
+    return filtered
+
 def getInfosPrescription(text):
     """Extraction principale des informations d'ordonnance"""
     infos = {}
@@ -287,6 +316,8 @@ def getInfosPrescription(text):
     # 4. Médicaments
     medications = extract_medications(text)
     if medications:
+        # Filter out invalid medications
+        medications = filter_invalid_medications(medications)
         infos["medicaments"] = medications
     
     # 5. Spécialité (récupérée du médecin)

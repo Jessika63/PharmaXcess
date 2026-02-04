@@ -75,6 +75,40 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
 
   // camera permissions managed in AddOrdonnance
 
+  // Helper to format medications for display
+  const formatMedications = (medicaments: any): string => {
+    if (!medicaments) return 'Non renseigné';
+    
+    try {
+      let medList: any[] = [];
+      
+      if (typeof medicaments === 'string') {
+        // Try to parse JSON string
+        try {
+          const parsed = JSON.parse(medicaments);
+          medList = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // Not JSON, return as is
+          return medicaments;
+        }
+      } else if (Array.isArray(medicaments)) {
+        medList = medicaments;
+      } else {
+        return String(medicaments);
+      }
+      
+      // Format each medication nicely
+      return medList.map(med => {
+        if (typeof med === 'string') return med;
+        const nom = med.nom || '';
+        const poso = med.posologie || '';
+        return poso ? `${nom} (${poso})` : nom;
+      }).join(', ') || 'Aucun';
+    } catch (e) {
+      return 'Non renseigné';
+    }
+  };
+
   // Fetch ordonnances from backend when profile changes (server profiles)
   const fetchOrdonnances = async () => {
     if (!currentProfile?.id) return;
@@ -87,8 +121,8 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
         const mapped = res.data.map((o: any) => ({
           name: o.description || `Ordonnance ${o.id}`,
           date: o.date_prescription || o.date_ajout,
-          doctor: o.medecin_nom,
-          medications: Array.isArray(o.medicaments) ? o.medicaments.join(', ') : (typeof o.medicaments === 'string' ? o.medicaments : JSON.stringify(o.medicaments)),
+          doctor: o.medecin_nom || 'Non renseigné',
+          medications: formatMedications(o.medicaments),
           id: o.id,
           temp_image_id: o.temp_image_id || null,
         }));
@@ -171,8 +205,8 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
             const mapped = res.data.map((o: any) => ({
               name: o.description || `Ordonnance ${o.id}`,
               date: o.date_prescription || o.date_ajout,
-              doctor: o.medecin_nom,
-              medications: Array.isArray(o.medicaments) ? o.medicaments.join(', ') : (typeof o.medicaments === 'string' ? o.medicaments : JSON.stringify(o.medicaments)),
+              doctor: o.medecin_nom || 'Non renseigné',
+              medications: formatMedications(o.medicaments),
               id: o.id,
               temp_image_id: o.temp_image_id || null,
             }));
@@ -218,9 +252,17 @@ export default function MyPrescriptions({ navigation }: MyPrescriptionsProps): R
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.prescriptionTitle}>{prescription.name}</Text>
-                  <Text style={styles.prescriptionText}>Date: {prescription.date}</Text>
-                  <Text style={styles.prescriptionText}>Médecin: {prescription.doctor}</Text>
-                  <Text style={styles.prescriptionText}>Médicaments: {prescription.medications}</Text>
+                  <View style={{ marginTop: 4 }}>
+                    <Text style={styles.prescriptionText}>
+                      <Text style={{ fontWeight: 'bold' }}>Date:</Text> {prescription.date || 'Non renseignée'}
+                    </Text>
+                    <Text style={styles.prescriptionText}>
+                      <Text style={{ fontWeight: 'bold' }}>Médecin:</Text> {prescription.doctor}
+                    </Text>
+                    <Text style={styles.prescriptionText}>
+                      <Text style={{ fontWeight: 'bold' }}>Médicaments:</Text> {prescription.medications}
+                    </Text>
+                  </View>
                 </View>
                 {!isMainProfile && (
                   <TouchableOpacity onPress={() => handleRemovePrescription(index)} style={{ padding: 8 }}>

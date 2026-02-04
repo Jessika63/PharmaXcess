@@ -15,6 +15,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import ElementsWrapper from '../ElementsWrapper';
 import { useCart } from '../../context/CartContext';
 import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
+import medicineService from '../../services/medicineService';
 
 const categories = {
     painKiller: "Anti-douleur",
@@ -48,7 +49,7 @@ function NonPrescriptionDrugs() {
     const [drugsItems, setDrugsItems] = useState([]);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const navigate = useNavigate();
-    const { addToCart, getCartCount } = useCart(); 
+    const { addToCart, getCartCount, getAvailableStock } = useCart(); 
 
 
     const searchButtonRef = useRef(null);
@@ -98,6 +99,7 @@ function NonPrescriptionDrugs() {
     useInactivityRedirect(() => setShowInactivityModal(true));
 
     const [clientSecret, setClientSecret] = useState(null);
+    const [medicalAdvice, setMedicalAdvice] = useState(null);
 
     const [stockUpdateError, setStockUpdateError] = useState(null);
 
@@ -114,7 +116,7 @@ function NonPrescriptionDrugs() {
                 Présentation : ${selectedDrug.presentation || `Boîte de ${selectedDrug.size} comprimés`}.
                 Laboratoire : ${selectedDrug.laboratoire || 'Non spécifié'}.
                 Prix : ${selectedDrug.price ? `${selectedDrug.price.toFixed(2)} euros` : 'Prix non défini'}.
-                ${selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}.
+                ${getAvailableStock(selectedDrug.id) > 0 ? 'En stock' : 'Non disponible'}.
                 Conseil d'utilisation :
                 Adultes : 1 comprimé toutes les 6 heures.
                 Maximum 4 comprimés par jour.
@@ -197,7 +199,7 @@ function NonPrescriptionDrugs() {
                 const data = await response.json();
                 if (response.ok) {
                     dataToUse = data.medicine;
-                    availableMedicineCache = data.medicine;
+                    availableMedicineCache = dataToUse;
                 } else {
                     setError(data.error || 'Server Error');
                     availableMedicineCache = null;
@@ -232,6 +234,25 @@ function NonPrescriptionDrugs() {
         };
         fetchData();
     }, []);
+
+    // Fetch medical advice when a drug is selected
+    useEffect(() => {
+        const fetchMedicalAdvice = async () => {
+            if (selectedDrug && selectedDrug.id) {
+                try {
+                    const advice = await medicineService.getMedicalAdvice(selectedDrug.id);
+                    setMedicalAdvice(advice);
+                } catch (error) {
+                    console.error('Error fetching medical advice:', error);
+                    setMedicalAdvice(null);
+                }
+            }
+        };
+        
+        if (isModalOpen && selectedDrug) {
+            fetchMedicalAdvice();
+        }
+    }, [isModalOpen, selectedDrug]);
 
     useEffect(() => {
         itemRefs.current = itemRefs.current.slice(0, drugsItems.length);
@@ -740,8 +761,8 @@ const applySort = (sort) => {
                                 <span className="text-lg font-bold text-black">
                                     {item.price ? `${item.price.toFixed(2)}€` : 'Prix non défini'}
                                 </span>
-                                <span className={`text-sm ${item.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {item.size > 0 ? 'En stock' : 'Non disponible'}
+                                <span className={`text-sm ${getAvailableStock(item.id) > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {getAvailableStock(item.id) > 0 ? 'En stock' : 'Non disponible'}
                                 </span>
                             </div>
                         </button>
@@ -824,22 +845,34 @@ const applySort = (sort) => {
                                     {/* Add to cart button */}
                                     <button ref={payButtonRef}
                                         {...createVoiceOverHandlers(speak)}
-            onClick={() => {
-                                            if (selectedDrug.size > 0) {
-                                                addToCart(selectedDrug);
-                                                closeModal();
-                                                navigate('/cart');} else {
+                                        onClick={async () => {
+                                            console.log('🔴 BOUTON CLIQUÉ!');
+                                            console.log('selectedDrug:', selectedDrug);
+                                            const availableStock = getAvailableStock(selectedDrug.id);
+                                            if (availableStock > 0) {
+                                                console.log('Stock disponible, ajout au panier...');
+                                                const success = await addToCart(selectedDrug);
+                                                console.log('Résultat addToCart:', success);
+                                                if (success) {
+                                                    console.log('✅ Succès! Fermeture modal et navigation...');
+                                                    closeModal();
+                                                    navigate('/cart');
+                                                } else {
+                                                    console.log('❌ Échec addToCart');
+                                                }
+                                            } else {
+                                                console.log('Stock insuffisant, redirection...');
                                                 navigate('/insufficient-stock', { state: { drug: selectedDrug, from: '/non-prescription-drugs' } });
                                             }
                                         }}
                                         className={`w-full py-4 rounded-full text-lg font-semibold flex items-center justify-center gap-3
                                             transition-transform duration-300 hover:scale-105
-                                            ${selectedDrug.size > 0 
+                                            ${getAvailableStock(selectedDrug.id) > 0 
                                                 ? 'bg-black text-white' 
                                                 : 'bg-gray-400 text-white'}
                                             ${modalFocusIndex === 1 ? 'scale-105' : ''}`}
                                     >
-                                        {selectedDrug.size > 0 ? ( 
+                                        {getAvailableStock(selectedDrug.id) > 0 ? ( 
                                             <> 
                                                 AJOUTER AU PANIER 
                                                 <config.icons.cart className="text-xl" /> 
@@ -856,8 +889,8 @@ const applySort = (sort) => {
                                     {/* Price and stock */}
                                     <div className="mb-8"> 
                                         <p className="text-5xl font-bold text-black">{selectedDrug.price ? `${selectedDrug.price.toFixed(2)}€` : 'Prix non défini'}</p>
-                                        <p className={`text-xl mt-2 ${selectedDrug.size > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                            {selectedDrug.size > 0 ? 'En stock' : 'Non disponible'}
+                                        <p className={`text-xl mt-2 ${getAvailableStock(selectedDrug.id) > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {getAvailableStock(selectedDrug.id) > 0 ? 'En stock' : 'Non disponible'}
                                         </p> 
                                     </div> 
 
@@ -866,10 +899,18 @@ const applySort = (sort) => {
                                     <div className="mb-8"> 
                                         <h3 className="text-xl font-bold text-black mb-3">Conseil d'utilisation</h3>
                                         <ul className="text-base text-gray-600 space-y-2"> 
-                                            <li>Adultes : 1 comprimé toutes les 6 heures</li> 
-                                            <li>Maximum 4 comprimés par jour</li>
-                                            <li>A prendre avec un verre d'eau</li> 
-                                            <li>Peut être pris pendant ou hors des repas</li>
+                                            {medicalAdvice && medicalAdvice.usageAdvice && medicalAdvice.usageAdvice.length > 0 ? (
+                                                medicalAdvice.usageAdvice.map((advice, index) => (
+                                                    <li key={index}>{advice}</li>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <li>Adultes : 1 comprimé toutes les 6 heures</li> 
+                                                    <li>Maximum 4 comprimés par jour</li>
+                                                    <li>A prendre avec un verre d'eau</li> 
+                                                    <li>Peut être pris pendant ou hors des repas</li>
+                                                </>
+                                            )}
                                         </ul> 
                                     </div>
 
@@ -877,10 +918,18 @@ const applySort = (sort) => {
                                     <div> 
                                         <h3 className="text-xl font-bold text-black mb-3">Précautions</h3>
                                         <ul className="text-base text-gray-600 space-y-2"> 
-                                            <li>Ne pas dépasser la dose recommandée</li>
-                                            <li>Déconseillé en cas d'allergie au paracétamol</li>
-                                            <li>Consulter un médecin si les symptômes persistent</li>
-                                            <li>Tenir hors de portée des enfants</li>
+                                            {medicalAdvice && medicalAdvice.warnings && medicalAdvice.warnings.length > 0 ? (
+                                                medicalAdvice.warnings.map((warning, index) => (
+                                                    <li key={index}>{warning}</li>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <li>Ne pas dépasser la dose recommandée</li>
+                                                    <li>Déconseillé en cas d'allergie au paracétamol</li>
+                                                    <li>Consulter un médecin si les symptômes persistent</li>
+                                                    <li>Tenir hors de portée des enfants</li>
+                                                </>
+                                            )}
                                         </ul> 
                                     </div> 
                                 </div> 

@@ -3,7 +3,9 @@ from db_app import get_app_connection
 from datetime import datetime
 import pymysql, uuid
 
+
 from routes.qr_code.gen_qrcode_fct import generate_prescription_qr_internal
+import json
 
 clickcollect_validate_bp = Blueprint('clickcollect_validate', __name__)
 
@@ -27,7 +29,9 @@ def validate_order():
             user_id = order["utilisateur_id"]
             ordonnance_id = order.get("ordonnance_id")
 
-            qr_code = str(uuid.uuid4())
+
+            prescription_qr = generate_prescription_qr_internal(user_id, ordonnance_id)
+            qr_code = json.dumps(prescription_qr)  # Serialize dict to JSON string
 
             cursor.execute("""
                 UPDATE commandes
@@ -38,8 +42,6 @@ def validate_order():
             cursor.execute("DELETE FROM ordonnance_images_temp WHERE utilisateur_id=%s", (user_id,))
 
         conn.commit()
-
-        prescription_qr = generate_prescription_qr_internal(user_id, ordonnance_id)
 
         return jsonify({
             "message": "Order validated successfully",

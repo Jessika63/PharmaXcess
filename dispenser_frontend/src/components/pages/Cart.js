@@ -6,6 +6,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { FaMinus, FaPlus, FaTrash, FaShoppingCart } from 'react-icons/fa';
 import config from '../../config';
 import { useCart } from '../../context/CartContext';
+import cartService from '../../services/cartService';
 import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
@@ -21,7 +22,7 @@ function Cart() {
 
     const navigate = useNavigate();
     const location = useLocation(); 
-    const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal, getAvailableStock, validateCart, cartId } = useCart();
 
     // Keyboard navigation state
     const [focusedIndex, setFocusedIndex] = useState(0);
@@ -66,6 +67,20 @@ function Cart() {
         }
 
         try {
+            // Validate the cart on the backend first
+            const validationResult = await validateCart();
+            
+            if (!validationResult) {
+                console.error('Failed to validate cart');
+                navigate('/payment-error', {
+                    state: {
+                        errorMessage: 'Erreur lors de la validation du panier',
+                        from: '/cart'
+                    }
+                });
+                return;
+            }
+
             // For the moment, we handle the first item in the cart
             // Pour l'instant, on traite le premier article du panier
             // TODO: Modify the backend to support multiple items 
@@ -102,6 +117,20 @@ function Cart() {
     };
 
     const handlePaymentSuccess = async (paymentIntent) => {
+        console.log('✅ Payment success! Checking out cart...');
+        
+        try {
+            // Call checkout to decrement stock in backend
+            if (cartId) {
+                console.log('💳 Calling checkoutCart for cartId:', cartId);
+                await cartService.checkoutCart(cartId);
+                console.log('✅ Stock decremented successfully');
+            }
+        } catch (checkoutErr) {
+            console.error('❌ Error during checkout (stock decrement):', checkoutErr);
+            // Don't stop the flow - payment already succeeded, just log the error
+        }
+        
         // Empty the cart upon successful payment
         clearCart();
         navigate('/payment-success', {
@@ -368,28 +397,47 @@ function Cart() {
                                         <p className="text-lg font-bold text-black">{item.price?.toFixed(2)} € / unité</p>
                                         <p className="text-sm text-gray-500">Total: {(item.price * item.quantity).toFixed(2)}€</p>
                                         
-                                        {/* Quantity controls */}
-                                        <div className="flex items-center justify-end gap-3 mt-3">
-                                            <button 
-                                                ref={el => decreaseRefs.current[itemIndex] = el}
-                                                {...createVoiceOverHandlers(speak)}
-            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                                                    hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex ? 'ring-2 ring-pink-300' : ''}`}
-                                            >
-                                                <FaMinus className="text-xs text-gray-600" />
-                                            </button>
-                                            <span className="text-lg font-semibold">{item.quantity}</span>
-                                            <button 
-                                                ref={el => increaseRefs.current[itemIndex] = el}
-                                                {...createVoiceOverHandlers(speak)}
-            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                                                    hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex + 1 ? 'ring-2 ring-pink-300' : ''}`}
-                                            >
-                                                <FaPlus className="text-xs text-gray-600" />
-                                            </button>
-                                        </div>
+                                        {/* Show preorder badge if applicable */}
+                                        {item.isPreorder && (
+                                            <p className="text-xs text-orange-600 mt-1">Précommande</p>
+                                        )}
+                                        
+                                        {/* Quantity controls - hide for preorders */}
+                                        {!item.isPreorder && (
+                                            <div className="flex items-center justify-end gap-3 mt-3">
+                                                <button 
+                                                    ref={el => decreaseRefs.current[itemIndex] = el}
+                                                    {...createVoiceOverHandlers(speak)}
+                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                                                        hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex ? 'ring-2 ring-pink-300' : ''}`}
+                                                >
+                                                    <FaMinus className="text-xs text-gray-600" />
+                                                </button>
+                                                <span className="text-lg font-semibold">{item.quantity}</span>
+                                                <button 
+                                                    ref={el => increaseRefs.current[itemIndex] = el}
+                                                    {...createVoiceOverHandlers(speak)}
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    disabled={getAvailableStock(item.id) <= 0}
+                                                    className={`w-8 h-8 rounded-full border flex items-center justify-center
+                                                        transition-colors ${
+                                                            getAvailableStock(item.id) <= 0 
+                                                                ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
+                                                                : 'border-gray-300 hover:bg-gray-100'
+                                                        } ${focusedIndex === baseIndex + 1 ? 'ring-2 ring-pink-300' : ''}`}
+                                                >
+                                                    <FaPlus className={`text-xs ${getAvailableStock(item.id) <= 0 ? 'text-gray-400' : 'text-gray-600'}`} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        
+                                        {/* For preorders, just show quantity without controls */}
+                                        {item.isPreorder && (
+                                            <div className="flex items-center justify-end gap-3 mt-3">
+                                                <span className="text-lg font-semibold">Quantité: {item.quantity}</span>
+                                            </div>
+                                        )}
 
                                         {/* Delete button */}
                                         <button 

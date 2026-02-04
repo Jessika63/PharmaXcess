@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import App from './App';
+import HelpMenu from './components/pages/HelpMenu';
+import UserGuideText from './components/pages/UserGuideText';
+import UserGuideVideo from './components/pages/UserGuideVideo';
 import DocumentsChecking from './components/pages/documents_checking';
 import NonPrescriptionDrugs from './components/pages/non_prescription_drugs';
 import DrugStoresAvailable from './components/pages/drug_stores_available';
@@ -45,6 +48,9 @@ function AppRoutes() {
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-error" element={<PaymentError />} />
                 <Route path="/direction-qr" element={<DirectionQRPage />} />
+                    <Route path="/help" element={<HelpMenu />} />
+                    <Route path="/user-guide-text" element={<UserGuideText />} />
+                    <Route path="/user-guide-video" element={<UserGuideVideo />} />
             </Routes>
         </Router>
                 </PrescriptionProvider>

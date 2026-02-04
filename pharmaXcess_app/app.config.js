@@ -20,7 +20,8 @@ module.exports = {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
-      }
+      },
+      usesCleartextTraffic: true
     },
     web: {
       favicon: "./assets/favicon.png"

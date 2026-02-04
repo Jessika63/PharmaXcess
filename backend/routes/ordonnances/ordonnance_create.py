@@ -3,8 +3,14 @@ from db_app import get_app_connection
 import pymysql
 from datetime import datetime
 import base64
-import sys
+import sys, json, cv2, re
 import os
+import numpy as np
+import tempfile
+from dateutil.parser import parse
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../scripts/scanner'))
+from extractAll import main
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from routes.profile.profile_access import get_current_user_id, profile_access_condition, profile_target_access_condition
