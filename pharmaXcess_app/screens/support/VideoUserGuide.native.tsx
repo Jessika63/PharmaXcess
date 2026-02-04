@@ -38,15 +38,15 @@ export default function VideoUserGuide(): React.JSX.Element {
             textAlign: 'center',
         },
         qrContainer: {
-            backgroundColor: colors.card,
-            padding: 30,
-            borderRadius: 20,
+            backgroundColor: colors.background,
+            padding: 20,
+            borderRadius: 15,
             alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 5,
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.22,
+            shadowRadius: 2.22,
+            elevation: 3,
         },
         button: {
             marginTop: 30,
@@ -75,8 +75,8 @@ export default function VideoUserGuide(): React.JSX.Element {
                 <QRCode
                     value={videoUrl}
                     size={200}
-                    color={colors.headerText}
-                    backgroundColor={colors.card}
+                    color="#000000"
+                    backgroundColor="#ffffff"
                 />
             </View>
             <TouchableOpacity style={styles.button} onPress={handleOpenVideo}>
