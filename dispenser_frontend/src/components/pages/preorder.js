@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
+import jsQR from 'jsqr';
 import config from '../../config';
 import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 import { FaSync } from "react-icons/fa";
@@ -291,121 +292,90 @@ function Preorder() {
       console.log("📏 Taille blob:", imageBlob.size, "bytes");
       console.log("🎨 Type blob:", imageBlob.type);
       
-      // Convertir le blob en image propre pour éviter les corruptions
+      // Convertir le blob en image pour décoder le QR
       const img = new Image();
       const blobUrl = URL.createObjectURL(imageBlob);
       
       img.onload = () => {
-        console.log("🖼️ Image chargée, reconversion en JPEG propre...");
+        console.log("🖼️ Image chargée, dimensions:", img.width, "x", img.height);
         
-        // Créer un canvas pour recompresser l'image proprement
+        // Créer un canvas pour extraire les pixels
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
         
-        // Convertir en blob JPEG propre
-        canvas.toBlob((cleanBlob) => {
-          URL.revokeObjectURL(blobUrl);
+        // Extraire les données de pixels
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        console.log("🔎 Décodage QR avec jsQR...");
+        setDebugInfo("Analyse QR locale...");
+        
+        // Décoder le QR code avec jsQR
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        
+        URL.revokeObjectURL(blobUrl);
+        
+        if (code) {
+          console.log("✅ QR code décodé:", code.data);
+          console.log("📍 Position:", code.location);
           
-          if (!cleanBlob) {
-            console.error("❌ Échec conversion canvas");
-            resolve({ success: false, error: "Erreur de conversion d'image" });
-            return;
-          }
-          
-          console.log("✅ Image reconvertie:", cleanBlob.size, "bytes");
-          
-          const formData = new FormData();
-          formData.append("image", cleanBlob, "photo.jpg");
-          formData.append("scan_role", "distributeur");
-          
-          console.log("📋 FormData créé");
-          console.log("🌐 Backend URL:", config.backendUrl);
-          const targetUrl = `${config.backendUrl}/read_profile_qr`;
-          console.log("🎯 URL complète:", targetUrl);
-
-          console.log("📤 Envoi au backend pour analyse QR...");
-          setDebugInfo("Envoi au backend...");
-          
-          // Utiliser XMLHttpRequest au lieu de fetch
-          const xhr = new XMLHttpRequest();
-          const startTime = Date.now();
-          
-          // Timeout de 30 secondes (le backend fait beaucoup de tentatives)
-          xhr.timeout = 30000;
-          
-          xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-              const percentComplete = (e.loaded / e.total) * 100;
-              console.log(`📊 Upload progress: ${percentComplete.toFixed(1)}%`);
-              setDebugInfo(`Upload: ${percentComplete.toFixed(0)}%`);
-            }
-          });
-          
-          xhr.addEventListener('load', () => {
-            const duration = Date.now() - startTime;
-            console.log(`✅ REQUÊTE TERMINÉE en ${duration}ms`);
-            console.log("📊 Status:", xhr.status, xhr.statusText);
-            console.log("📥 Response:", xhr.responseText.substring(0, 200));
+          // Le QR code contient un JSON: {"id": 123}
+          try {
+            const qrData = JSON.parse(code.data);
+            const qrId = qrData.id;
             
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const data = JSON.parse(xhr.responseText);
-                console.log("✅ Réponse backend:", data);
-                setDebugInfo("Analyse backend terminée");
-                resolve(data);
-              } catch (err) {
-                console.error("❌ Erreur parsing JSON:", err);
+            if (!qrId) {
+              console.error("❌ Pas d'ID dans le QR code");
+              resolve({ success: false, error: "QR code invalide (pas d'ID)" });
+              return;
+            }
+            
+            console.log("🆔 QR ID extrait:", qrId);
+            setDebugInfo(`QR ID: ${qrId}, récupération profil...`);
+            
+            // Appeler le backend pour récupérer les données du profil
+            fetch(`${config.backendUrl}/get_profile/${qrId}?scan_role=distributeur`)
+              .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+              })
+              .then(data => {
+                console.log("✅ Données profil:", data);
+                setDebugInfo("Profil chargé ✅");
+                resolve({
+                  success: true,
+                  qr_id: qrId,
+                  ...data
+                });
+              })
+              .catch(err => {
+                console.error("❌ Erreur récupération profil:", err);
+                setDebugInfo("Erreur serveur");
                 resolve({
                   success: false,
-                  error: "Réponse invalide du serveur"
+                  error: "Profil non trouvé"
                 });
-              }
-            } else {
-              console.error("❌ Erreur HTTP:", xhr.status, xhr.responseText);
-              resolve({
-                success: false,
-                error: `Erreur serveur: ${xhr.status}`
               });
-            }
-          });
-          
-          xhr.addEventListener('error', (e) => {
-            const duration = Date.now() - startTime;
-            console.error(`❌ ERREUR RÉSEAU après ${duration}ms`);
-            console.error("Event:", e);
-            setDebugInfo("Erreur réseau");
+          } catch (parseError) {
+            console.error("❌ QR code n'est pas du JSON valide:", parseError);
+            console.log("📄 Contenu brut:", code.data);
             resolve({
               success: false,
-              error: "Erreur de connexion réseau"
+              error: "Format QR code invalide"
             });
+          }
+        } else {
+          console.log("❌ Aucun QR code détecté dans l'image");
+          setDebugInfo("Pas de QR détecté");
+          resolve({
+            success: false,
+            error: "Aucun QR code trouvé"
           });
-          
-          xhr.addEventListener('timeout', () => {
-            console.error("⏱️ TIMEOUT après 30 secondes !");
-            setDebugInfo("Timeout - Serveur trop lent");
-            resolve({
-              success: false,
-              error: "Le serveur met trop de temps à répondre"
-            });
-          });
-          
-          xhr.addEventListener('abort', () => {
-            console.error("❌ Requête ABORTED");
-            resolve({
-              success: false,
-              error: "Requête annulée"
-            });
-          });
-          
-          console.log("🚀 Ouverture de la connexion...");
-          xhr.open('POST', targetUrl, true);
-          
-          console.log("📤 Envoi des données...");
-          xhr.send(formData);
-        }, 'image/jpeg', 0.9);
+        }
       };
       
       img.onerror = () => {
