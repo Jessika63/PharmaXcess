@@ -27,11 +27,11 @@ scan_lock = Lock()
 
 # -------- Camera config --------
 camera_lock = threading.Lock()
-camera_process = None
 is_streaming = False
-frame_buffer = None
-frame_buffer_lock = threading.Lock()
-last_frame_time = 0
+streaming_thread = None
+streaming_stop_flag = threading.Event()
+current_frame = None
+current_frame_lock = threading.Lock()
 
 # ==================== FONCTIONS CAMERA ====================
 def kill_camera_processes():
@@ -42,106 +42,108 @@ def kill_camera_processes():
         pass
     time.sleep(0.5)
 
-def capture_frames_continuously():
-    """Capturer des frames en continu avec rpicam-still"""
-    global is_streaming, frame_buffer, last_frame_time
+
+def capture_single_photo():
+    """Capturer une seule photo rapidement"""
+    try:
+        tmp_path = tempfile.mktemp(suffix='.jpg')
+        
+        cmd = [
+            "rpicam-still",
+            "-o", tmp_path,
+            "--width", "720",
+            "--height", "720",
+            "-n",
+            "--timeout", "5",
+            "--quality", "85",
+            "--shutter", "18000"
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, timeout=3)
+        
+        if result.returncode == 0 and os.path.exists(tmp_path):
+            with open(tmp_path, 'rb') as f:
+                photo_data = f.read()
+            
+            os.unlink(tmp_path)
+            
+            if len(photo_data) > 1000:
+                return photo_data
+        
+        return None
+        
+    except Exception as e:
+        print(f"⚠️ Erreur capture photo: {e}")
+        return None
+
+def streaming_worker():
+    """Worker qui capture des photos en continu"""
+    global current_frame
     
-    print("🚀 Démarrage capture continue avec rpicam-still...")
+    print("📸 Démarrage capture photos rapides (10 FPS)")
     
-    while is_streaming:
+    frame_count = 0
+    while not streaming_stop_flag.is_set():
         try:
-            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
-                tmp_path = tmp.name
+            # Capturer une photo
+            frame_start = time.time()
+            photo_data = capture_single_photo()
             
-            cmd = [
-                "rpicam-still",
-                "-o", tmp_path,
-                "--width", "1280",
-                "--height", "720",
-                "-n",
-                "--timeout", "1",
-                "--quality", "80",
-                "--shutter", "10000"
-            ]
-            
-            result = subprocess.run(cmd, capture_output=True, timeout=2)
-            
-            if result.returncode == 0 and os.path.exists(tmp_path):
-                with open(tmp_path, 'rb') as f:
-                    frame_data = f.read()
+            if photo_data:
+                with current_frame_lock:
+                    current_frame = photo_data
+                frame_count += 1
                 
-                if len(frame_data) > 1000:
-                    with frame_buffer_lock:
-                        frame_buffer = frame_data
-                        last_frame_time = time.time()
-                
-                os.unlink(tmp_path)
+                if frame_count % 30 == 0:
+                    print(f"📸 {frame_count} frames capturées")
             
-            time.sleep(0.1)
+            # Calculer le temps à attendre pour maintenir ~10 FPS
+            elapsed = time.time() - frame_start
+            sleep_time = max(0.066 - elapsed, 0.01)  # 15ms pour ~15 FPS
+            
+            time.sleep(sleep_time)
             
         except Exception as e:
-            print(f"⚠️ Erreur capture frame: {e}")
+            print(f"⚠️ Erreur worker streaming: {e}")
             time.sleep(0.1)
 
 def start_camera_stream():
-    """Démarrer le flux camera"""
-    global is_streaming, frame_buffer
+    global is_streaming, streaming_thread, streaming_stop_flag
     
     with camera_lock:
         if is_streaming:
             return True
         
-        try:
-            kill_camera_processes()
-            time.sleep(1)
-            
-            frame_buffer = None
-            is_streaming = True
-            threading.Thread(target=capture_frames_continuously, daemon=True).start()
-            
-            for _ in range(10):
-                if frame_buffer is not None:
-                    break
-                time.sleep(0.1)
-            
-            print("✅ Flux camera démarré avec rpicam-still")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Erreur démarrage flux: {e}")
-            is_streaming = False
-            return False
+        kill_camera_processes()
+        streaming_stop_flag.clear()
+        
+        # Démarrer le thread de streaming
+        streaming_thread = threading.Thread(target=streaming_worker, daemon=True)
+        streaming_thread.start()
+        
+        is_streaming = True
+        print("✅ Streaming photo démarré")
+        return True
 
 def stop_camera_stream():
-    """Arrêter le flux camera"""
-    global is_streaming
+    global is_streaming, streaming_thread, streaming_stop_flag
     
     with camera_lock:
-        is_streaming = False
+        if not is_streaming:
+            return
+        
+        streaming_stop_flag.set()
+        
+        if streaming_thread and streaming_thread.is_alive():
+            streaming_thread.join(timeout=2)
+        
         kill_camera_processes()
-        time.sleep(0.5)
-        print("✅ Flux camera arrêté")
-
-# ==================== FONCTIONS SCANNER ====================
-def scan_document(resolution=150):
-    """Fonction de scan"""
-    filename = f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-    filepath = os.path.join(SCAN_DIR, filename)
-
-    cmd = [
-        SCANIMAGE_BIN,
-        "-d", DEVICE,
-        "--resolution", str(resolution),
-        "--format=png"
-    ]
-
-    try:
-        with open(filepath, "wb") as f:
-            subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, check=True)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(e.stderr.decode())
-
-    return filename
+        is_streaming = False
+        
+        with current_frame_lock:
+            current_frame = None
+        
+        print("✅ Streaming photo arrêté")
 
 # ==================== ROUTES CAMERA ====================
 @app.route("/api/camera/status", methods=["GET"])
@@ -152,95 +154,70 @@ def camera_status():
         "streaming": is_streaming,
         "fps": "10",
         "resolution": "1280x720",
-        "camera": "rpicam"
+        "mode": "photo-rapide"
     })
 
 @app.route("/api/camera/start_stream", methods=["POST"])
 def camera_start_stream():
-    """Démarrer le flux camera"""
+    """Démarrer le flux photo rapide"""
     if start_camera_stream():
-        return jsonify({"success": True, "message": "Stream started"})
-    return jsonify({"success": False, "error": "Failed to start stream"}), 500
+        return jsonify({"success": True, "message": "Photo streaming started"})
+    return jsonify({"success": False, "error": "Failed to start streaming"}), 500
 
 @app.route("/api/camera/stop_stream", methods=["POST"])
 def camera_stop_stream():
-    """Arrêter le flux camera"""
+    """Arrêter le flux"""
     stop_camera_stream()
-    return jsonify({"success": True, "message": "Stream stopped"})
+    return jsonify({"success": True, "message": "Streaming stopped"})
 
 @app.route("/api/camera/stream")
-def camera_stream():
-    """Flux MJPEG"""
-    
+def stream():
+    """Flux MJPEG simulé avec des photos rapides"""
     def generate():
-        last_frame_sent = 0
+        last_frame_time = 0
+        frame_interval = 0.066  # ~15 FPS
         
         while is_streaming:
             try:
                 current_time = time.time()
                 
-                if current_time - last_frame_sent < 0.1:
-                    time.sleep(0.01)
-                    continue
-                
-                with frame_buffer_lock:
-                    if frame_buffer is None or (current_time - last_frame_time) > 1:
-                        img = Image.new('RGB', (1280, 720), color='black')
-                        draw = ImageDraw.Draw(img)
-                        draw.text((640, 360), "Camera Loading...", fill='white', anchor='mm')
+                # Vérifier si on doit envoyer une nouvelle frame
+                if current_time - last_frame_time >= frame_interval:
+                    with current_frame_lock:
+                        if current_frame:
+                            frame_data = current_frame
+                        else:
+                            # Frame par défaut (noire) si aucune photo disponible
+                            img = Image.new('RGB', (1280, 720), color='black')
+                            draw = ImageDraw.Draw(img)
+                            draw.text((50, 50), "Chargement...", fill='white')
+                            
+                            buf = io.BytesIO()
+                            img.save(buf, format='JPEG', quality=85)
+                            frame_data = buf.getvalue()
+                    
+                    if frame_data:
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' 
+                               + frame_data + b'\r\n')
                         
-                        buf = io.BytesIO()
-                        img.save(buf, format='JPEG', quality=80)
-                        frame_data = buf.getvalue()
-                    else:
-                        frame_data = frame_buffer
+                        last_frame_time = current_time
                 
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" +
-                       frame_data +
-                       b"\r\n")
-                
-                last_frame_sent = current_time
+                # Petit délai pour éviter de surcharger le CPU
+                time.sleep(0.01)
                 
             except Exception as e:
-                print(f"⚠️ Erreur génération frame: {e}")
+                print(f"⚠️ Erreur génération flux: {e}")
                 time.sleep(0.1)
-    
-    if not is_streaming:
-        if not start_camera_stream():
-            img = Image.new('RGB', (1280, 720), color='black')
-            draw = ImageDraw.Draw(img)
-            draw.text((640, 360), "Camera Error", fill='red', anchor='mm')
-            
-            buf = io.BytesIO()
-            img.save(buf, format='JPEG', quality=80)
-            frame_data = buf.getvalue()
-            
-            def error_stream():
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" +
-                       frame_data +
-                       b"\r\n")
-            
-            return Response(
-                error_stream(),
-                mimetype="multipart/x-mixed-replace; boundary=frame",
-                headers={'Cache-Control': 'no-cache'}
-            )
     
     return Response(
         generate(),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-        headers={
-            'Cache-Control': 'no-cache',
-            'Access-Control-Allow-Origin': '*',
-            'X-Accel-Buffering': 'no'
-        }
+        mimetype='multipart/x-mixed-replace; boundary=frame'
     )
 
 @app.route("/api/camera/capture", methods=["POST"])
 def camera_capture():
-    """Capturer une photo"""
+    """Capturer une photo de haute qualité"""
     tmp_path = None
     
     try:
@@ -248,6 +225,7 @@ def camera_capture():
         
         was_streaming = is_streaming
         if was_streaming:
+            # Arrêter temporairement le streaming pour une photo de meilleure qualité
             stop_camera_stream()
             time.sleep(0.5)
         
@@ -285,6 +263,69 @@ def camera_capture():
                 os.unlink(tmp_path)
             except:
                 pass
+
+@app.route("/api/camera/snapshot")
+def snapshot():
+    """Prendre une photo rapide pour le scan QR"""
+    try:
+        # Arrêter le streaming temporairement pour une capture propre
+        was_streaming = is_streaming
+        if was_streaming:
+            stop_camera_stream()
+            time.sleep(0.3)
+        
+        # Capturer une photo rapide
+        photo_data = capture_single_photo()
+        
+        if not photo_data:
+            # Créer une image noire par défaut
+            img = Image.new('RGB', (1280, 720), color='black')
+            draw = ImageDraw.Draw(img)
+            draw.text((100, 100), "Erreur capture", fill='white')
+            
+            buf = io.BytesIO()
+            img.save(buf, format='JPEG', quality=85)
+            photo_data = buf.getvalue()
+        
+        # Redémarrer le streaming si nécessaire
+        if was_streaming:
+            time.sleep(0.3)
+            start_camera_stream()
+        
+        # Créer une réponse avec l'image
+        return Response(
+            photo_data,
+            mimetype='image/jpeg',
+            headers={
+                'Content-Type': 'image/jpeg',
+                'Cache-Control': 'no-cache'
+            }
+        )
+        
+    except Exception as e:
+        print(f"❌ Erreur snapshot: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ==================== FONCTIONS SCANNER ====================
+def scan_document(resolution=150):
+    """Fonction de scan"""
+    filename = f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    filepath = os.path.join(SCAN_DIR, filename)
+
+    cmd = [
+        SCANIMAGE_BIN,
+        "-d", DEVICE,
+        "--resolution", str(resolution),
+        "--format=png"
+    ]
+
+    try:
+        with open(filepath, "wb") as f:
+            subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(e.stderr.decode())
+
+    return filename
 
 # ==================== ROUTES SCANNER ====================
 @app.route("/api/scanner/status", methods=["GET"])
@@ -331,6 +372,7 @@ def health():
         "status": "OK",
         "service": "scanner-camera",
         "camera": "streaming" if is_streaming else "ready",
+        "mode": "photo-rapide",
         "scanner": "ready",
         "timestamp": datetime.now().isoformat()
     })
@@ -340,6 +382,7 @@ def system_info():
     """Informations système"""
     return jsonify({
         "camera_streaming": is_streaming,
+        "camera_mode": "photo-rapide",
         "scanner_available": os.path.exists(SCANIMAGE_BIN),
         "scan_dir": SCAN_DIR,
         "port": PORT,
@@ -364,23 +407,35 @@ def index():
             .status { padding: 5px 10px; border-radius: 3px; font-weight: bold; }
             .streaming { background: #d4edda; color: #155724; }
             .ready { background: #fff3cd; color: #856404; }
+            .test-image { max-width: 640px; border: 2px solid #ccc; margin: 10px 0; }
         </style>
     </head>
     <body>
-        <h1>📷 Scanner & Camera Service</h1>
+        <h1>📷 Scanner & Camera Service (Photo Rapide)</h1>
         
         <div class="endpoint">
-            <h3>📊 Health Check</h3>
-            <p><span class="method">GET</span> <span class="url">/api/health</span></p>
-        </div>
-        
-        <div class="endpoint">
-            <h3>🎥 Camera</h3>
+            <h3>🎥 Camera Photo Rapide</h3>
+            <p>Mode: Photos rapides à ~10 FPS</p>
             <p><span class="method">GET</span> <span class="url">/api/camera/status</span> - Statut caméra</p>
-            <p><span class="method">POST</span> <span class="url">/api/camera/start</span> - Démarrer flux</p>
-            <p><span class="method">POST</span> <span class="url">/api/camera/stop</span> - Arrêter flux</p>
+            <p><span class="method">POST</span> <span class="url">/api/camera/start_stream</span> - Démarrer flux</p>
+            <p><span class="method">POST</span> <span class="url">/api/camera/stop_stream</span> - Arrêter flux</p>
             <p><span class="method">GET</span> <span class="url">/api/camera/stream</span> - Flux MJPEG</p>
-            <p><span class="method">POST</span> <span class="url">/api/camera/capture</span> - Capture photo</p>
+            <p><span class="method">GET</span> <span class="url">/api/camera/snapshot</span> - Photo rapide pour QR</p>
+            <p><span class="method">POST</span> <span class="url">/api/camera/capture</span> - Capture photo HQ</p>
+            
+            <div style="margin-top: 10px;">
+                <button onclick="startStream()">Démarrer Flux</button>
+                <button onclick="stopStream()">Arrêter Flux</button>
+                <button onclick="takeSnapshot()">Prendre Photo</button>
+            </div>
+            
+            <div>
+                <h4>Flux Live:</h4>
+                <img id="streamView" class="test-image" />
+                
+                <h4>Dernière Photo:</h4>
+                <img id="snapshotView" class="test-image" />
+            </div>
         </div>
         
         <div class="endpoint">
@@ -391,18 +446,52 @@ def index():
         </div>
         
         <h2>Statut actuel:</h2>
-        <p>Caméra: <span class="status streaming">Streaming</span> (si actif)</p>
+        <p>Caméra: <span id="cameraStatus" class="status ready">Arrêté</span></p>
         <p>Scanner: <span class="status ready">Prêt</span></p>
         
         <script>
-            fetch('/api/health')
-                .then(r => r.json())
-                .then(data => {
-                    document.querySelector('.streaming').textContent = 
-                        data.camera === 'streaming' ? 'En cours' : 'Arrêté';
-                    document.querySelector('.streaming').className = 
-                        'status ' + (data.camera === 'streaming' ? 'streaming' : 'ready');
-                });
+            function updateStatus() {
+                fetch('/api/health')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusEl = document.getElementById('cameraStatus');
+                        statusEl.textContent = data.camera === 'streaming' ? 'En cours' : 'Arrêté';
+                        statusEl.className = 'status ' + (data.camera === 'streaming' ? 'streaming' : 'ready');
+                        
+                        // Mettre à jour le flux si en cours
+                        if (data.camera === 'streaming') {
+                            document.getElementById('streamView').src = '/api/camera/stream?t=' + Date.now();
+                        } else {
+                            document.getElementById('streamView').src = '';
+                        }
+                    });
+            }
+            
+            function startStream() {
+                fetch('/api/camera/start_stream', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message || 'Stream démarré');
+                        updateStatus();
+                    });
+            }
+            
+            function stopStream() {
+                fetch('/api/camera/stop_stream', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message || 'Stream arrêté');
+                        updateStatus();
+                    });
+            }
+            
+            function takeSnapshot() {
+                document.getElementById('snapshotView').src = '/api/camera/snapshot?t=' + Date.now();
+            }
+            
+            // Initialiser
+            updateStatus();
+            setInterval(updateStatus, 5000);
         </script>
     </body>
     </html>
@@ -412,12 +501,16 @@ def index():
 # ==================== LANCEMENT ====================
 if __name__ == "__main__":
     print("=" * 60)
-    print("🎥📄 Service unifié Scanner & Camera")
+    print("📸 Service Scanner & Camera (Mode Photo Rapide)")
     print("=" * 60)
     print(f"📡 URL: http://0.0.0.0:{PORT}")
-    print(f"🎥 Flux camera: http://0.0.0.0:{PORT}/api/camera/stream")
+    print(f"📸 Flux caméra: http://0.0.0.0:{PORT}/api/camera/stream")
+    print(f"📸 Snapshot rapide: http://0.0.0.0:{PORT}/api/camera/snapshot")
     print(f"📄 Scan: POST http://0.0.0.0:{PORT}/api/scanner/scan")
     print(f"📊 Health: http://0.0.0.0:{PORT}/api/health")
+    print("=" * 60)
+    print("Mode: Photos rapides à ~10-15 FPS")
+    print("Résolution: 1280x720")
     print("=" * 60)
     
     # Vérifier rpicam-still

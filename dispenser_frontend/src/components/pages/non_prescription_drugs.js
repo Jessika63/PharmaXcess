@@ -26,8 +26,7 @@ const categories = {
     homeopathy: "Homéopathie",
     foodSupplement: "Complément alimentaire",
     antiSeptic: "Antiseptique",
-    antiDiarrheal: "Antidiarrhéique",
-    test: "Test"
+    antiDiarrheal: "Antidiarrhéique"
 };
 
 // Initialize Stripe PROMISE (not instance)

@@ -12,6 +12,7 @@ import NearbyPharmacies from './components/pages/nearby_pharmacies';
 import TransportMode from './components/pages/transport_mode';
 import DirectionsMapPage from './components/pages/DirectionsMapPage';
 import Preorder from './components/pages/preorder';
+import PreorderSuccess from './components/pages/PreorderSuccess';
 import ErrorPage from './components/ErrorPage';
 import PaymentSuccess from './components/pages/PaymentSuccess';
 import PaymentError from './components/pages/PaymentError';
@@ -44,6 +45,7 @@ function AppRoutes() {
                 <Route path="/medication-delivery" element={<MedicationDelivery />} />
                 <Route path="/directions-map" element={<DirectionsMapPage />} />
                 <Route path="/preorder" element={<Preorder />} />
+                <Route path="/preorder-success" element={<PreorderSuccess />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-error" element={<PaymentError />} />

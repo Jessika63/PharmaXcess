@@ -224,7 +224,7 @@ def extract_medications(text):
         known_meds = ['PARACETAMOL', 'IBUPROFENE', 'AMOXICILLINE', 'DICLOFENAC',
                      'LORATADINE', 'DESLORATADINE', 'OMEPRAZOLE', 'SIMVASTATINE',
                      'METFORMINE', 'INSULINE', 'PREDNISONE', 'DEXAMETHASONE',
-                     'SPASFON', 'SMECTA', 'DOLIPRANE', 'EFFERALGAN']
+                     'SPASFON', 'SMECTA', 'DOLIPRANE', 'EFFERALGAN', 'METOPROLOL']
         
         lines = text.split('\n')
         for line in lines:

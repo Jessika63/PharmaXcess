@@ -89,24 +89,25 @@ function StepCarteIdentite({ goToNextStep, goBackStep }) {
         return;
       }
 
-      console.log("✅ Scan + OCR réussi:", data);
-
       // Sauvegarder les données
-      const carteData = {
-        extractedText: data.extracted_text || '',
-        nom: data.nom || '',
-        prenom: data.prenom || '',
-        dateNaissance: data.date_naissance || '',
-        numeroIdentite: data.numero_identite || ''
-      };
+      const carteData = {};
+
+      if (data.nom) carteData.nom = data.nom;
+      if (data.prenom) carteData.prenom = data.prenom;
+      if (data.date_naissance) carteData.dateNaissance = data.date_naissance;
+      if (data.numero_identite) carteData.numeroIdentite = data.numero_identite;
+      if (data.extracted_text) carteData.extractedText = data.extracted_text;
+
 
       // Mettre à jour le contexte avec les données pour ce côté
-      updatePrescriptionData({ 
+      updatePrescriptionData(prev => ({
         carteIdentite: {
+          ...(prev?.carteIdentite || {}),
           ...carteData,
           [`${currentSide}Scanned`]: true
         }
-      });
+      }));
+
 
       // Sauvegarder dans localStorage
       const existingData = JSON.parse(localStorage.getItem('carteIdentite') || '{}');

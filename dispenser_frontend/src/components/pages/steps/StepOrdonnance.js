@@ -10,7 +10,7 @@ import { usePrescription } from "../../../context/PrescriptionContext";
 import config from "../../../config";
 import { FaPrint, FaSync, FaExclamationTriangle, FaCamera, FaQrcode } from "react-icons/fa";
 
-const CAMERA_PI = "https://undelineable-bellicose-alannah.ngrok-free.dev/api";
+const CAMERA_PI = "http://10.180.55.168:5000/api";
 
 function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const { speak } = useVoiceOver();
@@ -22,15 +22,11 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   const [streaming, setStreaming] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [cameraStatus, setCameraStatus] = useState("idle");
-  const [fps, setFps] = useState(0);
 
   const intervalRef = useRef(null);
   const imgRef = useRef(null);
   const isStreamingRef = useRef(false);
   const consecutiveFailsRef = useRef(0);
-  const frameCountRef = useRef(0);
-  const lastFpsUpdateRef = useRef(Date.now());
-  const refreshIntervalRef = useRef(null);
 
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showPrescriptionScanner, setShowPrescriptionScanner] = useState(false);
@@ -58,14 +54,16 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
   }, [showQRScanner, showPrescriptionScanner, speak]);
 
   // Fonctions pour le scan QR (pseudo backend caméra PI)
-  const checkQRCode = async (imageBlob) => {
+const checkQRCode = async (imageBlob) => {
+  try {
+    const formData = new FormData();
+    formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
+
+    // Augmenter le timeout et gérer mieux l'abort
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes
+
     try {
-      const formData = new FormData();
-      formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
       const res = await fetch(`${config.backendUrl}/read_prescription_qr`, {
         method: "POST",
         body: formData,
@@ -73,12 +71,24 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       });
 
       clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error: ${res.status}`);
+      }
+      
       return await res.json();
-    } catch (err) {
-      console.error("Erreur scan QR:", err);
-      return { success: false, error: err.message };
+    } catch (fetchErr) {
+      if (fetchErr.name === 'AbortError') {
+        return { success: false, error: "Timeout - scan trop long" };
+      }
+      throw fetchErr;
     }
-  };
+    
+  } catch (err) {
+    console.error("Erreur scan QR:", err);
+    return { success: false, error: err.message };
+  }
+};
 
   const extractPrescriptionText = async (imageBlob) => {
     try {
@@ -97,138 +107,8 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
     }
   };
 
-  // ----------------------------
-  // FONCTIONS CAMÉRA (de l'ancien code)
-  // ----------------------------
-  const cleanup = () => {
-    stopVideoStream();
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
-  };
-  
-  const checkCameraStatus = async () => {
-    try {
-      const response = await fetch(`${CAMERA_PI}/camera/status`);
-      if (response.ok) {
-        const data = await response.json();
-        setCameraStatus(data.status || "ready");
-      }
-    } catch (err) {
-      setCameraStatus("error");
-    }
-  };
 
-  const startVideoStream = async () => {
-    if (isStreamingRef.current) return;
-
-    try {
-      setError("");
-      console.log("🎬 Démarrage stream...");
-
-      const startRes = await fetch(`${CAMERA_PI}/camera/start_stream`, {
-        method: "POST"
-      });
-
-      if (!startRes.ok) throw new Error("Start failed");
-
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      frameCountRef.current = 0;
-      lastFpsUpdateRef.current = Date.now();
-
-      const refreshImage = () => {
-        if (!isStreamingRef.current || !imgRef.current) return;
-        
-        const timestamp = Date.now();
-        const url = `${CAMERA_PI}/camera/stream?t=${timestamp}`;
-        
-        const tempImg = new Image();
-        tempImg.crossOrigin = "anonymous";
-        tempImg.onload = () => {
-          if (imgRef.current) {
-            imgRef.current.src = url;
-            frameCountRef.current++;
-            
-            const now = Date.now();
-            if (now - lastFpsUpdateRef.current >= 1000) {
-              setFps(frameCountRef.current);
-              frameCountRef.current = 0;
-              lastFpsUpdateRef.current = now;
-            }
-          }
-        };
-        tempImg.onerror = () => {
-          console.log("⚠️ Erreur image");
-        };
-        tempImg.src = url;
-      };
-
-      refreshIntervalRef.current = setInterval(refreshImage, 100);
-      setTimeout(refreshImage, 200);
-
-      isStreamingRef.current = true;
-      setStreaming(true);
-      setCameraStatus("streaming");
-      console.log("✅ Stream démarré");
-
-    } catch (err) {
-      console.error("❌ Erreur:", err);
-      setError("Erreur démarrage flux");
-      setCameraStatus("error");
-    }
-  };
-
-  const stopVideoStream = async () => {
-    console.log("🛑 Arrêt stream...");
-    
-    isStreamingRef.current = false;
-    setStreaming(false);
-    setFps(0);
-
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-
-    if (imgRef.current) {
-      imgRef.current.src = "";
-    }
-
-    try {
-      await fetch(`${CAMERA_PI}/camera/stop_stream`, {
-        method: "POST"
-      });
-    } catch (err) {
-      console.log("Erreur arrêt:", err);
-    }
-
-    setCameraStatus("idle");
-  };
-
-  const captureForQR = async () => {
-    try {
-      const timestamp = Date.now();
-      const response = await fetch(`${CAMERA_PI}/camera/stream?t=${timestamp}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      
-      if (!blob || blob.size < 1000) {
-        throw new Error("Image invalide");
-      }
-      
-      console.log(`📸 Capture: ${blob.size} bytes`);
-      return blob;
-      
-    } catch (err) {
-      throw new Error(`Capture: ${err.message}`);
-    }
-  };
-
-  // ----------------------------
+    // ----------------------------
   // SCANNER PHYSIQUE (CanoScan LiDE 300)
   // ----------------------------
   const openScanner = async () => {
@@ -275,15 +155,330 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
     }
   };
 
+
+
   // ----------------------------
-  // LOGIQUE DE SCAN QR (de l'ancien code)
+  // FONCTIONS CAMÉRA
   // ----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Fonction d'heuristique pour détecter si une image pourrait contenir un QR code
+const mightContainQRCode = async (imageBlob) => {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(imageBlob);
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Analyser une version réduite de l'image pour plus de rapidité
+        canvas.width = 200;
+        canvas.height = 200;
+        ctx.drawImage(img, 0, 0, 200, 200);
+        
+        const imageData = ctx.getImageData(0, 0, 200, 200);
+        const data = imageData.data;
+        
+        // Compter les pixels très noirs et très blancs (caractéristiques des QR codes)
+        let blackPixels = 0;    // pixels très sombres (< 30)
+        let whitePixels = 0;    // pixels très clairs (> 225)
+        let contrastPixels = 0; // pixels avec fort contraste local
+        
+        // Analyser par blocs de 4x4 pixels
+        for (let y = 0; y < 200; y += 4) {
+          for (let x = 0; x < 200; x += 4) {
+            const index = (y * 200 + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            const brightness = (r + g + b) / 3;
+            
+            if (brightness < 30) blackPixels++;
+            if (brightness > 225) whitePixels++;
+            
+            // Vérifier le contraste local (différence entre pixels adjacents)
+            if (x < 196 && y < 196) {
+              const nextIndex = (y * 200 + (x + 4)) * 4;
+              const r2 = data[nextIndex];
+              const g2 = data[nextIndex + 1];
+              const b2 = data[nextIndex + 2];
+              const brightness2 = (r2 + g2 + b2) / 3;
+              
+              if (Math.abs(brightness - brightness2) > 100) {
+                contrastPixels++;
+              }
+            }
+          }
+        }
+        
+        const totalBlocks = (200/4) * (200/4); // 2500 blocs
+        const blackRatio = blackPixels / totalBlocks;
+        const whiteRatio = whitePixels / totalBlocks;
+        const contrastRatio = contrastPixels / totalBlocks;
+        
+        URL.revokeObjectURL(url);
+        
+        // Logique d'heuristique pour détecter un QR code potentiel
+        // Les QR codes ont généralement :
+        // - Des zones noires et blanches bien définies
+        // - Un fort contraste entre pixels adjacents
+        // - Une certaine proportion de noir et de blanc
+        
+        const isQRCodeLikely = (
+          // Soit bon ratio de noir ET de blanc
+          (blackRatio > 0.08 && whiteRatio > 0.08) ||
+          // Soit très fort contraste
+          (contrastRatio > 0.15) ||
+          // Soit beaucoup de noir OU beaucoup de blanc (pour QR codes simples)
+          (blackRatio > 0.15 || whiteRatio > 0.15)
+        );
+        
+        console.log(`Heuristique QR: noir=${(blackRatio*100).toFixed(1)}%, blanc=${(whiteRatio*100).toFixed(1)}%, contraste=${(contrastRatio*100).toFixed(1)}% => ${isQRCodeLikely ? 'POTENTIEL' : 'NON'}`);
+        resolve(isQRCodeLikely);
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(false);
+      };
+      
+      img.src = url;
+    } catch (err) {
+      console.error('Erreur heuristique QR:', err);
+      resolve(false);
+    }
+  });
+};
+
+// Modifier la fonction startQrScanning pour utiliser des photos individuelles
+const startQrScanning = () => {
+  const SCAN_INTERVAL = 2500; // 1 seconde
+  let scanAttempts = 0;
+  let lastCaptureTime = 0;
+
+  const performScan = async () => {
+    if (!isStreamingRef.current) {
+      console.log("Attente caméra...");
+      return;
+    }
+
+    scanAttempts++;
+    setScanCount(scanAttempts);
+    
+    console.log(`Capture #${scanAttempts}`);
+
+    try {
+      // 1. Capturer une photo
+      let imageBlob;
+      try {
+        imageBlob = await captureForQR();
+        lastCaptureTime = Date.now();
+      } catch (err) {
+        console.log("Capture ratée:", err);
+        consecutiveFailsRef.current++;
+        return;
+      }
+
+      // 2. Afficher la photo immédiatement dans le modal
+      if (imgRef.current) {
+        const url = URL.createObjectURL(imageBlob);
+        imgRef.current.src = url;
+        // Nettoyer l'URL précédente si elle existe
+        if (imgRef.current.dataset.lastUrl) {
+          URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+        }
+        imgRef.current.dataset.lastUrl = url;
+      }
+
+      // 3. Vérifier heuristique si c'est potentiellement un QR code
+      const isLikelyQR = await mightContainQRCode(imageBlob);
+      
+      if (isLikelyQR) {
+        console.log("Image semble contenir un QR code, analyse backend...");
+        
+        // 4. Envoyer au backend pour lecture réelle du QR code
+        const formData = new FormData();
+        formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+        try {
+          const res = await fetch(`${config.backendUrl}/read_prescription_qr`, {
+            method: "POST",
+            body: formData,
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+          
+          if (!res.ok) {
+            throw new Error(`HTTP error: ${res.status}`);
+          }
+          
+          const data = await res.json();
+
+          if (data.success && data.ordonnance) {
+            console.log("QR CODE TROUVÉ ET VALIDE!");
+            
+            // Arrêter le scanning
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            
+            // Nettoyer les URLs
+            if (imgRef.current && imgRef.current.dataset.lastUrl) {
+              URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+            }
+            
+            // Mettre à jour le contexte et passer à l'étape suivante
+            setHasQRCode(true);
+            updatePrescriptionData({
+              scanType: "qr",
+              hasQRCode: true,
+              rawData: data.ordonnance,
+              medicaments: data.ordonnance?.medicaments || [],
+              extractedText: "",
+              qrId: data.qr_id
+            });
+
+            setIsModalOpen(false);
+            cleanup();
+            goToNextStep({ hasQRCode: true });
+            return;
+            
+          } else {
+            console.log("QR code détecté mais invalide ou vide");
+            consecutiveFailsRef.current = 0; // Réinitialiser car on a trouvé quelque chose
+          }
+          
+        } catch (fetchErr) {
+          if (fetchErr.name === 'AbortError') {
+            console.log("Timeout analyse QR code");
+          } else {
+            console.error("Erreur analyse QR:", fetchErr);
+          }
+        }
+        
+      } else {
+        console.log("Image ne semble pas contenir de QR code, skip backend");
+        consecutiveFailsRef.current++;
+        
+        // Si trop d'échecs consécutifs, on pourrait ajuster l'intervalle
+        if (consecutiveFailsRef.current > 5) {
+          console.log("ℹBeaucoup d'images sans QR, continuons le scan...");
+        }
+      }
+
+    } catch (err) {
+      console.error(`Erreur scan cycle:`, err);
+      consecutiveFailsRef.current++;
+    }
+  };
+
+  // Démarrer immédiatement et régulièrement
+  performScan();
+  intervalRef.current = setInterval(performScan, SCAN_INTERVAL);
+};
+
+// Modifier également la fonction cleanup pour nettoyer les URLs
+const cleanup = () => {
+  stopVideoStream();
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  
+  // Nettoyer les URLs des images affichées
+  if (imgRef.current && imgRef.current.dataset.lastUrl) {
+    URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+    imgRef.current.src = "";
+    delete imgRef.current.dataset.lastUrl;
+  }
+};
+
+  const checkCameraStatus = async () => {
+    try {
+      const response = await fetch(`${CAMERA_PI}/camera/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setCameraStatus(data.status || "ready");
+      }
+    } catch (err) {
+      setCameraStatus("error");
+    }
+  };
+
+  
+  const startVideoStream = async () => {
+  if (isStreamingRef.current) return;
+
+  try {
+    setError("");
+    console.log("Démarrage stream caméra");
+
+    const res = await fetch(`${CAMERA_PI}/camera/start_stream`, {
+      method: "POST"
+    });
+
+    if (!res.ok) throw new Error("Start failed");
+
+    isStreamingRef.current = true;
+    setStreaming(true);
+    setCameraStatus("streaming");
+
+  } catch (err) {
+    console.error("Erreur caméra:", err);
+    setError("Erreur démarrage caméra");
+    setCameraStatus("error");
+  }
+};
+
+
+  const stopVideoStream = async () => {
+    console.log("Arrêt stream...");
+    
+    isStreamingRef.current = false;
+    setStreaming(false);
+
+    if (imgRef.current) {
+      imgRef.current.src = "";
+    }
+
+    try {
+      await fetch(`${CAMERA_PI}/camera/stop_stream`, {
+        method: "POST"
+      });
+    } catch (err) {
+      console.log("Erreur arrêt:", err);
+    }
+
+    setCameraStatus("idle");
+  };
+
+const captureForQR = async () => {
+  const res = await fetch(`${CAMERA_PI}/camera/snapshot`);
+  if (!res.ok) throw new Error("Snapshot failed");
+  return await res.blob();
+};
+
+
   const openQrCamera = () => {
     setScanType("qr");
     setIsModalOpen(true);
     setError("");
     setScanCount(0);
-    setFps(0);
     consecutiveFailsRef.current = 0;
 
     console.log("🔍 Mode QR");
@@ -292,87 +487,6 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       startVideoStream();
       setTimeout(startQrScanning, 2000);
     }, 300);
-  };
-
-  const startQrScanning = () => {
-    let scanInterval = 1500;
-
-    const performScan = async () => {
-      if (!isStreamingRef.current) {
-        console.log("⏳ Attente stream...");
-        return;
-      }
-
-      const currentScan = scanCount + 1;
-      setScanCount(currentScan);
-
-      console.log(`🔍 Scan #${currentScan}`);
-
-      try {
-        let imageBlob;
-        try {
-          imageBlob = await captureForQR();
-        } catch (err) {
-          console.log("⚠️ Capture ratée");
-          consecutiveFailsRef.current++;
-          return;
-        }
-
-        const formData = new FormData();
-        formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-        const res = await fetch(`${config.backendUrl}/read_prescription_qr`, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        const data = await res.json();
-
-        if (data.success && data.ordonnance) {
-          console.log("🎉 QR TROUVÉ!");
-
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          
-          setHasQRCode(true);
-          updatePrescriptionData({
-            scanType: "qr",
-            hasQRCode: true,
-            rawData: data.ordonnance,
-            medicaments: data.ordonnance?.medicaments || [],
-            extractedText: "",
-            qrId: data.qr_id
-          });
-
-          setIsModalOpen(false);
-          cleanup();
-          goToNextStep({ hasQRCode: true });
-
-        } else {
-          consecutiveFailsRef.current++;
-          console.log(`❌ Pas de QR (${consecutiveFailsRef.current})`);
-          
-          if (consecutiveFailsRef.current > 3) {
-            scanInterval = 1000;
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = setInterval(performScan, scanInterval);
-            }
-          }
-        }
-
-      } catch (err) {
-        console.log(`⚠️ Erreur: ${err.message}`);
-        consecutiveFailsRef.current++;
-      }
-    };
-
-    performScan();
-    intervalRef.current = setInterval(performScan, scanInterval);
   };
 
   // ----------------------------
@@ -418,6 +532,7 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       setLoading(false);
     }
   };
+
 
   // ----------------------------
   // GESTION DES PAGES
@@ -714,133 +829,89 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
         </>
       )}
 
-      {/* MODAL pour scan QR (ancienne méthode) */}
-      {isModalOpen && scanType === "qr" && (
-        <ModalCamera onClose={() => {
+
+
+{/* MODAL pour scan QR */}
+{isModalOpen && scanType === "qr" && (
+  <ModalCamera onClose={() => {
+    cleanup();
+    setIsModalOpen(false);
+    setScanType(null);
+    setError("");
+    setLoading(false);
+  }}>
+    <div className="flex flex-col items-center justify-center w-full h-full p-4">
+      <div className="relative w-full max-w-4xl h-[500px] mb-6 bg-black rounded-xl overflow-hidden">
+        <img
+          ref={imgRef}
+          className="w-full h-full object-contain"
+          alt="Scan QR code en direct"
+          crossOrigin="anonymous"
+        />
+        
+        {/* Overlay pour QR code */}
+        <div className="absolute inset-8 border-3 border-green-400 rounded-xl pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="bg-black bg-opacity-80 px-6 py-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <FaSync className="text-green-400 animate-spin" />
+                <span className="text-green-400 font-bold">SCAN QR CODE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Indicateur de capture */}
+        <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
+          Capture #{scanCount}
+        </div>
+        
+        {/* Indicateur statut */}
+        <div className="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
+          {streaming ? "Actif" : "Inactif"}
+        </div>
+      </div>
+
+      <div className="text-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-2">
+          Scanner QR Code - Mode Photo
+        </h3>
+        <p className="text-gray-600 mb-1">
+          Positionnez le QR code dans le cadre vert
+        </p>
+        <p className="text-gray-500 text-sm">
+          1 photo/seconde • ⚡ Analyse en temps réel
+        </p>
+      </div>
+
+      <button
+        onClick={() => {
           cleanup();
           setIsModalOpen(false);
           setScanType(null);
-          setError("");
-          setLoading(false);
-        }}>
-          <div className="flex flex-col items-center justify-center w-full h-full p-4">
-            <div className="relative w-full max-w-4xl h-[500px] mb-6 bg-black rounded-xl overflow-hidden">
-              <img
-                ref={imgRef}
-                className="w-full h-full object-contain"
-                alt="Flux caméra"
-                crossOrigin="anonymous"
-              />
+        }}
+        className="px-8 py-3 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition shadow-md"
+      >
+        Annuler le scan
+      </button>
+    </div>
+  </ModalCamera>
+)}
 
-              {/* Overlay pour QR code */}
-              <div className="absolute inset-8 border-3 border-green-400 rounded-xl pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-black bg-opacity-80 px-6 py-3 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <FaSync className="text-green-400 animate-spin" />
-                      <span className="text-green-400 font-bold">SCAN QR CODE</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Statistiques */}
-              <div className="absolute top-4 left-4 flex space-x-2">
-                {streaming && (
-                  <>
-                    <div className="bg-black bg-opacity-70 px-3 py-1 rounded-full">
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                        <span className="text-white text-sm">LIVE {fps}FPS</span>
-                      </div>
-                    </div>
-                    <div className="bg-blue-600 bg-opacity-80 px-3 py-1 rounded-full">
-                      <span className="text-white text-sm">Scans: {scanCount}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
 
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Scanner QR Code
-              </h3>
-              <p className="text-gray-600">
-                Positionnez le QR code dans le cadre vert
-              </p>
-            </div>
 
-            <button
-              onClick={() => {
-                cleanup();
-                setIsModalOpen(false);
-                setScanType(null);
-              }}
-              className="px-8 py-3 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition shadow-md"
-            >
-              Annuler
-            </button>
-          </div>
-        </ModalCamera>
-      )}
 
-      {/* MODAL pour photo (caméra) */}
-      {isModalOpen && scanType === "prescription" && (
-        <ModalCamera onClose={() => {
-          cleanup();
-          setIsModalOpen(false);
-          setScanType(null);
-          setError("");
-          setLoading(false);
-        }}>
-          <div className="flex flex-col items-center justify-center w-full h-full p-4">
-            <div className="relative w-full max-w-4xl h-[500px] mb-6 bg-black rounded-xl overflow-hidden">
-              <img
-                ref={imgRef}
-                className="w-full h-full object-contain"
-                alt="Flux caméra"
-                crossOrigin="anonymous"
-              />
-            </div>
 
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Prendre une photo de l'ordonnance
-              </h3>
-              <p className="text-gray-600">
-                Positionnez l'ordonnance face à la caméra
-              </p>
-            </div>
 
-            <div className="flex space-x-4">
-              <button
-                onClick={capturePhoto}
-                disabled={loading}
-                className={`
-                  px-8 py-3 font-medium rounded-lg shadow-md
-                  ${loading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'}
-                `}
-              >
-                {loading ? 'Capture en cours...' : '📸 Capturer'}
-              </button>
 
-              <button
-                onClick={() => {
-                  cleanup();
-                  setIsModalOpen(false);
-                  setScanType(null);
-                }}
-                className="px-8 py-3 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition shadow-md"
-              >
-                Annuler
-              </button>
-            </div>
-          </div>
-        </ModalCamera>
-      )}
+
+
+
+
+
+
+
     </div>
   );
 }

@@ -9,19 +9,20 @@
                 "form": "comprimé",
                 "dosage": "500 mg par comprimé",
                 "presentation": "Boîte de 16 comprimés",
-                "laboratory": "Sanofi"
+                "laboratory": "Upsa"
             },
             "usageAdvice": [
-                "Adultes : 1 comprimé toutes les 6 heures",
-                "Maximum 4 comprimés par jour",
+                "Adultes : 1 comprimé toutes les 4 à 6 heures",
+                "Maximum 6 comprimés par jour",
                 "À prendre avec un verre d'eau",
                 "Peut être pris pendant ou en dehors des repas"
             ],
             "warnings": [
                 "Ne pas dépasser la dose recommandée",
-                "Déconseillé en cas d'allergie au paracétamol",
-                "Attention en cas de maladie du foie",
-                "Tenir hors de portée des enfants"
+                "Ne pas associer avec d’autres médicaments contenant du paracétamol (rhume, grippe, douleur…)",
+                "Prudence en cas de : maladie du foie, consommation régulière d'alcool et dénutrition ou jeûne prolongé",
+                "Tenir hors de portée des enfants",
+                "Contre-indiqué dans le cas d'insuffisance hépatique sévère et/ou d'allergie au paracétamol"
             ],
             "size": 0,
             "label": "Dafalgan 500 mg"
@@ -30,7 +31,7 @@
             "id": 2,
             "category": "antiAcid",
             "price": 3.04,
-            "description": "Gaviscon est utilisé pour soulager les brûlures d’estomac et les reflux gastro-œsophagiens.",
+            "description": "Gaviscon est utilisé pour soulager les brûlures d’estomac, les remontées acides, la digestion difficile et les reflux gastro-œsophagiens.",
             "productInfo": {
                 "form": "suspension buvable",
                 "dosage": "Alginate de sodium et bicarbonate",
@@ -39,12 +40,13 @@
             },
             "usageAdvice": [
                 "10 à 20 ml après les repas",
-                "Peut être pris au coucher",
+                "Peut être pris au coucher si besoin",
                 "Agiter le flacon avant utilisation"
             ],
             "warnings": [
-                "Ne pas utiliser en cas d’allergie à l’un des composants",
-                "Contient du sodium"
+                "Espacer de 2 heures avec les autres médicaments",
+                "régime pauvre en sel (le médicament contient du sodium) et/ou d'insuffisance rénale sévère",
+                "Si les symptômes persistent plus de 7 jours, consulter un professionnel de santé"
             ],
             "size": 2,
             "label": "Gaviscon suspension buvable"
@@ -53,7 +55,7 @@
             "id": 3,
             "category": "antiInflammatory",
             "price": 3.29,
-            "description": "Nurofen est un anti-inflammatoire non stéroïdien utilisé pour traiter les douleurs et la fièvre.",
+            "description": "Nurofen est un anti-inflammatoire non stéroïdien utilisé pour traiter les douleurs légères à modérées (maux de tête, règles, douleurs dentaires, musculaires, inflammatoires) et fièvre.",
             "productInfo": {
                 "form": "comprimé",
                 "dosage": "200 mg par comprimé",
@@ -62,13 +64,15 @@
             },
             "usageAdvice": [
                 "1 comprimé toutes les 6 à 8 heures",
-                "À prendre de préférence pendant un repas",
+                "À prendre au cours d’un repas ou avec un grand verre d’eau",
                 "Maximum 1200 mg par jour"
             ],
             "warnings": [
-                "Déconseillé en cas d’ulcère gastrique",
+                "Déconseillé en cas d'antécédents d’ulcère ou de saignement digestif, maladie cardiaque, hypertension, insuffisance rénale ou déshydratation",
                 "Ne pas utiliser en cas d’asthme sans avis médical",
-                "Déconseillé en cas d’insuffisance rénale sévère"
+                "Contre-indiqué au 6e trimestre de grossesse",
+                "Ne pas associer avec un autre AINS (ibuprofène, kétoprofène, aspirine à dose antalgique, etc.)",
+                "Ne pas associer systématiquement avec Dafalgan® sans respecter les doses (possible mais à encadrer)."
             ],
             "size": 2,
             "label": "Nurofen 200 mg"
@@ -86,11 +90,12 @@
             },
             "usageAdvice": [
                 "1 à 2 pulvérisations dans chaque narine",
-                "2 à 3 fois par jour",
+                "1 à 3 fois par jour",
                 "Convient à un usage quotidien"
             ],
             "warnings": [
-                "Nettoyer l’embout après chaque utilisation"
+                "Nettoyer l’embout après chaque utilisation",
+                "En cas de douleur persistante, saignement fréquent ou infection prolongée, consulter"
             ],
             "size": 3,
             "label": "Physiomer spray nasal"
@@ -99,7 +104,7 @@
             "id": 5,
             "category": "antiHistamine",
             "price": 3.4,
-            "description": "Zyrtec est utilisé dans le traitement des symptômes des allergies comme le rhume des foins.",
+            "description": "Zyrtec est utilisé dans le traitement de rhinite allergique (éternuements, nez qui coule, yeux qui piquent), urticaire..",
             "productInfo": {
                 "form": "comprimé pelliculé",
                 "dosage": "10 mg par comprimé",
@@ -113,7 +118,7 @@
             ],
             "warnings": [
                 "Peut provoquer une somnolence",
-                "Prudence en cas d’insuffisance rénale"
+                "Prudence en cas d’insuffisance rénale et d'association avec alcool ou médicaments sédatifs"
             ],
             "size": 2,
             "label": "Zyrtec 10 mg"
@@ -130,12 +135,14 @@
                 "laboratory": "Boiron"
             },
             "usageAdvice": [
-                "1 comprimé toutes les heures au début",
+                "1 comprimé 3 à 6 fois par jour",
                 "Espacer les prises selon amélioration",
                 "Laisser fondre sous la langue"
             ],
             "warnings": [
-                "Contient du lactose"
+                "Contient du lactose",
+                "Si les symptômes persistent plus de 3 à 4 jours, consulter un médecin",
+                "Ne remplace pas un traitement spécifique si infection bactérienne ou complication"
             ],
             "size": 3,
             "label": "Coryzalia"
@@ -149,16 +156,18 @@
                 "form": "comprimé",
                 "dosage": "200 mg par comprimé",
                 "presentation": "Boîte de 20 comprimés",
-                "laboratory": "Biogaran"
+                "laboratory": "Mylan"
             },
             "usageAdvice": [
                 "1 comprimé toutes les 6 à 8 heures",
-                "À prendre pendant un repas",
-                "Maximum 1200 mg par jour"
+                "À prendre au cours d’un repas ou avec un grand verre d’eau",
+                "Maximum 6 comprimés par jour"
             ],
             "warnings": [
-                "Ne pas utiliser en cas d’ulcère gastrique",
-                "Déconseillé en cas d’insuffisance rénale sévère"
+                "Ne pas utiliser en cas d’ulcère gastrique, de saignement digestif, d'hypertension",
+                "Déconseillé en cas d’insuffisance rénale, cardiaque ou hépatique",
+                "Ne pas associer avec d’autres AINS (Nurofen®, kétoprofène, aspirine à dose antalgique…)",
+                "Peut diminuer l’efficacité des antihypertenseurs (ex. métoprolol)"
             ],
             "size": 0,
             "label": "Ibuprofène 200 mg"
@@ -175,13 +184,14 @@
                 "laboratory": "Sanofi"
             },
             "usageAdvice": [
-                "1 à 2 comprimés toutes les 6 heures",
-                "Maximum 4 g par jour",
+                "1 comprimés toutes les 4 à 6 heures",
+                "Maximum 6 comprimés par jour",
                 "À prendre avec un verre d’eau"
             ],
             "warnings": [
                 "Ne pas associer avec l’alcool",
-                "Ne pas cumuler avec d’autres médicaments contenant du paracétamol"
+                "Ne pas cumuler avec d’autres médicaments contenant du paracétamol",
+                "Prudence en cas de : maladie du foie et dénutrition ou jeûne prolongé"
             ],
             "size": 3,
             "label": "Doliprane 500 mg"
@@ -190,7 +200,7 @@
             "id": 9,
             "category": "homeopathy",
             "price": 6.99,
-            "description": "L52 est un médicament homéopathique traditionnellement utilisé en cas d’états anxieux légers.",
+            "description": "L52 est un médicament homéopathique traditionnellement utilisé pour soulager les symptômes des états grippaux (courbatures, fièvre, frissons, maux de tête).",
             "productInfo": {
                 "form": "comprimé",
                 "dosage": "Complexe homéopathique",
@@ -198,11 +208,14 @@
                 "laboratory": "Lehning"
             },
             "usageAdvice": [
-                "1 comprimé 3 fois par jour",
+                "2 comprimé 5 à 8 fois par jour",
                 "À laisser fondre sous la langue"
             ],
             "warnings": [
-                "Contient du lactose"
+                "Contient du lactose",
+                "Ne pas dépasser 7 jours",
+                "Consulter si les symptômes persistent au‑delà de 3 jours",
+                "Ce médicament ne remplace pas un traitement spécifique si une infection grave est suspectée."
             ],
             "size": 1,
             "label": "L52"
@@ -219,13 +232,16 @@
                 "laboratory": "Sanofi"
             },
             "usageAdvice": [
-                "1 prise le soir",
-                "Utiliser le gobelet doseur",
-                "Réservé à l’adulte"
+                "10 à 20 mL, 3 fois par jour",
+                "Avant le coucher si toux nocturne",
+                "Toujours utiliser la cuillère-doseuse fournie",
+                "Respecter les intervalles (environ 6 à 8 h entre les prises)"
             ],
             "warnings": [
                 "Peut provoquer une forte somnolence",
-                "Éviter la conduite de véhicules"
+                "Éviter la conduite de véhicules",
+                "Prudence en  cas de : maladies respiratoires chroniques, insuffisance rénale ou hépatique sévère, association avec autres sédatifs ou alcool",
+                "Ne pas dépasser la posologie indiquée"
             ],
             "size": 0,
             "label": "Toplexil"
@@ -239,16 +255,19 @@
                 "form": "comprimé",
                 "dosage": "500 mg de vitamine C par comprimé",
                 "presentation": "Tube de 20 comprimés",
-                "laboratory": "Bayer"
+                "laboratory": "Cooper"
             },
             "usageAdvice": [
                 "1 comprimé par jour",
                 "À avaler avec un verre d’eau",
-                "De préférence le matin"
+                "De préférence le matin",
+                "Maximum 4 comprimés par jour",
+                "Éviter de prendre en même temps que certains antibiotiques (comme la doxycycline) sans avis médical"
             ],
             "warnings": [
                 "Ne pas dépasser la dose journalière recommandée",
-                "À utiliser dans le cadre d’une alimentation équilibrée"
+                "À utiliser dans le cadre d’une alimentation équilibrée",
+                "Prudence en cas de : Calculs rénaux (vitamine C en excès peut favoriser les calculs d’oxalate), Insuffisance rénale sévère"
             ],
             "size": 2,
             "label": "Vitascorbol 500 mg"
@@ -265,13 +284,15 @@
                 "laboratory": "Bouchara-Recordati"
             },
             "usageAdvice": [
-                "1 pulvérisation dans la bouche",
-                "3 fois par jour",
+                "1 à 2 pulvérisation dans la gorge",
+                "3 à 6 fois par jour",
+                "Ne pas dépasser 12 pulvérisations par jour",
                 "Éviter de manger ou boire juste après l’application"
             ],
             "warnings": [
-                "Usage prolongé déconseillé",
-                "Ne pas utiliser chez l’enfant sans avis médical"
+                "Ne pas utiliser plus de 7 jours consécutifs sans avis médical",
+                "En cas de symptômes persistants, fièvre élevée, difficultés à avaler ou aggravation → consulter un médecin",
+                "Respecter la dose maximale"
             ],
             "size": 1,
             "label": "Hexaspray"
@@ -288,13 +309,14 @@
                 "laboratory": "Novartis"
             },
             "usageAdvice": [
-                "1 comprimé toutes les 12 heures",
-                "À prendre au cours d’un repas",
-                "Maximum 100 mg par jour"
+                "1 comprimé de 50 mg, 2 à 3 fois par jour selon la prescription",
+                "Avaler avec un verre d’eau, de préférence au cours d’un repas pour réduire l’irritation gastrique",
+                "Ne pas croquer ou écraser le comprimé",
+                "Respecter strictement la dose prescrite"
             ],
             "warnings": [
-                "Ne pas utiliser en cas d’ulcère gastrique",
-                "Déconseillé en cas d’insuffisance rénale",
+                "Ne pas utiliser en cas d’ulcère gastrique ou de saignement digestif, d'hypertension ou de prise de traitement coagulant",
+                "Déconseillé en cas d’insuffisance rénale, hépatique ou cardiaque",
                 "Ne pas associer avec d’autres AINS"
             ],
             "size": 2,
@@ -304,7 +326,7 @@
             "id": 14,
             "category": "antiDiarrheal",
             "price": 3.19,
-            "description": "Smecta est utilisé pour le traitement symptomatique des diarrhées aiguës.",
+            "description": "Smecta est utilisé pour le traitement symptomatique des diarrhées aiguës ou chronique.",
             "productInfo": {
                 "form": "poudre pour suspension buvable",
                 "dosage": "3 g de diosmectite par sachet",
@@ -314,10 +336,13 @@
             "usageAdvice": [
                 "1 sachet 3 fois par jour",
                 "À diluer dans un demi-verre d’eau",
-                "Espacer des autres médicaments"
+                "Prendre hors des repas ou à distance des autres médicaments (1 à 2 h avant ou après), car Smecta peut réduire l’absorption de certains médicaments"
             ],
             "warnings": [
-                "Peut provoquer une constipation passagère"
+                "Peut provoquer une constipation passagère",
+                "Ne pas utiliser plus de 7 jours sans avis médical",
+                "Boire beaucoup d’eau pendant la diarrhée pour éviter la déshydratation",
+                "À utiliser avec prudence chez les patients ayant des difficultés à avaler (poudre épaissie)"
             ],
             "size": 1,
             "label": "Smecta"
@@ -331,15 +356,19 @@
                 "form": "solution pour application cutanée",
                 "dosage": "Lévomenthol, résorcinol",
                 "presentation": "Flacon de 225 ml",
-                "laboratory": "GSK"
+                "laboratory": "EG Labo"
             },
             "usageAdvice": [
                 "Appliquer localement 1 à 2 fois par jour",
+                "Massez doucement jusqu’à absorption complète",
+                "Utiliser jusqu'à 1 semaine selo l'amélioration",
                 "Ne pas avaler",
                 "Usage externe uniquement"
             ],
             "warnings": [
                 "Ne pas appliquer sur une peau lésée",
+                "Éviter exposition prolongée au soleil sur la zone traitée si phototoxicité possible",
+                "Arrêter en cas de réaction cutanée (rougeur, démangeaisons)",
                 "Éviter le contact avec les yeux"
             ],
             "size": 3,
@@ -349,7 +378,7 @@
             "id": 16,
             "category": "antiSeptic",
             "price": 7.71,
-            "description": "Strepsils est utilisé pour soulager les maux de gorge et les irritations de la bouche.",
+            "description": "Strepsils est utilisé pour soulager les maux de gorge et les irritations de la gorge.",
             "productInfo": {
                 "form": "pastille à sucer",
                 "dosage": "Amylmétacrésol et alcool dichlorobenzylique",
@@ -358,10 +387,14 @@
             },
             "usageAdvice": [
                 "1 pastille toutes les 2 à 3 heures",
-                "Laisser fondre lentement dans la bouche"
+                "Laisser fondre lentement dans la bouche, ne pas croquer",
+                "Maximum : 8 à 12 pastilles par jour",
+                "Boire un peu d’eau après si nécessaire"
             ],
             "warnings": [
-                "Ne pas dépasser 8 pastilles par jour",
+                "Tenir hors de portée des enfants",
+                "Ne pas utiliser plus de 7 jours sans avis médical",
+                "En cas de symptômes persistants ou aggravation → consulter un médecin",
                 "Déconseillé chez l’enfant de moins de 6 ans"
             ],
             "size": 1,
@@ -376,18 +409,19 @@
                 "form": "comprimé",
                 "dosage": "500 mg par comprimé",
                 "presentation": "Boîte de 20 comprimés",
-                "laboratory": "Bayer"
+                "laboratory": "Upsa"
             },
             "usageAdvice": [
-                "1 à 2 comprimés toutes les 4 à 6 heures",
-                "Maximum 3 g par jour",
+                "1 comprimé toutes les 4 à 6 heures",
+                "Maximum 6 comprimés par jour",
                 "À prendre avec un grand verre d'eau",
-                "Prendre de préférence pendant les repas"
+                "Prendre de préférence pendant les repas",
+                "Ne pas croquer le comprimé"
             ],
             "warnings": [
                 "Ne pas utiliser en cas d'allergie à l'aspirine",
-                "Déconseillé en cas d'ulcère gastrique",
-                "Ne pas associer avec des anticoagulants sans avis médical"
+                "Déconseillé en cas d'ulcère gastrique, de saignement digestif, d'insufance rénale, hépatique ou cardiaque, d'asthme, d'allergie aux AINS",
+                "Ne pas associer avec des anticoagulants ou d'autres anti-inflammatoires sans avis médical"
             ],
             "size": 1,
             "label": "Aspirine 500 mg"
@@ -404,12 +438,16 @@
                 "laboratory": "Bayer"
             },
             "usageAdvice": [
-                "1 à 2 comprimés à croquer",
-                "Jusqu'à 11 comprimés par jour",
-                "Laisser fondre lentement dans la bouche"
+                "2 à 4 comprimés à mâcher après les repas et au coucher si nécessaire",
+                "Jusqu'à 16 comprimés par jour",
+                "Mâcher les comprimés avant d’avaler",
+                "Boire un peu d’eau si nécessaire"
             ],
             "warnings": [
-                "Ne pas utiliser en cas d'insuffisance rénale sévère"
+                "Ne pas utiliser en cas d'insuffisance rénale sévère",
+                "Ne pas utiliser plus de 2 semaines sans avis médical",
+                "Éviter une consommation excessive (risque d’apport en calcium trop élevé)",
+                "Peut contenir des sucres ou du lactose → attention aux intolérances"
             ],
             "size": 1,
             "label": "Rennie"
@@ -423,16 +461,17 @@
                 "form": "comprimé pelliculé",
                 "dosage": "400 mg d'ibuprofène",
                 "presentation": "Boîte de 14 comprimés",
-                "laboratory": "GSK"
+                "laboratory": "Pfizer"
             },
             "usageAdvice": [
-                "1 comprimé toutes les 6 heures",
+                "1 comprimé toutes les 6 à 8 heures",
                 "Maximum 3 comprimés par jour",
                 "À prendre avec de la nourriture"
             ],
             "warnings": [
                 "Ne pas utiliser chez la femme enceinte",
-                "Déconseillé en cas d'ulcère gastrique"
+                "Ne pas associer avec autres AINS (Nurofen®, Voltarène®, Aspirine à dose antalgique)",
+                "Déconseillé en cas d'ulcère gastrique, de saignement digestif, d'insufance rénale, hépatique ou cardiaque, d'hypertension, de consommation régulière d'alcool"
             ],
             "size": 3,
             "label": "Advil 400 mg"
@@ -449,11 +488,14 @@
                 "laboratory": "Fumouze"
             },
             "usageAdvice": [
-                "1 pulvérisation par narine",
-                "2 à 6 fois par jour"
+                "1 à 2 pulvérisations dans chaque narine",
+                "1 à 6 fois par jour"
             ],
             "warnings": [
-                "Nettoyer l'embout après usage"
+                "Nettoyer l'embout après usage",
+                "Pour usage nasal uniquement",
+                "Ne pas utiliser en cas de lésion ou saignement sévère du nez sans avis médical",
+                "Tenir hors de portée des enfants"
             ],
             "size": 0,
             "label": "Stérimar"
@@ -462,7 +504,7 @@
             "id": 21,
             "category": "antiHistamine",
             "price": 5.8,
-            "description": "Clarityne traite les symptômes allergiques comme le rhume des foins.",
+            "description": "Clarityne traite les symptômes de rhinite allergique (éternuements, nez qui coule, yeux qui piquent) et de l'urticaire (démangeaisons cutanées)",
             "productInfo": {
                 "form": "comprimé",
                 "dosage": "10 mg de loratadine",
@@ -471,10 +513,13 @@
             },
             "usageAdvice": [
                 "1 comprimé par jour",
+                "À prendre de préférence à la même heure chaque jour",
                 "À prendre avec un verre d'eau"
             ],
             "warnings": [
-                "Peut provoquer une légère somnolence"
+                "Peut provoquer une légère somnolence",
+                "Ne pas dépasser la dose recommandée",
+                "Prudence en cas de : insuffisance hépatique ou rénale sévère, traitement avec certains médicaments (ex. cétirizine, érythromycine)"
             ],
             "size": 0,
             "label": "Clarityne 10 mg"
@@ -491,11 +536,14 @@
                 "laboratory": "Boiron"
             },
             "usageAdvice": [
-                "1 dose au début des symptômes",
+                "1 dose de granules (1 tube) toutes les 6 heures pendant 24 à 48 heures maximum",
                 "Laisser fondre sous la langue"
             ],
             "warnings": [
-                "Contient du saccharose"
+                "Contient du saccharose",
+                "Ne pas remplacer un traitement médical en cas de grippe sévère ou infection bactérienne",
+                "Ne pas dépasser la dose recommandée",
+                "Tenir hors de portée des enfants"
             ],
             "size": 0,
             "label": "Oscillococcinum"
@@ -504,7 +552,7 @@
             "id": 23,
             "category": "antiInflammatory",
             "price": 3.9,
-            "description": "Spedifen est un anti-inflammatoire à action rapide.",
+            "description": "Spedifen est un traitement utilisé dans le cas de douleurs légères à modérées ou de fièvre.",
             "productInfo": {
                 "form": "comprimé",
                 "dosage": "400 mg d'ibuprofène",
@@ -512,13 +560,14 @@
                 "laboratory": "Zambon"
             },
             "usageAdvice": [
-                "1 comprimé toutes les 6 heures",
-                "Maximum 1200 mg par jour",
-                "À prendre au cours d'un repas"
+                "1 comprimé toutes les 6 à 8 heures",
+                "Maximum 3 comprimés par jour",
+                "Avaler avec un verre d’eau, au cours d’un repas si possible"
             ],
             "warnings": [
-                "Ne pas utiliser en cas d'ulcère",
-                "Contre-indiqué au 3e trimestre de grossesse"
+                "Ne pas utiliser en cas d'ulcère, de saignement digestif, insuffisance rénale, hépatique ou cardiaque, hypertension ou asthme, consommation régulière d’alcool",
+                "Contre-indiqué au 3e trimestre de grossesse",
+                "Ne pas associer avec autres AINS (Nurofen®, Advil®, Voltarène®)"
             ],
             "size": 1,
             "label": "Spedifen 400 mg"
@@ -535,13 +584,13 @@
                 "laboratory": "Upsa"
             },
             "usageAdvice": [
-                "1 comprimé toutes les 6 heures",
+                "1 comprimé toutes les 6 à 8 heures",
                 "Maximum 3 comprimés par jour",
                 "À dissoudre dans un verre d'eau"
             ],
             "warnings": [
                 "Ne pas dépasser 3 g par jour",
-                "Attention en cas d'insuffisance hépatique"
+                "Attention en cas d'insuffisance hépatique et de consommation importante d'alcool"
             ],
             "size": 2,
             "label": "Efferalgan 1000 mg"
@@ -555,14 +604,18 @@
                 "form": "gélule",
                 "dosage": "Extrait de passiflore",
                 "presentation": "Boîte de 45 gélules",
-                "laboratory": "Arkopharma"
+                "laboratory": "Fenioux"
             },
             "usageAdvice": [
                 "1 à 2 gélules par jour",
-                "À prendre avec un grand verre d'eau"
+                "À prendre de préférence le soir pour favoriser la relaxation et le sommeil",
+                "À prendre avec un grand verre d'eau",
+                "Ne pas dépasser la dose indiquée sur l’étiquette ou par le professionnel de santé"
             ],
             "warnings": [
-                "Déconseillé chez la femme enceinte"
+                "Déconseillé chez la femme enceinte",
+                "Peut provoquer somnolence",
+                "Ne pas associer à autres sédatifs puissants sans avis médical"
             ],
             "size": 1,
             "label": "Passiflore"
@@ -579,12 +632,16 @@
                 "laboratory": "Urgo"
             },
             "usageAdvice": [
-                "1 comprimé 3 fois par jour",
-                "Espacer les prises de 4 heures minimum"
+                "1 comprimé toutes les 6 à 8 heures",
+                "Maximum 3 à 4 comprimés par jour",
+                "Avaler le comprimé avec un peu d’eau",
+                "Respecter la dose maximale et la durée du traitement (souvent 5 à 7 jours)"
             ],
             "warnings": [
                 "Peut provoquer une somnolence",
-                "Ne pas conduire"
+                "Ne pas conduire",
+                "Prudence en cas de : grossesse ou allaitement, maladies cardiaques, hypertension, diabète, troubles hépatiques ou rénaux sévères",
+                "Tenir hors de portée des enfants"
             ],
             "size": 0,
             "label": "Humex"
@@ -593,7 +650,7 @@
             "id": 27,
             "category": "foodSupplement",
             "price": 15.9,
-            "description": "Complément alimentaire multivitaminé pour la vitalité.",
+            "description": "Complément alimentaire multivitaminé pour booster le système immunitaire.",
             "productInfo": {
                 "form": "comprimé",
                 "dosage": "Multivitamines et minéraux",
@@ -601,11 +658,14 @@
                 "laboratory": "Merck"
             },
             "usageAdvice": [
-                "1 comprimé par jour",
-                "À prendre le matin au petit-déjeuner"
+                "1 gélule par jour, de préférence au moment d’un repas",
+                "Avaler avec un verre d’eau"
             ],
             "warnings": [
-                "Ne pas dépasser la dose recommandée"
+                "Ne pas dépasser la dose recommandée",
+                "Tenir hors de portée des enfants",
+                "Prudence en cas d’immunodépression sévère ou maladie grave",
+                "Contient parfois du lactose"
             ],
             "size": 1,
             "label": "Bion 3"
@@ -619,14 +679,18 @@
                 "form": "comprimé à sucer",
                 "dosage": "Cétylpyridinium",
                 "presentation": "Boîte de 18 comprimés",
-                "laboratory": "Johnson & Johnson"
+                "laboratory": "Sanofi"
             },
             "usageAdvice": [
-                "1 comprimé toutes les 2 heures",
-                "Laisser fondre dans la bouche"
+                "1 comprimé toutes les 2 à 3 heures",
+                "Maximum : 6 à 8 pastilles par jour selon la notice",
+                "Laisser la pastille fondre lentement dans la bouche, ne pas croquer",
+                "Boire un peu d’eau après si nécessaire"
             ],
             "warnings": [
-                "Ne pas dépasser 6 comprimés par jour"
+                "Ne pas utiliser plus de 7 jours sans avis médical",
+                "Tenir hors de portée des enfants",
+                "Prudence si grossesse ou allaitement"
             ],
             "size": 3,
             "label": "Lysopaïne"
@@ -635,7 +699,7 @@
             "id": 29,
             "category": "antiInflammatory",
             "price": 8.9,
-            "description": "Gel anti-inflammatoire pour application cutanée.",
+            "description": "Gel anti-inflammatoire utilisé en cas de douleurs et inflammations localisées.",
             "productInfo": {
                 "form": "gel",
                 "dosage": "1% de diclofénac",
@@ -643,13 +707,17 @@
                 "laboratory": "IBSA"
             },
             "usageAdvice": [
-                "Appliquer 2 à 4 fois par jour",
+                "Appliquer 2 à 3 fois par jour",
                 "Masser légèrement",
-                "Usage externe uniquement"
+                "Usage externe uniquement",
+                "Ne pas dépasser 4 applications par jour"
             ],
             "warnings": [
-                "Ne pas appliquer sur une plaie",
-                "Se laver les mains après application"
+                "Ne pas appliquer sur une plaie ouverte",
+                "Éviter exposition prolongée au soleil sur la zone traitée",
+                "Arrêter en cas de réaction cutanée : rougeur, démangeaisons",
+                "Se laver les mains après application",
+                "Prudence en cas : insuffisance hépatique ou rénale sévère, allergie aux anti-inflammatoires non stéroïdiens (AINS)"
             ],
             "size": 1,
             "label": "Flector 1%"
@@ -658,7 +726,7 @@
             "id": 30,
             "category": "antiDiarrheal",
             "price": 6.5,
-            "description": "Ultra-Levure est utilisé pour traiter les diarrhées.",
+            "description": "Ultra-Levure est utilisé pour traiter les diarrhées aigües.",
             "productInfo": {
                 "form": "gélule",
                 "dosage": "Saccharomyces boulardii",
@@ -666,11 +734,16 @@
                 "laboratory": "Biocodex"
             },
             "usageAdvice": [
-                "1 à 2 gélules par jour",
-                "À prendre avec un verre d'eau"
+                "1 gélule par jour",
+                "À prendre avec un verre d'eau",
+                "Prendre de préférence en dehors des repas ou des antibiotiques (séparer d’au moins 2 heures)",
+                "Avaler entier, ne pas croquer",
+                "Respecter la durée indiquée sur la notice"
             ],
             "warnings": [
-                "Espacer de la prise d'antibiotiques"
+                "Peut contenir du lactose",
+                "Tenir hors de portée des enfants",
+                "Prudence en cas d’immunodépression sévère"
             ],
             "size": 2,
             "label": "Ultra-Levure"
@@ -684,16 +757,21 @@
                 "form": "baume",
                 "dosage": "Camphre et menthol",
                 "presentation": "Pot de 100 ml",
-                "laboratory": "Mayoly"
+                "laboratory": "Sanofi"
             },
             "usageAdvice": [
                 "Appliquer en massage",
-                "2 à 3 fois par jour",
-                "Usage externe"
+                "Appliquer une fine couche sur la zone douloureuse, 2 à 3 fois par jour",
+                "Usage externe",
+                "Durée limitée, généralement 5 à 7 jours, sauf avis médical",
+                "Ne pas appliquer sur plaies ouvertes, muqueuses ou peau irritée",
+                "Se laver les mains après application"
             ],
             "warnings": [
                 "Ne pas appliquer sur les muqueuses",
-                "Éviter le contact avec les yeux"
+                "Éviter le contact avec les yeux",
+                "Tenir hors de portée des enfants",
+                "Prudence en cas de : peau sensible ou lésions cutanées, grossesse ou allaitement"
             ],
             "size": 0,
             "label": "Decontractyl"
@@ -710,14 +788,40 @@
                 "laboratory": "Pierre Fabre"
             },
             "usageAdvice": [
-                "1 pastille toutes les 2 heures",
-                "Laisser fondre lentement"
+                "1 pastille toutes les 2 à 3 heures",
+                "Maximum : 6 à 8 pastilles par jour selon la notice",
+                "Laisser fondre lentement, ne pas croquer",
+                "Boire un peu d’eau après si nécessaire"
             ],
             "warnings": [
-                "Maximum 6 pastilles par jour"
+                "Ne pas utiliser plus de 7 jours sans avis médical",
+                "Tenir hors de portée des enfants",
+                "Prudence en cas de grossesse ou allaitement"
             ],
             "size": 2,
             "label": "Drill"
+        },
+        {
+            "id": 33,
+            "category": "painKiller",
+            "price": 3.01,
+            "description": "Médicament de traitement de fonds utilisé en cas de migraines sevères.",
+            "productInfo": {
+                "form": "comprimé",
+                "dosage": "50mg",
+                "presentation": "Boîte de 30 comprimés",
+                "laboratory": "Sandoz"
+            },
+            "usageAdvice": [
+                "1 comprimé par jour a heure fix après repas",
+                "À avaler avec un verre d’eau"
+            ],
+            "warnings": [
+                "Déconseillé en cas de problème pulmonaire et/ou cardiaque",
+                "Déconseillé chez la femme enceinte"
+            ],
+            "size": 3,
+            "label": "Métoprolol 50mg"
         }
     ]
 }
