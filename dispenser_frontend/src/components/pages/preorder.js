@@ -323,51 +323,42 @@ function Preorder() {
           console.log("✅ QR code décodé:", code.data);
           console.log("📍 Position:", code.location);
           
-          // Le QR code contient un JSON: {"id": 123}
-          try {
-            const qrData = JSON.parse(code.data);
-            const qrId = qrData.id;
-            
-            if (!qrId) {
-              console.error("❌ Pas d'ID dans le QR code");
-              resolve({ success: false, error: "QR code invalide (pas d'ID)" });
-              return;
-            }
-            
-            console.log("🆔 QR ID extrait:", qrId);
-            setDebugInfo(`QR ID: ${qrId}, récupération profil...`);
-            
-            // Appeler le backend pour récupérer les données du profil
-            fetch(`${config.backendUrl}/get_profile/${qrId}?scan_role=distributeur`)
-              .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-              })
-              .then(data => {
-                console.log("✅ Données profil:", data);
-                setDebugInfo("Profil chargé ✅");
-                resolve({
-                  success: true,
-                  qr_id: qrId,
-                  ...data
-                });
-              })
-              .catch(err => {
-                console.error("❌ Erreur récupération profil:", err);
-                setDebugInfo("Erreur serveur");
-                resolve({
-                  success: false,
-                  error: "Profil non trouvé"
-                });
+          // Le QR code contient des données cryptées, on envoie au backend pour décryptage
+          const qrContent = code.data.trim();
+          console.log("🔐 Contenu crypté, longueur:", qrContent.length);
+          setDebugInfo("Décryptage QR...");
+          
+          // Appeler le backend pour décrypter et récupérer le profil
+          fetch(`${config.backendUrl}/read_profile_qr_content`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              content: qrContent,
+              scan_role: 'distributeur'
+            })
+          })
+            .then(res => {
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              return res.json();
+            })
+            .then(data => {
+              console.log("✅ Données profil décryptées:", data);
+              setDebugInfo("Profil chargé ✅");
+              resolve({
+                success: true,
+                ...data
               });
-          } catch (parseError) {
-            console.error("❌ QR code n'est pas du JSON valide:", parseError);
-            console.log("📄 Contenu brut:", code.data);
-            resolve({
-              success: false,
-              error: "Format QR code invalide"
+            })
+            .catch(err => {
+              console.error("❌ Erreur décryptage/récupération profil:", err);
+              setDebugInfo("Erreur décryptage");
+              resolve({
+                success: false,
+                error: "Impossible de décrypter le QR code"
+              });
             });
-          }
         } else {
           console.log("❌ Aucun QR code détecté dans l'image");
           setDebugInfo("Pas de QR détecté");
