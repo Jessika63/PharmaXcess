@@ -333,8 +333,8 @@ function Preorder() {
           const xhr = new XMLHttpRequest();
           const startTime = Date.now();
           
-          // Timeout de 15 secondes
-          xhr.timeout = 15000;
+          // Timeout de 30 secondes (le backend fait beaucoup de tentatives)
+          xhr.timeout = 30000;
           
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
@@ -384,7 +384,7 @@ function Preorder() {
           });
           
           xhr.addEventListener('timeout', () => {
-            console.error("⏱️ TIMEOUT après 15 secondes !");
+            console.error("⏱️ TIMEOUT après 30 secondes !");
             setDebugInfo("Timeout - Serveur trop lent");
             resolve({
               success: false,
