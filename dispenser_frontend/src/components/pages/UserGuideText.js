@@ -18,7 +18,7 @@ function UserGuideText() {
         >
           <config.icons.arrowLeft className="text-2xl text-black" />
         </button>
-        <h1 className="ml-2 text-3xl font-bold text-black tracking-tight">Guide utilisateur</h1>
+        <h1 className="ml-2 text-3xl font-bold text-black tracking-tight">Guide utilisateur textuel</h1>
       </div>
       <div className="flex justify-center w-full">
         <div className="bg-white p-6 md:p-12 rounded-3xl shadow-xl w-full max-w-3xl mb-8">

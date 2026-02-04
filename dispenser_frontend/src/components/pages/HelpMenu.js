@@ -12,10 +12,11 @@ function HelpMenu() {
         <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-48 h-auto" />
       </div>
       {/* Header retour + titre */}
-      <div className="w-full flex items-center mb-8 mt-8 px-8">
+      {/* Header retour + titre */}
+      <div className="w-full flex items-center mb-8 mt-8 px-8 relative z-10">
         <button
           className="flex items-center space-x-2 bg-transparent hover:bg-gray-100 rounded-xl px-2 py-1 transition-transform duration-300"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
         >
           <config.icons.arrowLeft className="text-2xl text-black" />
         </button>
