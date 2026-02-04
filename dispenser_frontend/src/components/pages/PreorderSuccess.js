@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAutoVoiceOver } from '../../hooks/useVoiceOver';
+import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../../config';
