@@ -285,7 +285,7 @@ function Preorder() {
   const checkProfileQRCode = async (imageBlob) => {
     if (!isMountedRef.current) return { success: false, error: "Composant démonté" };
     
-    try {
+    return new Promise((resolve) => {
       console.log("🔍 === DÉBUT checkProfileQRCode ===");
       console.log("📦 Blob reçu:", imageBlob);
       console.log("📏 Taille blob:", imageBlob.size, "bytes");
@@ -303,61 +303,83 @@ function Preorder() {
       console.log("📤 Envoi au backend pour analyse QR...");
       setDebugInfo("Envoi au backend...");
       
-      // Ajouter un timeout pour éviter les blocages infinis
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.error("⏱️ TIMEOUT après 10 secondes !");
-        controller.abort();
-      }, 10000);
+      // Utiliser XMLHttpRequest au lieu de fetch
+      const xhr = new XMLHttpRequest();
+      const startTime = Date.now();
       
-      console.log("🚀 Lancement du fetch...");
-      const fetchStart = Date.now();
+      // Timeout de 15 secondes
+      xhr.timeout = 15000;
       
-      const response = await fetch(targetUrl, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = (e.loaded / e.total) * 100;
+          console.log(`📊 Upload progress: ${percentComplete.toFixed(1)}%`);
+          setDebugInfo(`Upload: ${percentComplete.toFixed(0)}%`);
+        }
       });
       
-      clearTimeout(timeoutId);
-      const fetchDuration = Date.now() - fetchStart;
+      xhr.addEventListener('load', () => {
+        const duration = Date.now() - startTime;
+        console.log(`✅ REQUÊTE TERMINÉE en ${duration}ms`);
+        console.log("📊 Status:", xhr.status, xhr.statusText);
+        console.log("📥 Response:", xhr.responseText.substring(0, 200));
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            console.log("✅ Réponse backend:", data);
+            setDebugInfo("Analyse backend terminée");
+            resolve(data);
+          } catch (err) {
+            console.error("❌ Erreur parsing JSON:", err);
+            resolve({
+              success: false,
+              error: "Réponse invalide du serveur"
+            });
+          }
+        } else {
+          console.error("❌ Erreur HTTP:", xhr.status, xhr.responseText);
+          resolve({
+            success: false,
+            error: `Erreur serveur: ${xhr.status}`
+          });
+        }
+      });
       
-      console.log("✅ FETCH TERMINÉ en", fetchDuration, "ms");
-      console.log("📥 Response reçue:", response);
-      console.log("📊 Status:", response.status, response.statusText);
-      console.log("🏷️ Headers:", [...response.headers.entries()]);
+      xhr.addEventListener('error', (e) => {
+        const duration = Date.now() - startTime;
+        console.error(`❌ ERREUR RÉSEAU après ${duration}ms`);
+        console.error("Event:", e);
+        setDebugInfo("Erreur réseau");
+        resolve({
+          success: false,
+          error: "Erreur de connexion réseau"
+        });
+      });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Erreur HTTP:", response.status, errorText);
-        throw new Error(`Erreur HTTP: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("✅ Réponse backend:", data);
-      setDebugInfo("Analyse backend terminée");
-      
-      return data;
-    } catch (err) {
-      console.error("❌ === ERREUR checkProfileQRCode ===");
-      console.error("Type:", err.name);
-      console.error("Message:", err.message);
-      console.error("Stack:", err.stack);
-      
-      if (err.name === 'AbortError') {
+      xhr.addEventListener('timeout', () => {
+        console.error("⏱️ TIMEOUT après 15 secondes !");
         setDebugInfo("Timeout - Serveur trop lent");
-        return {
+        resolve({
           success: false,
           error: "Le serveur met trop de temps à répondre"
-        };
-      }
+        });
+      });
       
-      setDebugInfo(`Erreur: ${err.message}`);
-      return {
-        success: false,
-        error: `Impossible de lire le QR code: ${err.message}`
-      };
-    }
+      xhr.addEventListener('abort', () => {
+        console.error("❌ Requête ABORTED");
+        resolve({
+          success: false,
+          error: "Requête annulée"
+        });
+      });
+      
+      console.log("🚀 Ouverture de la connexion...");
+      xhr.open('POST', targetUrl, true);
+      
+      console.log("📤 Envoi des données...");
+      xhr.send(formData);
+    });
   };
 
   // Lancer le scanning automatique
