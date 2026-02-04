@@ -49,7 +49,18 @@
           "allowUndefined": true,
           "verbose": false
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "networkSecurityConfig": "./network_security_config.xml"
+          }
+        }
+      ],
+      "./plugins/withNetworkSecurityConfig.js",
+      "./plugins/withNetworkSecurityConfigFile.js"
     ]
   }
 }

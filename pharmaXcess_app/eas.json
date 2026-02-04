@@ -5,14 +5,34 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PUBLIC_NGROK_BACKEND_URL": "https://dorie-nonerodent-unyieldingly.ngrok-free.dev",
+        "EXPO_PUBLIC_BACKEND_URL": "http://57.128.57.96:5000",
+        "EXPO_PUBLIC_CORS_SECRET_KEY": "phx_sec_cGh4X3NlY183RSM5d0A0SyRxRiFwTDIldlI1JmNYKno4YlkrZDNtVTZeblNfalRmRC1IKFApVz1Re0d9W0FdQjtOOlY8Qz5aP3hK"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_BACKEND_URL": "http://57.128.57.96:5000",
+        "EXPO_PUBLIC_CORS_SECRET_KEY": "phx_sec_cGh4X3NlY183RSM5d0A0SyRxRiFwTDIldlI1JmNYKno4YlkrZDNtVTZeblNfalRmRC1IKFApVz1Re0d9W0FdQjtOOlY8Qz5aP3hK"
       }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_BACKEND_URL": "http://57.128.57.96:5000",
+        "EXPO_PUBLIC_CORS_SECRET_KEY": "phx_sec_cGh4X3NlY183RSM5d0A0SyRxRiFwTDIldlI1JmNYKno4YlkrZDNtVTZeblNfalRmRC1IKFApVz1Re0d9W0FdQjtOOlY8Qz5aP3hK"
+      }
+    }
   }
 }
