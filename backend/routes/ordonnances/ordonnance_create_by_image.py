@@ -177,9 +177,14 @@ def create_ordonnance_by_image():
             stored_filename = file.filename
         elif image_base64:
             try:
-                img_bytes = base64.b64decode(image_base64)
-            except Exception:
-                return jsonify({"error": "Invalid base64 image"}), 400
+                # Remove data:image/jpeg;base64, prefix if present
+                if "," in image_base64:
+                    _, encoded = image_base64.split(",", 1)
+                else:
+                    encoded = image_base64
+                img_bytes = base64.b64decode(encoded)
+            except Exception as e:
+                return jsonify({"error": f"Invalid base64 image: {str(e)}"}), 400
         else:
             return jsonify({"error": "No image provided"}), 400
     except Exception as e:
@@ -208,16 +213,19 @@ def create_ordonnance_by_image():
             return jsonify({"error": "OCR completed but produced no usable data", "detail": ocr_result}), 422
     except Exception as e:
         return jsonify({"error": f"OCR execution failed: {str(e)}"}), 502
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
 
     # Extract OCR info
     infos_ocr = ocr_result.get("infos", {})
     medicaments = infos_ocr.get("medicaments", [])
     medecin = infos_ocr.get("medecin", {})
     patient = infos_ocr.get("patient", {})
-    description = "Ordonnance créée via OCR"
+    
+    # Build description with doctor's specialty if available
+    specialite = medecin.get("specialite") if medecin else None
+    if specialite:
+        description = f"Ordonnance - {specialite}"
+    else:
+        description = "Ordonnance - Généraliste"
 
     # Parse prescription date
     raw_date_prescription = infos_ocr.get("date_prescription")
@@ -228,8 +236,43 @@ def create_ordonnance_by_image():
     except Exception:
         medicaments_json = None
 
+    # Validation: medecin ET medicaments vides = erreur
+    medecin_nom = medecin.get("nom") if medecin else None
+    if not medicaments and not medecin_nom:
+        return jsonify({"error": "OCR n'a extrait ni médicaments ni médecin"}), 422
+    
     if not medicaments:
         return jsonify({"error": "OCR did not extract any medications"}), 422
+
+    # Save image to ordonnance_images_temp if we got it from base64 or file (not temp_image_id)
+    temp_image_id_created = None
+    if not temp_image_id:
+        # Re-read the saved file to get bytes
+        with open(tmp_path, 'rb') as f:
+            image_data_to_save = f.read()
+        
+        conn_save_img = get_app_connection()
+        try:
+            with conn_save_img.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO ordonnance_images_temp (
+                        utilisateur_id, filename, image_data, mime_type, date_upload
+                    ) VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    user_id,
+                    stored_filename or f"ordonnance_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
+                    image_data_to_save,
+                    "image/jpeg",
+                    datetime.now()
+                ))
+                temp_image_id_created = cursor.lastrowid
+            conn_save_img.commit()
+        finally:
+            conn_save_img.close()
+    
+    # Clean up temp file now that we've saved it
+    if tmp_path and os.path.exists(tmp_path):
+        os.remove(tmp_path)
 
     # Insert the ordonnance into the database
     conn = get_app_connection()
@@ -248,13 +291,27 @@ def create_ordonnance_by_image():
             """, (
                 user_id,
                 description,
-                stored_filename,
+                stored_filename or f"ordonnance_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
                 medecin.get("nom"),
                 date_prescription,
                 medicaments_json,
                 datetime.now()
             ))
             ordonnance_id = cursor.lastrowid
+            
+            # Link the temp image to this ordonnance
+            if temp_image_id:
+                cursor.execute("""
+                    UPDATE ordonnance_images_temp
+                    SET ordonnance_id = %s
+                    WHERE id = %s
+                """, (ordonnance_id, temp_image_id))
+            elif temp_image_id_created:
+                cursor.execute("""
+                    UPDATE ordonnance_images_temp
+                    SET ordonnance_id = %s
+                    WHERE id = %s
+                """, (ordonnance_id, temp_image_id_created))
 
         conn.commit()
     except Exception as e:

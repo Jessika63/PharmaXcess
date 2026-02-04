@@ -66,31 +66,53 @@ export default function OrdonnanceDetail({ navigation, route }: Props): React.JS
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.prescriptionList}>
-      <View style={[styles.prescriptionCard, { margin: 20, width: '90%', maxWidth: 600, alignSelf: 'center' }]}>
-        <Text style={[styles.prescriptionTitle, { marginBottom: 8 }]}>{ordonnance?.name}</Text>
-        <Text style={styles.prescriptionText}>Date: {ordonnance?.date}</Text>
-        <Text style={styles.prescriptionText}>Médecin: {ordonnance?.doctor}</Text>
-        <Text style={styles.prescriptionText}>Médicaments: {ordonnance?.medications}</Text>
-        <View style={{ marginTop: 12 }}>
-          {loading ? <ActivityIndicator /> : (
-            imageB64 ? <Image source={{ uri: imageB64 }} style={styles.image} /> : <Text style={styles.prescriptionText}>Aucune image disponible</Text>
-          )}
-        </View>
-
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-              <Text style={styles.buttonText}>Fermer</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete}>
-            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.gradient}>
-              <Text style={styles.buttonText}>{deleting ? 'Suppression...' : 'Supprimer'}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header with close button */}
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border 
+      }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.text, flex: 1 }}>
+          {ordonnance?.name || 'Ordonnance'}
+        </Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Fermer</Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      {/* Image display */}
+      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} />
+        ) : imageB64 ? (
+          <Image 
+            source={{ uri: imageB64 }} 
+            style={{ width: '100%', height: '100%', maxHeight: 800 }} 
+            resizeMode="contain" 
+          />
+        ) : (
+          <View style={{ alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+            <Text style={[styles.prescriptionText, { textAlign: 'center', fontSize: 16 }]}>
+              Aucune image disponible pour cette ordonnance
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Delete button at bottom */}
+      <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
+        <TouchableOpacity onPress={handleDelete} disabled={deleting}>
+          <LinearGradient colors={['#FF4444', '#CC0000']} style={styles.gradient}>
+            <Text style={[styles.buttonText, { color: '#FFF' }]}>
+              {deleting ? 'Suppression...' : 'Supprimer l\'ordonnance'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
