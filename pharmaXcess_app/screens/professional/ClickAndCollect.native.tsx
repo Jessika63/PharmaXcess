@@ -36,6 +36,7 @@ export default function ClickAndCollect(): React.JSX.Element {
   // State for managing prescription requests 
   const [requests, setRequests] = useState<PrescriptionRequest[]>([]);
   const [closedRequests, setClosedRequests] = useState<Set<string>>(new Set());
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   // Load pending requests from backend on mount
   React.useEffect(() => {
@@ -144,7 +145,9 @@ export default function ClickAndCollect(): React.JSX.Element {
   };
 
   const handleApprove = () => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || isProcessing) return;
+    
+    setIsProcessing(true);
     (async () => {
       try {
         console.info('[Professional ClickAndCollect] validateOrder request', { requestId: selectedRequest.id });
@@ -161,16 +164,21 @@ export default function ClickAndCollect(): React.JSX.Element {
       } catch (e: any) {
         console.error('[Professional ClickAndCollect] validateOrder exception', e);
         Alert.alert('Erreur', e?.message || String(e));
+      } finally {
+        setIsProcessing(false);
       }
     })();
   };
 
   const handleReject = () => {
+    if (isProcessing) return;
     setShowRejectModal(true);
   };
 
   const sendRejection = () => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || isProcessing) return;
+    
+    setIsProcessing(true);
     (async () => {
       try {
         console.info('[Professional ClickAndCollect] refuseOrder request', { requestId: selectedRequest.id, comment: rejectComment });
@@ -189,6 +197,8 @@ export default function ClickAndCollect(): React.JSX.Element {
       } catch (e: any) {
         console.error('[Professional ClickAndCollect] refuseOrder exception', e);
         Alert.alert('Erreur', e?.message || String(e));
+      } finally {
+        setIsProcessing(false);
       }
     })();
   };
@@ -298,14 +308,18 @@ export default function ClickAndCollect(): React.JSX.Element {
                 ) : (
                   <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                      style={styles.approveButton}
+                      style={[styles.approveButton, isProcessing && { opacity: 0.5 }]}
                       onPress={handleApprove}
+                      disabled={isProcessing}
                     >
-                      <Text style={styles.buttonText}>Valider</Text>
+                      <Text style={styles.buttonText}>
+                        {isProcessing ? 'Traitement...' : 'Valider'}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.rejectButton}
+                      style={[styles.rejectButton, isProcessing && { opacity: 0.5 }]}
                       onPress={handleReject}
+                      disabled={isProcessing}
                     >
                       <Text style={styles.buttonText}>Refuser</Text>
                     </TouchableOpacity>
@@ -343,14 +357,18 @@ export default function ClickAndCollect(): React.JSX.Element {
                     setShowRejectModal(false);
                     setRejectComment('');
                   }}
+                  disabled={isProcessing}
                 >
                   <Text style={styles.buttonText}>Annuler</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.approveButton }
+                  style={[styles.approveButton, isProcessing && { opacity: 0.5 }]}
                   onPress={sendRejection}
+                  disabled={isProcessing}
                 >
-                  <Text style={styles.buttonText}>Envoyer</Text>
+                  <Text style={styles.buttonText}>
+                    {isProcessing ? 'Envoi...' : 'Envoyer'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -264,6 +264,12 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         alignItems: 'center',
         padding: 20,
     },
+    qrImage: {
+        width: 220,
+        height: 220,
+        marginTop: 20,
+        borderRadius: 12,
+    },
     qrTitle: {
         fontSize: 24 * fontScale,
         fontWeight: 'bold',
