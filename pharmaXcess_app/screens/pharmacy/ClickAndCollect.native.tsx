@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import QRCode from 'react-native-qrcode-svg';
 import createStyles from '../../styles/ClickAndCollect.style';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
@@ -564,25 +565,64 @@ export default function ClickAndCollect(): React.JSX.Element {
                 </Text>
                 {(() => {
                   try {
-                    const parsed = JSON.parse(selectedOrder.contenu_qr);
-                    if (!parsed?.image) return null;
+                    console.log('[ClickAndCollect] contenu_qr brut:', selectedOrder.contenu_qr);
+                    
+                    if (!selectedOrder.contenu_qr) {
+                      console.warn('[ClickAndCollect] contenu_qr est vide ou null');
+                      return (
+                        <Text style={styles.qrText}>
+                          QR code indisponible (contenu vide)
+                        </Text>
+                      );
+                    }
 
+                    // Essayer de parser comme JSON d'abord
+                    try {
+                      const parsed = JSON.parse(selectedOrder.contenu_qr);
+                      console.log('[ClickAndCollect] contenu_qr parsé comme JSON:', parsed);
+                      
+                      if (parsed?.image) {
+                        return (
+                          <>
+                            <Image
+                              source={{ uri: `data:image/png;base64,${parsed.image}` }}
+                              style={styles.qrImage}
+                            />
+                            <Text style={styles.qrText}>
+                              Ou utilisez ce code : {parsed.code_unique || selectedOrder.contenu_qr}
+                            </Text>
+                          </>
+                        );
+                      }
+                    } catch (parseError) {
+                      // Ce n'est pas du JSON, c'est probablement juste un UUID
+                      console.log('[ClickAndCollect] contenu_qr n\'est pas du JSON, génération du QR code');
+                    }
+
+                    // Générer un QR code à partir du code UUID
                     return (
                       <>
-                        <Image
-                          source={{ uri: `data:image/png;base64,${parsed.image}` }}
-                          style={styles.qrImage}
-                        />
-                        <Text style={styles.qrText}>
-                          Ou utilisez ce code : {parsed.code_unique}
+                        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 12, marginTop: 20 }}>
+                          <QRCode
+                            value={selectedOrder.contenu_qr}
+                            size={220}
+                            color="black"
+                            backgroundColor="white"
+                          />
+                        </View>
+                        <Text style={[styles.qrText, { fontSize: 16 * fontScale, marginTop: 20 }]}>
+                          Ou utilisez ce code : 
+                        </Text>
+                        <Text style={[styles.qrText, { fontSize: 20 * fontScale, fontWeight: 'bold', color: colors.primary, marginTop: 5, letterSpacing: 1 }]}>
+                          {selectedOrder.contenu_qr}
                         </Text>
                       </>
                     );
                   } catch (e) {
-                    console.warn('QR invalide', e);
+                    console.error('[ClickAndCollect] Erreur inattendue:', e);
                     return (
                       <Text style={styles.qrText}>
-                        QR code indisponible
+                        Erreur d'affichage du code
                       </Text>
                     );
                   }

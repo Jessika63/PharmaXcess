@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from db_app import get_app_connection
 from datetime import datetime
-import pymysql, uuid
+import pymysql, uuid, json
 
 from routes.qr_code.gen_qrcode_fct import generate_prescription_qr_internal
 
@@ -27,19 +27,18 @@ def validate_order():
             user_id = order["utilisateur_id"]
             ordonnance_id = order.get("ordonnance_id")
 
-            qr_code = str(uuid.uuid4())
+            # Générer le QR code avec image
+            prescription_qr = generate_prescription_qr_internal(user_id, ordonnance_id)
 
             cursor.execute("""
                 UPDATE commandes
                 SET statut='valide', date_validation=%s, contenu_qr=%s
                 WHERE id=%s
-            """, (datetime.now(), qr_code, order_id))
+            """, (datetime.now(), json.dumps(prescription_qr), order_id))
 
             cursor.execute("DELETE FROM ordonnance_images_temp WHERE utilisateur_id=%s", (user_id,))
 
         conn.commit()
-
-        prescription_qr = generate_prescription_qr_internal(user_id, ordonnance_id)
 
         return jsonify({
             "message": "Order validated successfully",
