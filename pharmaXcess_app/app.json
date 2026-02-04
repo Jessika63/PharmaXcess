@@ -37,7 +37,12 @@
         "ACCESS_NETWORK_STATE"
       ],
       "softwareKeyboardLayoutMode": "resize",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCNV9r_RhZU41hYL6pQZq8lrPhmK0cJmgg"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

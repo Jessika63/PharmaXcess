@@ -571,20 +571,42 @@ export default function Localisation(): React.ReactElement {
   useEffect(() => {
     (async () => {
       try {
+        console.log('📍 Demande permission localisation...');
         const { status } = await Location.requestForegroundPermissionsAsync();
+        console.log('📍 Status permission:', status);
+        
         if (status !== 'granted') {
+          console.log('❌ Permission refusée');
           Alert.alert('Permission refusée', "Accordez la permission d'accéder à votre position.");
           return;
         }
 
-        const currentLocation = await Location.getCurrentPositionAsync({});
+        console.log('📍 Récupération position actuelle...');
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        console.log('✅ Position obtenue:', currentLocation.coords);
         setLocation(currentLocation);
 
+        console.log('🏥 Récupération pharmacies...');
         const response = await fetch(
-          `${BACKEND_URL}/get_pharmacies?lat=${currentLocation.coords.latitude}&lon=${currentLocation.coords.longitude}`
+          `${BACKEND_URL}/get_pharmacies?lat=${currentLocation.coords.latitude}&lon=${currentLocation.coords.longitude}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
-        if (response.ok && data.pharmacies) {
+        console.log('✅ Pharmacies reçues:', data.pharmacies?.length || 0);
+        
+        if (data.pharmacies) {
           const pharmaciesWithDistance = data.pharmacies.map((ph: any, index: number) => {
             const distance = calculateDistance(
               currentLocation.coords.latitude,
@@ -607,11 +629,13 @@ export default function Localisation(): React.ReactElement {
           
           setDistributors(pharmaciesWithDistance);
         } else {
+          console.log('⚠️ Aucune pharmacie dans la réponse');
           Alert.alert('Erreur', data.error || 'Impossible de récupérer les pharmacies');
         }
-      } catch (error) {
-        console.error('Erreur localisation ou fetch pharmacies :', error);
-        Alert.alert('Erreur', 'Impossible de récupérer la localisation ou les pharmacies.');
+      } catch (error: any) {
+        console.error('❌ Erreur dans useEffect localisation:', error);
+        console.error('Stack:', error?.stack);
+        Alert.alert('Erreur', error?.message || 'Impossible de récupérer la localisation ou les pharmacies.');
       }
     })();
   }, []);
