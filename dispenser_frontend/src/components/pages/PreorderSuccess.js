@@ -4,6 +4,7 @@ import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import config from '../../config';
 import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
+import { useCart } from '../../context/CartContext';
 
 function PreorderSuccess() {
   // Auto-play VoiceOver
@@ -17,6 +18,12 @@ function PreorderSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
   const profile = location.state?.profile;
+  const { clearCart } = useCart();
+  
+  // Clear cart when component mounts (preorder completed)
+  useEffect(() => {
+    clearCart();
+  }, [clearCart]);
 
     // Keyboard navigation
     useEffect(() => {

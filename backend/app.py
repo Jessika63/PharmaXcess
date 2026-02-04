@@ -277,7 +277,6 @@ def register_blueprints():
     from routes.medicine.get_medical_advice import get_medical_advice_bp
     from routes.profile.followed_patients import followed_bp
     from routes.cart.cart import cart_bp
-    
     from routes.ordonnances.ordonnance_create_by_image import ordonnance_create_by_image_bp
 
 

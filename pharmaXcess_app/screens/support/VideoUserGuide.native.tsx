@@ -10,7 +10,7 @@ export default function VideoUserGuide(): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
 
-    const videoUrl = 'https://pharmaxcess.video.guide'; // À remplacer par le vrai lien
+    const videoUrl = 'https://youtu.be/OBl4MxJ-ElE'; // À remplacer par le vrai lien
 
     const handleOpenVideo = () => {
         Linking.openURL(videoUrl);
