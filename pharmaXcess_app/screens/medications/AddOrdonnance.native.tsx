@@ -90,20 +90,53 @@ export default function AddOrdonnance({ navigation, route }: Props): React.JSX.E
         { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      const upload = await ordonnancesApi.uploadTempFile(userId, manipulated.uri, filename, 'image/jpeg');
-      if (!upload.ok) {
-        console.error('uploadTempFile result', upload);
-        throw new Error(upload.error || `Upload failed (status ${upload.status})`);
+      // Option 1: Appel direct avec OCR intégré (recommandé)
+      const created = await ordonnancesApi.createOrdonnanceByImage(userId, undefined, manipulated.uri);
+      
+      // Option 2: Si vous préférez passer par temp_image_id d'abord (ancien flux)
+      // const upload = await ordonnancesApi.uploadTempFile(userId, manipulated.uri, filename, 'image/jpeg');
+      // if (!upload.ok) {
+      //   console.error('uploadTempFile result', upload);
+      //   throw new Error(upload.error || `Upload failed (status ${upload.status})`);
+      // }
+      // let tempImageId = upload.data?.id;
+      // if (!tempImageId) {
+      //   const last = await ordonnancesApi.getLastTempImage(userId);
+      //   if (!last.ok || !last.data) throw new Error(last.error || 'Failed to get temp image');
+      //   tempImageId = last.data.id;
+      // }
+      // const created = await ordonnancesApi.createOrdonnanceByImage(userId, tempImageId);
+      
+      if (!created.ok) {
+        console.error('Create ordonnance failed:', created.error);
+        
+        // Cas spécial: OCR n'a pas pu extraire de données
+        if (created.error && (
+          created.error.includes('OCR completed but produced no usable data') ||
+          created.error.includes("OCR n'a extrait ni médicaments ni médecin") ||
+          created.error.includes('OCR did not extract any medications')
+        )) {
+          Alert.alert(
+            'Document non reconnu',
+            'Le document inséré est invalide ou ne correspond pas au type attendu.\n\n' +
+            'Veuillez vérifier que :\n' +
+            '• La photo est une ordonnance médicale\n' +
+            '• L\'image est nette et bien éclairée\n' +
+            '• Le texte est lisible (pas manuscrit)\n' +
+            '• L\'ordonnance est complète',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        
+        // Autres erreurs
+        throw new Error(created.error || 'Create ordonnance failed');
       }
-      let tempImageId = upload.data?.id;
-      if (!tempImageId) {
-        const last = await ordonnancesApi.getLastTempImage(userId);
-        if (!last.ok || !last.data) throw new Error(last.error || 'Failed to get temp image');
-        tempImageId = last.data.id;
-      }
-      const created = await ordonnancesApi.createOrdonnance({ user_id: userId, temp_image_id: tempImageId });
-      if (!created.ok) throw new Error(created.error || 'Create ordonnance failed');
-      Alert.alert('Succès', 'Ordonnance ajoutée');
+      
+      const { ordonnance_id, medicaments, medecin, date_prescription } = created.data || {};
+      console.log('Ordonnance créée avec OCR:', { ordonnance_id, medicaments, medecin, date_prescription });
+      
+      Alert.alert('Succès', `Ordonnance créée avec ${medicaments?.length || 0} médicament(s) détecté(s)`);
       navigation.goBack();
     } catch (e: any) {
       console.error('AddOrdonnance error', e);
