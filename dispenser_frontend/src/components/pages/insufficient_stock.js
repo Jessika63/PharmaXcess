@@ -113,9 +113,9 @@ function InsufficientStock() {
                 tabIndex={0}
                 {...createVoiceOverHandlers(speak)}
             onClick={() => {
-                  // Add selected drug to cart and navigate to cart with custom checkout label
-                  addToCart(drug); 
-                  navigate('/cart', { state: { checkoutLabel: 'COMMANDER'} });
+                  // Add selected drug to cart with allowOutOfStock flag and navigate to cart with custom checkout label
+                  addToCart(drug, { allowOutOfStock: true }); 
+                  navigate('/cart', { state: { checkoutLabel: 'COMMANDER', isPreorder: true } });
                 }}
                 className={`bg-black text-white px-12 py-5 rounded-full text-lg font-semibold
                   hover:scale-105 transition-transform duration-300

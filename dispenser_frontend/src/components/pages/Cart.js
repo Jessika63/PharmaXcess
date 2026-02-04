@@ -397,33 +397,47 @@ function Cart() {
                                         <p className="text-lg font-bold text-black">{item.price?.toFixed(2)} € / unité</p>
                                         <p className="text-sm text-gray-500">Total: {(item.price * item.quantity).toFixed(2)}€</p>
                                         
-                                        {/* Quantity controls */}
-                                        <div className="flex items-center justify-end gap-3 mt-3">
-                                            <button 
-                                                ref={el => decreaseRefs.current[itemIndex] = el}
-                                                {...createVoiceOverHandlers(speak)}
-            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                                                    hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex ? 'ring-2 ring-pink-300' : ''}`}
-                                            >
-                                                <FaMinus className="text-xs text-gray-600" />
-                                            </button>
-                                            <span className="text-lg font-semibold">{item.quantity}</span>
-                                            <button 
-                                                ref={el => increaseRefs.current[itemIndex] = el}
-                                                {...createVoiceOverHandlers(speak)}
-            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                disabled={getAvailableStock(item.id) <= 0}
-                                                className={`w-8 h-8 rounded-full border flex items-center justify-center
-                                                    transition-colors ${
-                                                        getAvailableStock(item.id) <= 0 
-                                                            ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
-                                                            : 'border-gray-300 hover:bg-gray-100'
-                                                    } ${focusedIndex === baseIndex + 1 ? 'ring-2 ring-pink-300' : ''}`}
-                                            >
-                                                <FaPlus className={`text-xs ${getAvailableStock(item.id) <= 0 ? 'text-gray-400' : 'text-gray-600'}`} />
-                                            </button>
-                                        </div>
+                                        {/* Show preorder badge if applicable */}
+                                        {item.isPreorder && (
+                                            <p className="text-xs text-orange-600 mt-1">Précommande</p>
+                                        )}
+                                        
+                                        {/* Quantity controls - hide for preorders */}
+                                        {!item.isPreorder && (
+                                            <div className="flex items-center justify-end gap-3 mt-3">
+                                                <button 
+                                                    ref={el => decreaseRefs.current[itemIndex] = el}
+                                                    {...createVoiceOverHandlers(speak)}
+                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                                                        hover:bg-gray-100 transition-colors ${focusedIndex === baseIndex ? 'ring-2 ring-pink-300' : ''}`}
+                                                >
+                                                    <FaMinus className="text-xs text-gray-600" />
+                                                </button>
+                                                <span className="text-lg font-semibold">{item.quantity}</span>
+                                                <button 
+                                                    ref={el => increaseRefs.current[itemIndex] = el}
+                                                    {...createVoiceOverHandlers(speak)}
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    disabled={getAvailableStock(item.id) <= 0}
+                                                    className={`w-8 h-8 rounded-full border flex items-center justify-center
+                                                        transition-colors ${
+                                                            getAvailableStock(item.id) <= 0 
+                                                                ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
+                                                                : 'border-gray-300 hover:bg-gray-100'
+                                                        } ${focusedIndex === baseIndex + 1 ? 'ring-2 ring-pink-300' : ''}`}
+                                                >
+                                                    <FaPlus className={`text-xs ${getAvailableStock(item.id) <= 0 ? 'text-gray-400' : 'text-gray-600'}`} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        
+                                        {/* For preorders, just show quantity without controls */}
+                                        {item.isPreorder && (
+                                            <div className="flex items-center justify-end gap-3 mt-3">
+                                                <span className="text-lg font-semibold">Quantité: {item.quantity}</span>
+                                            </div>
+                                        )}
 
                                         {/* Delete button */}
                                         <button 

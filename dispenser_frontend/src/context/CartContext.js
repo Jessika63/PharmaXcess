@@ -79,9 +79,12 @@ export const CartProvider = ({ children }) => {
     }, [medicinesData, cartItems]);
 
 
-    const addToCart = useCallback(async (drug) => {
+    const addToCart = useCallback(async (drug, options = {}) => {
         console.log('addToCart called with drug:', drug);
         console.log('cartId:', cartId);
+        console.log('options:', options);
+        
+        const { allowOutOfStock = false } = options;
         
         let currentCartId = cartId;
         
@@ -104,12 +107,43 @@ export const CartProvider = ({ children }) => {
             setLoading(true);
             console.log('Adding to cart, cartId:', currentCartId, 'drugId:', drug.id);
             
-            // Check stock before adding
-            const availableStock = getAvailableStock(drug.id);
-            console.log('Available stock:', availableStock);
-            if (availableStock <= 0) {
-                setError(`${drug.label} n'est pas en stock`);
-                return false;
+            // Check stock before adding (unless allowOutOfStock is true for preorders)
+            if (!allowOutOfStock) {
+                const availableStock = getAvailableStock(drug.id);
+                console.log('Available stock:', availableStock);
+                if (availableStock <= 0) {
+                    setError(`${drug.label} n'est pas en stock`);
+                    return false;
+                }
+            }
+            
+            // For out-of-stock preorders, add directly to local state without backend call
+            // since backend will reject items with insufficient stock
+            if (allowOutOfStock) {
+                console.log('✅ Adding out-of-stock item to cart for preorder:', drug.label);
+                const newItem = {
+                    id: drug.id,
+                    label: drug.label,
+                    description: drug.description || 'Médicament',
+                    price: drug.price || 0,
+                    quantity: 1,
+                    isPreorder: true // Flag to identify preorder items
+                };
+                
+                // Check if item already in cart
+                const existingIndex = cartItems.findIndex(item => item.id === drug.id);
+                if (existingIndex >= 0) {
+                    // Update quantity
+                    const updatedItems = [...cartItems];
+                    updatedItems[existingIndex].quantity += 1;
+                    setCartItems(updatedItems);
+                } else {
+                    // Add new item
+                    setCartItems([...cartItems, newItem]);
+                }
+                
+                setError(null);
+                return true;
             }
             
             console.log('Calling cartService.addItem with:', currentCartId, drug.id, 1);
@@ -134,7 +168,7 @@ export const CartProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [cartId, getAvailableStock]); 
+    }, [cartId, getAvailableStock, cartItems]); 
 
 
     const addListToCart = useCallback(async (items) => {
