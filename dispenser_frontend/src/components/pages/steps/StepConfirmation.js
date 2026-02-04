@@ -17,7 +17,9 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow, allPreviousSt
   const { addListToCart } = useCart();
   const [medicaments, setMedicaments] = useState([]);
   const [selectedMedicaments, setSelectedMedicaments] = useState({});
-  
+  const [carteIdentite, setCarteIdentite] = useState(null);
+  const [carteVitale, setCarteVitale] = useState(null);
+
   // Keyboard navigation
   const [focusedIndex, setFocusedIndex] = useState(0);
   const buttonRefs = useRef([]);
@@ -133,8 +135,39 @@ function StepConfirmation({ goToNextStep, goBackStep, restartFlow, allPreviousSt
     }
   };
 
-  const carteIdentite = prescriptionData.carteIdentite || JSON.parse(localStorage.getItem('carteIdentite') || 'null');
-  const carteVitale = prescriptionData.carteVitale || JSON.parse(localStorage.getItem('carteVitale') || 'null');
+  useEffect(() => {
+    const storedCarteIdentite = localStorage.getItem("carteIdentite");
+    const storedCarteVitale = localStorage.getItem("carteVitale");
+
+    if (storedCarteIdentite) {
+      try {
+        setCarteIdentite(JSON.parse(storedCarteIdentite));
+      } catch (e) {
+        console.error("JSON invalide carteIdentite", e);
+      }
+    }
+
+    if (storedCarteVitale) {
+      try {
+        setCarteVitale(JSON.parse(storedCarteVitale));
+      } catch (e) {
+        console.error("JSON invalide carteVitale", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (prescriptionData?.carteIdentite) {
+      setCarteIdentite(prescriptionData.carteIdentite);
+    }
+  }, [prescriptionData?.carteIdentite]);
+
+  useEffect(() => {
+    if (prescriptionData?.carteVitale) {
+      setCarteVitale(prescriptionData.carteVitale);
+    }
+  }, [prescriptionData?.carteVitale]);
+
 
   return (
     <div className="w-full h-screen flex flex-col overflow-y-auto">

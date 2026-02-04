@@ -5,25 +5,25 @@
 
 export const voiceOverTexts = {
   // Home page
-  startingPage: "Bienvenue sur PharmaXcess. Choisissez votre service. Option 1: Vous avez une ordonnance médicale à traiter. Continuer avec ordonnance. Option 2: Achat libre de médicaments disponibles. Continuer sans ordonnance.",
+  startingPage: "Bienvenue sur PharmaXcess. Choisissez votre service. Option une: Vous avez une ordonnance médicale à traiter. Continuer avec ordonnance. Option 2: Achat libre de médicaments disponibles. Continuer sans ordonnance.",
   
   // Documents Flow
-  documentsFlow: "Vérification de vos documents. Suivez les étapes pour scanner votre ordonnance, votre carte d'identité et votre carte vitale.",
+  documentsFlow: "Vérification de vos documents. Suivez les étapes pour scanné votre ordonnance, votre carte d'identité et votre carte vitale.",
   
   // Scan prescription 
-  scanOrdonnance: "Scanner votre ordonnance. Vous pouvez scanner un QR code ou une ordonnance papier. Veuillez présenter votre document au scanner.",
-  scanOrdonnanceQR: "Scanner le QR code de votre ordonnance. Veuillez positionner le QR code devant le scanner.", 
-  scanOrdonnancePapier: "Scanner votre ordonnance papier. Veuillez insérer votre ordonnance dans le scanner présent sur la machine. Cliquez sur lancer le scan pour commencer.",
+  scanOrdonnance: "Scanné votre ordonnance. Vous pouvez scanné un QR code ou une ordonnance papier. Veuillez présenter votre document au scannair.",
+  scanOrdonnanceQR: "Scanné le QR code de votre ordonnance. Veuillez positionner le QR code devant le scannair.", 
+  scanOrdonnancePapier: "Scanné votre ordonnance papier. Veuillez insérer votre ordonnance dans le scanner présent sur la machine. Cliquez sur lancer le scanne pour commencer.",
   
   
   // Scan identity card
-  scanCarteIdentite: "Scanner votre carte d'identité. Veuillez insérer le recto puis le verso de votre carte d'identité dans le scanner présent sur la machine.",
+  scanCarteIdentite: "Scanné votre carte d'identité. Veuillez insérer le recto puis le verso de votre carte d'identité dans le scanner présent sur la machine.",
   
   // Scan health insurance card
-  scanCarteVitale: "Scanner votre carte vitale. Prenez une photo de votre carte vitale en la positionnant face à la caméra.",
+  scanCarteVitale: "Scanné votre carte vitale. Prenez une photo de votre carte vitale en la positionnant face à la caméra.",
   
   // VVerification
-  verification: "Vérification de vos informations. Veuillez vérifier les informations affichées. Cochez les médicaments que vous souhaitez obtenir. Cliquez sur VALIDER pour continuer ou RECOMMENCER pour scanner à nouveau.",
+  verification: "Vérification de vos informations. Veuillez vérifier les informations affichées. Cochez les médicaments que vous souhaitez obtenir. Cliquez sur VALIDER pour continuer ou RECOMMENCER pour scanné à nouveau.",
   
   // Cart
   cart: "Votre panier. Vérifiez les médicaments sélectionnés et leurs quantités. Vous pouvez modifier les quantités ou supprimer des articles. Cliquez sur Finaliser pour procéder au paiement.",

@@ -50,6 +50,8 @@ import AppPreferences from '../screens/settings/AppPreferences.native';
 // Tutorial and FAQ screens for user assistance
 import HelpSupport from '../screens/support/HelpSupport.native';
 import Tutorial from '../screens/support/Tutorial.native';
+import TextualUserGuide from '../screens/support/TextualUserGuide.native';
+import VideoUserGuide from '../screens/support/VideoUserGuide.native';
 import FAQ from '../screens/support/FAQ.native';
 import GeneralFAQ from '../screens/support/GeneralFAQ.native';
 import TechnicalIssuesFAQ from '../screens/support/TechnicalIssuesFAQ.native';
@@ -176,6 +178,8 @@ const ProfileStackScreen = (): React.JSX.Element => {
     { name: 'AccountProfile', component: AccountProfile, title: 'Compte et profil' },
     { name: 'HelpSupport', component: HelpSupport, title: 'Aide et support' },
     { name: 'Tutorial', component: Tutorial, title: 'Tutoriel' },
+    { name: 'TextualUserGuide', component: TextualUserGuide, title: 'Guide utilisateur textuel' },
+    { name: 'VideoUserGuide', component: VideoUserGuide, title: 'Guide utilisateur vidéo' },
     { name: 'FirstSteps', component: FirstSteps, title: 'Premiers pas' },
     { name: 'MedicationManagement', component: MedicationManagement, title: 'Gestion des médicaments' },
     { name: 'PrescriptionImport', component: PrescriptionImport, title: 'Importation des ordonnances' },

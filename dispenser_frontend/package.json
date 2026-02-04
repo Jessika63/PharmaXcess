@@ -22,7 +22,6 @@
   },
   "scripts": {
     "start": "WATCHPACK_POLLING=true react-scripts start",
-    "start:lan": "HOST=192.168.1.39 PORT=3000 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

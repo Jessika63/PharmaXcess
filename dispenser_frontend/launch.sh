@@ -10,7 +10,7 @@ BACKEND_URL="http://57.128.57.96:5000"
 NGROK_PORT=5000
 LOG_FILE="/tmp/scanner_launch.log"
 PID_DIR="/tmp/scanner_pids"
-LAN_IP="192.168.1.39"
+LAN_IP="10.180.55.168"
 
 # Couleurs
 RED='\033[0;31m'
