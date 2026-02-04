@@ -291,94 +291,130 @@ function Preorder() {
       console.log("📏 Taille blob:", imageBlob.size, "bytes");
       console.log("🎨 Type blob:", imageBlob.type);
       
-      const formData = new FormData();
-      formData.append("image", imageBlob, "photo.jpg");
-      formData.append("scan_role", "distributeur");
+      // Convertir le blob en image propre pour éviter les corruptions
+      const img = new Image();
+      const blobUrl = URL.createObjectURL(imageBlob);
       
-      console.log("📋 FormData créé");
-      console.log("🌐 Backend URL:", config.backendUrl);
-      const targetUrl = `${config.backendUrl}/read_profile_qr`;
-      console.log("🎯 URL complète:", targetUrl);
-
-      console.log("📤 Envoi au backend pour analyse QR...");
-      setDebugInfo("Envoi au backend...");
-      
-      // Utiliser XMLHttpRequest au lieu de fetch
-      const xhr = new XMLHttpRequest();
-      const startTime = Date.now();
-      
-      // Timeout de 15 secondes
-      xhr.timeout = 15000;
-      
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = (e.loaded / e.total) * 100;
-          console.log(`📊 Upload progress: ${percentComplete.toFixed(1)}%`);
-          setDebugInfo(`Upload: ${percentComplete.toFixed(0)}%`);
-        }
-      });
-      
-      xhr.addEventListener('load', () => {
-        const duration = Date.now() - startTime;
-        console.log(`✅ REQUÊTE TERMINÉE en ${duration}ms`);
-        console.log("📊 Status:", xhr.status, xhr.statusText);
-        console.log("📥 Response:", xhr.responseText.substring(0, 200));
+      img.onload = () => {
+        console.log("🖼️ Image chargée, reconversion en JPEG propre...");
         
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            console.log("✅ Réponse backend:", data);
-            setDebugInfo("Analyse backend terminée");
-            resolve(data);
-          } catch (err) {
-            console.error("❌ Erreur parsing JSON:", err);
+        // Créer un canvas pour recompresser l'image proprement
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        // Convertir en blob JPEG propre
+        canvas.toBlob((cleanBlob) => {
+          URL.revokeObjectURL(blobUrl);
+          
+          if (!cleanBlob) {
+            console.error("❌ Échec conversion canvas");
+            resolve({ success: false, error: "Erreur de conversion d'image" });
+            return;
+          }
+          
+          console.log("✅ Image reconvertie:", cleanBlob.size, "bytes");
+          
+          const formData = new FormData();
+          formData.append("image", cleanBlob, "photo.jpg");
+          formData.append("scan_role", "distributeur");
+          
+          console.log("📋 FormData créé");
+          console.log("🌐 Backend URL:", config.backendUrl);
+          const targetUrl = `${config.backendUrl}/read_profile_qr`;
+          console.log("🎯 URL complète:", targetUrl);
+
+          console.log("📤 Envoi au backend pour analyse QR...");
+          setDebugInfo("Envoi au backend...");
+          
+          // Utiliser XMLHttpRequest au lieu de fetch
+          const xhr = new XMLHttpRequest();
+          const startTime = Date.now();
+          
+          // Timeout de 15 secondes
+          xhr.timeout = 15000;
+          
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              console.log(`📊 Upload progress: ${percentComplete.toFixed(1)}%`);
+              setDebugInfo(`Upload: ${percentComplete.toFixed(0)}%`);
+            }
+          });
+          
+          xhr.addEventListener('load', () => {
+            const duration = Date.now() - startTime;
+            console.log(`✅ REQUÊTE TERMINÉE en ${duration}ms`);
+            console.log("📊 Status:", xhr.status, xhr.statusText);
+            console.log("📥 Response:", xhr.responseText.substring(0, 200));
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                console.log("✅ Réponse backend:", data);
+                setDebugInfo("Analyse backend terminée");
+                resolve(data);
+              } catch (err) {
+                console.error("❌ Erreur parsing JSON:", err);
+                resolve({
+                  success: false,
+                  error: "Réponse invalide du serveur"
+                });
+              }
+            } else {
+              console.error("❌ Erreur HTTP:", xhr.status, xhr.responseText);
+              resolve({
+                success: false,
+                error: `Erreur serveur: ${xhr.status}`
+              });
+            }
+          });
+          
+          xhr.addEventListener('error', (e) => {
+            const duration = Date.now() - startTime;
+            console.error(`❌ ERREUR RÉSEAU après ${duration}ms`);
+            console.error("Event:", e);
+            setDebugInfo("Erreur réseau");
             resolve({
               success: false,
-              error: "Réponse invalide du serveur"
+              error: "Erreur de connexion réseau"
             });
-          }
-        } else {
-          console.error("❌ Erreur HTTP:", xhr.status, xhr.responseText);
-          resolve({
-            success: false,
-            error: `Erreur serveur: ${xhr.status}`
           });
-        }
-      });
+          
+          xhr.addEventListener('timeout', () => {
+            console.error("⏱️ TIMEOUT après 15 secondes !");
+            setDebugInfo("Timeout - Serveur trop lent");
+            resolve({
+              success: false,
+              error: "Le serveur met trop de temps à répondre"
+            });
+          });
+          
+          xhr.addEventListener('abort', () => {
+            console.error("❌ Requête ABORTED");
+            resolve({
+              success: false,
+              error: "Requête annulée"
+            });
+          });
+          
+          console.log("🚀 Ouverture de la connexion...");
+          xhr.open('POST', targetUrl, true);
+          
+          console.log("📤 Envoi des données...");
+          xhr.send(formData);
+        }, 'image/jpeg', 0.9);
+      };
       
-      xhr.addEventListener('error', (e) => {
-        const duration = Date.now() - startTime;
-        console.error(`❌ ERREUR RÉSEAU après ${duration}ms`);
-        console.error("Event:", e);
-        setDebugInfo("Erreur réseau");
-        resolve({
-          success: false,
-          error: "Erreur de connexion réseau"
-        });
-      });
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
+        console.error("❌ Erreur chargement image");
+        resolve({ success: false, error: "Image invalide" });
+      };
       
-      xhr.addEventListener('timeout', () => {
-        console.error("⏱️ TIMEOUT après 15 secondes !");
-        setDebugInfo("Timeout - Serveur trop lent");
-        resolve({
-          success: false,
-          error: "Le serveur met trop de temps à répondre"
-        });
-      });
-      
-      xhr.addEventListener('abort', () => {
-        console.error("❌ Requête ABORTED");
-        resolve({
-          success: false,
-          error: "Requête annulée"
-        });
-      });
-      
-      console.log("🚀 Ouverture de la connexion...");
-      xhr.open('POST', targetUrl, true);
-      
-      console.log("📤 Envoi des données...");
-      xhr.send(formData);
+      img.src = blobUrl;
     });
   };
 
