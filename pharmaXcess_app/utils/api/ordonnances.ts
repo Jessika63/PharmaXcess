@@ -1,4 +1,5 @@
 import config from '../../config';
+import * as FileSystem from 'expo-file-system/legacy';
 
 type ApiResult<T = any> = {
   ok: boolean;
@@ -92,6 +93,45 @@ export async function createOrdonnance(payload: any): Promise<ApiResult<any>> {
   }
 }
 
+export async function createOrdonnanceByImage(userId: string | number, tempImageId?: string | number, fileUri?: string, imageBase64?: string): Promise<ApiResult<any>> {
+  const url = `${config.backendUrl.replace(/\/$/, '')}/ordonnances/create_by_image`;
+  try {
+    // Si on a un fileUri, on le convertit en base64 avec expo-file-system
+    if (fileUri && !imageBase64) {
+      try {
+        imageBase64 = await FileSystem.readAsStringAsync(fileUri, { 
+          encoding: FileSystem.EncodingType.Base64 
+        });
+        // Ajouter le préfixe data:image/jpeg;base64,
+        imageBase64 = `data:image/jpeg;base64,${imageBase64}`;
+      } catch (fsError: any) {
+        console.error('FileSystem read error:', fsError);
+        return { ok: false, error: `Failed to read image file: ${fsError.message}` };
+      }
+    }
+
+    // Envoi en JSON (plus fiable avec Flask/CORS)
+    const body: any = { user_id: userId };
+    if (tempImageId) body.temp_image_id = tempImageId;
+    if (imageBase64) body.image_base64 = imageBase64;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data: json, status: res.status };
+    // Include detail if available for debugging OCR errors
+    const errorMsg = json?.error || json?.message || 'Create by image failed';
+    const detail = json?.detail ? `\n\nDétail: ${JSON.stringify(json.detail, null, 2)}` : '';
+    return { ok: false, error: errorMsg + detail, status: res.status };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
+
 export async function getOrdonnances(userId: string | number): Promise<ApiResult<any[]>> {
   const url = `${config.backendUrl.replace(/\/$/, '')}/ordonnances?user_id=${encodeURIComponent(String(userId))}`;
   try {
@@ -121,4 +161,4 @@ export async function deleteOrdonnance(userId: string | number, ordonnanceId: st
   }
 }
 
-export default { uploadTempImage, uploadTempFile, getLastTempImage, getTempImageById, createOrdonnance, getOrdonnances, deleteOrdonnance };
+export default { uploadTempImage, uploadTempFile, getLastTempImage, getTempImageById, createOrdonnance, createOrdonnanceByImage, getOrdonnances, deleteOrdonnance };
