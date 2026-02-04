@@ -22,18 +22,27 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pharmaxcess.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
-      ,
+      },
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO",
-        "READ_MEDIA_AUDIO"
-      ]
+        "READ_MEDIA_AUDIO",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "softwareKeyboardLayoutMode": "resize",
+      "usesCleartextTraffic": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCNV9r_RhZU41hYL6pQZq8lrPhmK0cJmgg"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,7 +54,18 @@
           "allowUndefined": true,
           "verbose": false
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "networkSecurityConfig": "./network_security_config.xml"
+          }
+        }
+      ],
+      "./plugins/withNetworkSecurityConfig.js",
+      "./plugins/withNetworkSecurityConfigFile.js"
     ]
   }
 }
