@@ -286,21 +286,51 @@ function Preorder() {
     if (!isMountedRef.current) return { success: false, error: "Composant démonté" };
     
     try {
+      console.log("🔍 === DÉBUT checkProfileQRCode ===");
+      console.log("📦 Blob reçu:", imageBlob);
+      console.log("📏 Taille blob:", imageBlob.size, "bytes");
+      console.log("🎨 Type blob:", imageBlob.type);
+      
       const formData = new FormData();
       formData.append("image", imageBlob, "photo.jpg");
       formData.append("scan_role", "distributeur");
+      
+      console.log("📋 FormData créé");
+      console.log("🌐 Backend URL:", config.backendUrl);
+      const targetUrl = `${config.backendUrl}/read_profile_qr`;
+      console.log("🎯 URL complète:", targetUrl);
 
       console.log("📤 Envoi au backend pour analyse QR...");
       setDebugInfo("Envoi au backend...");
       
-      const response = await fetch(`${config.backendUrl}/read_profile_qr`, {
+      // Ajouter un timeout pour éviter les blocages infinis
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error("⏱️ TIMEOUT après 10 secondes !");
+        controller.abort();
+      }, 10000);
+      
+      console.log("🚀 Lancement du fetch...");
+      const fetchStart = Date.now();
+      
+      const response = await fetch(targetUrl, {
         method: "POST",
         body: formData,
+        signal: controller.signal
       });
-      console.log("AAAAAAAAAAA", response);
+      
+      clearTimeout(timeoutId);
+      const fetchDuration = Date.now() - fetchStart;
+      
+      console.log("✅ FETCH TERMINÉ en", fetchDuration, "ms");
+      console.log("📥 Response reçue:", response);
+      console.log("📊 Status:", response.status, response.statusText);
+      console.log("🏷️ Headers:", [...response.headers.entries()]);
       
       if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+        const errorText = await response.text();
+        console.error("❌ Erreur HTTP:", response.status, errorText);
+        throw new Error(`Erreur HTTP: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -309,11 +339,23 @@ function Preorder() {
       
       return data;
     } catch (err) {
-      console.error("Erreur lecture QR code:", err);
-      setDebugInfo(`Erreur backend: ${err.message}`);
+      console.error("❌ === ERREUR checkProfileQRCode ===");
+      console.error("Type:", err.name);
+      console.error("Message:", err.message);
+      console.error("Stack:", err.stack);
+      
+      if (err.name === 'AbortError') {
+        setDebugInfo("Timeout - Serveur trop lent");
+        return {
+          success: false,
+          error: "Le serveur met trop de temps à répondre"
+        };
+      }
+      
+      setDebugInfo(`Erreur: ${err.message}`);
       return {
         success: false,
-        error: "Impossible de lire le QR code de profil."
+        error: `Impossible de lire le QR code: ${err.message}`
       };
     }
   };
