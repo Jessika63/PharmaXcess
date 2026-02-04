@@ -25,8 +25,8 @@ function UserGuideVideo() {
         <p className="text-xl font-semibold text-black mb-6">Scannez le QR code ci-dessous pour accéder à la vidéo d'instruction</p>
         <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center w-auto">
         {/* Remplacer par le QR code réel */}
-        <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://pharmaxcess.video.guide" alt="QR Code vidéo" className="w-48 h-48 mb-4" />
-        <a href="https://pharmaxcess.video.guide" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ou cliquez ici pour voir la vidéo</a>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://www.youtube.com/watch?v=8XM5Q5U-1z0" alt="QR Code vidéo" className="w-48 h-48 mb-4" />
+        <a href="https://www.youtube.com/watch?v=8XM5Q5U-1z0" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ou cliquez ici pour voir la vidéo</a>
       </div>
     </div>
     </div>
