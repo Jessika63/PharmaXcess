@@ -3,6 +3,7 @@ import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers';
 import { useNavigate, useSearchParams } from "react-router-dom";
+import jsQR from 'jsqr';
 import CameraComponent from "../../camera_component";
 import ModalCamera from "../../modal_camera";
 import QrCameraScanner from "../../qr_camera_scanner";
@@ -53,41 +54,92 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
     }
   }, [showQRScanner, showPrescriptionScanner, speak]);
 
-  // Fonctions pour le scan QR (pseudo backend caméra PI)
+  // Fonctions pour le scan QR avec jsQR (décodage frontend + décryptage backend)
 const checkQRCode = async (imageBlob) => {
-  try {
-    const formData = new FormData();
-    formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
-
-    // Augmenter le timeout et gérer mieux l'abort
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes
-
-    try {
-      const res = await fetch(`${config.backendUrl}/read_prescription_qr`, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error: ${res.status}`);
-      }
-      
-      return await res.json();
-    } catch (fetchErr) {
-      if (fetchErr.name === 'AbortError') {
-        return { success: false, error: "Timeout - scan trop long" };
-      }
-      throw fetchErr;
-    }
+  return new Promise((resolve) => {
+    console.log("🔍 === DÉBUT checkQRCode (ordonnance) ===");
+    console.log("📦 Blob reçu:", imageBlob);
+    console.log("📏 Taille blob:", imageBlob.size, "bytes");
     
-  } catch (err) {
-    console.error("Erreur scan QR:", err);
-    return { success: false, error: err.message };
-  }
+    // Convertir le blob en image pour décoder le QR
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(imageBlob);
+    
+    img.onload = () => {
+      console.log("🖼️ Image chargée, dimensions:", img.width, "x", img.height);
+      
+      // Créer un canvas pour extraire les pixels
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      // Extraire les données de pixels
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      console.log("🔎 Décodage QR avec jsQR...");
+      
+      // Décoder le QR code avec jsQR
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+      
+      URL.revokeObjectURL(blobUrl);
+      
+      if (code) {
+        console.log("✅ QR code décodé:", code.data);
+        console.log("📍 Position:", code.location);
+        
+        // Le QR code contient des données cryptées, on envoie au backend pour décryptage
+        const qrContent = code.data.trim();
+        console.log("🔐 Contenu crypté, longueur:", qrContent.length);
+        
+        // Appeler le backend pour décrypter et récupérer l'ordonnance
+        fetch(`${config.backendUrl}/read_prescription_qr_content`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: qrContent
+          })
+        })
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            console.log("✅ Données ordonnance décryptées:", data);
+            resolve({
+              success: true,
+              ...data
+            });
+          })
+          .catch(err => {
+            console.error("❌ Erreur décryptage/récupération ordonnance:", err);
+            resolve({
+              success: false,
+              error: "Impossible de décrypter le QR code"
+            });
+          });
+      } else {
+        console.log("❌ Aucun QR code détecté dans l'image");
+        resolve({
+          success: false,
+          error: "Aucun QR code trouvé"
+        });
+      }
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      console.error("❌ Erreur chargement image");
+      resolve({ success: false, error: "Image invalide" });
+    };
+    
+    img.src = blobUrl;
+  });
 };
 
   const extractPrescriptionText = async (imageBlob) => {
