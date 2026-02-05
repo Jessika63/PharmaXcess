@@ -4,7 +4,6 @@ import { useAutoVoiceOver, useVoiceOver } from '../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../config/voiceOverTexts';
 import { useNavigate } from 'react-router-dom';
 import config from '../../config';
-import { PrescriptionProvider } from '../../context/PrescriptionContext';
 // StepHeader removed from overview to hide numeric badges 
 import StepOrdonnance from './steps/StepOrdonnance';
 import StepCarteVitale from './steps/StepCarteVitale';
@@ -201,8 +200,7 @@ function DocumentsFlow({ stepsOrder }) {
     }, [focusedIndex, activeStepIndex, steps.length]); 
 
     return (
-        <PrescriptionProvider>
-            <div className="w-full h-screen flex flex-col bg-background_color">
+        <div className="w-full h-screen flex flex-col bg-background_color">
                 {/* Header: isn't displayed if the active step is StepOrdonnance, StepCarteIdentite, StepCarteVitale or StepConfirmation */}
                 {!(activeStepIndex !== null && (steps[activeStepIndex].id === 'ordonnance' || steps[activeStepIndex].id === 'carte_identite' || steps[activeStepIndex].id === 'carte_vitale' || steps[activeStepIndex].id === 'confirmation')) && (
                   <div className="w-full px-8 py-4 flex items-center justify-between mt-4">
@@ -293,7 +291,6 @@ function DocumentsFlow({ stepsOrder }) {
                     )}
                 </div>
             </div>
-        </PrescriptionProvider>
     );
 }
 
