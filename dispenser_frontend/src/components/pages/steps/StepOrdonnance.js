@@ -95,30 +95,12 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
         // Extraire les données de pixels
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        // CONVERSION NOIR & BLANC pour les QR codes colorés (rose/noir, blanc/rose)
-        console.log("🎨 Conversion N&B pour QR colorés...");
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          // Calculer la luminosité
-          const brightness = (r + g + b) / 3;
-          
-          // Convertir en noir ou blanc pur avec un seuil
-          const threshold = brightness > 128 ? 255 : 0;
-          data[i] = threshold;     // R
-          data[i + 1] = threshold; // G
-          data[i + 2] = threshold; // B
-        }
-        
         console.log("🔎 Décodage QR avec jsQR...");
         setDebugInfo("Analyse QR locale...");
         
-        // Décoder le QR code avec jsQR (tenter normal + inversé)
+        // Décoder le QR code avec jsQR (comme preorder.js - image brute)
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "attemptBoth",
+          inversionAttempts: "dontInvert",
         });
         
         URL.revokeObjectURL(blobUrl);
