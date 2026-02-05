@@ -4,27 +4,44 @@ import { useAutoVoiceOver, useVoiceOver } from '../../../hooks/useVoiceOver';
 import { voiceOverTexts } from '../../../config/voiceOverTexts';
 import { createVoiceOverHandlers } from '../../../utils/voiceOverHelpers';
 import { useNavigate, useSearchParams } from "react-router-dom";
+import jsQR from 'jsqr';
 import CameraComponent from "../../camera_component";
 import ModalCamera from "../../modal_camera";
 import QrCameraScanner from "../../qr_camera_scanner";
 import { usePrescription } from "../../../context/PrescriptionContext";
 import config from "../../../config";
+import { FaPrint, FaSync, FaExclamationTriangle, FaCamera, FaQrcode } from "react-icons/fa";
+
+// Configuration de la caméra PI (MÊME QUE PREORDER)
+const CAMERA_PI = "http://10.180.55.168:5000/api";
 
 function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
-  // Auto-play VoiceOver
   const { speak } = useVoiceOver();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [extractedText, setExtractedText] = useState("");
-  const [error, setError] = useState("");
-  const [scanType, setScanType] = useState(null); // 'qr' or 'prescription'
-  const [showQRScanner, setShowQRScanner] = useState(false); // for displaying the QR scan page 
-  const [showPrescriptionScanner, setShowPrescriptionScanner] = useState(false); // for displaying the prescription scan page 
-  const [success, setSuccess] = useState(false); 
   const navigate = useNavigate();
   const { updatePrescriptionData } = usePrescription();
+
+  // STATES CAMÉRA PI (MÊME QUE PREORDER)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [scanCount, setScanCount] = useState(0);
+  const [cameraAvailable, setCameraAvailable] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
+
+  const intervalRef = useRef(null);
+  const imgRef = useRef(null);
+  const isStreamingRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // States originaux StepOrdonnance
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [extractedText, setExtractedText] = useState("");
+  const [scanType, setScanType] = useState(null);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showPrescriptionScanner, setShowPrescriptionScanner] = useState(false);
 
   // Keyboard navigation
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -44,6 +61,26 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       speak(voiceOverTexts.scanOrdonnance);
     }
   }, [showQRScanner, showPrescriptionScanner, speak]);
+
+  // INIT CAMÉRA PI + CLEANUP (COPIÉ DE PREORDER)
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    // Test connexion caméra au montage
+    testCameraConnection().then(available => {
+      setCameraAvailable(available);
+      if (!available) {
+        console.warn("⚠️ Caméra PI non disponible");
+      }
+    });
+
+    // Cleanup au démontage
+    return () => {
+      console.log("🔴 Composant démonté");
+      isMountedRef.current = false;
+      cleanup();
+    };
+  }, []);
 
   const openCamera = (type) => {
     setScanType(type);
@@ -152,6 +189,166 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       img.src = blobUrl;
     });
   };
+
+  // ========== FONCTIONS CAMÉRA PI (COPIÉ DE PREORDER.JS) ==========
+  
+  // Test de connexion à la caméra PI
+  const testCameraConnection = async () => {
+    try {
+      console.log("🔍 Test connexion caméra PI...");
+      setDebugInfo("Test de connexion à la caméra...");
+      
+      const endpoints = ['/health', '/api/camera/status', '/'];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${CAMERA_PI}${endpoint}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Endpoint ${endpoint} accessible`);
+            return true;
+          }
+        } catch (err) {
+          console.log(`⚠️ Endpoint ${endpoint} non accessible:`, err.message);
+        }
+      }
+      
+      console.error("❌ Aucun endpoint de la caméra n'est accessible");
+      setDebugInfo("Caméra non accessible");
+      return false;
+      
+    } catch (err) {
+      console.error("❌ Erreur test connexion:", err);
+      setDebugInfo(`Erreur: ${err.message}`);
+      return false;
+    }
+  };
+
+  // Capturer une photo via la caméra PI
+  const captureForQR = async () => {
+    if (!isMountedRef.current) throw new Error("Composant démonté");
+    
+    try {
+      console.log("📸 Tentative de capture...");
+      setDebugInfo("Capture en cours...");
+      
+      const res = await fetch(`${CAMERA_PI}/camera/snapshot`);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Snapshot échoué: ${res.status} - ${errorText}`);
+      }
+      
+      const blob = await res.blob();
+      console.log("✅ Photo capturée, taille:", blob.size, "type:", blob.type);
+      setDebugInfo(`Photo capturée: ${Math.round(blob.size/1024)}KB`);
+      
+      if (blob.size < 1000) {
+        throw new Error("Image trop petite");
+      }
+      
+      return blob;
+      
+    } catch (err) {
+      console.error("❌ Erreur capture photo:", err);
+      setDebugInfo(`Erreur capture: ${err.message}`);
+      
+      if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+        setUseFallback(true);
+        setError("Problème de connexion à la caméra");
+      }
+      
+      throw err;
+    }
+  };
+
+  // Démarrer le flux vidéo
+  const startVideoStream = async () => {
+    if (!isMountedRef.current || isStreamingRef.current) return false;
+
+    try {
+      setError("");
+      setDebugInfo("Démarrage du streaming...");
+      console.log("🎬 Tentative de démarrage du flux...");
+      
+      const res = await fetch(`${CAMERA_PI}/camera/start_stream`, {
+        method: "POST"
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Démarrage échoué: ${res.status} - ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("✅ Streaming démarré:", data);
+      setDebugInfo("Streaming démarré avec succès");
+      
+      isStreamingRef.current = true;
+      setStreaming(true);
+      
+      return true;
+
+    } catch (err) {
+      console.error("❌ Erreur démarrage streaming:", err);
+      setDebugInfo(`Erreur streaming: ${err.message}`);
+      
+      if (err.message.includes('Failed to fetch')) {
+        setUseFallback(true);
+        setError("Impossible de se connecter à la caméra");
+      }
+      
+      return false;
+    }
+  };
+
+  // Arrêter le flux vidéo
+  const stopVideoStream = async () => {
+    if (!isMountedRef.current) return;
+    
+    console.log("🛑 Arrêt stream...");
+    setDebugInfo("Arrêt du streaming...");
+    
+    isStreamingRef.current = false;
+    setStreaming(false);
+
+    if (imgRef.current) {
+      if (imgRef.current.dataset.lastUrl) {
+        URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+      }
+      imgRef.current.src = "";
+    }
+
+    try {
+      await fetch(`${CAMERA_PI}/camera/stop_stream`, { method: "POST" });
+    } catch (err) {
+      console.log("Note: Erreur lors de l'arrêt:", err);
+    }
+  };
+
+  // Nettoyage
+  const cleanup = () => {
+    console.log("🧹 Nettoyage en cours...");
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    if (isStreamingRef.current) {
+      stopVideoStream();
+    }
+    
+    if (imgRef.current && imgRef.current.dataset.lastUrl) {
+      URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+      imgRef.current.src = "";
+      delete imgRef.current.dataset.lastUrl;
+    }
+  };
+
+  // ========== FIN FONCTIONS CAMÉRA PI ==========
 
   // Fonction pour extraire le texte d'une ordonnance classique
   const extractPrescriptionText = async (blob) => {
