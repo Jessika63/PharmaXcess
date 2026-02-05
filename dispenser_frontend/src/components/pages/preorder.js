@@ -309,13 +309,50 @@ function Preorder() {
         // Extraire les données de pixels
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        console.log("🔎 Décodage QR avec jsQR...");
+        console.log("🔎 Décodage QR avec jsQR (multi-scale)...");
         setDebugInfo("Analyse QR locale...");
         
-        // Décoder le QR code avec jsQR
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+        // Multi-scale scanning: essayer différents crops/zooms
+        const scales = [
+          { name: "Full", x: 0, y: 0, w: canvas.width, h: canvas.height },
+          { name: "Center 80%", x: canvas.width * 0.1, y: canvas.height * 0.1, w: canvas.width * 0.8, h: canvas.height * 0.8 },
+          { name: "Center 60%", x: canvas.width * 0.2, y: canvas.height * 0.2, w: canvas.width * 0.6, h: canvas.height * 0.6 },
+          { name: "Center 40%", x: canvas.width * 0.3, y: canvas.height * 0.3, w: canvas.width * 0.4, h: canvas.height * 0.4 },
+        ];
+        
+        let code = null;
+        
+        for (const scale of scales) {
+          console.log(`  🔍 Tentative ${scale.name}...`);
+          
+          // Créer un canvas temporaire pour le crop
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = 600;
+          tempCanvas.height = 600;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          // Dessiner la zone croppée et zoomée
+          tempCtx.drawImage(
+            canvas,
+            scale.x, scale.y, scale.w, scale.h,  // source crop
+            0, 0, 600, 600  // destination (zoom à 600x600)
+          );
+          
+          const scaledData = tempCtx.getImageData(0, 0, 600, 600);
+          
+          code = jsQR(scaledData.data, scaledData.width, scaledData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code) {
+            console.log(`  ✅ QR détecté avec ${scale.name}!`);
+            break;
+          }
+        }
+        
+        if (!code) {
+          console.log("  ❌ Aucune échelle n'a détecté de QR");
+        }
         
         URL.revokeObjectURL(blobUrl);
         
