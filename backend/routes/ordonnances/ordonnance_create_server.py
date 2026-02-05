@@ -330,22 +330,21 @@ def create_ordonnance_by_image():
                 seen.add(key)
                 medicaments_final_unique.append(m)
 
-        # ---- Save image to disk first ----
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads', 'ordonnances')
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        
-        # Create filename with timestamp
-        timestamp = int(datetime.now().timestamp())
-        saved_path = os.path.join(UPLOAD_DIR, f"{user_id}_{timestamp}_ordonnance.jpg")
-        
-        # Save the image to disk
-        cv2.imwrite(saved_path, img)
-        
-        # ---- Insert into database ----
+        # ---- Insert image in ordonnance_images_temp ----
         conn = get_app_connection()
-        cursor = conn.cursor()
-        try:
+        with conn.cursor() as cursor:
+            # Save image to uploads/ordonnances/ directory (same as upload_temp_image)
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads', 'ordonnances')
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            
+            # Create filename with timestamp
+            timestamp = int(datetime.now().timestamp())
+            saved_path = os.path.join(UPLOAD_DIR, f"{user_id}_{timestamp}_ordonnance.jpg")
+            
+            # Save the image to disk
+            cv2.imwrite(saved_path, img)
+            
             # Insert into ordonnance_images_temp
             cursor.execute("""
                 INSERT INTO ordonnance_images_temp
@@ -383,14 +382,9 @@ def create_ordonnance_by_image():
                 SET ordonnance_id = %s
                 WHERE id = %s
             """, (ordonnance_id, temp_image_id))
-            
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            raise e
-        finally:
-            cursor.close()
-            conn.close()
+
+        conn.commit()
+        conn.close()
 
         return jsonify({
             "success": True,
