@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import cartService from '../services/cartService';
 import medicineService from '../services/medicineService';
 
@@ -331,33 +331,49 @@ export const CartProvider = ({ children }) => {
     }, [cartId]);
 
 
-    const getCartTotal = () => { 
+    const getCartTotal = useCallback(() => { 
         return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0); 
-    }; 
+    }, [cartItems]); 
 
 
-    const getCartCount = () => { 
+    const getCartCount = useCallback(() => { 
         return cartItems.reduce((count, item) => count + item.quantity, 0); 
-    };
+    }, [cartItems]);
 
+    const contextValue = useMemo(() => ({
+        cartItems,
+        cartId,
+        addToCart,
+        addListToCart,
+        removeFromCart, 
+        updateQuantity, 
+        clearCart, 
+        validateCart,
+        getCartTotal,
+        getCartCount,
+        getAvailableStock,
+        loading,
+        error,
+        medicinesData
+    }), [
+        cartItems,
+        cartId,
+        addToCart,
+        addListToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        validateCart,
+        getCartTotal,
+        getCartCount,
+        getAvailableStock,
+        loading,
+        error,
+        medicinesData
+    ]);
 
     return ( 
-        <CartContext.Provider value={{
-            cartItems,
-            cartId,
-            addToCart,
-            addListToCart,
-            removeFromCart, 
-            updateQuantity, 
-            clearCart, 
-            validateCart,
-            getCartTotal,
-            getCartCount,
-            getAvailableStock,
-            loading,
-            error,
-            medicinesData
-        }}>
+        <CartContext.Provider value={contextValue}>
             {children}
         </CartContext.Provider>
     ); 
