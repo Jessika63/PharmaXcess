@@ -1,8 +1,151 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import cartService from '../services/cartService';
-import medicineService from '../services/medicineService';
+import config from '../config';
 
-const CartContext = createContext(); 
+const CartContext = createContext();
+
+// Inline cart service functions
+const cartService = {
+  async initCart() {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to init cart: ${response.status}`);
+      const data = await response.json();
+      return data.cart_id;
+    } catch (error) {
+      console.error('Error initializing cart:', error);
+      throw error;
+    }
+  },
+
+  async getCart(cartId) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/${cartId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to get cart: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      throw error;
+    }
+  },
+
+  async addItem(cartId, medicineId, quantity = 1) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart_id: cartId, id: medicineId, quantity }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to add item: ${response.status}`);
+      return data;
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      throw error;
+    }
+  },
+
+  async addList(cartId, items) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/add-list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart_id: cartId, items }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to add list: ${response.status}`);
+      return data;
+    } catch (error) {
+      console.error('Error adding list to cart:', error);
+      throw error;
+    }
+  },
+
+  async removeItem(cartId, medicineId, quantity) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart_id: cartId, id: medicineId, quantity }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to remove item: ${response.status}`);
+      return data.cart;
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      throw error;
+    }
+  },
+
+  async validateCart(cartId) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart_id: cartId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to validate cart: ${response.status}`);
+      return data;
+    } catch (error) {
+      console.error('Error validating cart:', error);
+      throw error;
+    }
+  },
+
+  async checkoutCart(cartId) {
+    try {
+      const response = await fetch(`${config.backendUrl}/cart/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart_id: cartId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to checkout: ${response.status}`);
+      return data;
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      throw error;
+    }
+  },
+};
+
+// Inline medicine service
+let medicinesCache = null;
+const medicineService = {
+  async getAllMedicines() {
+    if (medicinesCache) return medicinesCache;
+    try {
+      const response = await fetch(`${config.backendUrl}/get_available_medicine`);
+      if (!response.ok) throw new Error(`Failed to fetch medicines: ${response.status}`);
+      const data = await response.json();
+      medicinesCache = data.medicine || data;
+      return medicinesCache;
+    } catch (error) {
+      console.error('Error fetching medicines:', error);
+      throw error;
+    }
+  },
+
+  async getMedicineStock(medicineId) {
+    try {
+      const medicines = await this.getAllMedicines();
+      if (Array.isArray(medicines)) {
+        const med = medicines.find(m => parseInt(m.id) === parseInt(medicineId));
+        return med ? parseInt(med.size) || 0 : 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error fetching medicine stock:', error);
+      return 0;
+    }
+  },
+}; 
 
 
 export const useCart = () => { 
