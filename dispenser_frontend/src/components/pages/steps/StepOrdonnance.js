@@ -223,113 +223,11 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
       return false;
     }
   };
+  
 
-  // Fonction pour capturer une photo via la caméra PI
-  const captureForQR = async () => {
-    if (!isMountedRef.current) throw new Error("Composant démonté");
-    
-    try {
-      console.log("📸 Tentative de capture...");
-      setDebugInfo("Capture en cours...");
-      
-      const res = await fetch(`${CAMERA_PI}/camera/snapshot`);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Snapshot échoué: ${res.status} - ${errorText}`);
-      }
-      
-      const blob = await res.blob();
-      console.log("✅ Photo capturée, taille:", blob.size, "type:", blob.type);
-      setDebugInfo(`Photo capturée: ${Math.round(blob.size/1024)}KB`);
-      
-      if (blob.size < 1000) {
-        throw new Error("Image trop petite, probablement vide");
-      }
-      
-      return blob;
-      
-    } catch (err) {
-      console.error("❌ Erreur capture photo:", err);
-      setDebugInfo(`Erreur capture: ${err.message}`);
-      
-      if (err.message.includes('Failed to fetch') || 
-          err.message.includes('NetworkError') ||
-          err.name === 'TypeError') {
-        setUseFallback(true);
-        setError("Problème de connexion à la caméra");
-      }
-      
-      throw err;
-    }
-  };
-
-  // Démarrer le flux vidéo
-  const startVideoStream = async () => {
-    if (!isMountedRef.current || isStreamingRef.current) return false;
-
-    try {
-      setError("");
-      setDebugInfo("Démarrage du streaming...");
-      console.log("🎬 Tentative de démarrage du flux...");
-      
-      const res = await fetch(`${CAMERA_PI}/camera/start_stream`, {
-        method: "POST"
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Démarrage échoué: ${res.status} - ${errorText}`);
-      }
-
-      const data = await res.json();
-      console.log("✅ Streaming démarré:", data);
-      setDebugInfo("Streaming démarré avec succès");
-      
-      isStreamingRef.current = true;
-      setStreaming(true);
-      
-      return true;
-
-    } catch (err) {
-      console.error("❌ Erreur démarrage streaming:", err);
-      setDebugInfo(`Erreur streaming: ${err.message}`);
-      
-      if (err.message.includes('Failed to fetch')) {
-        setUseFallback(true);
-        setError("Impossible de se connecter à la caméra");
-      }
-      
-      return false;
-    }
-  };
-
-  // Arrêter le flux vidéo
-  const stopVideoStream = async () => {
-    if (!isMountedRef.current) return;
-    
-    console.log("🛑 Arrêt stream...");
-    setDebugInfo("Arrêt du streaming...");
-    
-    isStreamingRef.current = false;
-    setStreaming(false);
-
-    if (imgRef.current) {
-      if (imgRef.current.dataset.lastUrl) {
-        URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
-      }
-      imgRef.current.src = "";
-    }
-
-    try {
-      await fetch(`${CAMERA_PI}/camera/stop_stream`, {
-        method: "POST"
-      });
-    } catch (err) {
-      console.log("Note: Erreur lors de l'arrêt (peut être normal):", err);
-    }
-  };
-
+  
+  
+  
   // Nettoyage complet
   const cleanup = () => {
     console.log("🧹 Nettoyage en cours...");
@@ -656,20 +554,8 @@ const startQrScanning = () => {
   intervalRef.current = setInterval(performScan, SCAN_INTERVAL);
 };
 
-// Modifier également la fonction cleanup pour nettoyer les URLs
-const cleanup = () => {
-  stopVideoStream();
-  if (intervalRef.current) clearInterval(intervalRef.current);
-  
-  // Nettoyer les URLs des images affichées
-  if (imgRef.current && imgRef.current.dataset.lastUrl) {
-    URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
-    imgRef.current.src = "";
-    delete imgRef.current.dataset.lastUrl;
-  }
-};
 
-  const checkCameraStatus = async () => {
+const checkCameraStatus = async () => {
     try {
       const response = await fetch(`${CAMERA_PI}/camera/status`);
       if (response.ok) {
