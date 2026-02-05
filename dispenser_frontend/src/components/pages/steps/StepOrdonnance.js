@@ -335,224 +335,249 @@ function StepOrdonnance({ goToNextStep, goBackStep, setHasQRCode }) {
 
 
 
-  // Fonction d'heuristique pour détecter si une image pourrait contenir un QR code
-const mightContainQRCode = async (imageBlob) => {
-  return new Promise((resolve) => {
-    try {
-      const img = new Image();
-      const url = URL.createObjectURL(imageBlob);
-      
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Analyser une version réduite de l'image pour plus de rapidité
-        canvas.width = 200;
-        canvas.height = 200;
-        ctx.drawImage(img, 0, 0, 200, 200);
-        
-        const imageData = ctx.getImageData(0, 0, 200, 200);
-        const data = imageData.data;
-        
-        // Compter les pixels très noirs et très blancs (caractéristiques des QR codes)
-        let blackPixels = 0;    // pixels très sombres (< 30)
-        let whitePixels = 0;    // pixels très clairs (> 225)
-        let contrastPixels = 0; // pixels avec fort contraste local
-        
-        // Analyser par blocs de 4x4 pixels
-        for (let y = 0; y < 200; y += 4) {
-          for (let x = 0; x < 200; x += 4) {
-            const index = (y * 200 + x) * 4;
-            const r = data[index];
-            const g = data[index + 1];
-            const b = data[index + 2];
-            const brightness = (r + g + b) / 3;
-            
-            if (brightness < 30) blackPixels++;
-            if (brightness > 225) whitePixels++;
-            
-            // Vérifier le contraste local (différence entre pixels adjacents)
-            if (x < 196 && y < 196) {
-              const nextIndex = (y * 200 + (x + 4)) * 4;
-              const r2 = data[nextIndex];
-              const g2 = data[nextIndex + 1];
-              const b2 = data[nextIndex + 2];
-              const brightness2 = (r2 + g2 + b2) / 3;
-              
-              if (Math.abs(brightness - brightness2) > 100) {
-                contrastPixels++;
-              }
-            }
-          }
-        }
-        
-        const totalBlocks = (200/4) * (200/4); // 2500 blocs
-        const blackRatio = blackPixels / totalBlocks;
-        const whiteRatio = whitePixels / totalBlocks;
-        const contrastRatio = contrastPixels / totalBlocks;
-        
-        URL.revokeObjectURL(url);
-        
-        // Logique d'heuristique pour détecter un QR code potentiel
-        // Les QR codes ont généralement :
-        // - Des zones noires et blanches bien définies
-        // - Un fort contraste entre pixels adjacents
-        // - Une certaine proportion de noir et de blanc
-        
-        const isQRCodeLikely = (
-          // Soit bon ratio de noir ET de blanc
-          (blackRatio > 0.08 && whiteRatio > 0.08) ||
-          // Soit très fort contraste
-          (contrastRatio > 0.15) ||
-          // Soit beaucoup de noir OU beaucoup de blanc (pour QR codes simples)
-          (blackRatio > 0.15 || whiteRatio > 0.15)
-        );
-        
-        console.log(`Heuristique QR: noir=${(blackRatio*100).toFixed(1)}%, blanc=${(whiteRatio*100).toFixed(1)}%, contraste=${(contrastRatio*100).toFixed(1)}% => ${isQRCodeLikely ? 'POTENTIEL' : 'NON'}`);
-        resolve(isQRCodeLikely);
-      };
-      
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(false);
-      };
-      
-      img.src = url;
-    } catch (err) {
-      console.error('Erreur heuristique QR:', err);
-      resolve(false);
-    }
-  });
-};
-
-// Modifier la fonction startQrScanning pour utiliser des photos individuelles
-const startQrScanning = () => {
-  const SCAN_INTERVAL = 2500; // 1 seconde
-  let scanAttempts = 0;
-  let lastCaptureTime = 0;
-
-  const performScan = async () => {
-    if (!isStreamingRef.current) {
-      console.log("Attente caméra...");
-      return;
-    }
-
-    scanAttempts++;
-    setScanCount(scanAttempts);
+  // Fonction pour capturer une photo via la caméra PI
+  const captureForQR = async () => {
+    if (!isMountedRef.current) throw new Error("Composant démonté");
     
-    console.log(`Capture #${scanAttempts}`);
+    try {
+      console.log("📸 Tentative de capture...");
+      setDebugInfo("Capture en cours...");
+      
+      const res = await fetch(`${CAMERA_PI}/camera/snapshot`);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Snapshot échoué: ${res.status} - ${errorText}`);
+      }
+      
+      const blob = await res.blob();
+      console.log("✅ Photo capturée, taille:", blob.size, "type:", blob.type);
+      setDebugInfo(`Photo capturée: ${Math.round(blob.size/1024)}KB`);
+      
+      if (blob.size < 1000) {
+        throw new Error("Image trop petite, probablement vide");
+      }
+      
+      return blob;
+      
+    } catch (err) {
+      console.error("❌ Erreur capture photo:", err);
+      setDebugInfo(`Erreur capture: ${err.message}`);
+      
+      if (err.message.includes('Failed to fetch') || 
+          err.message.includes('NetworkError') ||
+          err.name === 'TypeError') {
+        setUseFallback(true);
+        setError("Problème de connexion à la caméra");
+      }
+      
+      throw err;
+    }
+  };
+
+  // Démarrer le flux vidéo
+  const startVideoStream = async () => {
+    if (!isMountedRef.current || isStreamingRef.current) return false;
 
     try {
-      // 1. Capturer une photo
-      let imageBlob;
-      try {
-        imageBlob = await captureForQR();
-        lastCaptureTime = Date.now();
-      } catch (err) {
-        console.log("Capture ratée:", err);
-        consecutiveFailsRef.current++;
+      setError("");
+      setDebugInfo("Démarrage du streaming...");
+      console.log("🎬 Tentative de démarrage du flux...");
+      
+      const res = await fetch(`${CAMERA_PI}/camera/start_stream`, {
+        method: "POST"
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Démarrage échoué: ${res.status} - ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("✅ Streaming démarré:", data);
+      setDebugInfo("Streaming démarré avec succès");
+      
+      isStreamingRef.current = true;
+      setStreaming(true);
+      
+      return true;
+
+    } catch (err) {
+      console.error("❌ Erreur démarrage streaming:", err);
+      setDebugInfo(`Erreur streaming: ${err.message}`);
+      
+      if (err.message.includes('Failed to fetch')) {
+        setUseFallback(true);
+        setError("Impossible de se connecter à la caméra");
+      }
+      
+      return false;
+    }
+  };
+
+  // Arrêter le flux vidéo
+  const stopVideoStream = async () => {
+    if (!isMountedRef.current) return;
+    
+    console.log("🛑 Arrêt stream...");
+    setDebugInfo("Arrêt du streaming...");
+    
+    isStreamingRef.current = false;
+    setStreaming(false);
+
+    if (imgRef.current) {
+      if (imgRef.current.dataset.lastUrl) {
+        URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+      }
+      imgRef.current.src = "";
+    }
+
+    try {
+      await fetch(`${CAMERA_PI}/camera/stop_stream`, {
+        method: "POST"
+      });
+    } catch (err) {
+      console.log("Note: Erreur lors de l'arrêt (peut être normal):", err);
+    }
+  };
+
+  // Lancer le scanning automatique pour prescription
+  const startPrescriptionScanning = () => {
+    const SCAN_INTERVAL = 2000; // 2 secondes
+    let scanAttempts = 0;
+    let consecutiveErrors = 0;
+
+    const performScan = async () => {
+      if (!isMountedRef.current) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         return;
       }
 
-      // 2. Afficher la photo immédiatement dans le modal
-      if (imgRef.current) {
-        const url = URL.createObjectURL(imageBlob);
-        imgRef.current.src = url;
-        // Nettoyer l'URL précédente si elle existe
-        if (imgRef.current.dataset.lastUrl) {
-          URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
-        }
-        imgRef.current.dataset.lastUrl = url;
+      if (!isStreamingRef.current) {
+        console.log("⏳ Caméra non prête");
+        return;
       }
 
-      // 3. Vérifier heuristique si c'est potentiellement un QR code
-      const isLikelyQR = await mightContainQRCode(imageBlob);
-      
-      if (isLikelyQR) {
-        console.log("Image semble contenir un QR code, analyse backend...");
-        
-        // 4. Envoyer au backend pour lecture réelle du QR code
-        const formData = new FormData();
-        formData.append("image", imageBlob, `qr_${Date.now()}.jpg`);
+      scanAttempts++;
+      if (isMountedRef.current) {
+        setScanCount(scanAttempts);
+      }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+      console.log(`📸 Capture #${scanAttempts}`);
+      setDebugInfo(`Capture #${scanAttempts}`);
 
+      try {
+        let imageBlob;
         try {
-          const res = await fetch(`${config.backendUrl}/read_prescription_qr`, {
-            method: "POST",
-            body: formData,
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
+          imageBlob = await captureForQR();
+          consecutiveErrors = 0;
+        } catch (err) {
+          consecutiveErrors++;
+          console.log(`⚠️ Capture ratée (${consecutiveErrors}/3):`, err.message);
           
-          if (!res.ok) {
-            throw new Error(`HTTP error: ${res.status}`);
+          if (consecutiveErrors >= 3) {
+            console.log("⚠️ Trop d'erreurs consécutives, basculement vers fallback");
+            setUseFallback(true);
+            setError("Problème persistant avec la caméra");
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
           }
-          
-          const data = await res.json();
+          return;
+        }
 
-          if (data.success && data.ordonnance) {
-            console.log("QR CODE TROUVÉ ET VALIDE!");
+        // Afficher la photo
+        if (imgRef.current && isMountedRef.current) {
+          const url = URL.createObjectURL(imageBlob);
+          
+          imgRef.current.onload = () => {
+            console.log("✅ Image affichée");
+            if (imgRef.current) {
+              console.log("📐 Dimensions:", imgRef.current.naturalWidth, "x", imgRef.current.naturalHeight);
+            }
+          };
+          
+          imgRef.current.onerror = (e) => {
+            console.error("❌ Erreur affichage image:", e);
+          };
+          
+          imgRef.current.src = url;
+          
+          if (imgRef.current.dataset.lastUrl) {
+            URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
+          }
+          imgRef.current.dataset.lastUrl = url;
+        }
+
+        if (isMountedRef.current) {
+          console.log("🎯 Analyse jsQR locale...");
+          setDebugInfo("QR code - Analyse en cours...");
+          
+          setLoading(true);
+          
+          const qrData = await checkQRCode(imageBlob);
+          
+          setLoading(false);
+
+          if (qrData.success && qrData.ordonnance && isMountedRef.current) {
+            console.log("🎉 QR CODE PRESCRIPTION TROUVÉ!");
+            setDebugInfo("QR code valide trouvé!");
             
-            // Arrêter le scanning
-            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
             
-            // Nettoyer les URLs
             if (imgRef.current && imgRef.current.dataset.lastUrl) {
               URL.revokeObjectURL(imgRef.current.dataset.lastUrl);
             }
             
-            // Mettre à jour le contexte et passer à l'étape suivante
-            setHasQRCode(true);
-            updatePrescriptionData({
-              scanType: "qr",
-              hasQRCode: true,
-              rawData: data.ordonnance,
-              medicaments: data.ordonnance?.medicaments || [],
-              extractedText: "",
-              qrId: data.qr_id
-            });
-
-            setIsModalOpen(false);
-            cleanup();
-            goToNextStep({ hasQRCode: true });
+            setSuccess(true);
+            setError("");
+            
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                setHasQRCode(true);
+                updatePrescriptionData({
+                  scanType: "qr",
+                  hasQRCode: true,
+                  rawData: qrData.ordonnance,
+                  medicaments: qrData.ordonnance?.medicaments || [],
+                  extractedText: "",
+                  qrId: qrData.qr_id
+                });
+                setIsModalOpen(false);
+                cleanup();
+                goToNextStep({ hasQRCode: true });
+              }
+            }, 1000);
+            
             return;
             
-          } else {
-            console.log("QR code détecté mais invalide ou vide");
-            consecutiveFailsRef.current = 0; // Réinitialiser car on a trouvé quelque chose
+          } else if (isMountedRef.current) {
+            console.log("❌ QR code invalide");
+            setError(qrData.error || "QR code invalide");
           }
-          
-        } catch (fetchErr) {
-          if (fetchErr.name === 'AbortError') {
-            console.log("Timeout analyse QR code");
-          } else {
-            console.error("Erreur analyse QR:", fetchErr);
-          }
+        } else {
+          console.log("👁️ Pas de QR code détecté");
         }
-        
-      } else {
-        console.log("Image ne semble pas contenir de QR code, skip backend");
-        consecutiveFailsRef.current++;
-        
-        // Si trop d'échecs consécutifs, on pourrait ajuster l'intervalle
-        if (consecutiveFailsRef.current > 5) {
-          console.log("ℹBeaucoup d'images sans QR, continuons le scan...");
-        }
+
+      } catch (err) {
+        console.error(`⚠️ Erreur scan:`, err);
+        setDebugInfo(`Erreur: ${err.message}`);
       }
+    };
 
-    } catch (err) {
-      console.error(`Erreur scan cycle:`, err);
-      consecutiveFailsRef.current++;
-    }
+    // Premier scan immédiat
+    setTimeout(performScan, 500);
+    
+    // Puis scans réguliers
+    intervalRef.current = setInterval(performScan, SCAN_INTERVAL);
   };
-
-  // Démarrer immédiatement et régulièrement
-  performScan();
-  intervalRef.current = setInterval(performScan, SCAN_INTERVAL);
-};
 
 
 const checkCameraStatus = async () => {
@@ -567,60 +592,6 @@ const checkCameraStatus = async () => {
     }
   };
 
-  
-  const startVideoStream = async () => {
-  if (isStreamingRef.current) return;
-
-  try {
-    setError("");
-    console.log("Démarrage stream caméra");
-
-    const res = await fetch(`${CAMERA_PI}/camera/start_stream`, {
-      method: "POST"
-    });
-
-    if (!res.ok) throw new Error("Start failed");
-
-    isStreamingRef.current = true;
-    setStreaming(true);
-    setCameraStatus("streaming");
-
-  } catch (err) {
-    console.error("Erreur caméra:", err);
-    setError("Erreur démarrage caméra");
-    setCameraStatus("error");
-  }
-};
-
-
-  const stopVideoStream = async () => {
-    console.log("Arrêt stream...");
-    
-    isStreamingRef.current = false;
-    setStreaming(false);
-
-    if (imgRef.current) {
-      imgRef.current.src = "";
-    }
-
-    try {
-      await fetch(`${CAMERA_PI}/camera/stop_stream`, {
-        method: "POST"
-      });
-    } catch (err) {
-      console.log("Erreur arrêt:", err);
-    }
-
-    setCameraStatus("idle");
-  };
-
-const captureForQR = async () => {
-  const res = await fetch(`${CAMERA_PI}/camera/snapshot`);
-  if (!res.ok) throw new Error("Snapshot failed");
-  return await res.blob();
-};
-
-
   const openQrCamera = () => {
     setScanType("qr");
     setIsModalOpen(true);
@@ -632,7 +603,7 @@ const captureForQR = async () => {
 
     setTimeout(() => {
       startVideoStream();
-      setTimeout(startQrScanning, 2000);
+      setTimeout(startPrescriptionScanning, 2000);
     }, 300);
   };
 
