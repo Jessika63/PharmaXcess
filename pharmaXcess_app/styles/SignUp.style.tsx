@@ -140,7 +140,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         justifyContent: 'center',
     },
     buttonText: {
-        color: colors.text,
+        color: colors.buttonText,
         fontSize: 18 * fontScale,
         fontWeight: 'bold',
     },

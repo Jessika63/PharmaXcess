@@ -415,7 +415,7 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                         style={styles.gradient}
                     >
                         {isSubmitting ? (
-                            <ActivityIndicator color={colors.text} size="small" />
+                            <ActivityIndicator color={colors.buttonText} size="small" />
                         ) : (
                             <Text style={styles.buttonText}>Se connecter</Text>
                         )}

@@ -18,6 +18,7 @@ export interface ColorScheme {
   text: string;
   textSecondary: string;
   textMuted: string;
+  buttonText: string; // for text on colored buttons
   
   // state colors 
   success: string;
@@ -73,9 +74,10 @@ export const lightTheme: ColorScheme = {
   profileText: '#333333', // good
   
   // Text colors 
-  text: '#FFFFFF', // good
+  text: '#1A1A1A', // good - changed from white to dark for light theme
   textSecondary: '#666666',
   textMuted: '#999999',
+  buttonText: '#FFFFFF', // good - white text for colored buttons
   
   // state colors 
   success: '#4CAF50',
@@ -100,7 +102,7 @@ export const lightTheme: ColorScheme = {
   optionsSecondary: '#F57196', // good
 
   // icon colors
-  iconPrimary: '#FFFFFF', // good
+  iconPrimary: '#1A1A1A', // good - changed from white to dark for light theme
 
   // info colors
   infoTitle: '#333333', // good
@@ -133,6 +135,7 @@ export const darkTheme: ColorScheme = {
   // Text colors
   text: '#FFFFFF', // good
   textSecondary: '#CCCCCC',
+  buttonText: '#FFFFFF', // good - white text for colored buttons
   textMuted: '#888888',
   
   // state colors

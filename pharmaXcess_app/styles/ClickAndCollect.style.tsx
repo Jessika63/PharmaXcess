@@ -140,7 +140,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         alignItems: 'center',
     },
     buttonText: {
-        color: colors.iconPrimary,
+        color: '#FFFFFF',
         fontSize: 16 * fontScale,
         fontWeight: 'bold',
     },
@@ -230,7 +230,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         alignItems: 'center',
     },
     buttonTextWhite: {
-        color: colors.iconPrimary,
+        color: '#FFFFFF',
         fontSize: 18 * fontScale,
         fontWeight: 'bold',
     },

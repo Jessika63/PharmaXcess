@@ -218,7 +218,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         borderRadius: 10,
     },
     buttonText: {
-        color: colors.text,
+        color: colors.buttonText,
         fontSize: 16 * fontScale,
         fontWeight: 'bold',
     },

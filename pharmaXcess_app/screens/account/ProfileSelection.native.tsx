@@ -119,11 +119,11 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                     style={[cardStyles.profileImage, { width: 50, height: 50, marginLeft: 15 }]} 
                                 />
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[cardStyles.cardText, { fontSize: 18, fontWeight: 'bold' }, currentProfile?.id === profile.id && { color: colors.iconPrimary }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 18, fontWeight: 'bold' }, currentProfile?.id === profile.id && { color: colors.buttonText }]}>
                                         {profile.name}
                                         {profile.isMain && ' (Principal)'}
                                     </Text>
-                                    <Text style={[cardStyles.cardText, { fontSize: 14, opacity: 0.8 }, currentProfile?.id === profile.id && { color: colors.iconPrimary }]}>
+                                    <Text style={[cardStyles.cardText, { fontSize: 14, opacity: 0.8 }, currentProfile?.id === profile.id && { color: colors.buttonText }]}>
                                         {getRelatiionshipText(profile.relationship)}
                                     </Text>
                                 </View>
@@ -132,11 +132,11 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                                 <Ionicons 
                                     name={getRelationshipIcon(profile.relationship) as any} 
                                     size={24} 
-                                    color={currentProfile?.id === profile.id ? colors.iconPrimary : colors.profileText} 
+                                    color={currentProfile?.id === profile.id ? colors.buttonText : colors.profileText} 
                                     style={{ marginRight: 10 }} 
                                 />
                                 {currentProfile?.id === profile.id && (
-                                    <Ionicons name="checkmark-circle" size={24} color={colors.iconPrimary} style={{ marginRight: 10 }} />
+                                    <Ionicons name="checkmark-circle" size={24} color={colors.buttonText} style={{ marginRight: 10 }} />
                                 )}
                             </View>
                         </LinearGradient>
@@ -153,8 +153,8 @@ export default function ProfileSelection({ navigation }: ProfileSelectionProps):
                             colors={[colors.secondary, colors.primary]} 
                             style={[cardStyles.cardGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color={colors.iconPrimary} style={{ marginRight: 10 }} />
-                            <Text style={[cardStyles.cardText, { color: colors.iconPrimary, fontWeight: 'bold' }]}>
+                            <Ionicons name="add-circle-outline" size={24} color={colors.buttonText} style={{ marginRight: 10 }} />
+                            <Text style={[cardStyles.cardText, { color: colors.buttonText, fontWeight: 'bold' }]}>
                                 Créer un nouveau profil
                             </Text>
                         </LinearGradient>

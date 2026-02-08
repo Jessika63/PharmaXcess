@@ -73,7 +73,7 @@ export const createStyles = (colors: ColorScheme, fontScale: number) => {
             fontSize: 16 * fontScale,
         },
         createButtonText: {
-            color: colors.text,
+            color: colors.buttonText,
             fontWeight: 'bold',
             fontSize: 16 * fontScale,
         },

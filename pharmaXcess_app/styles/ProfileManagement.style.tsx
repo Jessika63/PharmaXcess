@@ -149,7 +149,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         color: colors.profileText,
     },
     saveButtonText: {
-        color: colors.iconPrimary,
+        color: '#FFFFFF',
     },
 });
 

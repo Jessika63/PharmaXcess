@@ -76,7 +76,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) => StyleSheet.crea
         marginHorizontal: 10,
     },
     buttonText: {
-        color: colors.text,
+        color: colors.buttonText,
         fontWeight: 'bold',
         fontSize: 16 * fontScale,
     },

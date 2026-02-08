@@ -1,7 +1,6 @@
 
 {
   "expo": {
-    "owner": "pharmaxcess",
     "sdkVersion": "54.0.0",
     "platforms": [
       "ios",

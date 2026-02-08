@@ -555,7 +555,7 @@ export default function SignUp({ navigation }: SignUpProps): React.JSX.Element {
                         style={styles.gradient}
                     >
                         {authLoading ? (
-                            <ActivityIndicator color={colors.text} size="small" />
+                            <ActivityIndicator color={colors.buttonText} size="small" />
                         ) : (
                             <Text style={styles.buttonText}>S'inscrire</Text>
                         )}

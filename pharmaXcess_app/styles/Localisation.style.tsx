@@ -193,7 +193,7 @@ const createStyles = (colors: ColorScheme, fontScale: number) =>
     },
     text: {
         fontSize: 16 * fontScale,
-        color: colors.iconPrimary,
+        color: colors.profileText,
         fontWeight: 'bold',
         textAlign: 'center',
     }, 
