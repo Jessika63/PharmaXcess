@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,18 +17,22 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { CustomPicker } from '../../components';
 import createStyles from '../../styles/Login.style';
+import config from '../../config';
 
 type LoginProps = {
     navigation: StackNavigationProp<any, any>;
 };
 
 interface FormData {
+    userType: 'patient' | 'professional';
     email: string;
     password: string;
 }
 
 interface FormErrors {
+    userType?: string;
     email?: string;
     password?: string;
     general?: string;
@@ -37,19 +41,53 @@ interface FormErrors {
 export default function Login({ navigation }: LoginProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
-    const { login, isLoading: authLoading } = useAuth();
+    const { login, authError, clearAuthError } = useAuth();
     const { t } = useTranslation('common');
     const styles = createStyles(colors, fontScale);
 
+    // Check if error is "already logged in"
+    const isAlreadyLoggedInError = (msg: string) => msg?.toLowerCase().includes('already logged in');
+
+    // Handle force logout when stuck with another session
+    const handleForceLogout = useCallback(async () => {
+        try {
+            const base = config.backendUrl?.replace(/\/$/, '') || '';
+            if (!base) {
+                Alert.alert('Erreur', 'URL backend non configurée');
+                return;
+            }
+
+            const res = await fetch(`${base}/logout`, { 
+                method: 'POST',
+                credentials: 'include' 
+            });
+
+            if (res.ok) {
+                Alert.alert('Succès', 'Session déconnectée. Veuillez réessayer de vous connecter.');
+                setErrors({});
+                setErrorStatus(null);
+                if (clearAuthError) clearAuthError();
+            } else {
+                Alert.alert('Erreur', 'Impossible de déconnecter la session actuelle');
+            }
+        } catch (error) {
+            console.warn('Logout error:', error);
+            Alert.alert('Erreur', 'Erreur lors de la déconnexion');
+        }
+    }, [clearAuthError]);
+
     // Form state
     const [formData, setFormData] = useState<FormData>({
+        userType: 'patient',
         email: '',
         password: '',
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
+    const [errorStatus, setErrorStatus] = useState<number | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state
 
     // Refs for accessibility
     const emailInputRef = useRef<TextInput>(null);
@@ -59,9 +97,26 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
     // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // Clear errors when component mounts so old errors don't persist from AuthContext
+    useEffect(() => {
+        if (clearAuthError) {
+            clearAuthError();
+        }
+        return () => {
+            // Optionally, you could also clear errors on unmount
+            // if you want a fresh state when coming back to login
+        };
+    }, [clearAuthError]);
+
     // Form validation
     const validateForm = useCallback((): boolean => {
         const newErrors: FormErrors = {};
+
+        // User type validation 
+        if (!formData.userType) { 
+            newErrors.userType = 'Le type de compte est requis'; 
+        }
+
 
         // Email validation
         if (!formData.email.trim()) {
@@ -89,33 +144,67 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
         }
-    }, [errors]);
+        // Clear general error/status when user edits any field
+        if (errors.general) {
+            setErrors(prev => ({ ...prev, general: undefined }));
+        }
+        if (errorStatus) {
+            setErrorStatus(null);
+        }
+        // Clear shared auth error in context so it doesn't persist across remounts
+        if (clearAuthError) clearAuthError();
+    }, [errors, errorStatus, clearAuthError]);
 
     // Handle login submission
     const handleLogin = useCallback(async () => {
+        console.log('========== LOGIN SUBMIT ==========');
+        console.log('Email:', formData.email);
+        console.log('Password:', formData.password);
+        console.log('UserType:', formData.userType);
+        
         if (!validateForm()) {
             // Announce validation errors to screen readers
             const errorMessages = Object.values(errors).join('. ');
+            console.log('❌ Validation locale échouée:', errors);
             AccessibilityInfo.announceForAccessibility(`Erreurs de validation: ${errorMessages}`);
             return;
         }
 
+        console.log('✅ Validation locale OK - Appel login...');
         setErrors({});
+        setErrorStatus(null);
+        setIsSubmitting(true);
 
         try {
-            const success = await login(formData.email, formData.password);
-            
-            // Mock authentication logic
-            if (formData.email === 'test@example.com' && formData.password === 'password') {
+            // call AuthContext.login which now throws on failure with backend message
+            const success = await login(formData.email, formData.password, formData.userType);
+            console.log('Résultat login:', success);
+            if (success) {
+                console.log('✅ LOGIN RÉUSSI');
                 AccessibilityInfo.announceForAccessibility('Connexion réussie');
-                // La navigation sera automatiquement gérée par RootNavigation
+                // Navigation will be handled by RootNavigation observing auth state
             } else {
-                throw new Error('Identifiants invalides');
+                console.log('❌ Login retourné false');
+                setErrors({ general: 'Échec de la connexion' });
             }
-        } catch (error) {
+        } catch (error: any) {
+            console.log('❌ EXCEPTION CATCHÉE dans Login:');
+            console.log('Type:', typeof error);
+            console.log('Message:', error?.message);
+            console.log('Status:', error?.status);
+            console.log('Objet complet:', error);
+            
             const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+
+            // If backend returned 401 (not found / wrong password) show the backend message
+            // inline on the page instead of a popup to avoid interrupting the flow.
+            const status = error?.status;
             setErrors({ general: errorMessage });
+            setErrorStatus(status || null);
+            console.log('📍 Message affiché sur Login:', errorMessage);
             AccessibilityInfo.announceForAccessibility(`Erreur de connexion: ${errorMessage}`);
+        } finally {
+            setIsSubmitting(false);
         }
     }, [formData, validateForm, errors, login]);
 
@@ -164,15 +253,53 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                 </Text>
 
                 {/* General error message */}
-                {errors.general && (
-                    <Text 
-                        style={styles.errorText}
-                        accessibilityRole="alert"
-                        accessibilityLiveRegion="assertive"
-                    >
-                        {errors.general}
-                    </Text>
+                { (errors.general || authError?.message) && (
+                    <View>
+                        <Text 
+                            style={styles.errorText}
+                            accessibilityRole="alert"
+                            accessibilityLiveRegion="assertive"
+                        >
+                            {errors.general || authError?.message}
+                        </Text>
+                        
+                        {/* Show logout button if already logged in error */}
+                        {isAlreadyLoggedInError(errors.general || authError?.message || '') && (
+                            <TouchableOpacity 
+                                style={[styles.loginButton, { marginTop: 12, backgroundColor: colors.error }]}
+                                onPress={handleForceLogout}
+                                accessibilityRole="button"
+                                accessibilityLabel="Forcer la déconnexion"
+                            >
+                                <Text style={styles.buttonText}>Forcer la déconnexion</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 )}
+                {/* If the backend indicated 401 (not found/wrong password), show a small inline link to SignUp */}
+                { (errors.general && errorStatus === 401) && (
+                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')} accessibilityRole="button">
+                        <Text style={[styles.registerLink, { marginTop: 8 }]}>Créer un compte</Text>
+                    </TouchableOpacity>
+                )}
+
+{/* 
+                {/* User Type Selection */}
+                <View style={styles.inputContainer}>
+                    <CustomPicker
+                        label="Type de compte"
+                        selectedValue={formData.userType}
+                        onValueChange={(value) => updateFormData('userType', value as string)}
+                        options={[
+                            { label: 'Patient', value: 'patient' },
+                            { label: 'Professionnel de santé', value: 'professional' }
+                        ]}
+                        placeholder="Sélectionnez votre type de compte"
+                        accessibilityLabel="Type de compte"
+                        accessibilityHint="Choisissez entre Patient ou Professionnel de santé"
+                        error={errors.userType}
+                    />
+                </View>
 
                 {/* Email input */}
                 <View style={styles.inputContainer}>
@@ -267,20 +394,20 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                 <TouchableOpacity
                     style={[
                         styles.loginButton,
-                        authLoading && styles.buttonDisabled
+                        isSubmitting && styles.buttonDisabled
                     ]}
                     onPress={handleLogin}
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     accessibilityRole="button"
                     accessibilityLabel="Se connecter"
                     accessibilityHint="Appuyez pour vous connecter"
-                    accessibilityState={{ disabled: authLoading }}
+                    accessibilityState={{ disabled: isSubmitting }}
                 >
                     <LinearGradient
                         colors={[colors.primary, colors.secondary]}
                         style={styles.gradient}
                     >
-                        {authLoading ? (
+                        {isSubmitting ? (
                             <ActivityIndicator color={colors.text} size="small" />
                         ) : (
                             <Text style={styles.buttonText}>Se connecter</Text>
@@ -318,11 +445,6 @@ export default function Login({ navigation }: LoginProps): React.JSX.Element {
                         </Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* Loading overlay */}
-                {authLoading && (
-                    <View style={styles.loadingOverlay} />
-                )}
 
                 {/* Hidden accessibility announcement text */}
                 <Text

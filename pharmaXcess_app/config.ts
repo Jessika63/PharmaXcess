@@ -5,9 +5,16 @@ export interface AppConfig {
   corsEndpoint: string;
 }
 
-// Configuration qui utilise les variables EXPO_PUBLIC_*
+// Récupérer l'ENV côté frontend
+const env = process.env.EXPO_PUBLIC_ENV || 'development';
+
+const backendUrl =
+  env === 'production'
+    ? process.env.EXPO_PUBLIC_BACKEND_URL
+    : process.env.EXPO_PUBLIC_NGROK_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+
 const config: AppConfig = {
-  backendUrl: process.env.EXPO_PUBLIC_BACKEND_URL,
+  backendUrl,
   corsSecretKey: process.env.EXPO_PUBLIC_CORS_SECRET_KEY,
   corsEndpoint: '/register-origin'
 };

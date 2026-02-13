@@ -25,13 +25,45 @@ import {
   FaHome,
   FaQrcode,
   FaInfoCircle,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaShoppingCart
+
 } from 'react-icons/fa';
 import logo from './assets/logo.png';
 
+const env = process.env.REACT_APP_ENV;
+
+let backendUrl;
+
+if (env === 'production') {
+    backendUrl = 'http://57.128.57.96:5000';
+} else if (env === 'development') {
+    backendUrl = 'http://localhost:5000';
+} else {
+    console.error("⚠️ La variable ENV n'est pas définie correctement");
+}
+backendUrl = 'http://57.128.57.96:5000';
+// Define the constants separately first
+const Epitech_Paris = {
+  lat: 48.815273,
+  lon: 2.363006,
+  name: "Epitech Kremlin-Bicêtre",
+};
+
+const Epitech_Lyon = {
+  lat: 45.746288,
+  lon: 4.835127,
+  name: "Epitech Lyon",
+};
+
+const getDefaultLocation = () => {
+  const location = process.env.REACT_APP_DEFAULT_LOCATION || 'paris';
+  return location === 'lyon' ? Epitech_Lyon : Epitech_Paris;
+};
+
 const config = {
   // Backend configuration
-  backendUrl: 'http://57.128.57.96:5000',
+  backendUrl: backendUrl,
 
   // Configuration CORS dynamique
   cors: {
@@ -42,22 +74,24 @@ const config = {
 
   // Background colors
   backgroundColors: {
-    default: '#e8c3cb', // Main background color from tailwind config
-    alternative: '#d5b0b8', // Alternative background mentioned in comments
-    primary: '#d45b93', // Primary pink color
+    default: 'rgba(245, 113, 150, 0.15)', // #F57196 at 15% opacity 
+    alternative: 'rgba(245, 113, 150, 0.20)', // Slightly more opaque variant
+    primary: '#F57196', // Primary pink color
     white: '#ffffff',
     black: '#000000',
     transparent: 'transparent',
-    button: '#f0d4d9', // Different background for buttons
-    text: '#f5e6e9' // Different background for text containers
+    button: '#000000', // Black background for buttons
+    text: '#ffffff' // White background for text containers/steps
   },
 
   // Text colors
   textColors: {
-    primary: 'text-gray-800', // Main text color used throughout
-    secondary: 'text-gray-600', // Secondary text color
+    primary: 'text-black', // Main text color - black
+    secondary: 'text-gray-700', // Secondary text color 
     white: 'text-white',
     black: 'text-black', // Black text for light backgrounds
+    button: 'text-black', // Black text for buttons 
+
     red: 'text-red-600',
     pink: 'text-pink-500',
     green: 'text-green-500',
@@ -75,29 +109,33 @@ const config = {
 
   // Button colors and styles
   buttonColors: {
-    // Main gradient buttons
-    mainGradient: 'bg-gradient-to-r from-pink-500 to-rose-400',
-    mainGradientHover: 'hover:from-[#d45b93] hover:to-[#e65866] hover:scale-105',
+    // Main buttons - white background with black text 
+    mainGradient: 'bg-white',
+    mainGradientHover: 'hover:bg-gray-100 hover:scale-105',
+
 
     // Action buttons
-    red: 'bg-red-500 text-white',
-    redHover: 'hover:bg-red-600',
-    green: 'bg-green-500 text-white',
-    greenHover: 'hover:bg-green-600',
+    red: 'bg-red-600 text-white',
+    redHover: 'hover:bg-red-700', 
+    green: 'bg-green-600 text-white', 
+    greenHover: 'hover:bg-green-700', 
+
 
     // Alternative buttons
-    darkPink: 'bg-pink-900 text-white',
-    darkPinkHover: 'hover:bg-pink-950',
-    white: 'bg-white text-pink-500',
+    darkPink: 'bg-white text-black',
+    darkPinkHover: 'hover:bg-gray-100',
+    white: 'bg-white text-black',
+
 
     // Transparent buttons
-    transparent: 'bg-transparent text-white',
+    transparent: 'bg-transparent text-black',
 
-    // Button background color (different from text background)
-    buttonBackground: 'bg-pink-200',
+    // Button background color - white
+    buttonBackground: 'bg-white', 
 
-    // Text area background color
-    textBackground: 'bg-pink-100'
+    // Text area/steps background color - white 
+    textBackground: 'bg-white'
+
   },
 
   // Border radius
@@ -123,7 +161,8 @@ const config = {
 
   // Focus states
   focusStates: {
-    ring: 'focus:ring-4 focus:ring-pink-300',
+    ring: 'focus:ring-4 focus:ring-gray-400', 
+
     outline: 'focus:outline-none',
   },
 
@@ -150,6 +189,8 @@ const config = {
     prescription: FaPrescriptionBottle,
     pills: FaPills,
     filePrescription: FaFilePrescription,
+    cart: FaShoppingCart,
+
 
     // Document icons
     idCard: FaIdCard,
@@ -192,24 +233,24 @@ const config = {
 
   // Common button styles
   buttonStyles: {
-    // Primary buttons
-    primary: 'bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300',
+    // Primary buttons 
+    primary: 'bg-white text-black rounded-2xl shadow-lg hover:bg-gray-100 hover:scale-105 transition-transform duration-300',
 
-    // Secondary buttons
-    secondary: 'bg-white text-pink-500 rounded-xl shadow hover:scale-105 transition-transform duration-300',
+    // Secondary buttons 
+    secondary: 'bg-white text-black rounded-xl shadow hover:bg-gray-100 hover:scale-105 transition-transform duration-300',
 
     // Action buttons
-    danger: 'bg-red-500 text-white rounded-xl shadow hover:bg-red-600 transition-transform duration-300',
-    success: 'bg-green-500 text-white rounded-lg shadow-lg transition-transform duration-300',
+    danger: 'bg-red-600 text-white rounded-x1 shadow hover:bg-red-700 transition-transform duration-300', 
+    success: 'bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-transform duration-300',
 
-    // Navigation buttons
-    back: 'bg-gradient-to-r from-pink-500 to-rose-400 text-gray-800 rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300 flex items-center',
+    // Navigation buttons - white with black text
+    back: 'bg-white text-black rounded-2x1 shadow-lg hover:bg-gray-100 hover:scale-105 transition-transform duration-300 flex items-center',
   },
 
   // Modal styles
   modalStyles: {
     overlay: 'fixed inset-0 bg-black bg-opacity-30 z-50',
-    content: 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl h-1/2 max-h-full bg-gradient-to-b from-pink-500 to-rose-400 text-gray-800 flex flex-col justify-center items-center rounded-2xl shadow-lg p-6 z-50',
+    content: 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl h-1/2 max-h-full bg-white text-black flex flex-col justify-center items-center rounded-2xl shadow-lg p-6 z-50',
   },
 
   // Layout classes
@@ -249,6 +290,11 @@ const config = {
     bottomMedium: 'mb-8',
     bottomLarge: 'mb-12',
   },
+  // Default position if no geolocation
+  Epitech_Paris: Epitech_Paris,
+  Epitech_Lyon: Epitech_Lyon,
+  Default_Location: getDefaultLocation(),
+
 };
 
 export default config;

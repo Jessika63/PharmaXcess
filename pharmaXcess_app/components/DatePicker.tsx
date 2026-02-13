@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../context/ThemeContext';
 import { useFontScale } from '../context/FontScaleContext';
+import createStyles from '../styles/DatePicker.style';
 
 interface DatePickerProps {
     label?: string;
@@ -39,6 +40,7 @@ export default function DatePicker({
 }: DatePickerProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const getDayOptions = () => {
         const days = [];
@@ -71,48 +73,6 @@ export default function DatePicker({
         }
         return years;
     };
-
-    const styles = StyleSheet.create({
-        container: {
-            marginBottom: 15,
-        },
-        label: {
-            fontSize: 16 * fontScale,
-            fontWeight: '600',
-            color: colors.profileText,
-            marginBottom: 8,
-        },
-        dateContainer: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            gap: 10,
-        },
-        pickerWrapper: {
-            flex: 1,
-            borderWidth: 1,
-            borderColor: colors.inputBorder,
-            borderRadius: 10,
-            backgroundColor: colors.inputBackground,
-            overflow: 'hidden',
-        },
-        pickerWrapperError: {
-            borderColor: colors.error || '#FF6B6B',
-        },
-        picker: {
-            height: 50,
-            color: colors.text,
-        },
-        pickerItem: {
-            fontSize: 14 * fontScale,
-            color: colors.text,
-        },
-        errorText: {
-            color: colors.error || '#FF6B6B',
-            fontSize: 14 * fontScale,
-            marginTop: 5,
-            marginLeft: 5,
-        },
-    });
 
     const hasError = errors && (errors.day || errors.month || errors.year);
 

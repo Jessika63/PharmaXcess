@@ -1,4 +1,3 @@
-
 import * as Notifications from 'expo-notifications';
 import { Alert, Platform, Linking } from 'react-native';
 
@@ -6,10 +5,10 @@ export class NotificationService {
   static async requestPermissions(): Promise<boolean> {
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-
+      
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
-
+        
         if (status !== 'granted') {
           Alert.alert(
             'Notifications désactivées',
@@ -56,7 +55,6 @@ export class NotificationService {
     canSetBadge: boolean;
   }> {
     const settings = await Notifications.getPermissionsAsync();
-
     return {
       enabled: settings.status === 'granted',
       canAlert: settings.canAskAgain || settings.status === 'granted',
@@ -93,7 +91,6 @@ export class NotificationService {
     for (let week = 0; week < 4; week++) {
       for (const dayName of alarm.days) {
         const dayOfWeek = dayMap[dayName];
-
         // Calculer la prochaine occurrence de ce jour
         let targetDate = new Date(today);
         const daysUntilTarget = (dayOfWeek + 7 - today.getDay()) % 7;
@@ -119,7 +116,7 @@ export class NotificationService {
                 date: targetDate,
               } as any,
             });
-
+            
             notificationIds.push(notificationId);
             console.log(`📅 Notification programmée: ${alarm.medicineName} - ${targetDate.toLocaleString()}`);
           } catch (error) {

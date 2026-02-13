@@ -23,3 +23,14 @@ node_modules
 *.tar
 
 *__pycache__*
+
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+/backend/uploads/*
+!/backend/uploads/.gitkeep

@@ -7,16 +7,25 @@ import ModalCINChoice from '../modal_cin_choice';
 import config from '../../config';
 import ModalStandard from '../modal_standard';
 import useInactivityRedirect from '../../utils/useInactivityRedirect';
+import { useVoiceOver } from '../../hooks/useVoiceOver';
+import { createVoiceOverHandlers } from '../../utils/voiceOverHelpers';
 
 function DocumentsChecking() {
+  const { speak } = useVoiceOver();
     const [showCamera, setShowCamera] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [focusedIndex, setFocusedIndex] = useState(1);
-    const focusedIndexRef = useRef(1);
+    const [focusedIndex, setFocusedIndex] = useState(0);
+    const focusedIndexRef = useRef(0);
     const buttonsRef = useRef([]);
     const [showInactivityModal, setShowInactivityModal] = useState(false);
     const [currentDocType, setCurrentDocType] = useState(null);
     const [showCINOptions, setShowCINOptions] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
+    // Document upload states
+    const [userIdInput, setUserIdInput] = useState('1');
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [docTitle, setDocTitle] = useState('');
+    const [documents, setDocuments] = useState([]);
 
     const navigate = useNavigate();
 
@@ -103,35 +112,36 @@ function DocumentsChecking() {
     };
 
     const handleKeyDown = useCallback((event) => {
-        if (event.key === "ArrowRight" || (event.key === "Tab" && !event.shiftKey)) {
+        // Don't handle keyboard events if modals are open
+        if (isModalOpen || showInactivityModal || showCINOptions) return;
+        
+        if (event.key === "ArrowRight" || event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex + 1) % 5;
+                const newIndex = (prevIndex + 1) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
-        } else if (event.key === "ArrowLeft" || (event.key === "Tab" && event.shiftKey)) {
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
             event.preventDefault();
             setFocusedIndex((prevIndex) => {
-                const newIndex = (prevIndex - 1 + 5) % 5;
+                const newIndex = (prevIndex - 1 + 4) % 4;
                 focusedIndexRef.current = newIndex;
                 return newIndex;
             });
         } else if (event.key === "Enter") {
             event.preventDefault();
-            if (focusedIndexRef.current === 1) { // Nouveau cas
+            if (focusedIndexRef.current === 0) {
                 handleOpenCamera('ordonnance_qr');
-            } else if (focusedIndexRef.current === 2) {
+            } else if (focusedIndexRef.current === 1) { 
                 handleOpenCamera('ordonnance');
-            } else if (focusedIndexRef.current === 3) {
+            } else if (focusedIndexRef.current === 2) {
                 handleOpenCamera('carte_vitale');
-            } else if (focusedIndexRef.current === 4) {
+            } else if (focusedIndexRef.current === 3) {
                 handleOpenCamera('carte_identite');
-            } else if (focusedIndexRef.current === 0) {
-                navigate('/');
             }
         }
-    }, [navigate, handleOpenCamera]);
+    }, [navigate, handleOpenCamera, isModalOpen, showInactivityModal, showCINOptions]);
 
     useInactivityRedirect(() => setShowInactivityModal(true));
     useEffect(() => {
@@ -160,6 +170,83 @@ function DocumentsChecking() {
     useEffect(() => {
     }, [focusedIndex]);
 
+    // Fetch documents for a user
+    const fetchDocuments = async (uid) => {
+        try {
+            const res = await fetch(`${config.backendUrl}/documents/${uid}`);
+            if (res.ok) {
+                const data = await res.json();
+                setDocuments(data);
+            } else {
+                console.error('Failed to fetch documents');
+            }
+        } catch (e) {
+            console.error('Error fetching documents', e);
+        }
+    };
+
+    useEffect(() => {
+        if (userIdInput) fetchDocuments(userIdInput);
+    }, [userIdInput]);
+
+    const handleFileChange = (e) => {
+        setSelectedFile(e.target.files[0]);
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile) return alert('Choisir un fichier');
+        const uid = userIdInput || '1';
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        fd.append('title', docTitle || selectedFile.name);
+        try {
+            const res = await fetch(`${config.backendUrl}/documents/${uid}`, {
+                method: 'POST',
+                body: fd
+            });
+            if (res.ok) {
+                setSelectedFile(null);
+                setDocTitle('');
+                fetchDocuments(uid);
+                alert('Fichier uploadé');
+            } else {
+                const data = await res.json();
+                alert('Erreur upload: ' + (data.error || res.statusText));
+            }
+        } catch (e) {
+            console.error('Upload error', e);
+            alert('Erreur réseau');
+        }
+    };
+
+    const handleDownload = (doc) => {
+        const uid = userIdInput || '1';
+        // open in new tab to trigger download
+        window.open(`${config.backendUrl}/documents/${uid}/${doc.id}`);
+    };
+
+    const handleDelete = async (doc) => {
+        const uid = userIdInput || '1';
+        setConfirmDelete(doc);
+    };
+
+    const confirmDeleteDocument = async () => {
+        const uid = userIdInput || '1';
+        const doc = confirmDelete;
+        setConfirmDelete(null);
+        try {
+            const res = await fetch(`${config.backendUrl}/documents/${uid}/${doc.id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchDocuments(uid);
+            } else {
+                alert('Erreur suppression');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Erreur réseau');
+        }
+    };
+
     return (
         <>
             {showInactivityModal && (
@@ -174,9 +261,35 @@ function DocumentsChecking() {
                         ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
                         ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
                         ${config.transitions.default}
-                    `} onClick={() => setShowInactivityModal(false)}>
+                    `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setShowInactivityModal(false)}>
                         Rester sur la page
                     </button>
+                </ModalStandard>
+            )}
+            {confirmDelete && (
+                <ModalStandard onClose={() => setConfirmDelete(null)}>
+                    <div className={`${config.fontSizes.lg} font-bold mb-4`}>
+                        Supprimer ce document ?
+                    </div>
+                    <div className="flex gap-4">
+                        <button className={`
+                            ${config.padding.button} ${config.buttonStyles.secondary} ${config.fontSizes.md}
+                            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                            ${config.transitions.default}
+                        `} {...createVoiceOverHandlers(speak)}
+            onClick={() => setConfirmDelete(null)}>
+                            Annuler
+                        </button>
+                        <button className={`
+                            ${config.padding.button} bg-red-600 text-white ${config.fontSizes.md}
+                            ${config.borderRadius.md} ${config.shadows.md} ${config.scaleEffects.hover}
+                            ${config.transitions.default}
+                        `} onClick={confirmDeleteDocument}
+            {...createVoiceOverHandlers(speak)}>
+                            Supprimer
+                        </button>
+                    </div>
                 </ModalStandard>
             )}
             <div className={`bg-background_color w-full h-screen flex flex-col items-center`}>
@@ -184,7 +297,8 @@ function DocumentsChecking() {
                 {/* Header */}
                 <div className="w-4/5 h-40 flex justify-between items-center mb-6 mt-12">
                     {/* Go Back */}
-                    <Link
+                    <Link 
+            {...createVoiceOverHandlers(speak)}
                         to="/"
                         ref={(el) => (buttonsRef.current[-1] = el)}
                         tabIndex={0}
@@ -199,6 +313,44 @@ function DocumentsChecking() {
                     {/* Logo */}
                     <div className="flex-grow flex justify-center pr-64">
                         <img src={config.icons.logo} alt="Logo PharmaXcess" className="w-96 h-24" />
+                    </div>
+                </div>
+
+                {/* Document upload area */}
+                <div className="w-2/3 mt-6 p-6 bg-white rounded-lg shadow-md">
+                    <div className="mb-4">
+                        <label className="block mb-1">User ID</label>
+                        <input value={userIdInput} onChange={(e) => setUserIdInput(e.target.value)} className="border p-2 rounded w-32" />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block mb-1">Titre (optionnel)</label>
+                        <input value={docTitle} onChange={(e) => setDocTitle(e.target.value)} className="border p-2 rounded w-full" />
+                    </div>
+                    <div className="mb-4">
+                        <input type="file" onChange={handleFileChange} />
+                        <button onClick={handleUpload} className={`ml-4 ${config.buttonStyles.primary} ${config.padding.button}`}
+            {...createVoiceOverHandlers(speak)}>Upload</button>
+                    </div>
+
+                    <div>
+                        <h3 className="font-bold mb-2">Documents</h3>
+                        {documents.length === 0 && <div className="text-sm text-gray-500">Aucun document</div>}
+                        <ul>
+                            {documents.map((d) => (
+                                <li key={d.id} className="flex items-center justify-between py-2 border-b">
+                                    <div>
+                                        <div className="font-medium">{d.title}</div>
+                                        <div className="text-xs text-gray-500">{d.size} bytes — {new Date(d.date_ajout).toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDownload(d)} className={`${config.buttonStyles.secondary} ${config.padding.button} mr-2`}>Download</button>
+                                        <button {...createVoiceOverHandlers(speak)}
+            onClick={() => handleDelete(d)} className={`${config.buttonStyles.danger} ${config.padding.button}`}>Delete</button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
 
@@ -221,7 +373,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 4 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 0 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance_qr')}
                         >
                             <config.icons.qrCode className="mr-4 text-4xl" />
@@ -237,7 +389,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 1 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 1 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('ordonnance')}
 
                         >
@@ -254,7 +406,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 2 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 2 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_vitale')}
                         >
                             <config.icons.addressCard className="mr-4 text-4xl" />
@@ -270,7 +422,7 @@ function DocumentsChecking() {
                             className={`w-1/2 h-32 flex items-center justify-center ${config.borderRadius.lg} ${config.shadows.md}
                                 ${config.buttonColors.mainGradient} ${config.textColors.primary} cursor-pointer
                                 ${config.transitions.slow} ${config.buttonColors.mainGradientHover} ${config.scaleEffects.hover}
-                                ${config.focusStates.outline} ${focusedIndex === 3 ? config.scaleEffects.focus : ''}`}
+                                ${config.focusStates.outline} ${focusedIndex === 3 ? 'ring-2 ring-pink-300' : ''}`}
                             onClick={() => handleOpenCamera('carte_identite')}
                         >
                             <config.icons.idCard className="mr-4 text-4xl" />

@@ -1,18 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authApi from '../utils/api/auth';
+import { useUser } from './UserContext';
+
+type UserType = 'patient' | 'professional';
 
 interface User {
   id: string;
   email: string;
   name?: string;
+  userType?: UserType;
 }
 
 interface AuthContextType {
   user: User | null;
+  userType: UserType | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name?: string) => Promise<boolean>;
+  authError: { message?: string; status?: number } | null;
+  clearAuthError?: () => void;
+  login: (email: string, password: string, userType?: UserType) => Promise<boolean>;
+  register: (email: string, password: string, userType?: UserType, name?: string) => Promise<boolean>;
   logout: () => Promise<void>;
+    forgotPassword?: (email: string) => Promise<string | null>;
+    resetPassword?: (token: string, newPassword: string) => Promise<boolean>;
+  setUserType: (type: UserType) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -23,8 +34,12 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const { setUser: setUserInUserContext } = useUser();
+
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserTypeState] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<{ message?: string; status?: number } | null>(null);
 
   useEffect(() => {
     checkAuthState();
@@ -32,12 +47,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthState = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('authToken');
-      
-      if (userData && token) {
-        setUser(JSON.parse(userData));
-      }
+      // IMPORTANT: Do NOT auto-restore user from AsyncStorage to avoid automatic
+      // sign-in on app startup. Previously we restored a stored 'user' and this
+      // caused the app to appear already connected when the user opened the app
+      // after scanning a QR or returning to the app. To require an explicit
+      // login, we skip restoring the user and let the login flow set it.
+      // If you want to re-enable resume-from-storage in the future, add a
+      // secure server-side verification (e.g. call an endpoint to validate
+      // the session cookie) before trusting the local cache.
+      // Intentionally do nothing here.
     } catch (error) {
       console.error('Error checking auth state:', error);
     } finally {
@@ -45,55 +63,95 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // translate known backend English errors to French for the UI
+  const translateBackendError = (errMsg?: string | null) => {
+    if (!errMsg) return 'Email ou mot de passe incorrect';
+    const map: Record<string, string> = {
+      'Email and password required': 'Email et mot de passe requis',
+      'Incorrect email or password': 'Email ou mot de passe incorrect',
+      'Missing fields': 'Champs manquants',
+      'An account already exists with this email': 'Un compte existe déjà avec cet email',
+      'Database constraint error': 'Erreur de contrainte en base de données',
+      'Email required': 'Email requis',
+      'Missing token or new password': 'Token ou nouveau mot de passe manquant',
+      'Invalid or expired token': 'Token invalide ou expiré',
+      'New password must be different': "Le nouveau mot de passe doit être différent de l'ancien",
+    };
+    return map[errMsg] || `Erreur: ${errMsg}`;
+  };
+
+  const login = async (email: string, password: string, userType?: UserType, force?: boolean): Promise<boolean> => {
     try {
-      setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (email === 'test@example.com' && password === 'password') {
+      // Clear any previous auth error so UI doesn't show stale messages while attempting login
+      setAuthError(null);
+      // DO NOT set isLoading here - it would unmount the entire navigation stack
+      // The calling component (Login) should show its own loading state
+      console.log('⏳ Appel backend login...');
+      // Call backend
+      const result = await authApi.login(email, password, force);
+
+      if (result.ok && result.data) {
+        console.log('✅ Backend OK - création userData');
+        // backend returns user_id and sets session cookie (credentials: include)
         const userData: User = {
-          id: '1',
+          id: String(result.data.user_id || ''),
           email: email,
-          name: 'Utilisateur Test'
+          name: result.data.name || result.data.first_name + ' ' + result.data.last_name || email,
+          userType: userType,
         };
-        
+
         await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('authToken', 'fake-jwt-token');
-        
+        // we don't use token-based auth here; session cookie is managed by backend
+        if (userType) {
+          await AsyncStorage.setItem('userType', userType);
+          setUserTypeState(userType);
+        }
         setUser(userData);
+        setUserInUserContext(userData); // Synchronize with UserContext
+        // Clear any auth error on successful login
+        setAuthError(null);
+        console.log('✅ Login réussi - retourne true');
         return true;
-      } else {
-        throw new Error('Identifiants invalides');
       }
+
+      console.log('❌ Backend erreur:', result.error);
+      const err = translateBackendError(result.error);
+      console.log('Erreur traduite:', err);
+      // Create an Error object and attach HTTP status so UI can react specifically (e.g., 401 -> offer signup)
+      const e: any = new Error(err);
+      e.status = result.status;
+      // Store auth error in context so UI survives navigation remounts
+      setAuthError({ message: err, status: result.status });
+      console.log('🔴 Lancement exception avec:', err);
+      throw e;
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      console.log('🔴 Exception dans login catch:', error);
+      // propagate the error so the calling screen can show a friendly message
+      throw error;
     }
   };
 
-  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
+  const register = async (email: string, password: string, userType?: UserType, name?: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const userData: User = {
-        id: Date.now().toString(),
-        email: email,
-        name: name || 'Nouvel utilisateur'
-      };
-      
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('authToken', 'fake-jwt-token');
-      
-      setUser(userData);
-      return true;
+      // call backend register endpoint
+      // backend expects nom/prenom/email/password — we'll try to split name
+      const prenom = name || '';
+      const nom = name || '';
+      const result = await authApi.register(nom, prenom, email, password);
+
+      if (result.ok) {
+        // Optionally auto-login after register (force=true to override any existing session)
+        const logged = await login(email, password, userType, true);
+        return logged;
+      }
+
+  const err = result.error || 'Registration failed';
+  // Throw so calling screen can display backend message (translated to French)
+  throw new Error(translateBackendError(err));
     } catch (error) {
-      console.error('Register error:', error);
-      return false;
+      // propagate the error up to the screen
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -101,20 +159,93 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // call backend logout to clear session if any
+      try {
+        await authApi.logout();
+      } catch (e) {
+        // Non-fatal
+        console.warn('Backend logout failed', e);
+      }
+
       await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('userType');
       setUser(null);
+      setUserTypeState(null);
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
+  const forgotPassword = async (email: string): Promise<string | null> => {
+    // NOTE: do not toggle the global isLoading here because toggling it
+    // causes RootNavigation to unmount and remount navigation stacks which
+    // breaks navigation callbacks (Alert -> navigate). The screen should
+    // show its own local loading indicator instead.
+    try {
+      const result = await authApi.forgotPassword(email);
+      if (result.ok && result.data) {
+        // backend in dev returns the token in the response body
+        return (result.data.token as string) || null;
+      }
+  throw new Error(translateBackendError(result.error) || 'Impossible de générer le token');
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string): Promise<boolean> => {
+    console.log('🔵 AuthContext.resetPassword appelé');
+    console.log('Token:', token?.substring(0, 10) + '...');
+    console.log('New password:', newPassword);
+    try {
+      // DO NOT set isLoading here - it would unmount the entire navigation stack
+      // The calling component (ResetPassword) should show its own loading state
+      const result = await authApi.resetPassword(token, newPassword);
+      console.log('Réponse backend:', result);
+      if (result.ok) {
+        // Clear any auth error on successful reset
+        console.log('✅ Backend OK - retourne true');
+        setAuthError(null);
+        return true;
+      }
+      // Backend returned an error - translate and throw
+      console.log('❌ Backend erreur:', result.error);
+      const err = translateBackendError(result.error);
+      console.log('Erreur traduite:', err);
+      setAuthError({ message: err, status: result.status });
+      console.log('🔴 Lancement exception avec:', err);
+      throw new Error(err);
+    } catch (e: any) {
+      // If e is already an Error object with a message, re-throw it
+      // Otherwise create a new error with the caught value
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error(e?.message || String(e));
+    }
+  };
+
+  const setUserType = async (type: UserType): Promise<void> => {
+    try {
+      await AsyncStorage.setItem('userType', type);
+      setUserTypeState(type);
+    } catch (error) {
+      console.error('Error setting user type:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
+    userType,
     isLoading,
+    authError,
+    clearAuthError: () => setAuthError(null),
     login,
     register,
     logout,
+    forgotPassword,
+    resetPassword,
+    setUserType,
     isAuthenticated: !!user,
   };
 

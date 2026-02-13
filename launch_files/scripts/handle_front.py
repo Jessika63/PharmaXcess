@@ -8,6 +8,7 @@ from helpers.change_directory import change_directory
 from helpers.start_containers import start_containers
 from helpers.verify.verify_frontend_is_up import verify_frontend_is_up
 from helpers.troubleshooting_message_giver import troubleshooting_message_front_install
+from helpers.config.update_frontend_config import update_frontend_config
 
 def handle_front(frontend_folder, front_app_container_name, no_cache=False, install_front=False, sudo=False):
     """

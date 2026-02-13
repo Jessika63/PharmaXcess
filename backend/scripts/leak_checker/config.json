@@ -10,8 +10,9 @@
         "backend/test/results.png",
         "app/pharmaXcess_app/package-lock.json",
         "app/pharmaXcess_app/yarn.lock",
-        "backend/database_dump_px_03_07_2025.sql",
-        "backend/docker-compose.yml"
+        "backend/docker-compose.yml",
+        "database_dump_px_doctors_db_07_10_2025.sql",
+        "database_dump_px_app_db_05_12_2025.sql"
     ],
     "ignore_dirs": [
         ".git",

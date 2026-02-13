@@ -91,7 +91,18 @@ if __name__ == "__main__":
 
     # Database Operations
     database_group.add_argument("--update", type=str, help="Function to update the database.")
-    database_group.add_argument("--dump", action="store_true", help="Function to export the database dump.")
+    database_group.add_argument(
+        "--dump",
+        nargs="?",         # permet 0 ou 1 argument (nom de la DB)
+        const="all",       # si aucun argument, on met "all"
+        help="Export database dump locally. Optionally provide a database name."
+    )
+    database_group.add_argument(
+        "--remote-dump",
+        nargs="?",         # permet 0 ou 1 argument (nom de la DB)
+        const="all",
+        help="Export database dump on remote server and retrieve via SCP."
+    )
 
     # Docker Images Management
     docker_group.add_argument("--down", action="store_true", help="Stop containers, remove images and volumes.")
@@ -106,9 +117,10 @@ if __name__ == "__main__":
     build_group.add_argument("--install-front", action="store_true", help="Install frontend dependencies with npm.")
     build_group.add_argument("--install-app", action="store_true", help="Install mobile app dependencies with npm.")
     build_group.add_argument("--build-test", action="store_true", help="Build Test Docker images before running.")
+    build_group.add_argument("--location", type=str, choices=['paris', 'lyon'], default='lyon', help="Set the default location for the frontend (paris or lyon).")
 
     # Logging & Debugging
-    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "every"], help="Stream logs for components.")
+    log_group.add_argument("--see-log", type=str, choices=["back", "front", "app", "server", "every"], help="Stream logs for components.")
     log_group.add_argument("--origins", action="store_true", help="List registered frontend origins.")
 
     # Miscellaneous
@@ -155,6 +167,13 @@ if __name__ == "__main__":
         "medicine_data"
     ]
 
+    post_deploy_scripts = [
+        [
+            "backend/scripts/fill_app_db/docker_launcher.py",
+            "backend/scripts/fill_app_db/fill_distributeurs_table.py"
+        ]
+    ]
+
     # Execute operations based on flags
     if any(vars(args).values()):
         # Combo ou All ou Restart
@@ -167,7 +186,7 @@ if __name__ == "__main__":
                 env_configs, backend_folder, db_configs
             )
             handle_back(
-                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
             )
             handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
             mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
@@ -186,7 +205,7 @@ if __name__ == "__main__":
                     env_configs, backend_folder, db_configs
                 )
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
                 )
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
                 mobile_app_process = handle_app(mobile_app_folder, install_app=args.install_app, sudo=args.sudo, no_cache=args.no_cache_app, tunnel=args.tunnel)
@@ -194,7 +213,7 @@ if __name__ == "__main__":
                     active_processes.append(mobile_app_process)
             if args.back:
                 handle_back(
-                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back
+                    backend_folder, db_configs, back_app_container_name, volumes, no_cache=args.no_cache_back, location=args.location
                 )
             if args.front:
                 handle_front(frontend_folder, front_app_container_name, no_cache=args.no_cache_front, install_front=args.install_front, sudo=args.sudo)
@@ -211,9 +230,23 @@ if __name__ == "__main__":
                 app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
                 handle_update(update_function, app_db_config["container_name"], backend_folder)
             if args.dump:
-                # Use the app database configuration for dumps
-                app_db_config = next((db for db in db_configs if db["name"] == "app_db"), db_configs[0])
-                handle_dump(backend_folder, app_db_config["container_name"], back_app_container_name)
+                target_db = None if args.dump == "all" else args.dump
+                handle_dump(
+                    backend_folder,
+                    db_configs,
+                    back_app_container_name,
+                    target_db_name=target_db,
+                    remote=False
+                )
+            if args.remote_dump:
+                target_db = None if args.remote_dump == "all" else args.remote_dump
+                handle_dump(
+                    backend_folder,
+                    db_configs,
+                    back_app_container_name,
+                    target_db_name=target_db,
+                    remote=True
+                )
             if args.export_images:
                 handle_export_images(args.export_images, [back_app_image_name, "mysql:5.7"])
             if args.import_images:
@@ -249,7 +282,10 @@ if __name__ == "__main__":
             if args.origins:
                 handle_origins(backend_folder)
             if args.deploy_back:
+                handle_clean_server()
                 handle_deploy_back()
+                for script_group in post_deploy_scripts:
+                    handle_exec_server(*script_group)
             if args.exec_server:
                 handle_exec_server(*args.exec_server)  # On décompresse la liste
             if args.clean_server:

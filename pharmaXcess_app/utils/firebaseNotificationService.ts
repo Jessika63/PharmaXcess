@@ -1,4 +1,3 @@
-
 import messaging from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -19,7 +18,7 @@ export class FirebaseNotificationService {
     // HHandle for foreground notifications
     messaging().onMessage(async remoteMessage => {
       console.log('Message reçu en premier plan:', remoteMessage);
-
+      
       // Display a local notification
       await Notifications.scheduleNotificationAsync({
         content: {

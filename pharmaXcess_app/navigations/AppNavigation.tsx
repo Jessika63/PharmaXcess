@@ -12,7 +12,6 @@ import Chat from '../screens/communication/Chat.native';
 
 // Health screens 
 // Importing various health-related screens for managing user health records
-import Diseases from '../screens/health/Diseases.native';
 import DiseasesProfile from '../screens/health/DiseasesProfile.native';
 import Allergies from '../screens/health/Allergies.native';
 import FamilyHistory from '../screens/health/FamilyHistory.native';
@@ -22,12 +21,14 @@ import MedicalProfile from '../screens/health/MedicalProfile.native';
 
 // Medications screens
 import MyPrescriptions from '../screens/medications/MyPrescriptions.native';
+import AddOrdonnance from '../screens/medications/AddOrdonnance.native';
 import Treatments from '../screens/medications/Treatments.native';
 import MedicineReminders from '../screens/medications/MedicineReminders.native';
 import PrescriptionReminders from '../screens/medications/PrescriptionReminders.native';
 import MedicationManagement from '../screens/medications/MedicationManagement.native';
 import PrescriptionImport from '../screens/medications/PrescriptionImport.native';
 import MedicationManagementFAQ from '../screens/medications/MedicationManagementFAQ.native';
+import OrdonnanceDetail from '../screens/medications/OrdonnanceDetail.native';
 
 // Pharmacy screens
 import Localisation from '../screens/pharmacy/Localisation.native';
@@ -49,6 +50,8 @@ import AppPreferences from '../screens/settings/AppPreferences.native';
 // Tutorial and FAQ screens for user assistance
 import HelpSupport from '../screens/support/HelpSupport.native';
 import Tutorial from '../screens/support/Tutorial.native';
+import TextualUserGuide from '../screens/support/TextualUserGuide.native';
+import VideoUserGuide from '../screens/support/VideoUserGuide.native';
 import FAQ from '../screens/support/FAQ.native';
 import GeneralFAQ from '../screens/support/GeneralFAQ.native';
 import TechnicalIssuesFAQ from '../screens/support/TechnicalIssuesFAQ.native';
@@ -67,6 +70,7 @@ import CookieManagement from '../screens/privacy/CookieManagement.native';
 // Account screens
 import Profile from '../screens/account/Profile.native';
 import PersonalInfo from '../screens/account/PersonalInfo.native';
+import Documents from '../screens/account/Documents.native';
 import PersonalDataOptions from '../screens/account/PersonalDataOptions.native';
 import AccountProfile from '../screens/account/AccountProfile.native';
 import AccountPrivacyFAQ from '../screens/account/AccountPrivacyFAQ.native';
@@ -135,6 +139,8 @@ const HomeStackScreen = (): React.JSX.Element => {
   return createStack([
     { name: 'Home', component: Home, title: 'Accueil' },
     { name: 'MyPrescriptions', component: MyPrescriptions, title: 'Mes ordonnances' },
+    { name: 'AddOrdonnance', component: AddOrdonnance, title: "Ajouter une ordonnance" },
+    { name: 'OrdonnanceDetail', component: OrdonnanceDetail, title: 'Détails ordonnance' },
     { name: 'MedicineReminders', component: MedicineReminders, title: 'Mes rappels médicaments' },
     { name: 'PrescriptionReminders', component: PrescriptionReminders, title: 'Mes rappels ordonnances' },
   ], colors);
@@ -149,6 +155,7 @@ const ProfileStackScreen = (): React.JSX.Element => {
     { name: 'ProfileManagement', component: ProfileManagement, title: 'Gestion des profils' },
     { name: 'Settings', component: Settings, title: 'Paramètres' },
     { name: 'PersonalInfo', component: PersonalInfo, title: 'Mes informations' },
+    { name: 'Documents', component: Documents, title: 'Mes documents' },
     { name: 'Diseases', component: DiseasesProfile, title: 'Maladies' },
     { name: 'Treatments', component: Treatments, title: 'Traitements' },
     { name: 'Hospitalizations', component: Hospitalizations, title: 'Hospitalisations' },
@@ -171,6 +178,8 @@ const ProfileStackScreen = (): React.JSX.Element => {
     { name: 'AccountProfile', component: AccountProfile, title: 'Compte et profil' },
     { name: 'HelpSupport', component: HelpSupport, title: 'Aide et support' },
     { name: 'Tutorial', component: Tutorial, title: 'Tutoriel' },
+    { name: 'TextualUserGuide', component: TextualUserGuide, title: 'Guide utilisateur textuel' },
+    { name: 'VideoUserGuide', component: VideoUserGuide, title: 'Guide utilisateur vidéo' },
     { name: 'FirstSteps', component: FirstSteps, title: 'Premiers pas' },
     { name: 'MedicationManagement', component: MedicationManagement, title: 'Gestion des médicaments' },
     { name: 'PrescriptionImport', component: PrescriptionImport, title: 'Importation des ordonnances' },

@@ -1,7 +1,10 @@
 
 services:
   react-app:
-    build: .
+    build:
+      context: .
+      args:
+        - DEFAULT_LOCATION=${DEFAULT_LOCATION:-paris}
     ports:
       - "3000:3000"
     volumes:

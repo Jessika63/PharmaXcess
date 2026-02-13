@@ -1,10 +1,9 @@
-
 import os
 import subprocess
 
 from helpers.colored_print import colored_print
 from helpers.change_directory import change_directory
-from helpers.verify.verify_database_is_up import verify_database_is_up
+from helpers.verify.verify_database_is_up import verify_databases_are_up
 from helpers.verify.verify_backend_is_up import verify_backend_is_up
 from helpers.env_functions.load_env_file import load_env_file
 
@@ -29,18 +28,31 @@ def run_docker_command(cmd_list):
         full_cmd = DOCKER_CMD + cmd_list
     subprocess.run(full_cmd, check=True)
 
-def handle_test(backend_folder, db_container_name, back_container_name, build_first=False):
+def handle_test(backend_folder, db_configs, back_app_container_name, build_first=False):
+    """
+    Objectif: Prépare et exécute les tests dans un environnement Docker,
+    en vérifiant que les bases de données et le backend sont bien démarrés.
+
+    Parameters:
+        - backend_folder: chemin vers le dossier backend (str)
+        - db_configs: liste de dictionnaires de configuration des BDD (list)
+        - back_app_container_name: nom du conteneur backend (str)
+        - build_first: si True → reconstruit l'image de test avant exécution (bool)
+
+    """
     colored_print("Preparing to run tests...", "green")
 
-    # Step 0: Change working directory to backend/
+    # Step 0: Se placer dans backend/
     change_directory(backend_folder)
 
-    # Step 1: Check if containers are ready
-    if db_container_name:
-        verify_database_is_up(db_container_name)
-    verify_backend_is_up(back_container_name, nb_of_retry=10)
+    # Step 1: Vérifier que toutes les DB sont up
+    if db_configs:
+        verify_databases_are_up(db_configs, nb_of_retry=10)
 
-    # Step 2: Build test image if requested
+    # Step 2: Vérifier que le backend est up
+    verify_backend_is_up(back_app_container_name, backend_folder, nb_of_retry=10)
+
+    # Step 3: Build test image si demandé
     if build_first:
         try:
             colored_print("Building test image...", "blue")
@@ -53,7 +65,7 @@ def handle_test(backend_folder, db_container_name, back_container_name, build_fi
             colored_print(f"Failed to build test image: {e}", "red")
             return
 
-    # Step 3: Run tests using Docker Compose / docker compose
+    # Step 4: Lancer les tests
     try:
         colored_print("Running tests using Docker Compose...", "blue")
         if isinstance(DOCKER_CMD, str):

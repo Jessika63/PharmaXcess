@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../context/ThemeContext';
 import { useFontScale } from '../context/FontScaleContext';
+import createStyles from '../styles/QuantityPicker.style';
 
 interface QuantityPickerProps {
     label: string;
@@ -35,6 +36,7 @@ export default function QuantityPicker({
 }: QuantityPickerProps): React.JSX.Element {
     const { colors } = useTheme();
     const { fontScale } = useFontScale();
+    const styles = createStyles(colors, fontScale);
 
     const getQuantityOptions = () => {
         if (customValues) {
@@ -55,45 +57,12 @@ export default function QuantityPicker({
         return options;
     };
 
-    const styles = StyleSheet.create({
-        container: {
-            marginBottom: 15,
-        },
-        label: {
-            fontSize: 16 * fontScale,
-            fontWeight: '600',
-            color: colors.profileText,
-            marginBottom: 8,
-        },
-        pickerContainer: {
-            borderWidth: 1,
-            borderColor: error ? (colors.error || '#FF6B6B') : colors.inputBorder,
-            borderRadius: 10,
-            backgroundColor: colors.inputBackground,
-            overflow: 'hidden',
-        },
-        picker: {
-            height: 50,
-            color: colors.text,
-        },
-        pickerItem: {
-            fontSize: 16 * fontScale,
-            color: colors.text,
-        },
-        errorText: {
-            color: colors.error || '#FF6B6B',
-            fontSize: 14 * fontScale,
-            marginTop: 5,
-            marginLeft: 5,
-        },
-    });
-
     return (
         <View style={[styles.container, style]}>
             <Text style={styles.label} accessibilityRole="header">
                 {label}
             </Text>
-            <View style={styles.pickerContainer}>
+            <View style={[styles.pickerContainer, error && styles.pickerContainerError]}>
                 <Picker
                     selectedValue={selectedValue}
                     style={styles.picker}

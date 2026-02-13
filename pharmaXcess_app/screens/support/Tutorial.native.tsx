@@ -28,10 +28,8 @@ export default function Tutorial({ navigation }: TutorialProps): React.JSX.Eleme
     const styles = createStyles(colors, fontScale);
 
     const items: Item[] = [
-        { title: 'Premiers pas', route: 'FirstSteps', icon: 'book-outline' },
-        { title: 'Gestion des médicaments', route: 'MedicationManagement', icon: 'medkit-outline' },
-        { title: 'Importation des ordonnances', route: 'PrescriptionImport', icon: 'document-text-outline' },
-        { title: 'Profil médical', route: 'MedicalProfile', icon: 'person-outline' },
+        { title: 'Guide utilisateur textuel', route: 'TextualUserGuide', icon: 'document-text-outline' },
+        { title: 'Guide utilisateur vidéo', route: 'VideoUserGuide', icon: 'videocam-outline' },
     ];
 
     return (

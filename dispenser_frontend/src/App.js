@@ -4,7 +4,7 @@ import { useCORSRegistration } from './hooks/useCORSRegistration';
 import config from './config';
 
 function App() {
-  const { isRegistered, isLoading, error, retryRegistration } = useCORSRegistration();
+  const { isLoading, error, retryRegistration } = useCORSRegistration();
 
   // Afficher un message de chargement pendant l'enregistrement CORS
   if (isLoading) {

@@ -1,7 +1,8 @@
+
 {
     "verification_settings": {
         "env_configs": {
-            "backend/" : [
+            "backend/": [
                 "APP_DB_HOST",
                 "APP_DB_USER",
                 "APP_DB_PASSWORD",
@@ -19,31 +20,38 @@
                 "ABUSEIPDB_API_KEY",
                 "GETIPINTEL_CONTACT",
                 "SECRET_QR_ENCRYPTION_KEY",
-                "CORS_SECRET_KEY"
+                "CORS_SECRET_KEY",
+                "ENV",
+                "FLASK_SECRET_KEY"
             ],
-            "dispenser_frontend/" : [
-                "REACT_APP_CORS_SECRET_KEY"
+            "dispenser_frontend/": [
+                "REACT_APP_CORS_SECRET_KEY",
+                "REACT_APP_ENV"
             ],
-            "pharmaXcess_app/" : [
+            "pharmaXcess_app/": [
                 "EXPO_PUBLIC_CORS_SECRET_KEY",
                 "EXPO_PUBLIC_BACKEND_URL",
-                "NGROK_TOKEN"
+                "EXPO_PUBLIC_NGROK_BACKEND_URL",
+                "NGROK_TOKEN",
+                "EXPO_PUBLIC_ENV"
             ]
         },
         "databases": [
             {
-                "name": "dispenser_db",
+                "name": "doctors_db",
                 "container_name": "distributeur-backend-db",
-                "db_dump_date": "03_07_2025",
+                "db_dump_date": "07_10_2025",
                 "port": "3307",
-                "env_prefix": "DOCTORS_"
+                "env_prefix": "DOCTORS_",
+                "nbr_of_tables": 1
             },
             {
                 "name": "app_db",
                 "container_name": "app-backend-db",
-                "db_dump_date": "",
+                "db_dump_date": "23_01_2026",
                 "port": "3308",
-                "env_prefix": "APP_"
+                "env_prefix": "APP_",
+                "nbr_of_tables": 21
             }
         ]
     },

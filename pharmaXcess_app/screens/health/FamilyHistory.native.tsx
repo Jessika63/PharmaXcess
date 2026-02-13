@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type FamilyHistoryItem = {
@@ -33,20 +34,8 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
     const familyMembers = ['Père', 'Mère', 'Frère', 'Sœur', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Oncle', 'Tante', 'Cousin(e)', 'Autre'];
     const severityLevels = ['Léger', 'Modéré', 'Sévère', 'Critique'];
 
-    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([
-        {
-            name: 'Diabète de type 2',
-            familyMember: 'Père',
-            severity: 'Modéré',
-            treatment: 'Insuline, régime alimentaire',
-        },
-        {
-            name: 'Hypertension artérielle',
-            familyMember: 'Mère',
-            severity: 'Sévère',
-            treatment: 'Bêtabloquants, régime alimentaire',
-        },
-    ]);
+    // Start empty: family history should be supplied by backend/profile
+    const [familyHistory, setFamilyHistory] = useState<FamilyHistoryItem[]>([]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -114,14 +103,39 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
         }
 
         if (editingIndex !== null) {
-            const updatedFamilyHistory = [...familyHistory];
-            updatedFamilyHistory[editingIndex] = editedFamilyHistory;
-            setFamilyHistory(updatedFamilyHistory);
-        }
+            const target = familyHistory[editingIndex];
+            const payload = {
+                maladie: editedFamilyHistory.name,
+                membre: editedFamilyHistory.familyMember,
+                severite: editedFamilyHistory.severity,
+                traitement: editedFamilyHistory.treatment,
+            } as any;
 
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'antécédent familial ont été mises à jour.');
+            if (isMainProfile && (target as any).id) {
+                (async () => {
+                    const res = await profileApi.updateFamilyHistory((target as any).id, payload);
+                    if (res.ok) {
+                        const list = await profileApi.getFamilyHistory();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = list.data.map((e: any) => ({ id: e.id, name: e.maladie || e.name || '', familyMember: e.membre || '', severity: e.severite || '', treatment: e.traitement || '' }));
+                            setFamilyHistory(mapped as any[]);
+                        }
+                        setEditModalVisible(false);
+                        setEditingIndex(null);
+                        Alert.alert('Succès', 'Les informations de l\'antécédent familial ont été mises à jour.');
+                        return;
+                    }
+                    Alert.alert('Erreur', 'Impossible de mettre à jour l\'antécédent familial.');
+                })();
+            } else {
+                const updatedFamilyHistory = [...familyHistory];
+                updatedFamilyHistory[editingIndex] = editedFamilyHistory;
+                setFamilyHistory(updatedFamilyHistory);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+                Alert.alert('Succès', 'Les informations de l\'antécédent familial ont été mises à jour.');
+            }
+        }
     };
 
     const handleDeleteFamilyHistory = (index: number): void => {
@@ -135,8 +149,23 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        const updatedFamilyHistory = familyHistory.filter((_, i) => i !== index);
-                        setFamilyHistory(updatedFamilyHistory);
+                        (async () => {
+                            if (isMainProfile && (item as any).id) {
+                                const res = await profileApi.deleteFamilyHistory((item as any).id);
+                                if (res.ok) {
+                                    const list = await profileApi.getFamilyHistory();
+                                    if (list.ok && Array.isArray(list.data)) {
+                                        const mapped = list.data.map((e: any) => ({ id: e.id, name: e.maladie || e.name || '', familyMember: e.membre || '', severity: e.severite || '', treatment: e.traitement || '' }));
+                                        setFamilyHistory(mapped as any[]);
+                                    }
+                                    return;
+                                }
+                                Alert.alert('Erreur', 'Impossible de supprimer l\'antécédent familial.');
+                                return;
+                            }
+                            const updatedFamilyHistory = familyHistory.filter((_, i) => i !== index);
+                            setFamilyHistory(updatedFamilyHistory);
+                        })();
                     }
                 }
             ]
@@ -185,6 +214,42 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
     // Determine if it's the main profile 
     const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
+    // Load family history from backend when this is a server-backed profile
+    React.useEffect(() => {
+        const load = async () => {
+            if (!currentProfile) return;
+            const numericCandidate = Number(currentProfile.id);
+            const isServerProfileLocal = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+            if (isServerProfileLocal) {
+                const res = await profileApi.getFamilyHistory();
+                if (res.ok && Array.isArray(res.data)) {
+                    const mapped = res.data.map((e: any) => ({
+                        id: e.id,
+                        name: e.maladie || e.name || '',
+                        familyMember: e.membre || e.familyMember || '',
+                        severity: e.severite || e.severity || '',
+                        treatment: e.traitement || e.treatment || '',
+                    }));
+                    setFamilyHistory(mapped);
+                }
+            } else {
+                // fallback to profileFamilyHistory
+                if (Array.isArray(profileFamilyHistory) && profileFamilyHistory.length > 0) {
+                    try {
+                        const mapped = profileFamilyHistory.map((a: any) => {
+                            if (typeof a === 'string') {
+                                try { const p = JSON.parse(a); return { id: p.id || undefined, name: p.name || p.maladie || p, familyMember: p.familyMember || p.membre || '', severity: p.severity || p.severite || '', treatment: p.treatment || p.traitement || '' }; } catch { return { name: a, familyMember: '', severity: '', treatment: '' }; }
+                            }
+                            return { id: a.id || undefined, name: a.name || a.maladie || '', familyMember: a.familyMember || a.membre || '', severity: a.severity || a.severite || '', treatment: a.treatment || a.traitement || '' };
+                        });
+                        setFamilyHistory(mapped as any[]);
+                    } catch (e) { /* ignore */ }
+                }
+            }
+        };
+        load();
+    }, [currentProfile?.id]);
+
     const handleAddPress = (): void => {
         if (!newFamilyHistory.name || !newFamilyHistory.treatment) {
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
@@ -197,14 +262,27 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
             severity: newFamilyHistory.severity || severityLevels[0]
         };
 
-        setFamilyHistory([...familyHistory, finalFamilyHistory]);
-        setNewFamilyHistory({
-            name: '',
-            familyMember: '',
-            severity: '',
-            treatment: '',
-        });
-        setIsModalVisible(false);
+        if (isMainProfile) {
+            (async () => {
+                const success = await addFamilyHistory(JSON.stringify(finalFamilyHistory));
+                if (success) {
+                    const res = await profileApi.getFamilyHistory();
+                    if (res.ok && Array.isArray(res.data)) {
+                        const mapped = res.data.map((e: any) => ({ id: e.id, name: e.maladie || e.name || '', familyMember: e.membre || '', severity: e.severite || '', treatment: e.traitement || '' }));
+                        setFamilyHistory(mapped as any[]);
+                    }
+                    setNewFamilyHistory({ name: '', familyMember: '', severity: '', treatment: '' });
+                    setIsModalVisible(false);
+                    Alert.alert('Succès', 'Antécédent familial ajouté avec succès.');
+                } else {
+                    Alert.alert('Erreur', 'Cet antécédent est déjà enregistré ou une erreur est survenue.');
+                }
+            })();
+        } else {
+            setFamilyHistory([...familyHistory, finalFamilyHistory]);
+            setNewFamilyHistory({ name: '', familyMember: '', severity: '', treatment: '' });
+            setIsModalVisible(false);
+        }
     };
 
     return (
@@ -351,7 +429,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Nom de la maladie"
                         value={isMainProfile ? newFamilyHistory.name : newFamilyHistorySimple}
-                        onChangeText={(text) => {
+                        onChangeText={(text: string) => {
                             if (isMainProfile) {
                                 setNewFamilyHistory({ ...newFamilyHistory, name: text })
                             } else {
@@ -363,32 +441,36 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                         style={styles.input}
                     />
                     
-                    <CustomPicker
-                        label="Membre de la famille"
-                        selectedValue={newFamilyHistory.familyMember || familyMembers[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
-                        options={familyMembers.map(member => ({ 
-                            label: member, 
-                            value: member 
-                        }))}
-                        placeholder="Sélectionner un membre"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Membre de la famille"
+                            selectedValue={newFamilyHistory.familyMember || familyMembers[0]}
+                            onValueChange={(value: string | number) => setNewFamilyHistory({ ...newFamilyHistory, familyMember: String(value) })}
+                            options={familyMembers.map(member => ({ 
+                                label: member, 
+                                value: member 
+                            }))}
+                            placeholder="Sélectionner un membre"
+                        />
+                    </View>
                     
-                    <CustomPicker
-                        label="Sévérité"
-                        selectedValue={newFamilyHistory.severity || severityLevels[0]}
-                        onValueChange={(value) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
-                        options={severityLevels.map(level => ({ 
-                            label: level, 
-                            value: level 
-                        }))}
-                        placeholder="Sélectionner la sévérité"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Sévérité"
+                            selectedValue={newFamilyHistory.severity || severityLevels[0]}
+                            onValueChange={(value: string | number) => setNewFamilyHistory({ ...newFamilyHistory, severity: String(value) })}
+                            options={severityLevels.map(level => ({ 
+                                label: level, 
+                                value: level 
+                            }))}
+                            placeholder="Sélectionner la sévérité"
+                        />
+                    </View>
                     
                     <TextInput
                         placeholder="Traitement"
                         value={newFamilyHistory.treatment}
-                        onChangeText={(text) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
+                        onChangeText={(text: string) => setNewFamilyHistory({ ...newFamilyHistory, treatment: text })}
                         style={styles.input}
                     />
                     
@@ -409,7 +491,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                                 treatment: '',
                             });
                         }} style={styles.button}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -428,36 +510,40 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                     <TextInput
                         placeholder="Nom de la maladie"
                         value={editedFamilyHistory.name}
-                        onChangeText={(text) => setEditedFamilyHistory({ ...editedFamilyHistory, name: text })}
+                        onChangeText={(text: string) => setEditedFamilyHistory({ ...editedFamilyHistory, name: text })}
                         style={styles.input}
                     />
                     
-                    <CustomPicker
-                        label="Membre de la famille"
-                        selectedValue={editedFamilyHistory.familyMember}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
-                        options={familyMembers.map(member => ({ 
-                            label: member, 
-                            value: member 
-                        }))}
-                        placeholder="Sélectionner un membre"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Membre de la famille"
+                            selectedValue={editedFamilyHistory.familyMember}
+                            onValueChange={(value: string | number) => setEditedFamilyHistory({ ...editedFamilyHistory, familyMember: String(value) })}
+                            options={familyMembers.map(member => ({ 
+                                label: member, 
+                                value: member 
+                            }))}
+                            placeholder="Sélectionner un membre"
+                        />
+                    </View>
                     
-                    <CustomPicker
-                        label="Sévérité"
-                        selectedValue={editedFamilyHistory.severity}
-                        onValueChange={(value) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
-                        options={severityLevels.map(level => ({ 
-                            label: level, 
-                            value: level 
-                        }))}
-                        placeholder="Sélectionner la sévérité"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Sévérité"
+                            selectedValue={editedFamilyHistory.severity}
+                            onValueChange={(value: string | number) => setEditedFamilyHistory({ ...editedFamilyHistory, severity: String(value) })}
+                            options={severityLevels.map(level => ({ 
+                                label: level, 
+                                value: level 
+                            }))}
+                            placeholder="Sélectionner la sévérité"
+                        />
+                    </View>
                     
                     <TextInput
                         placeholder="Traitement"
                         value={editedFamilyHistory.treatment}
-                        onChangeText={(text) => setEditedFamilyHistory({ ...editedFamilyHistory, treatment: text })}
+                        onChangeText={(text: string) => setEditedFamilyHistory({ ...editedFamilyHistory, treatment: text })}
                         style={styles.input}
                     />
                     
@@ -477,7 +563,7 @@ export default function FamilyHistory({ navigation }: FamilyHistoryProps) : Reac
                                 treatment: '',
                             });
                         }} style={styles.button}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

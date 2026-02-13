@@ -6,9 +6,6 @@ const ErrorPage = ({ message, children }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Get message from props or from route state
-    const errorMessage = message || location.state?.message || 'Un problème est survenu avec le serveur.';
-
     React.useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'Enter') {

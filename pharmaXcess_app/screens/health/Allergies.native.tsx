@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFontScale } from '../../context/FontScaleContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import profileApi from '../../utils/api/profile';
 import { CustomPicker } from '../../components';
 
 type Allergy = {
@@ -31,24 +32,10 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
     const { allergies: profileAllergies, addAllergy, removeAllergy } = useProfileData();
     const styles = createStyles(colors, fontScale);
 
-    const [allergies, setAllergies] = useState<Allergy[]>([
-        {
-            name: 'Pollen',
-            beginDate: '01/01/2021',
-            severity: 'Modérée',
-            symptoms: 'Éternuements, nez qui coule',
-            medications: 'Antihistaminiques',
-            comments: 'Allergie saisonnière',
-        },
-        {
-            name: 'Pénicilline',
-            beginDate: '01/01/2020',
-            severity: 'Sévère',
-            symptoms: 'Urticaire, œdème de Quincke',
-            medications: 'Éviter les pénicillines',
-            comments: 'Allergie connue',
-        },
-    ]);
+    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
+
+    // Start with an empty list: allergies will be loaded from the backend/profile data
+    const [allergies, setAllergies] = useState<Allergy[]>([]);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState<boolean>(false);
@@ -139,19 +126,43 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             beginDate: `${selectedBeginDay.toString().padStart(2, '0')}/${selectedBeginMonth.toString().padStart(2, '0')}/${selectedBeginYear}`,
         };
 
-        setAllergies([...allergies, newAllergyData]);
-        setNewAllergy({
-            name: '',
-            beginDate: '',
-            severity: '',
-            symptoms: '',
-            medications: '',
-            comments: '',
-        });
-        setSelectedBeginYear(2024);
-        setSelectedBeginMonth(1);
-        setSelectedBeginDay(1);
-        setIsModalVisible(false);
+        // If this is the main (editable) profile, try to persist to backend via addAllergy which will handle server profile
+        if (isMainProfile) {
+            (async () => {
+                const success = await addAllergy(JSON.stringify(newAllergyData));
+                if (success) {
+                    // fetch fresh list from backend
+                    const res = await profileApi.getAllergies();
+                    if (res.ok && Array.isArray(res.data)) {
+                        const mapped = res.data.map((a: any) => ({
+                            id: a.id,
+                            name: a.nom || a.name || '',
+                            beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                            severity: a.gravite || a.severity || '',
+                            symptoms: a.symptomes || a.symptoms || '',
+                            medications: a.medicaments || '',
+                            comments: a.commentaires || a.comments || '',
+                        }));
+                        setAllergies(mapped);
+                    }
+                    setNewAllergy({ name: '', beginDate: '', severity: '', symptoms: '', medications: '', comments: '' });
+                    setSelectedBeginYear(2024);
+                    setSelectedBeginMonth(1);
+                    setSelectedBeginDay(1);
+                    setIsModalVisible(false);
+                    Alert.alert('Succès', 'Allergie ajoutée avec succès.');
+                } else {
+                    Alert.alert('Erreur', 'Cette allergie est déjà enregistrée ou une erreur est survenue.');
+                }
+            })();
+        } else {
+            setAllergies([...allergies, newAllergyData]);
+            setNewAllergy({ name: '', beginDate: '', severity: '', symptoms: '', medications: '', comments: '' });
+            setSelectedBeginYear(2024);
+            setSelectedBeginMonth(1);
+            setSelectedBeginDay(1);
+            setIsModalVisible(false);
+        }
     };
 
     const handleEditPress = (index: number): void => {
@@ -183,17 +194,52 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
         }
 
         if (editingIndex !== null) {
-            const updatedAllergies = [...allergies];
-            updatedAllergies[editingIndex] = {
-                ...editedAllergy,
-                beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
-            };
-            setAllergies(updatedAllergies);
-        }
+            const target = allergies[editingIndex];
+            const payload = {
+                nom: editedAllergy.name,
+                debut: `${editSelectedBeginYear}-${String(editSelectedBeginMonth).padStart(2, '0')}-${String(editSelectedBeginDay).padStart(2, '0')}`,
+                medicaments: editedAllergy.medications || null,
+                gravite: editedAllergy.severity,
+                symptomes: editedAllergy.symptoms,
+                commentaires: editedAllergy.comments,
+            } as any;
 
-        setEditModalVisible(false);
-        setEditingIndex(null);
-        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+            if (isMainProfile && target && (target as any).id) {
+                (async () => {
+                    const res = await profileApi.updateAllergy((target as any).id, payload);
+                    if (res.ok) {
+                        const list = await profileApi.getAllergies();
+                        if (list.ok && Array.isArray(list.data)) {
+                            const mapped = list.data.map((a: any) => ({
+                                id: a.id,
+                                name: a.nom || a.name || '',
+                                beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                                severity: a.gravite || a.severity || '',
+                                symptoms: a.symptomes || a.symptoms || '',
+                                medications: a.medicaments || '',
+                                comments: a.commentaires || a.comments || '',
+                            }));
+                            setAllergies(mapped);
+                        }
+                        setEditModalVisible(false);
+                        setEditingIndex(null);
+                        Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+                        return;
+                    }
+                    Alert.alert('Erreur', 'Impossible de mettre à jour l\'allergie.');
+                })();
+            } else {
+                const updatedAllergies = [...allergies];
+                updatedAllergies[editingIndex] = {
+                    ...editedAllergy,
+                    beginDate: `${editSelectedBeginDay.toString().padStart(2, '0')}/${editSelectedBeginMonth.toString().padStart(2, '0')}/${editSelectedBeginYear}`,
+                };
+                setAllergies(updatedAllergies);
+                setEditModalVisible(false);
+                setEditingIndex(null);
+                Alert.alert('Succès', 'Les informations de l\'allergie ont été mises à jour.');
+            }
+        }
     };
 
     const handleDeleteAllergy = (index: number): void => {
@@ -207,13 +253,75 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     text: 'Supprimer', 
                     style: 'destructive',
                     onPress: () => {
-                        const updatedAllergies = allergies.filter((_, i) => i !== index);
-                        setAllergies(updatedAllergies);
+                        (async () => {
+                            if (isMainProfile && (allergy as any).id) {
+                                const res = await profileApi.deleteAllergy((allergy as any).id);
+                                if (res.ok) {
+                                    const list = await profileApi.getAllergies();
+                                    if (list.ok && Array.isArray(list.data)) {
+                                        const mapped = list.data.map((a: any) => ({
+                                            id: a.id,
+                                            name: a.nom || a.name || '',
+                                            beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                                            severity: a.gravite || a.severity || '',
+                                            symptoms: a.symptomes || a.symptoms || '',
+                                            medications: a.medicaments || '',
+                                            comments: a.commentaires || a.comments || '',
+                                        }));
+                                        setAllergies(mapped);
+                                    }
+                                    return;
+                                }
+                                Alert.alert('Erreur', 'Impossible de supprimer l\'allergie.');
+                                return;
+                            }
+
+                            const updatedAllergies = allergies.filter((_, i) => i !== index);
+                            setAllergies(updatedAllergies);
+                        })();
                     }
                 }
             ]
         );
     };
+
+    // Load allergies from backend when opening the screen for a server profile
+    React.useEffect(() => {
+        const load = async () => {
+            if (!currentProfile) return;
+            const numericCandidate = Number(currentProfile.id);
+            const isServerProfile = !Number.isNaN(numericCandidate) && String(numericCandidate) === String(currentProfile.id);
+            if (isServerProfile) {
+                const res = await profileApi.getAllergies();
+                if (res.ok && Array.isArray(res.data)) {
+                    const mapped = res.data.map((a: any) => ({
+                        id: a.id,
+                        name: a.nom || a.name || '',
+                        beginDate: (a.debut && typeof a.debut === 'string' && a.debut.includes('-')) ? a.debut.split('-').reverse().join('/') : (a.debut || ''),
+                        severity: a.gravite || a.severity || '',
+                        symptoms: a.symptomes || a.symptoms || '',
+                        medications: a.medicaments || '',
+                        comments: a.commentaires || a.comments || '',
+                    }));
+                    setAllergies(mapped);
+                }
+            } else {
+                // fallback to profileAllergies array if provided
+                if (Array.isArray(profileAllergies) && profileAllergies.length > 0) {
+                    try {
+                        const mapped = profileAllergies.map((a: any) => {
+                            if (typeof a === 'string') {
+                                try { const p = JSON.parse(a); return { id: p.id || undefined, name: p.name || p.nom || p, beginDate: p.beginDate || p.debut || '' , severity: p.severity || p.gravite || '', symptoms: p.symptoms || p.symptomes || '', medications: p.medications || '', comments: p.comments || p.commentaires || '' }; } catch { return { name: a, beginDate: '', severity: '', symptoms: '', medications: '', comments: '' }; }
+                            }
+                            return { id: a.id || undefined, name: a.name || a.nom || '', beginDate: a.beginDate || a.debut || '', severity: a.severity || a.gravite || '', symptoms: a.symptoms || a.symptomes || '', medications: a.medicaments || '', comments: a.comments || a.commentaires || '' };
+                        });
+                        setAllergies(mapped as any[]);
+                    } catch (e) { /* ignore */ }
+                }
+            }
+        };
+        load();
+    }, [currentProfile?.id]);
 
     const handleRemoveAllergy = async (allergy: string): Promise<void> => {
         Alert.alert(
@@ -256,9 +364,6 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
             title: 'Allergies',
         });
     }, [navigation]);
-
-    // Determine if it's the main profile 
-    const isMainProfile = currentProfile?.name === 'Profil de base' || currentProfile?.relationship === 'self';
 
     return (
         <View style={[styles.container, { flex: 1 }]}>
@@ -421,7 +526,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         <TextInput
                             placeholder="Nom de l'allergie"
                             value={isMainProfile ? newAllergy.name : newAllergySimple}
-                            onChangeText={(text) => {
+                            onChangeText={(text: string) => {
                                 if (isMainProfile) {
                                     setNewAllergy({ ...newAllergy, name: text })
                                 } else {
@@ -437,7 +542,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Jour"
                                     selectedValue={selectedBeginDay}
-                                    onValueChange={(value) => setSelectedBeginDay(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginDay(Number(value))}
                                     options={Array.from({ length: 31 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -449,7 +554,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Mois"
                                     selectedValue={selectedBeginMonth}
-                                    onValueChange={(value) => setSelectedBeginMonth(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginMonth(Number(value))}
                                     options={Array.from({ length: 12 }, (_, i) => ({ 
                                         label: (i + 1).toString().padStart(2, '0'), 
                                         value: i + 1 
@@ -461,7 +566,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 <CustomPicker
                                     label="Année"
                                     selectedValue={selectedBeginYear}
-                                    onValueChange={(value) => setSelectedBeginYear(Number(value))}
+                                    onValueChange={(value: string | number) => setSelectedBeginYear(Number(value))}
                                     options={Array.from({ length: 10 }, (_, i) => ({ 
                                         label: (2024 + i).toString(), 
                                         value: 2024 + i 
@@ -470,28 +575,35 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 />
                             </View>
                         </View>
-                        <TextInput
-                            placeholder="Gravité"
-                            value={newAllergy.severity}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, severity: text })}
-                            style={styles.input}
-                        />
+                        <View style={{ width: '100%' }}>
+                            <CustomPicker
+                                label="Gravité"
+                                selectedValue={newAllergy.severity}
+                                onValueChange={(value: string | number) => setNewAllergy({ ...newAllergy, severity: String(value) })}
+                                options={[
+                                    { label: 'Légère', value: 'Légère' },
+                                    { label: 'Modérée', value: 'Modérée' },
+                                    { label: 'Sévère', value: 'Sévère' }
+                                ]}
+                                placeholder="Sélectionner"
+                            />
+                        </View>
                         <TextInput
                             placeholder="Symptômes"
                             value={newAllergy.symptoms}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, symptoms: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, symptoms: text })}
                             style={styles.input}
                         />
                         <TextInput
                             placeholder="Médicaments"
                             value={newAllergy.medications}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, medications: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, medications: text })}
                             style={styles.input}
                         />
                         <TextInput
                             placeholder="Commentaires"
                             value={newAllergy.comments}
-                            onChangeText={(text) => setNewAllergy({ ...newAllergy, comments: text })}
+                            onChangeText={(text: string) => setNewAllergy({ ...newAllergy, comments: text })}
                             style={styles.input}
                         />
                         <View style={styles.buttonContainer}>
@@ -520,7 +632,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                                 }} 
                                 style={styles.button}
                             >
-                                <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                                <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                     <Text style={styles.buttonText}>Annuler</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -535,19 +647,19 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                     contentInsetAdjustmentBehavior="automatic"
                 >
                     <Text style={styles.modalTitle}>Modifier l'allergie</Text>
-                    <TextInput
-                        placeholder="Nom"
-                        value={editedAllergy.name}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, name: text })}
-                        style={styles.input}
-                        placeholderTextColor={colors.inputBorder}
-                    />
+                        <TextInput
+                            placeholder="Nom"
+                            value={editedAllergy.name}
+                            onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, name: text })}
+                            style={styles.input}
+                            placeholderTextColor={colors.inputBorder}
+                        />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View style={{ flex: 1, marginRight: 5 }}>
                             <CustomPicker
                                 label="Jour"
                                 selectedValue={editSelectedBeginDay}
-                                onValueChange={(value) => setEditSelectedBeginDay(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginDay(Number(value))}
                                 options={Array.from({ length: 31 }, (_, i) => ({ 
                                     label: (i + 1).toString().padStart(2, '0'), 
                                     value: i + 1 
@@ -559,7 +671,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             <CustomPicker
                                 label="Mois"
                                 selectedValue={editSelectedBeginMonth}
-                                onValueChange={(value) => setEditSelectedBeginMonth(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginMonth(Number(value))}
                                 options={Array.from({ length: 12 }, (_, i) => ({ 
                                     label: (i + 1).toString().padStart(2, '0'), 
                                     value: i + 1 
@@ -571,7 +683,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             <CustomPicker
                                 label="Année"
                                 selectedValue={editSelectedBeginYear}
-                                onValueChange={(value) => setEditSelectedBeginYear(Number(value))}
+                                onValueChange={(value: string | number) => setEditSelectedBeginYear(Number(value))}
                                 options={Array.from({ length: 50 }, (_, i) => ({ 
                                     label: (1980 + i).toString(), 
                                     value: 1980 + i 
@@ -580,35 +692,37 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                             />
                         </View>
                     </View>
-                    <CustomPicker
-                        label="Gravité"
-                        selectedValue={editedAllergy.severity}
-                        onValueChange={(value) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
-                        options={[
-                            { label: 'Légère', value: 'Légère' },
-                            { label: 'Modérée', value: 'Modérée' },
-                            { label: 'Sévère', value: 'Sévère' }
-                        ]}
-                        placeholder="Sélectionner"
-                    />
+                    <View style={{ width: '100%' }}>
+                        <CustomPicker
+                            label="Gravité"
+                            selectedValue={editedAllergy.severity}
+                            onValueChange={(value: string | number) => setEditedAllergy({ ...editedAllergy, severity: String(value) })}
+                            options={[
+                                { label: 'Légère', value: 'Légère' },
+                                { label: 'Modérée', value: 'Modérée' },
+                                { label: 'Sévère', value: 'Sévère' }
+                            ]}
+                            placeholder="Sélectionner"
+                        />
+                    </View>
                     <TextInput
                         placeholder="Symptômes"
                         value={editedAllergy.symptoms}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, symptoms: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, symptoms: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />
                     <TextInput
                         placeholder="Médicaments"
                         value={editedAllergy.medications}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, medications: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, medications: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />
                     <TextInput
                         placeholder="Commentaires"
                         value={editedAllergy.comments}
-                        onChangeText={(text) => setEditedAllergy({ ...editedAllergy, comments: text })}
+                        onChangeText={(text: string) => setEditedAllergy({ ...editedAllergy, comments: text })}
                         style={styles.input}
                         placeholderTextColor={colors.inputBorder}
                     />
@@ -620,7 +734,7 @@ export default function Allergies({ navigation }: AllergiesProps): React.JSX.Ele
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.button}>
-                            <LinearGradient colors={['#666', '#999']} style={styles.gradient}>
+                            <LinearGradient colors={[colors.textSecondary, colors.infoTextSecondary]} style={styles.gradient}>
                                 <Text style={styles.buttonText}>Annuler</Text>
                             </LinearGradient>
                         </TouchableOpacity>

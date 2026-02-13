@@ -3,6 +3,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useTheme } from '../context/ThemeContext';
 import Login from '../screens/account/Login.native';
 import SignUp from '../screens/account/SignUp.native';
+import ForgotPassword from '../screens/account/ForgotPassword.native';
+import ResetPassword from '../screens/account/ResetPassword.native';
 
 const AuthStack = createStackNavigator();
 
@@ -45,6 +47,22 @@ export default function AuthNavigation(): React.JSX.Element {
                     title: 'Inscription',
                     headerShown: true,
                     headerBackTitle: 'Retour',
+                }}
+            />
+            <AuthStack.Screen
+                name="ForgotPassword"
+                component={ForgotPassword}
+                options={{
+                    title: 'Mot de passe oublié',
+                    headerShown: true,
+                }}
+            />
+            <AuthStack.Screen
+                name="ResetPassword"
+                component={ResetPassword}
+                options={{
+                    title: 'Réinitialiser le mot de passe',
+                    headerShown: true,
                 }}
             />
         </AuthStack.Navigator>

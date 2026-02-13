@@ -3,8 +3,16 @@ import json
 import csv
 import requests
 import unicodedata
+import os
 
-API_URL = "http://57.128.57.96:5000/add_list_doctors"
+env = os.getenv('ENV')
+
+if env == 'production':
+    API_URL = "http://57.128.57.96:5000/add_list_doctors"
+elif env == 'development':
+    API_URL = "http://localhost:5000/add_list_doctors"
+else:
+    print("Erreur : la variable ENV n'est pas définie correctement")
 BATCH_SIZE = 180  # Batch size
 
 def validate_row(row):

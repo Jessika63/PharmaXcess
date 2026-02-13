@@ -18,6 +18,7 @@ services:
       - APP_DB_USER=${APP_DB_USER}   # User for app DB (from .env)
       - APP_DB_PASSWORD=${APP_DB_PASSWORD} # Password for app DB (from .env)
       - APP_DB_NAME=${APP_DB_NAME}   # Database name for app DB (from .env)
+      - DEFAULT_LOCATION=${DEFAULT_LOCATION:-paris}  # Default location for maps (from launch script, defaults to paris)
     container_name: "distributeur-backend-app"  # Explicit container name for backend app
 
   # ----------------------------
@@ -28,6 +29,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Root password for MySQL (from .env)
       MYSQL_DATABASE: ${APP_DB_NAME}               # Database to initialize for app
+      MYSQL_EVENT_SCHEDULER: 'ON'
     ports:
       - "3308:3306"  # Map container port 3306 to host port 3308 to avoid conflict
     container_name: "app-backend-db"  # Container name for app DB
